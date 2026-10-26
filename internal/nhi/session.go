@@ -56,12 +56,13 @@ var (
 // Error deliberately excludes the raw upstream body and request details. It is
 // safe to return to the application or log; it never embeds a login credential.
 type Error struct {
-	Code          string `json:"code"`
-	Message       string `json:"message"`
-	HTTPStatus    int    `json:"upstreamStatus,omitempty"`
-	UpstreamCode  string `json:"upstreamCode,omitempty"`
-	ExpectedCount int    `json:"expectedCount,omitempty"`
-	ReceivedCount int    `json:"receivedCount,omitempty"`
+	Code          string       `json:"code"`
+	Message       string       `json:"message"`
+	HTTPStatus    int          `json:"upstreamStatus,omitempty"`
+	UpstreamCode  string       `json:"upstreamCode,omitempty"`
+	ExpectedCount int          `json:"expectedCount,omitempty"`
+	ReceivedCount int          `json:"receivedCount,omitempty"`
+	Diagnostics   *Diagnostics `json:"diagnostics,omitempty"`
 }
 
 func (e *Error) Error() string { return e.Message }
@@ -97,6 +98,7 @@ type Session struct {
 	challengeExpiry time.Time
 	bootstrapped    bool
 	closed          bool
+	lastDiagnostics *Diagnostics
 }
 
 // New creates an isolated connector. It cannot target a caller-supplied URL.
@@ -106,7 +108,7 @@ func New() (*Session, error) {
 		return nil, failure("INITIALIZATION_FAILED", "無法建立健保署連線工作階段。")
 	}
 	transport := &http.Transport{
-		Proxy:                 http.ProxyFromEnvironment,
+		Proxy:                 diagnosticProxy,
 		DialContext:           (&net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
 		TLSClientConfig:       &tls.Config{MinVersion: tls.VersionTLS12},
 		TLSHandshakeTimeout:   10 * time.Second,
@@ -126,6 +128,7 @@ func New() (*Session, error) {
 			if req.URL.Scheme != "https" || req.URL.Host != "myhealthbank.nhi.gov.tw" || len(via) >= 3 {
 				return errRedirectRejected
 			}
+			traceRedirect(req)
 			return nil
 		},
 	}
@@ -188,7 +191,7 @@ func (s *Session) Challenge(ctx context.Context) (Challenge, error) {
 	switch contentType {
 	case "image/png", "image/jpeg", "image/gif":
 	default:
-		return Challenge{}, failure("CAPTCHA_INVALID_IMAGE", "官方連線未回傳有效的圖形驗證碼圖片，請稍後再試。")
+		return Challenge{}, s.annotateResponseError(failure("CAPTCHA_INVALID_IMAGE", "官方連線未回傳有效的圖形驗證碼圖片，請稍後再試。"))
 	}
 	s.challengeID = id
 	s.challengeExpiry = now.Add(5 * time.Minute)
@@ -204,7 +207,7 @@ func (s *Session) bootstrap(ctx context.Context) error {
 		var upstream *Error
 		if errors.As(err, &upstream) {
 			if upstream.Code == "RESPONSE_TOO_LARGE" {
-				return failure("LOGIN_PAGE_INVALID", "官方登入頁回應超過大小限制，無法建立驗證碼連線。")
+				return s.annotateResponseError(failure("LOGIN_PAGE_INVALID", "官方登入頁回應超過大小限制，無法建立驗證碼連線。"))
 			}
 			detail := *upstream
 			detail.Message = "載入官方登入頁時：" + upstream.Message
@@ -216,7 +219,7 @@ func (s *Session) bootstrap(ctx context.Context) error {
 	mediaType, _, err := mime.ParseMediaType(headers.Get("Content-Type"))
 	trimmed := bytes.TrimSpace(bytes.TrimPrefix(body, []byte{0xef, 0xbb, 0xbf}))
 	if err != nil || mediaType != "text/html" || !strings.HasPrefix(http.DetectContentType(trimmed), "text/html") {
-		return failure("LOGIN_PAGE_INVALID", "官方登入頁未回傳有效的HTML文件，無法建立驗證碼連線；請稍後再試。")
+		return s.annotateResponseError(failure("LOGIN_PAGE_INVALID", "官方登入頁未回傳有效的HTML文件，無法建立驗證碼連線；請稍後再試。"))
 	}
 	s.bootstrapped = true
 	return nil
@@ -271,13 +274,13 @@ func (s *Session) Login(ctx context.Context, credentials Credentials) error {
 	defer clear(body)
 	var response loginResponse
 	if err := decodeJSON(body, &response); err != nil {
-		return failure("UPSTREAM_CHANGED", "健保署登入回應格式已變更，請稍後重試。")
+		return s.annotateResponseError(failure("UPSTREAM_CHANGED", "健保署登入回應格式已變更，請稍後重試。"))
 	}
 	if !loginSucceeded(response.Code) {
-		return &Error{Code: "AUTH_FAILED", Message: "健保署登入未完成，請確認登入資料與驗證碼；若持續失敗，請至官網確認帳號狀態。", UpstreamCode: safeCode(response.Code)}
+		return s.annotateResponseError(&Error{Code: "AUTH_FAILED", Message: "健保署登入未完成，請確認登入資料與驗證碼；若持續失敗，請至官網確認帳號狀態。", UpstreamCode: safeCode(response.Code)})
 	}
 	if !validToken(response.Token) {
-		return failure("UPSTREAM_CHANGED", "健保署未提供有效的登入憑證。")
+		return s.annotateResponseError(failure("UPSTREAM_CHANGED", "健保署未提供有效的登入憑證。"))
 	}
 	s.token = response.Token
 	s.tokenObtainedAt = time.Now()
@@ -306,7 +309,7 @@ func (s *Session) refresh(ctx context.Context) error {
 	var response loginResponse
 	if decodeJSON(body, &response) != nil || response.Code != "0000" || !validToken(response.Token) {
 		s.clearAuth()
-		return sessionExpired()
+		return s.annotateResponseError(sessionExpired())
 	}
 	s.token = response.Token
 	s.tokenObtainedAt = time.Now()
@@ -351,7 +354,7 @@ func (s *Session) close() {
 
 func (s *Session) clearAuth() { s.token, s.tokenObtainedAt = "", time.Time{} }
 
-func (s *Session) request(ctx context.Context, method, path string, query url.Values, payload []byte, limit int64, authenticated bool) ([]byte, http.Header, error) {
+func (s *Session) request(ctx context.Context, method, path string, query url.Values, payload []byte, limit int64, authenticated bool) (result []byte, headers http.Header, requestErr error) {
 	if authenticated && s.token == "" {
 		return nil, nil, sessionExpired()
 	}
@@ -363,6 +366,11 @@ func (s *Session) request(ctx context.Context, method, path string, query url.Va
 	if err != nil {
 		return nil, nil, failure("REQUEST_FAILED", "無法建立健保署請求。")
 	}
+	req, trace := startRequestTrace(req, operationForPath(path))
+	defer func() {
+		s.lastDiagnostics = trace.finish()
+		requestErr = s.annotateResponseError(requestErr)
+	}()
 	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; BestkakkoiHealthbank/1.0)")
 	req.Header.Set("Accept-Language", "zh-TW,zh;q=0.9")
 	if path == loginPage {
@@ -394,6 +402,7 @@ func (s *Session) request(ctx context.Context, method, path string, query url.Va
 		return nil, nil, networkFailure(err)
 	}
 	defer response.Body.Close()
+	trace.response(response)
 	if response.StatusCode == http.StatusUnauthorized || response.StatusCode == http.StatusForbidden {
 		if authenticated {
 			s.clearAuth()
@@ -404,6 +413,7 @@ func (s *Session) request(ctx context.Context, method, path string, query url.Va
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		return nil, nil, &Error{Code: "UPSTREAM_UNAVAILABLE", Message: "官方連線收到 HTTP " + strconv.Itoa(response.StatusCode) + "，目前無法完成請求，請稍後再試。", HTTPStatus: response.StatusCode}
 	}
+	trace.setPhase(PhaseResponseBody)
 	body, err := io.ReadAll(io.LimitReader(response.Body, limit+1))
 	if err != nil {
 		return nil, nil, responseReadFailure(err, response.StatusCode)
@@ -411,6 +421,7 @@ func (s *Session) request(ctx context.Context, method, path string, query url.Va
 	if int64(len(body)) > limit {
 		return nil, nil, failure("RESPONSE_TOO_LARGE", "資料超出單次讀取範圍，請縮短日期區間後重試。")
 	}
+	trace.setPhase(PhaseComplete)
 	return body, response.Header, nil
 }
 

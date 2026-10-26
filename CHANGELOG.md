@@ -2,6 +2,16 @@
 
 Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
+## v1.0.3-rc.1 — 2026-10-27 (Asia/Taipei)
+
+This prerelease adds actionable connection diagnostics. It is not a verified fix for official CAPTCHA or login availability.
+
+- Added bounded per-request DNS/TCP/proxy/TLS/HTTP phase diagnostics to dependency errors and sanitized logs, without changing the official origin, TLS configuration, proxy selection, headers, retry behavior or authentication payload.
+- Added `healthbank diagnose-nhi`, which runs the same document-to-CAPTCHA flow without opening a database or disturbing the running application. It validates the complete raster image and prints only safe connection facts; it never accepts credentials, solves CAPTCHA, logs in, or prints cookies, image bytes or challenge identifiers.
+- Displayed the observed failure phase beside existing error and request codes.
+- Corrected the empty-report welcome action for an already authenticated session to open the existing update controls rather than requesting another CAPTCHA.
+- Reproduced `CONNECTION_RESET` through the deployed v1.0.2 web UI. The exact v1.0.2 executable was also started and exercised as a real web application in the preview environment, where outbound DNS failed. A separate approved public request completed its configured proxy/TLS path but received HTTP 503. These distinct results do not establish the deployed host's reset stage or prove a global outage.
+
 ## v1.0.2 — 2026-10-27 (Asia/Taipei)
 
 - Added the Healthbank heart/pulse SVG favicon, a 16/32/48px ICO fallback and a 180px Apple touch icon; all icons are embedded in the Go executable.

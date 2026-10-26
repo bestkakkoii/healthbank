@@ -917,11 +917,14 @@ export default function App() {
                 <div className="welcome-actions">
                   <button
                     className="button primary large-button"
-                    onClick={() => setLoginOpen(true)}
+                    onClick={() => {
+                      if (persisted) setRangeOpen(true);
+                      else setLoginOpen(true);
+                    }}
                     disabled={!!busy}
                   >
-                    <Icon name="login" />
-                    連接健康存摺
+                    <Icon name={persisted ? 'refresh' : 'login'} />
+                    {persisted ? '更新資料' : '連接健康存摺'}
                   </button>
                   <button
                     className="button secondary large-button"

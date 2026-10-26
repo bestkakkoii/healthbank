@@ -79,10 +79,10 @@ func (s *Session) Fetch(ctx context.Context, query Query) (Report, error) {
 	clear(body)
 	if err != nil {
 		s.invalidateOnAuthError(err)
-		return Report{}, err
+		return Report{}, s.annotateResponseError(err)
 	}
 	if meta.count > MaxReportRecords {
-		return Report{}, failure("RESPONSE_TOO_LARGE", "檢驗項目過多，請縮短日期區間後重試。")
+		return Report{}, s.annotateResponseError(failure("RESPONSE_TOO_LARGE", "檢驗項目過多，請縮短日期區間後重試。"))
 	}
 	params.Del("nowPage")
 	params.Del("pageDataCount")
@@ -96,13 +96,13 @@ func (s *Session) Fetch(ctx context.Context, query Query) (Report, error) {
 	records, err := parseRecords(body)
 	if err != nil {
 		s.invalidateOnAuthError(err)
-		return Report{}, err
+		return Report{}, s.annotateResponseError(err)
 	}
 	if meta.count >= 0 && len(records) < meta.count {
-		return Report{StartDate: meta.start, EndDate: meta.end, ReportedCount: meta.count}, &Error{
+		return Report{StartDate: meta.start, EndDate: meta.end, ReportedCount: meta.count}, s.annotateResponseError(&Error{
 			Code: "INCOMPLETE_RESPONSE", Message: "健保署回傳的筆數不足，尚未匯入；請重新取得資料或縮短日期區間。",
 			ExpectedCount: meta.count, ReceivedCount: len(records),
-		}
+		})
 	}
 	return Report{Records: records, StartDate: meta.start, EndDate: meta.end, ReportedCount: meta.count}, nil
 }

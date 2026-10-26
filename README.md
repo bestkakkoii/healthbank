@@ -8,11 +8,13 @@ Copyright © 2026 **bestkakkoii llc.** All rights reserved.
 
 [專案原始碼](https://github.com/bestkakkoii/healthbank) · [Linux 發行版本](https://github.com/bestkakkoii/healthbank/releases)
 
+**目前 v1.0.3-rc.1 為連線診斷預覽版，官方驗證碼、登入及完整個人資料取得尚未通過驗收。**
+
 ## 寶塔部署：上傳、選擇執行檔、綁定網域、啟動
 
 **主要部署目標：Debian 13（trixie）x64／x86_64。請選 `linux_amd64`，採 `GOAMD64=v1` 與純 Go 靜態編譯。**
 
-1. 一般 Intel／AMD 64 位元主機下載 `healthbank_1.0.2_linux_amd64.tar.gz`；ARM64 主機下載 `linux_arm64`。
+1. 一般 Intel／AMD 64 位元主機下載 `healthbank_1.0.3-rc.1_linux_amd64.tar.gz`；ARM64 主機下載 `linux_arm64`。
 2. 在寶塔檔案管理中上傳並解壓縮，例如放在 `/www/wwwroot/healthbank/`。解壓後可把套件內層目錄當成專案目錄。
 3. 在寶塔 **Go 專案**新增專案，選擇解壓出的 **`healthbank` 執行檔**。無需啟動參數，預設服務位址為 **`127.0.0.1:8787`**；面板需要填埠號時填 **8787**。
 4. 綁定已指向這台主機的網域，啟動專案。由寶塔的網站／Go 專案反向代理映射至該埠號，使用該網域瀏覽。正式登入請使用寶塔管理的 **HTTPS**。
@@ -20,6 +22,12 @@ Copyright © 2026 **bestkakkoii llc.** All rights reserved.
 **不必安裝 Go、Node.js、Python、Chromium 或 MySQL，也不必在伺服器編譯前端。** 前端與預設資料表已內嵌在執行檔。第一次啟動會在執行檔旁建立 `data/`。
 
 如果面板沒有保留執行權限，在檔案權限中把 `healthbank` 設為可執行（755）。不同寶塔版本的欄位名稱可能略異；完整欄位對照與可選 Nginx 設定見 [部署說明](docs/deployment.zh-TW.md)。`deploy/nginx.healthbank.conf` 只供此 APP 的網站使用；已有面板映射時不需重複加入 `location /`。
+
+## v1.0.3-rc.1 連線診斷預覽版
+
+此預覽版用於定位真實部署的 `CONNECTION_RESET`，**尚未通過官方驗證碼、登入及資料取得驗收**，不應當成已修復登入的正式版。程式仍維持相同的 HTTPS／Cookie／登入流程。
+
+將預覽版解壓到另一個目錄，不需停止或覆蓋既有服務，即可在該目錄執行 `./healthbank diagnose-nhi`。它使用同一個正式連接器測試登入頁與圖片，只輸出連線階段、耗時、狀態及圖片解碼是否成功；不開啟資料庫，也不要求帳密。詳細解讀見 [部署診斷](docs/deployment.zh-TW.md#網站可開啟但圖形驗證碼無法取得)。
 
 ## 使用方式
 
@@ -102,7 +110,7 @@ npm --prefix web ci
 npm --prefix web run build
 .tools/go/bin/go test ./...
 .tools/go/bin/go vet ./...
-GO="$PWD/.tools/go/bin/go" bash scripts/release.sh v1.0.2
+GO="$PWD/.tools/go/bin/go" bash scripts/release.sh v1.0.3-rc.1
 ```
 
 輸出為 `dist/releases/` 內兩種 Linux架構套件、原始碼套件與 `SHA256SUMS`。二進位採 `CGO_ENABLED=0`；伺服器不需編譯工具或外部動態 SQLite 函式庫。原始碼包不含真實報告、登入資料、資料庫、金鑰或開發快取。

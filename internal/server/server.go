@@ -295,13 +295,14 @@ func (a *App) fail(w http.ResponseWriter, r *http.Request, status int, code, mes
 }
 func (a *App) upstreamError(w http.ResponseWriter, r *http.Request, err error) {
 	detail := struct {
-		Code           string `json:"code"`
-		Message        string `json:"message"`
-		RequestID      string `json:"request_id"`
-		UpstreamStatus int    `json:"upstream_status,omitempty"`
-		UpstreamCode   string `json:"upstream_code,omitempty"`
-		ExpectedCount  *int   `json:"expected_count,omitempty"`
-		ReceivedCount  *int   `json:"received_count,omitempty"`
+		Code           string           `json:"code"`
+		Message        string           `json:"message"`
+		RequestID      string           `json:"request_id"`
+		UpstreamStatus int              `json:"upstream_status,omitempty"`
+		UpstreamCode   string           `json:"upstream_code,omitempty"`
+		ExpectedCount  *int             `json:"expected_count,omitempty"`
+		ReceivedCount  *int             `json:"received_count,omitempty"`
+		Diagnostics    *nhi.Diagnostics `json:"diagnostics,omitempty"`
 	}{
 		Code:      "upstream_failed",
 		Message:   "官方連線未能完成，請稍後重試或匯入已另存的報告。",
@@ -341,6 +342,7 @@ func (a *App) upstreamError(w http.ResponseWriter, r *http.Request, err error) {
 			expected, received := e.ExpectedCount, e.ReceivedCount
 			detail.ExpectedCount, detail.ReceivedCount = &expected, &received
 		}
+		detail.Diagnostics = e.Diagnostics.Sanitized()
 	}
 	if status == http.StatusFailedDependency || status >= 500 {
 		attributes := []slog.Attr{slog.String("code", detail.Code), slog.String("request_id", detail.RequestID)}
@@ -349,6 +351,9 @@ func (a *App) upstreamError(w http.ResponseWriter, r *http.Request, err error) {
 		}
 		if detail.UpstreamCode != "" {
 			attributes = append(attributes, slog.String("upstream_code", detail.UpstreamCode))
+		}
+		if detail.Diagnostics != nil {
+			attributes = append(attributes, slog.Any("diagnostics", detail.Diagnostics))
 		}
 		slog.LogAttrs(r.Context(), slog.LevelWarn, "official request failed", attributes...)
 	}

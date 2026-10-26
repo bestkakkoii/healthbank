@@ -66,6 +66,37 @@ not part of this application's executable or release.
 | Initial document cookies | A browser loads the login document before its image. Saved JavaScript cannot establish whether that document's live HTTP response sets a required Cookie. The connector now preserves this normal request order and captures any such Cookie. |
 | Live acceptance | Server-side cookie requirements, current edge behavior, a valid image, successful account login and complete live report retrieval remain runtime questions. Static analysis cannot settle them. |
 
+## Runtime connection diagnostics (v1.0.3-rc.1)
+
+The deployed v1.0.2 UI was exercised on 2026-10-26 UTC and reproduced
+`CONNECTION_RESET` while loading the login document. The same released binary
+was started as a real web application in the managed preview and exercised
+through its visible login dialog; that environment returned `DNS_FAILED`.
+A separate public HTTPS check with the configured egress proxy completed
+CONNECT and the connected-peer TLS handshake, then received HTTP 503. A direct
+public TLS diagnostic could not get past DNS. These are distinct network paths;
+none establishes where the deployed host's connection was reset.
+
+Request diagnostics use `net/http/httptrace` and retain only allowlisted
+operation/phase labels, bounded elapsed time, whether a configured proxy was
+selected, and observed TLS version/protocol. They do not retain hostnames,
+addresses, URLs, query strings, headers, credentials, cookies, tokens,
+certificate bodies or raw errors. Redirected attempts update the active phase;
+concurrent callbacks are synchronized. API output and logs use independent
+sanitized copies. Transport settings, routing and request counts are unchanged.
+
+`healthbank diagnose-nhi` runs the same fresh-session document and CAPTCHA
+sequence before any database/configuration/instance-lock setup. It validates
+the complete bounded raster image and reports a nonzero exit status on failure.
+It does not return the image or challenge ID, authenticate a person, or read
+reports. A successful CAPTCHA check cannot establish successful login.
+
+Negotiated TLS fields refer to the connection that delivered the request.
+With an egress proxy they do not prove an independently authenticated origin
+handshake. A `tls_handshake` phase can motivate a controlled compatibility
+investigation; it does not by itself prove a specific TLS extension is at fault.
+No automatic TLS downgrade, fingerprint imitation or retry was added.
+
 ## Fixed origin and API
 
 The only production origin is `https://myhealthbank.nhi.gov.tw`. The starting

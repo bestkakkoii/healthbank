@@ -6,11 +6,11 @@
 
 ## 一、第一次部署：上傳、選執行檔、綁域名、啟動
 
-**本次正式部署平台為 Debian 13（trixie）x64。使用 `healthbank_1.0.2_linux_amd64.tar.gz`；`amd64` 在發行檔名中同時代表 Intel／AMD 的 64 位元 x86 主機。ARM64 包供其他主機使用，這台 Debian 主機不選它。**
+**本次正式部署平台為 Debian 13（trixie）x64。使用 `healthbank_1.0.3-rc.1_linux_amd64.tar.gz`；`amd64` 在發行檔名中同時代表 Intel／AMD 的 64 位元 x86 主機。ARM64 包供其他主機使用，這台 Debian 主機不選它。**
 
 發行包內的 `healthbank` 已包含編譯完成的前端與 Go 後端。執行主機不需要安裝 Node.js、Python、Go 編譯器、SQLite 服務或瀏覽器自動化程式。使用預設 SQLite 時也不用先建立資料庫。
 
-1. 在寶塔「檔案」把對應架構的壓縮檔上傳到應用程式目錄並解壓縮，例如 `/www/wwwroot/healthbank/`。一般 Intel／AMD 64 位元主機選 `healthbank_1.0.2_linux_amd64.tar.gz`；ARM 64 位元主機選 `healthbank_1.0.2_linux_arm64.tar.gz`。版本號以實際下載檔名為準。
+1. 在寶塔「檔案」把對應架構的壓縮檔上傳到應用程式目錄並解壓縮，例如 `/www/wwwroot/healthbank/`。一般 Intel／AMD 64 位元主機選 `healthbank_1.0.3-rc.1_linux_amd64.tar.gz`；ARM 64 位元主機選 `healthbank_1.0.3-rc.1_linux_arm64.tar.gz`。版本號以實際下載檔名為準。
 2. 開啟「網站 → Go 項目 → 添加項目」，依下表填寫。寶塔若自動產生完整執行命令，保留指向該執行檔的命令即可，不需要 `serve` 參數。
 3. 綁定已解析到本機的域名，使用寶塔提供的域名／外網映射功能，讓 Nginx 轉送到 `127.0.0.1:8787`。在站點 SSL 設定啟用 HTTPS，供手機與筆電正式登入使用。
 4. 點「啟動」，開啟 `https://你的域名/`。SQLite 與必要的服務設定會自動建立在執行檔旁的 `data/` 目錄；不論寶塔啟動時採用哪一個工作目錄，都會使用同一個位置。
@@ -162,6 +162,19 @@ MySQL 驅動、建表與匯入路徑均已實作。若該發行版的驗證紀�
 
 v1.0.2 起，官方連線失敗使用 HTTP 424 搭配結構化錯誤，區分 DNS、TLS、逾時、連線失敗及官方 HTTP 狀態，不再全部回成本應用的 502。畫面會顯示安全的錯誤代碼、可取得的連線回應狀態與查詢代碼。Cloudflare／Nginx 的自訂錯誤規則仍可能替換錯誤回應；若畫面仍只有通用 502，請從部署主機讀取原始回應。
 
+v1.0.3-rc.1 另提供單次診斷指令。可把套件解壓到另一個目錄，在該目錄執行，不需停機或覆蓋目前版本：
+
+```bash
+chmod 755 ./healthbank
+./healthbank diagnose-nhi
+```
+
+這個指令直接使用正式連接器，先讀取登入頁，再於同一個 Cookie 工作階段取圖。它不開啟資料庫、不讀取既有使用者連線、不輸入帳密、不提交登入、不輸出圖片內容或驗證碼識別字串。`image_decoded: true` 只代表完整圖片解碼成功，**不代表登入或報告取得成功**；失敗會傳回非零退出碼，不做自動重試。
+
+輸出的 `diagnostics.phase` 是中斷／最後完成階段，例如 `dns`、`tcp_connect`、`proxy_connect`、`tls_handshake`、`response_headers`、`response_body`。`proxy_selected` 只表示這次連線使用了環境設定的代理，不含代理位址。TLS 版本與協議只在實際觀察到時提供；若有代理，不能把它當成獨立證明已與官方來源完成端到端握手。指令與寶塔服務若使用不同執行帳號、DNS 或代理環境，結果也可能不同。
+
+更新為此預覽版的網頁會在錯誤訊息顯示中斷階段，API 及相同 `request_id` 的安全日誌也會帶上這些資訊。程式不會依重設錯誤自動停用憑證驗證、強制降級 TLS、偽造瀏覽器指紋或重送登入。
+
 在寶塔終端執行以下唯讀檢查，直接呼叫 Go 的本機端點，不經 Nginx 或 Cloudflare。它不需要登入資料，最多等待 45 秒；成功時會省略圖片及挑戰識別字串：
 
 ```bash
@@ -191,15 +204,15 @@ sed -E 's/"image_url":"[^"]*/"image_url":"[image omitted]/g;s/"challenge_id":"[^
 先按專案 README 完成相依套件準備、測試及前端建置，確認 `internal/webui/dist/index.html` 已存在，再執行：
 
 ```bash
-bash scripts/release.sh v1.0.2
+bash scripts/release.sh v1.0.3-rc.1
 ```
 
 腳本產生：
 
 ```text
-dist/releases/healthbank_1.0.2_linux_amd64.tar.gz
-dist/releases/healthbank_1.0.2_linux_arm64.tar.gz
-dist/releases/healthbank_1.0.2_source.tar.gz
+dist/releases/healthbank_1.0.3-rc.1_linux_amd64.tar.gz
+dist/releases/healthbank_1.0.3-rc.1_linux_arm64.tar.gz
+dist/releases/healthbank_1.0.3-rc.1_source.tar.gz
 dist/releases/SHA256SUMS
 ```
 

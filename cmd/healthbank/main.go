@@ -36,8 +36,11 @@ func run(args []string) error {
 		return nil
 	}
 	if len(args) == 1 && (args[0] == "--help" || args[0] == "-h") {
-		fmt.Print("healthbank [serve]\nhealthbank --version\nhealthbank settings export <new-file.json>\nhealthbank settings import <file.json>\n\nDefault:127.0.0.1:8787; SQLite and identity.key in executable-adjacent data/.\nEnvironment:HEALTHBANK_ADDR, PORT, HEALTHBANK_DATA_DIR, HEALTHBANK_DB_DRIVER, HEALTHBANK_MYSQL_DSN.\n")
+		fmt.Print("healthbank [serve]\nhealthbank --version\nhealthbank diagnose-nhi\nhealthbank settings export <new-file.json>\nhealthbank settings import <file.json>\n\nDefault:127.0.0.1:8787; SQLite and identity.key in executable-adjacent data/.\nEnvironment:HEALTHBANK_ADDR, PORT, HEALTHBANK_DATA_DIR, HEALTHBANK_DB_DRIVER, HEALTHBANK_MYSQL_DSN.\n\n診斷：diagnose-nhi 只測試官方登入頁及驗證碼，不登入、不讀取資料庫、不改動現有服務。\nCopyright (c) 2026 bestkakkoii llc.\n")
 		return nil
+	}
+	if len(args) == 1 && args[0] == "diagnose-nhi" {
+		return diagnoseNHI(os.Stdout)
 	}
 	maintenance := len(args) == 3 && args[0] == "settings" && (args[1] == "export" || args[1] == "import")
 	if !(len(args) == 0 || (len(args) == 1 && args[0] == "serve") || maintenance) {

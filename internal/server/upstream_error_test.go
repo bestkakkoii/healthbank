@@ -99,3 +99,47 @@ func TestUpstreamErrorsKeepDiagnosticsWithoutBecomingGatewayErrors(t *testing.T)
 		})
 	}
 }
+
+func TestUpstreamConnectionDiagnosticsAreSanitizedInResponseAndLog(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		diagnostics *nhi.Diagnostics
+		phase       string
+	}{
+		{"observed_tls_reset", &nhi.Diagnostics{Operation: "login_document", Phase: "tls_handshake", ElapsedMS: 28, ProxySelected: false}, "tls_handshake"},
+		{"unsafe_metadata", &nhi.Diagnostics{Operation: "SECRET_URL", Phase: "SECRET_PASSWORD", ElapsedMS: -1, TLSVersion: "SECRET_CERTIFICATE", TLSProtocol: "SECRET_HEADER"}, "unknown"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var logs bytes.Buffer
+			previous := slog.Default()
+			slog.SetDefault(slog.New(slog.NewJSONHandler(&logs, nil)))
+			t.Cleanup(func() { slog.SetDefault(previous) })
+			app := &App{mux: http.NewServeMux()}
+			app.mux.HandleFunc("GET /api/auth/captcha", func(w http.ResponseWriter, r *http.Request) {
+				app.upstreamError(w, r, &nhi.Error{Code: "CONNECTION_RESET", Message: "官方連線被重設。", Diagnostics: tc.diagnostics})
+			})
+			response := httptest.NewRecorder()
+			app.Handler().ServeHTTP(response, httptest.NewRequest(http.MethodGet, "https://healthbank.test/api/auth/captcha", nil))
+			var envelope struct {
+				Error struct {
+					Diagnostics *nhi.Diagnostics `json:"diagnostics"`
+				} `json:"error"`
+			}
+			if err := json.Unmarshal(response.Body.Bytes(), &envelope); err != nil {
+				t.Fatal(err)
+			}
+			if response.Code != http.StatusFailedDependency || envelope.Error.Diagnostics == nil || string(envelope.Error.Diagnostics.Phase) != tc.phase {
+				t.Fatal("connection diagnostic phase was lost")
+			}
+			var entry struct {
+				Diagnostics *nhi.Diagnostics `json:"diagnostics"`
+			}
+			if err := json.Unmarshal(logs.Bytes(), &entry); err != nil {
+				t.Fatal(err)
+			}
+			if entry.Diagnostics == nil || string(entry.Diagnostics.Phase) != tc.phase || strings.Contains(response.Body.String(), "SECRET") || strings.Contains(logs.String(), "SECRET") {
+				t.Fatal("unsafe connection diagnostics reached the response or log")
+			}
+		})
+	}
+}

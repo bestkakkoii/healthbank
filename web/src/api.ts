@@ -118,6 +118,21 @@ export interface CaptchaResponse {
   challenge_id: string;
 }
 
+const connectionPhaseLabels = {
+  unknown: '無法確認',
+  prepare: '建立請求',
+  dns: 'DNS 解析',
+  tcp_connect: 'TCP 連線',
+  proxy_connect: '代理連線',
+  tls_handshake: 'TLS 握手',
+  connection_ready: '建立連線後',
+  request_write: '傳送請求',
+  response_headers: 'HTTP 回應標頭',
+  response_body: '讀取回應內容',
+  complete: 'HTTP 回應讀取完成',
+} as const;
+type ConnectionPhase = keyof typeof connectionPhaseLabels;
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -127,6 +142,7 @@ export class ApiError extends Error {
     public upstreamStatus?: number,
     public upstreamCode?: string,
     public incompleteCounts?: { expected: number; received: number },
+    public connectionPhase?: ConnectionPhase,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -175,6 +191,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
           upstream_code?: string;
           expected_count?: number;
           received_count?: number;
+          diagnostics?: { phase?: unknown };
         };
       } | null
     )?.error;
@@ -188,6 +205,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       expectedCount > 0 && expectedCount <= 50000 &&
       receivedCount >= 0 && receivedCount < expectedCount
         ? { expected: expectedCount, received: receivedCount }
+        : undefined;
+    const phase = detail?.diagnostics?.phase;
+    const connectionPhase =
+      typeof phase === 'string' && Object.hasOwn(connectionPhaseLabels, phase)
+        ? phase as ConnectionPhase
         : undefined;
     throw new ApiError(
       detail?.message ?? `服務暫時無法完成要求（HTTP ${response.status}）。`,
@@ -203,6 +225,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
         ? detail.upstream_code
         : undefined,
       incompleteCounts,
+      connectionPhase,
     );
   }
   if (payload === null)
@@ -261,6 +284,8 @@ export function readableError(error: unknown): string {
     if (error.upstreamCode) details.push(`官方代碼：${error.upstreamCode}`);
     if (error.incompleteCounts)
       details.push(`已收到 ${error.incompleteCounts.received} 筆／官方回報 ${error.incompleteCounts.expected} 筆`);
+    if (error.connectionPhase)
+      details.push(`最後連線階段：${connectionPhaseLabels[error.connectionPhase]}`);
     if (error.requestId) details.push(`查詢代碼：${error.requestId}`);
     return error.message + (details.length ? `（${details.join('；')}）` : '');
   }

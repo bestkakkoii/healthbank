@@ -48,6 +48,8 @@ Run the strict TypeScript production build, focused Go tests, go vet, and Linux 
 
 The authenticated live NHI flow remains unverified unless a user actually completes an authorized login on a reachable deployment. An upstream HTTP503 is an availability result, not evidence of global outage or bot detection. Do not request credentials in chat or solve CAPTCHA automatically. MySQL and BaoTa runtime acceptance require their actual environments; a skipped test is not a pass.
 
+The `diagnose-nhi` command uses the production connector without loading configuration, opening SQL, or acquiring the serving instance lock. It must not accept an upstream override or credentials, retry authentication, print image/challenge contents, or downgrade TLS. Diagnostic phases identify observed client-side progress, not the responsible remote component; a negotiated TLS peer may be a configured proxy.
+
 ## Release
 
 The source archive is explicitly allowlisted by scripts/release.py. Keep raw reports, upload directories, .tools, databases, identity.key, environment files and logs outside it. Build compiled frontend before Go embedding. Use a clean commit and semantic version, preserve SOURCE_DATE_EPOCH, produce Linux amd64/arm64 tar.gz archives and SHA256SUMS, and include notices/licenses and deployment/clinical/verification documents. Local packaging does not authorize publication to GitHub or a user's server.
