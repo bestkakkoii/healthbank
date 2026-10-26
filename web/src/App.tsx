@@ -80,7 +80,7 @@ function initialSettings(): Settings {
     if (raw) {
       const value = JSON.parse(raw);
       if (['light', 'dark', 'system'].includes(value.theme)) settings.theme = value.theme;
-      if ([1, 1.1, 1.2].includes(value.font_scale)) settings.font_scale = value.font_scale;
+      if ([1, 1.1, 1.2, 1.5, 2].includes(value.font_scale)) settings.font_scale = value.font_scale;
     }
   } catch {
     /* Storage is optional. */
@@ -722,7 +722,7 @@ export default function App() {
                     aria-describedby={view === 'comparison' ? 'comparison-print-tip' : undefined}
                     title={
                       view === 'comparison'
-                        ? '列印建議使用「依年度」，或先篩選單一年度，讓每欄維持清晰字級。'
+                        ? '列印時每段最多 4 個檢驗項目欄，自動分段換頁；可先篩選類別或關注項目。'
                         : '開啟瀏覽器列印，可儲存為 PDF。'
                     }
                     onClick={() => window.print()}
@@ -1184,22 +1184,22 @@ export default function App() {
               {view === 'comparison' && (
                 <Panel
                   title="歷年檢驗數值"
-                  subtitle={`${filteredGroups.length} 個項目 · ${filteredGroups.reduce((sum, group) => sum + group.records.length, 0)} 筆結果`}
+                  subtitle={`${filteredGroups.length} 個項目 · ${filteredGroups.reduce((sum, group) => sum + group.records.length, 0)} 筆結果 · 日期為列，檢驗項目為欄`}
                   action={
-                    <div className="segmented-control" aria-label="比較欄位模式">
+                    <div className="segmented-control" aria-label="日期列分組方式">
                       <button
                         aria-pressed={granularity === 'year'}
                         className={granularity === 'year' ? 'selected' : ''}
                         onClick={() => setGranularity('year')}
                       >
-                        依年度
+                        年度分組
                       </button>
                       <button
                         aria-pressed={granularity === 'date'}
                         className={granularity === 'date' ? 'selected' : ''}
                         onClick={() => setGranularity('date')}
                       >
-                        依檢查日期
+                        日期清單
                       </button>
                     </div>
                   }
@@ -1235,7 +1235,7 @@ export default function App() {
                     <span>「—」表示未取得資料；不同日期、同日多筆結果皆分開保留。</span>
                     <Copyright />
                     <span id="comparison-print-tip">
-                      列印建議：日期欄位較多時，請切換「依年度」或先篩選單一年度，以維持清晰字級。
+                      列印時每段最多 4 個檢驗項目欄，分段換頁並重複日期與欄名；可先篩選類別或關注項目。
                     </span>
                   </div>
                 </Panel>
@@ -1368,7 +1368,9 @@ export default function App() {
                       {[
                         { scale: 1, label: '標準' },
                         { scale: 1.1, label: '較大' },
-                        { scale: 1.2, label: '最大' },
+                        { scale: 1.2, label: '加大' },
+                        { scale: 1.5, label: '特大（150%）' },
+                        { scale: 2, label: '最大（200%）' },
                       ].map((option) => (
                         <button
                           className={settings.font_scale === option.scale ? 'selected' : ''}

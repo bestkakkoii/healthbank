@@ -2,6 +2,16 @@
 
 Copyright (c) 2026 bestkakkoi llc. SPDX-License-Identifier: MIT.
 
+## v1.0.1 — 2026-10-27 (Asia/Taipei)
+
+- Changed the comparison table to inspection-date rows and laboratory-item columns, with a fixed date column and item headers.
+- Kept every same-date observation in its corresponding cell, including original flags, units, institutions and detail access; missing results remain missing.
+- Changed annual mode to group actual date rows by year without aggregating observations; continuous-date mode remains available.
+- Added readable print column groups with repeated dates and headings for wide comparisons.
+- Fixed clipped focus highlights, fixed-height controls, narrow mobile forms and short landscape navigation; added safe-area spacing and a relative base text size.
+- Added 150% and 200% reading sizes, retaining earlier choices and synchronizing the same validated setting across devices.
+- Documented the existing automatic CAPTCHA-image loading and an origin-local diagnostic for image requests hidden behind a proxy HTTP 502. This release does not claim to resolve an unverified deployment-to-NHI connection failure.
+
 ## v1.0.0 — 2026-10-27 (Asia/Taipei)
 
 - Added the self-hosted Go application with embedded React/TypeScript frontend and automatic SQLite initialization.

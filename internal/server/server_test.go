@@ -342,7 +342,7 @@ func TestVerifiedFixtureSharesSettingsAcrossDevicesButNotResults(t *testing.T) {
 	}
 	key := catalog.Items[0].Key
 	settings := view.Settings
-	settings.Theme, settings.FontScale = "dark", 1.25
+	settings.Theme, settings.FontScale = "dark", 2
 	settings.Favorites = []string{key}
 	high := "20"
 	settings.Overrides = map[string]lab.Override{key: {Enabled: true, ReferenceHigh: &high}}
@@ -350,13 +350,20 @@ func TestVerifiedFixtureSharesSettingsAcrossDevicesButNotResults(t *testing.T) {
 	if saved.Revision != 2 {
 		t.Fatal("configuration revision did not advance")
 	}
+	// The largest reading size must survive a real API/SQLite round trip;
+	// an out-of-range update must not replace it or advance the revision.
+	oversized := saved
+	oversized.FontScale = 2.01
+	if response := first.jsonRequest(t, http.MethodPut, "/api/settings", settingsPayload(oversized)); response.Code != http.StatusBadRequest {
+		t.Fatalf("out-of-range reading size accepted: %d", response.Code)
+	}
 	second := &browserFixture{app: app}
 	second.refresh(t)
 	if secondSubject := attachVerifiedFixture(t, second, syntheticID, nil); secondSubject != subject {
 		t.Fatal("same verified identity did not map to one pseudonym")
 	}
 	secondView := second.refresh(t)
-	if secondView.Settings.Revision != 2 || secondView.Settings.Theme != "dark" || secondView.Settings.FontScale != 1.25 || !reflect.DeepEqual(secondView.Settings.Favorites, []string{key}) {
+	if secondView.Settings.Revision != 2 || secondView.Settings.Theme != "dark" || secondView.Settings.FontScale != 2 || !reflect.DeepEqual(secondView.Settings.Favorites, []string{key}) {
 		t.Fatalf("second device did not load shared preferences: %+v", secondView.Settings)
 	}
 	secondReports := decodeResponse[reportResponse](t, second.request(http.MethodGet, "/api/reports/current", nil, "", ""), http.StatusOK)

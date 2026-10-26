@@ -36,6 +36,8 @@ Never persist medical observations, original identity/card numbers, passwords, o
 10. Metadata and never-observed missing results do not create configuration entries. Shared ACR settings do not collapse the source measurement channels.
 11. No external scripts/fonts/analytics, report localStorage, service-worker report cache, uploaded script execution, or multipart disk spooling.
 12. All human-facing output retains bestkakkoi llc copyright. Synthetic demonstrations must be conspicuously labelled.
+13. Comparison rows are inspection dates and columns are item identities. Annual mode groups dates without aggregating values; preserve every same-date observation within its own item cell. Print column batches must use the same lossless matrix.
+14. Browser font preferences and in-app reading sizes up to 200% must retain usable controls and readable content. Keep overflow local to two-dimensional tables/charts, protect focus highlights, and do not equate desktop viewport checks with real iOS Dynamic Type or safe-area verification.
 
 ## Build and verification
 

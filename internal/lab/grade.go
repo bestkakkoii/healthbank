@@ -248,7 +248,7 @@ func (c *Catalog) Normalize(raw []RawRecord, s *Settings) []Record {
 					rec.Interpretation = description(d)
 					for _, b := range rule.Bands {
 						if p.span.within(bandInterval(b.Band)) {
-      rec.Interpretation += " 分類：" + clinicalCategoryLabel(b.Category) + "。"
+							rec.Interpretation += " 分類：" + clinicalCategoryLabel(b.Category) + "。"
 							break
 						}
 					}
@@ -345,8 +345,8 @@ func ValidateSettings(s Settings, known map[string]KnownItem) error {
 	if s.Theme != "light" && s.Theme != "dark" && s.Theme != "system" {
 		return fmt.Errorf("外觀必須為light、dark或system")
 	}
-	if s.FontScale < 1 || s.FontScale > 1.5 {
-		return fmt.Errorf("文字倍率須介於1與1.5")
+	if s.FontScale < 1 || s.FontScale > 2 {
+		return fmt.Errorf("文字倍率須介於1與2")
 	}
 	if len(s.Overrides) > 500 || len(s.Favorites) > 500 || len(known) > 1000 {
 		return fmt.Errorf("設定項目數量超出上限")

@@ -367,7 +367,7 @@ export function TrendChart({
       {exact.length > 0 && (
         <p className="chart-footnote">
           <Icon name="info" size={16} />
-          陰影依各次報告的適用參考值分段呈現。同日多筆結果全部保留為資料點，不推測當日先後順序。
+          圖表可左右滑動，點選資料點查看原始報告。陰影依各次報告的適用參考值分段呈現；同日多筆結果全部保留，不推測當日先後順序。
         </p>
       )}
       <div className="chart-records">

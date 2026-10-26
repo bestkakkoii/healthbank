@@ -289,6 +289,9 @@ export function Modal({
       </div>
       <div className="modal-content">{children}</div>
       <div className="modal-footer">
+        <button type="button" className="button secondary" onClick={onClose} disabled={busy}>
+          關閉
+        </button>
         <Copyright />
       </div>
     </dialog>
