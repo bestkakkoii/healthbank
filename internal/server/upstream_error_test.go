@@ -29,6 +29,7 @@ func TestUpstreamErrorsKeepDiagnosticsWithoutBecomingGatewayErrors(t *testing.T)
 		{"unavailable", &nhi.Error{Code: "UPSTREAM_UNAVAILABLE", Message: "官方連線未完成。", HTTPStatus: 503}, 424, "UPSTREAM_UNAVAILABLE", 503, "", true},
 		{"anonymous_forbidden", &nhi.Error{Code: "UPSTREAM_ACCESS_DENIED", Message: "官方連線拒絕請求。", HTTPStatus: 403}, 424, "UPSTREAM_ACCESS_DENIED", 403, "", true},
 		{"invalid_image", &nhi.Error{Code: "CAPTCHA_INVALID_IMAGE", Message: "驗證碼圖片格式不符。"}, 424, "CAPTCHA_INVALID_IMAGE", 0, "", true},
+		{"invalid_login_page", &nhi.Error{Code: "LOGIN_PAGE_INVALID", Message: "官方登入頁格式不符。"}, 424, "LOGIN_PAGE_INVALID", 0, "", true},
 		{"dns", &nhi.Error{Code: "DNS_FAILED", Message: "無法完成 DNS 解析。"}, 424, "DNS_FAILED", 0, "", true},
 		{"typed_official_code", &nhi.Error{Code: "UPSTREAM_REJECTED", Message: "官方未完成請求。", UpstreamCode: "Z003A"}, 424, "UPSTREAM_REJECTED", 0, "Z003A", true},
 		{"input", &nhi.Error{Code: "INVALID_INPUT", Message: "請確認輸入內容。"}, 400, "INVALID_INPUT", 0, "", false},

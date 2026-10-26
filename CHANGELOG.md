@@ -15,6 +15,8 @@ Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 - Strengthened synthetic HTTPS tests to decode the CAPTCHA image and verify the exact login payload, matching challenge ID and cookie continuity. A bounded real CAPTCHA request from the build environment still received HTTP 503; live login is not claimed as verified.
 - Exposed the effective official query interval and reported total beside the received count, with bounded expected/received diagnostics for incomplete responses. Replaced the arbitrary initial four-year query with the official default interval, while keeping explicit date selection and clearly limiting completeness claims to the returned interval.
 - Strengthened the full-search fixture with an initial 50-row page and a separate 52-row complete response, preserving replacement semantics and exact effective query parameters.
+- Added a bounded login-document bootstrap before the first CAPTCHA in each connector session, preserving document cookies through image retrieval and login. Document requests use HTML semantics without XHR or Authorization headers; failures do not silently continue or retry. This corrects a browser-sequence difference, not a proven cause of the observed HTTP 503.
+- Used REA 6.8.0 for inert analysis of six saved public JavaScript bundles and recorded its partial-coverage limits alongside the direct source review.
 
 ## v1.0.1 — 2026-10-27 (Asia/Taipei)
 

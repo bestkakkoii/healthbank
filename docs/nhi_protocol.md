@@ -35,6 +35,37 @@ The implementation is verified against local synthetic protocol fixtures.
 The release must keep this distinction visible until a person completes a
 normal authorized sign-in on the deployed application.
 
+### REA-assisted source review
+
+The official npm release of [REA 6.8.0](https://github.com/morluto/rea) was run
+locally with `analyze-javascript-application`, using inert text only. The six
+selected public bundles were the login component, `app`, `loginmaster`,
+`master`, `fmMaster~master`, and the laboratory component. REA parsed all six
+without a syntax failure: 195,479 source bytes and 49,142 visited AST nodes.
+The retained parent Evidence ID is
+`ev_e651d3aa3ea6ad85543d679761e4f752225f9af651ad461351fb7b95af7b6292`.
+
+This is a scoped static analysis. Six other inventoried sources were outside
+the selected scope, and REA reported partial application/semantic coverage,
+including unresolved dynamic relationships. Its generic request extractor
+does not establish the complete Vue-resource request flow. The source-level
+checks below were therefore reviewed directly against the saved bundles;
+successful parsing is not successful authentication. Captured code was never
+executed, and no browser profile, credentials or patient report was supplied
+to REA. The tool and its large analysis outputs are development-only and are
+not part of this application's executable or release.
+
+| Question | Source finding and boundary |
+| --- | --- |
+| CAPTCHA transport | The login component renders an ordinary image URL. Its image request does not traverse the Vue-resource Authorization interceptor. |
+| Image identifier | The component combines the current millisecond with a six-digit random number and uses that millisecond as the cache parameter. Login submits the same identifier. |
+| Login submission | A direct same-origin JSON POST contains the five fields documented below. The selected source does not establish an additional CSRF-token field. |
+| Misleading helper name | The component's `getCookie` helper triggers CAPTCHA audio; its name is not evidence of a required cookie-initialization request. |
+| Other pre-login requests | The login shell loads visit counts and announcements. No observed client-side path waits for their response or copies it into the login payload. This does not prove that their servers have no hidden side effects. |
+| Post-login shell | Menu, identity-list and home-page requests are separate from the report component's token-authenticated `page_load` and `search`. No required response value from those requests was observed in the report payload. Dependent-family switching remains an explicit user action, not part of this connector. |
+| Initial document cookies | A browser loads the login document before its image. Saved JavaScript cannot establish whether that document's live HTTP response sets a required Cookie. The connector now preserves this normal request order and captures any such Cookie. |
+| Live acceptance | Server-side cookie requirements, current edge behavior, a valid image, successful account login and complete live report retrieval remain runtime questions. Static analysis cannot settle them. |
+
 ## Fixed origin and API
 
 The only production origin is `https://myhealthbank.nhi.gov.tw`. The starting
@@ -48,6 +79,7 @@ between application users or written to disk by this package.
 
 | Operation | Method and path | Request or response |
 | --- | --- | --- |
+| Login document | `GET /IHKE3000/IHKE3099S01` | One successful HTML bootstrap per fresh connector session, before CAPTCHA; the same cookie jar is retained. |
 | CAPTCHA | `GET /api/ihke3000/IHKELOGIN/captcha` | Query `id`, `r`; raster image response. |
 | Login | `POST /api/ihke3000/ihkelogin/Login` | JSON fields below; response includes `error_code` and `jwt_token`. |
 | Initial report metadata | `GET /api/ihke3000/ihke3409s01/page_load` | Date/filter query; wrapper includes `sdate`, `edate`, `counts`, `sP_IHKE3409S02_Data`. |
@@ -63,6 +95,22 @@ The connector mirrors those semantics. Standard HTTPS certificate validation
 remains enabled. Redirects outside the exact HTTPS official host are rejected.
 
 ## CAPTCHA and credential transformations
+
+A fresh connector first requests the fixed HTTPS login document with an HTML
+Accept header and no XHR or Authorization header. The response is bounded and
+must be HTML; HTTP/network failures retain their typed cause, while a
+successful non-HTML response yields `LOGIN_PAGE_INVALID`. Only a successful
+document load marks the bootstrap complete. Later manual CAPTCHA refreshes
+reuse it and the same cookie jar. A failed bootstrap does not proceed to the
+image and is not automatically retried. A later explicit user request can
+start it again. The complete document-plus-image operation shares a 35-second
+context budget.
+
+This adds the normal browser document-to-image ordering that the previous
+direct-image connector omitted. No live evidence establishes that an initial
+document Cookie caused the observed HTTP 503, so this compatibility change
+must not be described as a confirmed availability fix. JavaScript challenges
+in the returned document are not executed or bypassed.
 
 The saved login component generates `codeID` from the current millisecond
 within the second followed by a random six-digit number. `r` is the current
@@ -226,6 +274,8 @@ Production TLS settings and the fixed production origin are unchanged.
 The tests exercise:
 
 - CAPTCHA retrieval, complete synthetic PNG decoding and cookie continuity.
+- Login-document → CAPTCHA → login ordering, shared document/image cookies,
+  one successful bootstrap per session and failure without automatic replay.
 - Exact five-field login payload, ID uppercase and eight-digit card prefix.
 - Accepted official success codes, bearer forwarding and token refresh.
 - An initial 50-record page followed by exactly 52 full-search records, with
@@ -254,10 +304,14 @@ text, URLs, proxy addresses, cookies, identifiers or official response bodies.
 No automatic CAPTCHA/login retry, alternate official origin, disabled TLS
 validation or transport fingerprint change was added.
 
-On 2026-10-27 (Asia/Taipei), one bounded call through the production connector
-received HTTP 503 after 4.073 seconds. No image was obtained, so no live login
-was attempted. The exact login submission remains verified against the local
-synthetic HTTPS fixture, not an authenticated live account.
+On 2026-10-27 (Asia/Taipei), the earlier direct-CAPTCHA production call received
+HTTP 503 after 4.073 seconds. After adding document initialization, a new bounded
+production call at 03:28:39 received HTTP 503 after 4.248 seconds while loading
+the login document; it did not reach the CAPTCHA request. Its safe message
+identified that stage. No image was obtained and no live login was attempted.
+The exact login submission remains verified against the local synthetic HTTPS
+fixture, not an authenticated live account. These responses do not establish
+which upstream component generated the HTTP 503 or its root cause.
 
 These fixtures establish implementation behavior against the observed
 protocol. They do not replace a live authorized sign-in acceptance test after

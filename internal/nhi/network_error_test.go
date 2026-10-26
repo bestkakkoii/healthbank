@@ -107,6 +107,10 @@ func TestAnonymousChallengeStatusAndImageFailuresRemainDistinct(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var calls atomic.Int32
 			session := fixtureSession(t, func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path == loginPage {
+					respondLoginDocument(t, w)
+					return
+				}
 				calls.Add(1)
 				if r.URL.Path != captchaPath || r.Method != http.MethodGet {
 					t.Error("CAPTCHA flow called an unexpected endpoint")

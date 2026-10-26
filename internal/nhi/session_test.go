@@ -63,6 +63,14 @@ func respondJSON(t *testing.T, w http.ResponseWriter, value any) {
 	}
 }
 
+func respondLoginDocument(t *testing.T, w http.ResponseWriter) {
+	t.Helper()
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if _, err := w.Write([]byte("<!doctype html><html><head><title>Synthetic login</title></head><body>Synthetic fixture</body></html>")); err != nil {
+		t.Error(err)
+	}
+}
+
 func TestSourceDerivedFlowWithFullSearch(t *testing.T) {
 	var imageBuffer bytes.Buffer
 	if err := png.Encode(&imageBuffer, image.NewRGBA(image.Rect(0, 0, 2, 1))); err != nil {
@@ -79,12 +87,27 @@ func TestSourceDerivedFlowWithFullSearch(t *testing.T) {
 		}
 	}
 	var challengeID string
-	var loginCalls, refreshCalls, pageLoadCalls, searchCalls, logoutCalls atomic.Int32
+	var bootstrapCalls, captchaCalls, loginCalls, refreshCalls, pageLoadCalls, searchCalls, logoutCalls atomic.Int32
 	session := fixtureSession(t, func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
+		case loginPage:
+			bootstrapCalls.Add(1)
+			if r.Method != http.MethodGet || r.URL.RawQuery != "" || r.Header.Get("Accept") != "text/html" || r.Header.Get("X-Requested-With") != "" || r.Header.Get("Authorization") != "" || r.Header.Get("Origin") != "" {
+				t.Error("login document was not requested as an anonymous HTML document")
+			}
+			if captchaCalls.Load() != 0 || loginCalls.Load() != 0 {
+				t.Error("login document was repeated after the session had started")
+			}
+			http.SetCookie(w, &http.Cookie{Name: "fixture_bootstrap", Value: "synthetic-document", Path: "/", Secure: true, HttpOnly: true})
+			respondLoginDocument(t, w)
 		case captchaPath:
+			captchaCalls.Add(1)
 			if r.Method != http.MethodGet || r.URL.Query().Get("id") == "" || r.URL.Query().Get("r") == "" {
 				t.Error("missing official CAPTCHA query")
+			}
+			cookie, cookieErr := r.Cookie("fixture_bootstrap")
+			if bootstrapCalls.Load() != 1 || cookieErr != nil || cookie.Value != "synthetic-document" || r.Header.Get("X-Requested-With") != "" || r.Header.Get("Authorization") != "" {
+				t.Error("CAPTCHA did not follow the document in the same anonymous cookie jar")
 			}
 			challengeID = r.URL.Query().Get("id")
 			http.SetCookie(w, &http.Cookie{Name: "fixture_session", Value: "synthetic", Path: "/", Secure: true})
@@ -98,6 +121,10 @@ func TestSourceDerivedFlowWithFullSearch(t *testing.T) {
 			cookie, cookieErr := r.Cookie("fixture_session")
 			if cookieErr != nil || cookie.Value != "synthetic" {
 				t.Error("CAPTCHA cookie not preserved")
+			}
+			cookie, cookieErr = r.Cookie("fixture_bootstrap")
+			if cookieErr != nil || cookie.Value != "synthetic-document" {
+				t.Error("login document cookie not preserved through CAPTCHA")
 			}
 			var form map[string]string
 			if err := json.NewDecoder(r.Body).Decode(&form); err != nil {
@@ -149,6 +176,12 @@ func TestSourceDerivedFlowWithFullSearch(t *testing.T) {
 	decodedImage, format, err := image.Decode(bytes.NewReader(challenge.Image))
 	if err != nil || format != "png" || decodedImage.Bounds().Dx() != 2 || decodedImage.Bounds().Dy() != 1 {
 		t.Fatal("CAPTCHA bytes did not decode into the complete synthetic image")
+	}
+	// A user-requested replacement CAPTCHA reuses the established document
+	// session instead of loading the document again or losing its cookies.
+	challenge, err = session.Challenge(ctx)
+	if err != nil || challenge.ID != challengeID || bootstrapCalls.Load() != 1 || captchaCalls.Load() != 2 {
+		t.Fatal("manual CAPTCHA refresh recreated the document session")
 	}
 	err = session.Login(ctx, Credentials{NationalID: "a000000000", CardNumber: "12345678", Password: "synthetic-password", Captcha: " TEST "})
 	if err != nil {

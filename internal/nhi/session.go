@@ -17,6 +17,7 @@ import (
 	"errors"
 	"io"
 	"math/big"
+	"mime"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
@@ -30,17 +31,19 @@ import (
 )
 
 const (
-	officialOrigin = "https://myhealthbank.nhi.gov.tw"
-	loginPage      = "/IHKE3000/IHKE3099S01"
-	captchaPath    = "/api/ihke3000/IHKELOGIN/captcha"
-	loginPath      = "/api/ihke3000/ihkelogin/Login"
-	refreshPath    = "/api/ihke3000/ihkelogin/RefreshJWT"
-	logoutPath     = "/api/ihke3000/ihkelogin/Logout"
-	pageLoadPath   = "/api/ihke3000/ihke3409s01/page_load"
-	searchPath     = "/api/ihke3000/ihke3409s01/search"
-	maxJSONBytes   = 16 << 20
-	maxImageBytes  = 512 << 10
-	maxAuthBytes   = 64 << 10
+	officialOrigin    = "https://myhealthbank.nhi.gov.tw"
+	loginPage         = "/IHKE3000/IHKE3099S01"
+	captchaPath       = "/api/ihke3000/IHKELOGIN/captcha"
+	loginPath         = "/api/ihke3000/ihkelogin/Login"
+	refreshPath       = "/api/ihke3000/ihkelogin/RefreshJWT"
+	logoutPath        = "/api/ihke3000/ihkelogin/Logout"
+	pageLoadPath      = "/api/ihke3000/ihke3409s01/page_load"
+	searchPath        = "/api/ihke3000/ihke3409s01/search"
+	maxJSONBytes      = 16 << 20
+	maxImageBytes     = 512 << 10
+	maxAuthBytes      = 64 << 10
+	maxLoginPageBytes = 1 << 20
+	challengeBudget   = 35 * time.Second
 	// MaxReportRecords bounds one official query and its count diagnostics.
 	MaxReportRecords = 50000
 )
@@ -92,6 +95,7 @@ type Session struct {
 	tokenObtainedAt time.Time
 	challengeID     string
 	challengeExpiry time.Time
+	bootstrapped    bool
 	closed          bool
 }
 
@@ -159,8 +163,15 @@ func (s *Session) Challenge(ctx context.Context) (Challenge, error) {
 	if s.closed {
 		return Challenge{}, closedError()
 	}
+	ctx, cancel := context.WithTimeout(ctx, challengeBudget)
+	defer cancel()
 	s.clearAuth()
 	s.challengeID = ""
+	if !s.bootstrapped {
+		if err := s.bootstrap(ctx); err != nil {
+			return Challenge{}, err
+		}
+	}
 	n, err := rand.Int(rand.Reader, big.NewInt(899999))
 	if err != nil {
 		return Challenge{}, failure("INITIALIZATION_FAILED", "無法產生驗證碼工作階段。")
@@ -182,6 +193,33 @@ func (s *Session) Challenge(ctx context.Context) (Challenge, error) {
 	s.challengeID = id
 	s.challengeExpiry = now.Add(5 * time.Minute)
 	return Challenge{ID: id, Image: body, ContentType: contentType, ExpiresAt: s.challengeExpiry}, nil
+}
+
+// bootstrap reproduces the browser's initial document request so cookies set by
+// that response are available to the CAPTCHA and login in this session's jar.
+// The saved SPA cannot establish whether those server-issued cookies are required.
+func (s *Session) bootstrap(ctx context.Context) error {
+	body, headers, err := s.request(ctx, http.MethodGet, loginPage, nil, nil, maxLoginPageBytes, false)
+	if err != nil {
+		var upstream *Error
+		if errors.As(err, &upstream) {
+			if upstream.Code == "RESPONSE_TOO_LARGE" {
+				return failure("LOGIN_PAGE_INVALID", "官方登入頁回應超過大小限制，無法建立驗證碼連線。")
+			}
+			detail := *upstream
+			detail.Message = "載入官方登入頁時：" + upstream.Message
+			return &detail
+		}
+		return err
+	}
+	defer clear(body)
+	mediaType, _, err := mime.ParseMediaType(headers.Get("Content-Type"))
+	trimmed := bytes.TrimSpace(bytes.TrimPrefix(body, []byte{0xef, 0xbb, 0xbf}))
+	if err != nil || mediaType != "text/html" || !strings.HasPrefix(http.DetectContentType(trimmed), "text/html") {
+		return failure("LOGIN_PAGE_INVALID", "官方登入頁未回傳有效的HTML文件，無法建立驗證碼連線；請稍後再試。")
+	}
+	s.bootstrapped = true
+	return nil
 }
 
 type loginResponse struct {
@@ -303,6 +341,7 @@ func (s *Session) close() {
 	s.clearAuth()
 	s.challengeID = ""
 	s.challengeExpiry = time.Time{}
+	s.bootstrapped = false
 	s.closed = true
 	if s.client != nil {
 		s.client.CloseIdleConnections()
@@ -325,17 +364,21 @@ func (s *Session) request(ctx context.Context, method, path string, query url.Va
 		return nil, nil, failure("REQUEST_FAILED", "無法建立健保署請求。")
 	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; BestkakkoiHealthbank/1.0)")
-	req.Header.Set("Accept", "application/json, text/plain, */*")
-	req.Header.Set("Referer", officialOrigin+loginPage)
-	if authenticated {
-		req.Header.Set("Referer", officialOrigin+"/IHKE3000/IHKE3409S01")
-	}
-	req.Header.Set("Origin", officialOrigin)
 	req.Header.Set("Accept-Language", "zh-TW,zh;q=0.9")
-	if path == captchaPath {
-		req.Header.Set("Accept", "image/png,image/jpeg,image/gif")
+	if path == loginPage {
+		req.Header.Set("Accept", "text/html")
 	} else {
-		req.Header.Set("X-Requested-With", "XMLHttpRequest")
+		req.Header.Set("Accept", "application/json, text/plain, */*")
+		req.Header.Set("Referer", officialOrigin+loginPage)
+		if authenticated {
+			req.Header.Set("Referer", officialOrigin+"/IHKE3000/IHKE3409S01")
+		}
+		req.Header.Set("Origin", officialOrigin)
+		if path == captchaPath {
+			req.Header.Set("Accept", "image/png,image/jpeg,image/gif")
+		} else {
+			req.Header.Set("X-Requested-With", "XMLHttpRequest")
+		}
 	}
 	if len(payload) > 0 {
 		req.Header.Set("Content-Type", "application/json;charset=utf-8")
