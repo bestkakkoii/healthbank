@@ -1,0 +1,2933 @@
+{
+  "schema_version": 1,
+  "catalog_id": "healthbank_lab_defaults_tw",
+  "verified_date": "2026-10-27",
+  "status": "v1_source_catalog_with_explicit_applicability_guards",
+  "scope": "Taiwan-oriented adult laboratory reference templates and sourced category rules. No universal2026 Asian five-level clinical danger standard is claimed.",
+  "personal_observations_included": false,
+  "source_item_count": 72,
+  "measurement_definition_count": 70,
+  "palette": [
+    {
+      "level": 1,
+      "label_zh_tw": "基準內",
+      "background": "#DCFCE7",
+      "foreground": "#166534"
+    },
+    {
+      "level": 2,
+      "label_zh_tw": "邊界／留意",
+      "background": "#FEF9C3",
+      "foreground": "#854D0E"
+    },
+    {
+      "level": 3,
+      "label_zh_tw": "異常",
+      "background": "#FFEDD5",
+      "foreground": "#9A3412"
+    },
+    {
+      "level": 4,
+      "label_zh_tw": "顯著異常／需評估",
+      "background": "#FEE2E2",
+      "foreground": "#991B1B"
+    },
+    {
+      "level": 5,
+      "label_zh_tw": "最高警示",
+      "background": "#F3E8FF",
+      "foreground": "#6B21A8"
+    },
+    {
+      "level": null,
+      "label_zh_tw": "未判定／無結果",
+      "background": "#F3F4F6",
+      "foreground": "#374151"
+    }
+  ],
+  "interpretation_contract": {
+    "colors_are_application_mapping": true,
+    "preserve_original_category_and_reference_flags": true,
+    "reference_priority": [
+      "live_report",
+      "explicit_personal_target_as_separate_view",
+      "applicable_named_laboratory_profile"
+    ],
+    "do_not_infer": [
+      "Five danger bands from proportional reference deviation",
+      "Asian ancestry from residence or report",
+      "Sex, age, medication or disease history from example values",
+      "Current emergency status from historical observations"
+    ],
+    "result_types": [
+      "numeric",
+      "bounded_inequality",
+      "interval",
+      "ordinal",
+      "qualitative",
+      "descriptive",
+      "missing",
+      "metadata"
+    ],
+    "numeric_comparison": "Decimal comparisons; explicit inclusive/exclusive bounds; never round before classification.",
+    "inequality_policy": "Assign a category only when the entire possible result interval belongs to it. Otherwise retain category range or unknown; never replace > or >= with equality.",
+    "missing_tokens": [
+      "",
+      "-",
+      "--"
+    ],
+    "missing_is_zero": false,
+    "unit_policy": "Compare only matching/verified-convertible units. Missing unit is unknown, not automatically dimensionless.",
+    "personal_overrides": "Affect selected personal display rules; do not erase original laboratory flags or independently applicable critical alerts.",
+    "year_policy": "Use source-effective versions;2026 verification date does not make older publications2026 editions. Preserve old reference context when recoloring under a selected current profile.",
+    "critical_policy": "Source critical flags retained independently. Institutional optional profiles are disabled until explicitly selected and applicable.",
+    "unknown_policy": "Gray. No invented numeric cutoff or default-safe classification."
+  },
+  "settings_storage_contract": {
+    "database": "SQLite",
+    "identity_key": "HMAC-SHA-256(stable_server_secret, domain_separated_verified_official_subject)",
+    "identity_requirement": "Generate only after successful official authentication; never trust an unverified submitted ID. Same verified subject and stable key map to same settings on phone/desktop.",
+    "identity_caveat": "Pseudonymous linkage, not complete anonymity. Store key version; protect/back up the server secret outside the database.",
+    "persist": [
+      "pseudonymous_user_key",
+      "selected_profile_versions",
+      "per_configuration_key_overrides",
+      "display_preferences",
+      "configuration_revision"
+    ],
+    "never_persist_server_side": [
+      "raw_identity_number",
+      "health_card_number",
+      "official_password",
+      "official_cookie_or_session_token",
+      "login_history",
+      "lab_observations",
+      "report_html",
+      "report_dates",
+      "medical_record_downloads"
+    ],
+    "transient_only": [
+      "official_login_context",
+      "lab_observations",
+      "date_range_filter_values_when_sensitive"
+    ],
+    "browser_login_memory": "Earlier requested device-local login-field memory is separate from server configuration storage; it contains identity information and must be optional/clearable. If no browser PII retention is intended, disable it and rely on password-manager/user entry.",
+    "browser_report_storage": "No localStorage/IndexedDB/service-worker cache of report results; authenticated report responses use no-store.",
+    "configuration_creation": "Upsert only for real observed measurements; ignore missing/metadata; share a configuration_key only after analyte/unit/method identity is verified. Retrieval never overwrites personal settings.",
+    "concurrency": "Unique user_key+configuration_key; atomic transaction; version check on edits to prevent phone/desktop lost updates.",
+    "retention_consequence": "Old reports unavailable from the source cannot be reconstructed after session end when results are not persisted."
+  },
+  "sources": {
+    "provided_report_reference": {
+      "type": "user_supplied_reference_template",
+      "title": "Supplied report reference fields; no patient observations retained",
+      "verified_date": "2026-10-27",
+      "scope": "Use only as a named laboratory profile; live report reference wins."
+    },
+    "songshan_manual": {
+      "type": "official_hospital_manual",
+      "title": "三軍總醫院松山分院 生物參考區間與實驗室解釋手冊 SOP-AA06",
+      "version": "1.1",
+      "effective_date": "2022-10-24",
+      "verified_date": "2026-10-27",
+      "url": "https://wwwv.tsgh.ndmutsgh.edu.tw/files/web/193/file_up/20101/12733/SOP-AA06%E7%94%9F%E7%89%A9%E5%8F%83%E8%80%83%E5%8D%80%E9%96%93%E5%8F%8A%E5%AF%A6%E9%A9%97%E5%AE%A4%E8%A7%A3%E9%87%8B%E6%89%8B%E5%86%8A1.1.pdf",
+      "caveat": "Not a 2026 edition. Venous-pH upper bound 72.43 is a source typo and is excluded; manual sodium upper146 differs from supplied report145."
+    },
+    "kdigo_ckd": {
+      "type": "professional_guideline",
+      "title": "KDIGO 2024 CKD Guideline",
+      "edition": "2024",
+      "verified_date": "2026-10-27",
+      "url": "https://kdigo.org/wp-content/uploads/2024/03/KDIGO-2024-CKD-Guideline.pdf",
+      "locator": "Tables2–3; chronicity practice points; Figure48 referral criteria"
+    },
+    "kdigo_pcr_table": {
+      "type": "historical_professional_guideline_table",
+      "title": "KDIGO 2012 CKD Guideline, Table7",
+      "edition": "2012",
+      "published_year": 2013,
+      "verified_date": "2026-10-27",
+      "url": "https://kdigo.org/wp-content/uploads/2017/02/KDIGO_2012_CKD_GL.pdf",
+      "caveat": "PCR/ACR correspondences are approximate. Historical protein-to-creatinine ratio categories, not a newly issued 2026 standard."
+    },
+    "nhlbi_triglycerides": {
+      "type": "official_public_health",
+      "title": "NHLBI High Blood Triglycerides",
+      "verified_date": "2026-10-27",
+      "url": "https://www.nhlbi.nih.gov/health/high-blood-triglycerides"
+    },
+    "acc_hypertriglyceridemia": {
+      "type": "professional_society_consensus_summary",
+      "title": "ACC2021 Hypertriglyceridemia Consensus",
+      "published_date": "2021-07-28",
+      "verified_date": "2026-10-27",
+      "url": "https://www.acc.org/latest-in-cardiology/ten-points-to-remember/2021/07/27/21/04/2021-acc-ecdp-hypertriglyceridemia"
+    },
+    "acc_triglycerides_current": {
+      "type": "professional_society_current_clinical_education",
+      "title": "ACC Severe Hypertriglyceridemia: Acute Risk Stratification and Immediate Management",
+      "published_date": "2026-06-09",
+      "verified_date": "2026-10-27",
+      "url": "https://www.acc.org/education-and-meetings/patient-case-quizzes/2026/06/09/16/23/severe-hypertriglyceridemia"
+    },
+    "cdc_glycemia": {
+      "type": "official_public_health",
+      "title": "CDC Diabetes Testing",
+      "published_date": "2024-05-15",
+      "verified_date": "2026-10-27",
+      "url": "https://www.cdc.gov/diabetes/diabetes-testing/"
+    },
+    "ada_hypoglycemia": {
+      "type": "professional_guideline_search_verified",
+      "title": "ADA Standards of Care2026 Section6",
+      "edition": "2026",
+      "verified_date": "2026-10-27",
+      "url": "https://diabetesjournals.org/care/article/49/Supplement_1/S132/163927/6-Glycemic-Goals-Hypoglycemia-and-Hyperglycemic",
+      "access_note": "Official indexed text verified; publisher full-page retrieval blocked."
+    },
+    "vgh_notifications": {
+      "type": "institution_specific_notification_policy",
+      "title": "臺北榮總病理檢驗部異常值／危急值通報標準",
+      "updated_date": "2025-12-12",
+      "verified_date": "2026-10-27",
+      "url": "https://wd.vghtpe.gov.tw/path/Fpage.action?fid=7351&muid=5616",
+      "scope": "Optional named template only; not a Taiwan-wide rule or the Songshan policy."
+    },
+    "aarc_venous_gases": {
+      "type": "professional_guideline",
+      "title": "AARC Blood Gas Analysis and Hemoximetry",
+      "edition": "2013",
+      "verified_date": "2026-10-27",
+      "url": "https://www.aarc.org/wp-content/uploads/2025/03/davis-et-al-2013-aarc-clinical-practice-guideline-blood-gas-analysis-and-hemoximetry-2013.pdf",
+      "caveat": "URL upload year2025 is not the guideline publication year."
+    },
+    "tsgh_sglt2": {
+      "type": "official_hospital_patient_education",
+      "title": "三總 控血糖護心腎—SGLT2抑制劑",
+      "published_date": "2022-05-05",
+      "verified_date": "2026-10-27",
+      "url": "https://enews.tsgh.ndmutsgh.edu.tw/edm/content_detail.aspx?eid=1892"
+    }
+  },
+  "rules": {
+    "report_reference": {
+      "kind": "reference_interval",
+      "mapping": {
+        "within": 1,
+        "outside": 3,
+        "unknown": null
+      },
+      "sources": [
+        "provided_report_reference"
+      ],
+      "meaning": "Reference conformity/deviation only; not a calibrated clinical-danger scale. Unused levels are intentional."
+    },
+    "qualitative_reference": {
+      "kind": "qualitative_reference",
+      "mapping": {
+        "expected": 1,
+        "unexpected": 3,
+        "unknown": null
+      },
+      "sources": [
+        "songshan_manual"
+      ],
+      "meaning": "Qualitative abnormal flag, not illness severity. Do not map the number of plus signs directly to L1–L5."
+    },
+    "unclassified": {
+      "kind": "unclassified",
+      "mapping": {
+        "any": null
+      },
+      "sources": [],
+      "meaning": "No applicable reference/interpretation rule or nonmeasurement information."
+    },
+    "adult_triglycerides": {
+      "kind": "numeric_bands",
+      "unit": "mg/dL",
+      "domain_min": "0",
+      "sources": [
+        "nhlbi_triglycerides",
+        "acc_hypertriglyceridemia",
+        "acc_triglycerides_current"
+      ],
+      "bands": [
+        {
+          "lower": "0",
+          "upper": "150",
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 1,
+          "category": "below150"
+        },
+        {
+          "lower": "150",
+          "upper": "200",
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 2,
+          "category": "borderline_high"
+        },
+        {
+          "lower": "200",
+          "upper": "500",
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 3,
+          "category": "high"
+        },
+        {
+          "lower": "500",
+          "upper": "1000",
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 4,
+          "category": "severe"
+        },
+        {
+          "lower": "1000",
+          "upper": null,
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 5,
+          "category": "very_high_pancreatitis_attention"
+        }
+      ],
+      "conditions": [
+        "Adult profile. Verify fasting status for lower-level classification; large elevations still warrant attention when nonfasting."
+      ],
+      "meaning": "Source thresholds mapped into five application colors. L5 does not diagnose pancreatitis or mean every asymptomatic patient needs emergency admission."
+    },
+    "egfr_categories": {
+      "kind": "numeric_bands",
+      "unit": "mL/min/1.73m2",
+      "domain_min": "0",
+      "sources": [
+        "kdigo_ckd"
+      ],
+      "bands": [
+        {
+          "lower": "0",
+          "upper": "15",
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 5,
+          "category": "G5"
+        },
+        {
+          "lower": "15",
+          "upper": "30",
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 4,
+          "category": "G4"
+        },
+        {
+          "lower": "30",
+          "upper": "45",
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 3,
+          "category": "G3b"
+        },
+        {
+          "lower": "45",
+          "upper": "60",
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 3,
+          "category": "G3a"
+        },
+        {
+          "lower": "60",
+          "upper": "90",
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 2,
+          "category": "G2"
+        },
+        {
+          "lower": "90",
+          "upper": null,
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 1,
+          "category": "G1"
+        }
+      ],
+      "conditions": [
+        "Verify source unit and equation. Do not infer CKD chronicity from one value."
+      ],
+      "meaning": "Five colors encode six filtration categories; G3a/G3b retain separate labels. G1/G2 do not exclude kidney damage; assess albuminuria independently."
+    },
+    "acr_categories": {
+      "kind": "numeric_bands",
+      "unit": "mg/g",
+      "unit_aliases": [
+        "mg/gCr"
+      ],
+      "domain_min": "0",
+      "sources": [
+        "kdigo_ckd"
+      ],
+      "bands": [
+        {
+          "lower": "0",
+          "upper": "30",
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 1,
+          "category": "A1"
+        },
+        {
+          "lower": "30",
+          "upper": "300",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "display_level": 3,
+          "category": "A2"
+        },
+        {
+          "lower": "300",
+          "upper": null,
+          "lower_inclusive": false,
+          "upper_inclusive": false,
+          "display_level": 4,
+          "category": "A3"
+        }
+      ],
+      "meaning": "KDIGO Table3 uses A2 30–300 and A3>300. Semi-quantitative >=300 spans A2/A3; do not replace it with the exact value300. Application L2/L5 intentionally unused."
+    },
+    "pcr_categories": {
+      "kind": "numeric_bands",
+      "unit": "mg/g",
+      "domain_min": "0",
+      "sources": [
+        "kdigo_pcr_table"
+      ],
+      "bands": [
+        {
+          "lower": "0",
+          "upper": "150",
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 1,
+          "category": "normal_to_mildly_increased_protein"
+        },
+        {
+          "lower": "150",
+          "upper": "500",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "display_level": 3,
+          "category": "moderately_increased_protein"
+        },
+        {
+          "lower": "500",
+          "upper": null,
+          "lower_inclusive": false,
+          "upper_inclusive": false,
+          "display_level": 4,
+          "category": "severely_increased_protein"
+        }
+      ],
+      "meaning": "Historical total-protein categories; not albumin A-stages and not a validated five-level risk scale."
+    },
+    "fasting_glucose_screening": {
+      "kind": "numeric_bands",
+      "unit": "mg/dL",
+      "domain_min": "0",
+      "sources": [
+        "cdc_glycemia",
+        "ada_hypoglycemia"
+      ],
+      "enabled_by_default": false,
+      "bands": [
+        {
+          "lower": "70",
+          "upper": "100",
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 1,
+          "category": "below_screening_threshold"
+        },
+        {
+          "lower": "100",
+          "upper": "126",
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 2,
+          "category": "impaired_fasting_glucose_range"
+        },
+        {
+          "lower": "126",
+          "upper": null,
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 3,
+          "category": "diabetes_diagnostic_threshold_requires_confirmation"
+        }
+      ],
+      "conditions": [
+        "Fasting confirmed; diagnostic labels apply to screening, not to reclassification of treated diabetes."
+      ],
+      "meaning": "High-glucose band is a diagnostic category, not a severity ceiling. Preserve separate critical alerts and symptoms; this profile does not diagnose or exclude DKA/HHS.",
+      "clinical_severity_is_graded": false
+    },
+    "hba1c_screening": {
+      "kind": "numeric_bands",
+      "unit": "%",
+      "domain_min": "0",
+      "sources": [
+        "cdc_glycemia"
+      ],
+      "enabled_by_default": false,
+      "bands": [
+        {
+          "lower": "0",
+          "upper": "5.7",
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 1,
+          "category": "below_screening_threshold"
+        },
+        {
+          "lower": "5.7",
+          "upper": "6.5",
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 2,
+          "category": "prediabetes_numeric_range"
+        },
+        {
+          "lower": "6.5",
+          "upper": null,
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 3,
+          "category": "diabetes_diagnostic_threshold_requires_confirmation"
+        }
+      ],
+      "conditions": [
+        "Do not relabel known treated diabetes as prediabetes. A low out-of-reference HbA1c must retain its low flag. Assay/RBC-lifespan context matters."
+      ],
+      "meaning": "Screening cutoffs are not individual treatment targets. No invented HbA1c L4/L5 cutoffs.",
+      "requires_live_lower_reference": true,
+      "below_reference_policy": "low_flag_and_no_green"
+    },
+    "blood_glucose_low_alerts": {
+      "kind": "numeric_bands",
+      "unit": "mg/dL",
+      "domain_min": "0",
+      "sources": [
+        "ada_hypoglycemia"
+      ],
+      "fasting_required": false,
+      "bands": [
+        {
+          "lower": "0",
+          "upper": "54",
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 5,
+          "category": "ADA_level2_hypoglycemia"
+        },
+        {
+          "lower": "54",
+          "upper": "70",
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 4,
+          "category": "ADA_level1_hypoglycemia"
+        }
+      ],
+      "meaning": "Source hypoglycemia categories mapped to application alert colors; ADA level3 requires clinical assistance and cannot be inferred numerically."
+    }
+  },
+  "optional_institutional_profiles": {
+    "taipei_vgh_notification_20251212": {
+      "enabled_by_default": false,
+      "source": "vgh_notifications",
+      "overlap_policy": "Highest applicable display level wins; keep source classification; lower-tier rules intentionally overlap severe tiers.",
+      "alerts": [
+        {
+          "item_id": "serum_potassium",
+          "operator": "<=",
+          "value": "2.5",
+          "display_level": 4,
+          "source_classification": "abnormal_notification",
+          "unit": "mmol/L",
+          "conditions": []
+        },
+        {
+          "item_id": "serum_potassium",
+          "operator": ">=",
+          "value": "6",
+          "display_level": 4,
+          "source_classification": "abnormal_notification",
+          "unit": "mmol/L",
+          "conditions": [
+            "Adult profile"
+          ]
+        },
+        {
+          "item_id": "serum_potassium",
+          "operator": "<=",
+          "value": "2",
+          "display_level": 5,
+          "source_classification": "critical",
+          "unit": "mmol/L",
+          "conditions": []
+        },
+        {
+          "item_id": "serum_potassium",
+          "operator": ">=",
+          "value": "6.5",
+          "display_level": 5,
+          "source_classification": "critical",
+          "unit": "mmol/L",
+          "conditions": []
+        },
+        {
+          "item_id": "serum_total_calcium",
+          "operator": "<=",
+          "value": "6.5",
+          "display_level": 4,
+          "source_classification": "abnormal_notification",
+          "unit": "mg/dL",
+          "conditions": []
+        },
+        {
+          "item_id": "serum_total_calcium",
+          "operator": ">=",
+          "value": "13",
+          "display_level": 4,
+          "source_classification": "abnormal_notification",
+          "unit": "mg/dL",
+          "conditions": []
+        },
+        {
+          "item_id": "serum_total_calcium",
+          "operator": ">=",
+          "value": "15",
+          "display_level": 5,
+          "source_classification": "critical",
+          "unit": "mg/dL",
+          "conditions": []
+        },
+        {
+          "item_id": "serum_chloride",
+          "operator": "<=",
+          "value": "75",
+          "display_level": 4,
+          "source_classification": "abnormal_notification",
+          "unit": "mmol/L",
+          "conditions": []
+        },
+        {
+          "item_id": "serum_chloride",
+          "operator": ">=",
+          "value": "125",
+          "display_level": 4,
+          "source_classification": "abnormal_notification",
+          "unit": "mmol/L",
+          "conditions": []
+        },
+        {
+          "item_id": "serum_sodium",
+          "operator": "<=",
+          "value": "115",
+          "display_level": 4,
+          "source_classification": "abnormal_notification",
+          "unit": "mmol/L",
+          "conditions": []
+        },
+        {
+          "item_id": "serum_sodium",
+          "operator": ">=",
+          "value": "160",
+          "display_level": 4,
+          "source_classification": "abnormal_notification",
+          "unit": "mmol/L",
+          "conditions": []
+        },
+        {
+          "item_id": "serum_alt",
+          "operator": ">=",
+          "value": "400",
+          "display_level": 4,
+          "source_classification": "abnormal_notification",
+          "unit": "U/L",
+          "conditions": [
+            "General threshold; specialized-department policies may differ"
+          ]
+        },
+        {
+          "item_id": "serum_crp",
+          "operator": ">=",
+          "value": "5",
+          "display_level": 4,
+          "source_classification": "abnormal_notification",
+          "unit": "mg/dL",
+          "conditions": [
+            "Outpatients only"
+          ]
+        },
+        {
+          "item_id": "blood_wbc_count",
+          "operator": "<=",
+          "value": "1.2",
+          "display_level": 4,
+          "source_classification": "abnormal_notification",
+          "unit": "x10^3/uL",
+          "conditions": []
+        },
+        {
+          "item_id": "blood_wbc_count",
+          "operator": ">",
+          "value": "100",
+          "display_level": 4,
+          "source_classification": "abnormal_notification",
+          "unit": "x10^3/uL",
+          "conditions": []
+        },
+        {
+          "item_id": "blood_hemoglobin",
+          "operator": "<=",
+          "value": "5",
+          "display_level": 4,
+          "source_classification": "abnormal_notification",
+          "unit": "g/dL",
+          "conditions": []
+        },
+        {
+          "item_id": "blood_hematocrit",
+          "operator": "<=",
+          "value": "16",
+          "display_level": 4,
+          "source_classification": "abnormal_notification",
+          "unit": "%",
+          "conditions": []
+        },
+        {
+          "item_id": "blood_hematocrit",
+          "operator": ">=",
+          "value": "60",
+          "display_level": 4,
+          "source_classification": "abnormal_notification",
+          "unit": "%",
+          "conditions": []
+        },
+        {
+          "item_id": "blood_platelet_count",
+          "operator": "<=",
+          "value": "30",
+          "display_level": 4,
+          "source_classification": "abnormal_notification",
+          "unit": "x10^3/uL",
+          "conditions": []
+        },
+        {
+          "item_id": "fasting_plasma_glucose",
+          "operator": "<=",
+          "value": "40",
+          "display_level": 5,
+          "source_classification": "critical",
+          "unit": "mg/dL",
+          "conditions": []
+        },
+        {
+          "item_id": "fasting_plasma_glucose",
+          "operator": "<=",
+          "value": "50",
+          "display_level": 4,
+          "source_classification": "abnormal_notification",
+          "unit": "mg/dL",
+          "conditions": []
+        },
+        {
+          "item_id": "fasting_plasma_glucose",
+          "operator": ">=",
+          "value": "600",
+          "display_level": 4,
+          "source_classification": "abnormal_notification",
+          "unit": "mg/dL",
+          "conditions": [
+            "Age18orolder"
+          ]
+        }
+      ]
+    }
+  },
+  "items": [
+    {
+      "id": "urine_acr_semiquantitative",
+      "display_name_zh_tw": "尿白蛋白／肌酸酐比值（半定量）",
+      "source_match": {
+        "order_code": "06012C",
+        "item_name": "A/C ratio",
+        "unit_raw": "mg/gCr"
+      },
+      "configuration_key": "urine_albumin_creatinine_ratio",
+      "kind": "measurement",
+      "value_kind": "numeric_or_inequality",
+      "reference_profile": null,
+      "default_rule": "acr_categories",
+      "notes": [
+        "Share ratio-classification settings; retain separate method/result channels and never overwrite one result with the other."
+      ],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "urine_acr_quantitative",
+      "display_name_zh_tw": "尿白蛋白／肌酸酐比值（定量）",
+      "source_match": {
+        "order_code": "09016C",
+        "item_name": "ACR",
+        "unit_raw": "mg/g"
+      },
+      "configuration_key": "urine_albumin_creatinine_ratio",
+      "kind": "measurement",
+      "value_kind": "numeric_or_inequality",
+      "reference_profile": null,
+      "default_rule": "acr_categories",
+      "notes": [
+        "Share ratio-classification settings; retain separate method/result channels and never overwrite one result with the other."
+      ],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "serum_alt",
+      "display_name_zh_tw": "丙胺酸轉胺酶",
+      "source_match": {
+        "order_code": "09026C",
+        "item_name": "ALT",
+        "unit_raw": "U/L"
+      },
+      "configuration_key": "serum_alt",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "7",
+        "upper": "52",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[7][52]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "serum_or_plasma",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "urine_albumin_semiquantitative",
+      "display_name_zh_tw": "尿白蛋白濃度（半定量）",
+      "source_match": {
+        "order_code": "06012C",
+        "item_name": "Albumin",
+        "unit_raw": "mg/L"
+      },
+      "configuration_key": "urine_albumin_semiquantitative",
+      "kind": "measurement",
+      "value_kind": "numeric_or_inequality",
+      "reference_profile": {
+        "lower": null,
+        "upper": "23.8",
+        "lower_inclusive": true,
+        "upper_inclusive": false,
+        "source": "songshan_manual",
+        "scope": "songshan_urine_albumin_method",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "serum_albumin",
+      "display_name_zh_tw": "血清白蛋白",
+      "source_match": {
+        "order_code": "09038C",
+        "item_name": "Albumin",
+        "unit_raw": "g/dL"
+      },
+      "configuration_key": "serum_albumin",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "3.5",
+        "upper": "5.7",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[3.5][5.7]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "serum_or_plasma",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "blood_atypical_lymphocyte_percentage",
+      "display_name_zh_tw": "非典型淋巴球比例",
+      "source_match": {
+        "order_code": "08013C",
+        "item_name": "Atypical-Lymphocyte",
+        "unit_raw": "%"
+      },
+      "configuration_key": "blood_atypical_lymphocyte_percentage",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": null,
+      "default_rule": "unclassified",
+      "notes": [
+        "No source-lab reference established; do not invent a universal normal0 cutoff.",
+        "Relative percentage alone does not establish absolute-cell-count severity. Do not duplicate total and segment neutrophils in derived counts."
+      ],
+      "specimen": "blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": "100"
+      }
+    },
+    {
+      "id": "venous_base_excess",
+      "display_name_zh_tw": "靜脈血鹼剩餘",
+      "source_match": {
+        "order_code": "09041B",
+        "item_name": "BE(B)",
+        "unit_raw": "mmol/L"
+      },
+      "configuration_key": "venous_base_excess",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": null,
+      "default_rule": "unclassified",
+      "notes": [
+        "No applicable venous source-lab interval established; do not copy the manual arterial BE range."
+      ],
+      "specimen": "venous_blood",
+      "physical_domain": {
+        "minimum": null,
+        "maximum": null
+      }
+    },
+    {
+      "id": "serum_bun",
+      "display_name_zh_tw": "血中尿素氮",
+      "source_match": {
+        "order_code": "09002C",
+        "item_name": "BUN",
+        "unit_raw": "mg/dL"
+      },
+      "configuration_key": "serum_bun",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "7",
+        "upper": "25",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[7][25]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "serum_or_plasma",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "urine_bacteria",
+      "display_name_zh_tw": "尿液細菌",
+      "source_match": {
+        "order_code": "06012C",
+        "item_name": "Bacteria",
+        "unit_raw": "無單位"
+      },
+      "configuration_key": "urine_bacteria",
+      "kind": "measurement",
+      "value_kind": "qualitative_or_ordinal",
+      "reference_profile": {
+        "expected_values": [
+          "Negative"
+        ],
+        "source": "songshan_manual",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "qualitative_reference",
+      "notes": [],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "blood_band_neutrophil_percentage",
+      "display_name_zh_tw": "帶狀嗜中性球比例",
+      "source_match": {
+        "order_code": "08013C",
+        "item_name": "Band neutrophil",
+        "unit_raw": "%"
+      },
+      "configuration_key": "blood_band_neutrophil_percentage",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "0",
+        "upper": "5",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[0][5]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Relative percentage alone does not establish absolute-cell-count severity. Do not duplicate total and segment neutrophils in derived counts."
+      ],
+      "specimen": "blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": "100"
+      }
+    },
+    {
+      "id": "blood_basophil_percentage",
+      "display_name_zh_tw": "嗜鹼性球比例",
+      "source_match": {
+        "order_code": "08013C",
+        "item_name": "Basophil",
+        "unit_raw": "%"
+      },
+      "configuration_key": "blood_basophil_percentage",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "0",
+        "upper": "1.5",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[0][1.5]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Relative percentage alone does not establish absolute-cell-count severity. Do not duplicate total and segment neutrophils in derived counts."
+      ],
+      "specimen": "blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": "100"
+      }
+    },
+    {
+      "id": "urine_bilirubin",
+      "display_name_zh_tw": "尿膽紅素",
+      "source_match": {
+        "order_code": "06012C",
+        "item_name": "Bilirubin",
+        "unit_raw": "無單位"
+      },
+      "configuration_key": "urine_bilirubin",
+      "kind": "measurement",
+      "value_kind": "qualitative_or_ordinal",
+      "reference_profile": {
+        "expected_values": [
+          "Negative"
+        ],
+        "source": "songshan_manual",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "qualitative_reference",
+      "notes": [],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "venous_blood_gas_panel",
+      "display_name_zh_tw": "靜脈血氣檢驗組別",
+      "source_match": {
+        "order_code": "09041B",
+        "item_name": "Blood gas analysis-vein",
+        "unit_raw": "無單位"
+      },
+      "configuration_key": null,
+      "kind": "metadata",
+      "value_kind": "text",
+      "reference_profile": null,
+      "default_rule": "unclassified",
+      "notes": [],
+      "specimen": "venous_blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "serum_ck",
+      "display_name_zh_tw": "肌酸激酶",
+      "source_match": {
+        "order_code": "09032C",
+        "item_name": "CK",
+        "unit_raw": "U/L"
+      },
+      "configuration_key": "serum_ck",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "30",
+        "upper": "223",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[30][223]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "serum_or_plasma",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "serum_crp",
+      "display_name_zh_tw": "C反應性蛋白",
+      "source_match": {
+        "order_code": "12015C",
+        "item_name": "CRP",
+        "unit_raw": "mg/dL"
+      },
+      "configuration_key": "serum_crp",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "0",
+        "upper": "1.0",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[0][1.0]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Ordinary CRP, not hs-CRP. Do not apply hs-CRP cardiovascular-risk bands."
+      ],
+      "specimen": "serum_or_plasma",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "serum_total_calcium",
+      "display_name_zh_tw": "總鈣",
+      "source_match": {
+        "order_code": "09011C",
+        "item_name": "Calcium",
+        "unit_raw": "mg/dL"
+      },
+      "configuration_key": "serum_total_calcium",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "8.6",
+        "upper": "10.3",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[8.6][10.3]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Total calcium, not ionized calcium."
+      ],
+      "specimen": "serum_or_plasma",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "urine_casts",
+      "display_name_zh_tw": "尿液圓柱體",
+      "source_match": {
+        "order_code": "06012C",
+        "item_name": "Cast",
+        "unit_raw": "/LPF"
+      },
+      "configuration_key": "urine_casts",
+      "kind": "measurement",
+      "value_kind": "qualitative_or_count",
+      "reference_profile": {
+        "expected_values": [
+          "Not Found"
+        ],
+        "source": "songshan_manual",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "qualitative_reference",
+      "notes": [],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "serum_chloride",
+      "display_name_zh_tw": "氯",
+      "source_match": {
+        "order_code": "09023C",
+        "item_name": "Chloride(Cl)",
+        "unit_raw": "mmol/L"
+      },
+      "configuration_key": "serum_chloride",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "101",
+        "upper": "109",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[101][109]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "serum_or_plasma",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "serum_total_cholesterol",
+      "display_name_zh_tw": "總膽固醇",
+      "source_match": {
+        "order_code": "09001C",
+        "item_name": "Cholesterol",
+        "unit_raw": "mg/dL"
+      },
+      "configuration_key": "serum_total_cholesterol",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "0",
+        "upper": "200",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[0][200]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "serum_or_plasma",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "urine_clarity",
+      "display_name_zh_tw": "尿液清澈度",
+      "source_match": {
+        "order_code": "06012C",
+        "item_name": "Clarity",
+        "unit_raw": "無單位"
+      },
+      "configuration_key": "urine_clarity",
+      "kind": "measurement",
+      "value_kind": "descriptive",
+      "reference_profile": null,
+      "default_rule": "unclassified",
+      "notes": [],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "urine_color",
+      "display_name_zh_tw": "尿液顏色",
+      "source_match": {
+        "order_code": "06012C",
+        "item_name": "Color",
+        "unit_raw": "無單位"
+      },
+      "configuration_key": "urine_color",
+      "kind": "measurement",
+      "value_kind": "descriptive",
+      "reference_profile": null,
+      "default_rule": "unclassified",
+      "notes": [],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "serum_creatinine",
+      "display_name_zh_tw": "血清肌酸酐",
+      "source_match": {
+        "order_code": "09015C",
+        "item_name": "Creatinine",
+        "unit_raw": "mg/dL"
+      },
+      "configuration_key": "serum_creatinine",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "0.7",
+        "upper": "1.3",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[0.7][1.3]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Use live report interval first. Optional demographic profile requires explicit applicability; do not infer sex/age from this sample."
+      ],
+      "specimen": "serum_or_plasma",
+      "optional_reference_profiles": [
+        {
+          "applicability": "male",
+          "lower": "0.7",
+          "upper": "1.3",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "source": "songshan_manual"
+        },
+        {
+          "applicability": "female",
+          "lower": "0.6",
+          "upper": "1.2",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "source": "songshan_manual"
+        }
+      ],
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "spot_urine_creatinine",
+      "display_name_zh_tw": "隨機尿肌酸酐濃度",
+      "source_match": {
+        "order_code": "09016C",
+        "item_name": "Creatinine-spot urine",
+        "unit_raw": "mg/dL"
+      },
+      "configuration_key": "spot_urine_creatinine",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": null,
+      "default_rule": "unclassified",
+      "notes": [
+        "No universal risk bands for this spot concentration; do not use24h mg/day limits."
+      ],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "urine_crystals",
+      "display_name_zh_tw": "尿液結晶",
+      "source_match": {
+        "order_code": "06012C",
+        "item_name": "Crystal",
+        "unit_raw": "/HPF"
+      },
+      "configuration_key": "urine_crystals",
+      "kind": "measurement",
+      "value_kind": "qualitative_or_count",
+      "reference_profile": {
+        "expected_values": [
+          "Not Found"
+        ],
+        "source": "songshan_manual",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "qualitative_reference",
+      "notes": [],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "blood_eosinophil_percentage",
+      "display_name_zh_tw": "嗜酸性球比例",
+      "source_match": {
+        "order_code": "08013C",
+        "item_name": "Eosinophil",
+        "unit_raw": "%"
+      },
+      "configuration_key": "blood_eosinophil_percentage",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "0",
+        "upper": "7",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[0][7]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Relative percentage alone does not establish absolute-cell-count severity. Do not duplicate total and segment neutrophils in derived counts."
+      ],
+      "specimen": "blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": "100"
+      }
+    },
+    {
+      "id": "urine_epithelial_cells",
+      "display_name_zh_tw": "尿液上皮細胞",
+      "source_match": {
+        "order_code": "06012C",
+        "item_name": "Epithelial cell",
+        "unit_raw": "/HPF"
+      },
+      "configuration_key": "urine_epithelial_cells",
+      "kind": "measurement",
+      "value_kind": "numeric_or_interval",
+      "reference_profile": {
+        "lower": "0",
+        "upper": "5",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "songshan_manual",
+        "scope": "songshan_microscopy_profile",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "urine_glucose_dipstick",
+      "display_name_zh_tw": "尿糖",
+      "source_match": {
+        "order_code": "06012C",
+        "item_name": "Glucose",
+        "unit_raw": "無單位"
+      },
+      "configuration_key": "urine_glucose_dipstick",
+      "kind": "measurement",
+      "value_kind": "qualitative_or_ordinal",
+      "reference_profile": {
+        "expected_values": [
+          "Negative"
+        ],
+        "source": "songshan_manual",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "qualitative_reference",
+      "notes": [
+        "SGLT2 inhibitors can deliberately increase urine glucose;4+ is not a blood-glucose value or automatic L5."
+      ],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "fasting_plasma_glucose",
+      "display_name_zh_tw": "空腹血糖",
+      "source_match": {
+        "order_code": "09005C",
+        "item_name": "Glucose-AC(飯前)",
+        "unit_raw": "mg/dL"
+      },
+      "configuration_key": "fasting_plasma_glucose",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "70",
+        "upper": "100",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[70][100]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Preserve report reference70–100 separately from screening threshold100."
+      ],
+      "specimen": "verify_source",
+      "optional_rules": [
+        "fasting_glucose_screening"
+      ],
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "venous_bicarbonate",
+      "display_name_zh_tw": "靜脈血碳酸氫根",
+      "source_match": {
+        "order_code": "09041B",
+        "item_name": "HCO3-act",
+        "unit_raw": "mmol/L"
+      },
+      "configuration_key": "venous_bicarbonate",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "23",
+        "upper": "27",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[23][27]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "venous_blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "serum_hdl_cholesterol",
+      "display_name_zh_tw": "高密度脂蛋白膽固醇",
+      "source_match": {
+        "order_code": "09043C",
+        "item_name": "HDL-Cholesterol",
+        "unit_raw": "mg/dL"
+      },
+      "configuration_key": "serum_hdl_cholesterol",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "40",
+        "upper": null,
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[40][]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Supplied lower40 is report-specific; do not treat every adult or every sex as sharing this target."
+      ],
+      "specimen": "serum_or_plasma",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "blood_hemoglobin",
+      "display_name_zh_tw": "血紅素",
+      "source_match": {
+        "order_code": "08011C",
+        "item_name": "Hb",
+        "unit_raw": "g/dL"
+      },
+      "configuration_key": "blood_hemoglobin",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "13.5",
+        "upper": "18.0",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[13.5][18.0]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Use live report interval first. Optional demographic profile requires explicit applicability; do not infer sex/age from this sample."
+      ],
+      "specimen": "blood",
+      "optional_reference_profiles": [
+        {
+          "applicability": "male",
+          "lower": "13.5",
+          "upper": "18",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "source": "songshan_manual"
+        },
+        {
+          "applicability": "female",
+          "lower": "12",
+          "upper": "16",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "source": "songshan_manual"
+        }
+      ],
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "blood_hba1c",
+      "display_name_zh_tw": "糖化血色素",
+      "source_match": {
+        "order_code": "09006C",
+        "item_name": "HbA1c",
+        "unit_raw": "%"
+      },
+      "configuration_key": "blood_hba1c",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "4.0",
+        "upper": "6.0",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[4.0][6.0]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Reference interval, diagnostic cutoff and treatment target remain distinct. Known diabetes is not relabeled from one treated value."
+      ],
+      "specimen": "blood",
+      "optional_rules": [
+        "hba1c_screening"
+      ],
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": "100"
+      }
+    },
+    {
+      "id": "blood_hematocrit",
+      "display_name_zh_tw": "血比容",
+      "source_match": {
+        "order_code": "08011C",
+        "item_name": "Hct",
+        "unit_raw": "%"
+      },
+      "configuration_key": "blood_hematocrit",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "40",
+        "upper": "54",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[40][54]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Use live report interval first. Optional demographic profile requires explicit applicability; do not infer sex/age from this sample."
+      ],
+      "specimen": "blood",
+      "optional_reference_profiles": [
+        {
+          "applicability": "male",
+          "lower": "40",
+          "upper": "54",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "source": "songshan_manual"
+        },
+        {
+          "applicability": "female",
+          "lower": "38",
+          "upper": "47",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "source": "songshan_manual"
+        }
+      ],
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": "100"
+      }
+    },
+    {
+      "id": "urine_ketones",
+      "display_name_zh_tw": "尿酮體",
+      "source_match": {
+        "order_code": "06012C",
+        "item_name": "Ketone",
+        "unit_raw": "無單位"
+      },
+      "configuration_key": "urine_ketones",
+      "kind": "measurement",
+      "value_kind": "qualitative_or_ordinal",
+      "reference_profile": {
+        "expected_values": [
+          "Negative"
+        ],
+        "source": "songshan_manual",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "qualitative_reference",
+      "notes": [],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "serum_ldl_cholesterol",
+      "display_name_zh_tw": "低密度脂蛋白膽固醇",
+      "source_match": {
+        "order_code": "09044C",
+        "item_name": "LDL-Cholesterol",
+        "unit_raw": "mg/dL"
+      },
+      "configuration_key": "serum_ldl_cholesterol",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "0",
+        "upper": "130",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[0][130]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Treatment goal depends on cardiovascular risk. A result within the laboratory interval is not proof of treatment-goal attainment.",
+        "For marked triglyceride elevation verify whether LDL is directly measured or calculated; do not use Friedewald above400mg/dL or silently reject a directly measured result."
+      ],
+      "specimen": "serum_or_plasma",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "urine_leukocyte_esterase",
+      "display_name_zh_tw": "尿白血球酯酶",
+      "source_match": {
+        "order_code": "06012C",
+        "item_name": "Leukocyte esterase",
+        "unit_raw": "無單位"
+      },
+      "configuration_key": "urine_leukocyte_esterase",
+      "kind": "measurement",
+      "value_kind": "qualitative_or_ordinal",
+      "reference_profile": {
+        "expected_values": [
+          "Negative"
+        ],
+        "source": "songshan_manual",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "qualitative_reference",
+      "notes": [],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "blood_lymphocyte_percentage",
+      "display_name_zh_tw": "淋巴球比例",
+      "source_match": {
+        "order_code": "08013C",
+        "item_name": "Lymphocyte",
+        "unit_raw": "%"
+      },
+      "configuration_key": "blood_lymphocyte_percentage",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "19",
+        "upper": "48",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[19][48]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Relative percentage alone does not establish absolute-cell-count severity. Do not duplicate total and segment neutrophils in derived counts."
+      ],
+      "specimen": "blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": "100"
+      }
+    },
+    {
+      "id": "blood_mch",
+      "display_name_zh_tw": "平均紅血球血紅素量",
+      "source_match": {
+        "order_code": "08011C",
+        "item_name": "MCH",
+        "unit_raw": "pg"
+      },
+      "configuration_key": "blood_mch",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "25.4",
+        "upper": "34.6",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[25.4][34.6]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "blood_mchc",
+      "display_name_zh_tw": "平均紅血球血紅素濃度",
+      "source_match": {
+        "order_code": "08011C",
+        "item_name": "MCHC",
+        "unit_raw": "g/dL"
+      },
+      "configuration_key": "blood_mchc",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "30",
+        "upper": "37",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[30][37]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "blood_mcv",
+      "display_name_zh_tw": "平均紅血球容積",
+      "source_match": {
+        "order_code": "08011C",
+        "item_name": "MCV",
+        "unit_raw": "fL"
+      },
+      "configuration_key": "blood_mcv",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "79",
+        "upper": "100",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[79][100]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "urine_albumin_quantitative",
+      "display_name_zh_tw": "尿白蛋白濃度（定量）",
+      "source_match": {
+        "order_code": "12111C",
+        "item_name": "Microalbumin-urine",
+        "unit_raw": "mg/L"
+      },
+      "configuration_key": "urine_albumin_quantitative",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "0",
+        "upper": "30",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[0][30]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Concentration mg/L is not ACR mg/g. Retain method-specific range."
+      ],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "blood_monocyte_percentage",
+      "display_name_zh_tw": "單核球比例",
+      "source_match": {
+        "order_code": "08013C",
+        "item_name": "Monocyte",
+        "unit_raw": "%"
+      },
+      "configuration_key": "blood_monocyte_percentage",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "3.4",
+        "upper": "9",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[3.4][9]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Relative percentage alone does not establish absolute-cell-count severity. Do not duplicate total and segment neutrophils in derived counts."
+      ],
+      "specimen": "blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": "100"
+      }
+    },
+    {
+      "id": "plasma_nt_probnp",
+      "display_name_zh_tw": "N端B型利鈉肽前驅物",
+      "source_match": {
+        "order_code": "12193C",
+        "item_name": "NT-ProBNP",
+        "unit_raw": "pg/mL"
+      },
+      "configuration_key": "plasma_nt_probnp",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "0",
+        "upper": "125",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[0][125]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Use live report interval first. Optional demographic profile requires explicit applicability; do not infer sex/age from this sample.",
+        "Age-specific laboratory reference is not a heart-failure severity scale. Clinical setting and kidney function matter."
+      ],
+      "specimen": "verify_source",
+      "optional_reference_profiles": [
+        {
+          "applicability": "age_under75",
+          "lower": "0",
+          "upper": "125",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "source": "songshan_manual"
+        },
+        {
+          "applicability": "age_at_least75",
+          "lower": "0",
+          "upper": "450",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "source": "songshan_manual"
+        }
+      ],
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "blood_neutrophil_percentage",
+      "display_name_zh_tw": "嗜中性球比例",
+      "source_match": {
+        "order_code": "08013C",
+        "item_name": "Neutrophil",
+        "unit_raw": "%"
+      },
+      "configuration_key": "blood_neutrophil_percentage",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "40",
+        "upper": "74",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[40][74]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Relative percentage alone does not establish absolute-cell-count severity. Do not duplicate total and segment neutrophils in derived counts."
+      ],
+      "specimen": "blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": "100"
+      }
+    },
+    {
+      "id": "urine_nitrite",
+      "display_name_zh_tw": "尿亞硝酸鹽",
+      "source_match": {
+        "order_code": "06012C",
+        "item_name": "Nitrite",
+        "unit_raw": "無單位"
+      },
+      "configuration_key": "urine_nitrite",
+      "kind": "measurement",
+      "value_kind": "qualitative_or_ordinal",
+      "reference_profile": {
+        "expected_values": [
+          "Negative"
+        ],
+        "source": "songshan_manual",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "qualitative_reference",
+      "notes": [],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "venous_oxygen_saturation",
+      "display_name_zh_tw": "靜脈血氧飽和度",
+      "source_match": {
+        "order_code": "09041B",
+        "item_name": "O2sat",
+        "unit_raw": "%"
+      },
+      "configuration_key": "venous_oxygen_saturation",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "60",
+        "upper": "85",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[60][85]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Keep the current report60–85% interval. No matching venous interval found in the Songshan manual.",
+        "Not finger pulse-ox SpO2. Do not apply arterial95–98% or pulse-ox emergency cutoffs."
+      ],
+      "specimen": "venous_blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": "100"
+      }
+    },
+    {
+      "id": "urine_occult_blood",
+      "display_name_zh_tw": "尿潛血",
+      "source_match": {
+        "order_code": "06012C",
+        "item_name": "Occult Blood",
+        "unit_raw": "無單位"
+      },
+      "configuration_key": "urine_occult_blood",
+      "kind": "measurement",
+      "value_kind": "qualitative_or_ordinal",
+      "reference_profile": {
+        "expected_values": [
+          "Negative"
+        ],
+        "source": "songshan_manual",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "qualitative_reference",
+      "notes": [],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "venous_pco2",
+      "display_name_zh_tw": "靜脈血二氧化碳分壓",
+      "source_match": {
+        "order_code": "09041B",
+        "item_name": "PCO2",
+        "unit_raw": "mmHg"
+      },
+      "configuration_key": "venous_pco2",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "36",
+        "upper": "50",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[36][50]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Use live report interval first. Optional demographic profile requires explicit applicability; do not infer sex/age from this sample."
+      ],
+      "specimen": "venous_blood",
+      "optional_reference_profiles": [
+        {
+          "applicability": "male",
+          "lower": "36",
+          "upper": "50",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "source": "songshan_manual"
+        },
+        {
+          "applicability": "female",
+          "lower": "34",
+          "upper": "48",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "source": "songshan_manual"
+        }
+      ],
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "urine_ph",
+      "display_name_zh_tw": "尿液酸鹼值",
+      "source_match": {
+        "order_code": "06012C",
+        "item_name": "PH",
+        "unit_raw": "無單位"
+      },
+      "configuration_key": "urine_ph",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "4.5",
+        "upper": "7.5",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[4.5][7.5]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": "14"
+      }
+    },
+    {
+      "id": "venous_po2",
+      "display_name_zh_tw": "靜脈血氧分壓",
+      "source_match": {
+        "order_code": "09041B",
+        "item_name": "PO2",
+        "unit_raw": "mmHg"
+      },
+      "configuration_key": "venous_po2",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "35",
+        "upper": "50",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[35][50]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Peripheral venous pO2 cannot substitute for arterial oxygenation assessment."
+      ],
+      "specimen": "venous_blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "serum_phosphorus",
+      "display_name_zh_tw": "磷",
+      "source_match": {
+        "order_code": "09012C",
+        "item_name": "Phosphorus",
+        "unit_raw": "mg/dL"
+      },
+      "configuration_key": "serum_phosphorus",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "2.5",
+        "upper": "5.0",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[2.5][5.0]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "serum_or_plasma",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "blood_platelet_count",
+      "display_name_zh_tw": "血小板計數",
+      "source_match": {
+        "order_code": "08011C",
+        "item_name": "Platelet count",
+        "unit_raw": "x10^3/uL"
+      },
+      "configuration_key": "blood_platelet_count",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "150",
+        "upper": "400",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[150][400]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "serum_potassium",
+      "display_name_zh_tw": "鉀",
+      "source_match": {
+        "order_code": "09022C",
+        "item_name": "Potassium(K)",
+        "unit_raw": "mmol/L"
+      },
+      "configuration_key": "serum_potassium",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "3.5",
+        "upper": "5.1",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[3.5][5.1]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "serum_or_plasma",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "urine_protein_dipstick",
+      "display_name_zh_tw": "尿蛋白試紙",
+      "source_match": {
+        "order_code": "06012C",
+        "item_name": "Protein",
+        "unit_raw": "無單位"
+      },
+      "configuration_key": "urine_protein_dipstick",
+      "kind": "measurement",
+      "value_kind": "qualitative_or_ordinal",
+      "reference_profile": {
+        "expected_values": [
+          "Negative",
+          "Trace"
+        ],
+        "source": "songshan_manual",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "qualitative_reference",
+      "notes": [],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "urine_rbc_microscopy",
+      "display_name_zh_tw": "尿液紅血球鏡檢",
+      "source_match": {
+        "order_code": "06012C",
+        "item_name": "R.B.C.",
+        "unit_raw": "/HPF"
+      },
+      "configuration_key": "urine_rbc_microscopy",
+      "kind": "measurement",
+      "value_kind": "numeric_or_interval",
+      "reference_profile": {
+        "lower": "0",
+        "upper": "2",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "songshan_manual",
+        "scope": "songshan_microscopy_profile",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "blood_rbc_count",
+      "display_name_zh_tw": "紅血球計數",
+      "source_match": {
+        "order_code": "08011C",
+        "item_name": "RBC",
+        "unit_raw": "x10^6/uL"
+      },
+      "configuration_key": "blood_rbc_count",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "4.6",
+        "upper": "6.0",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[4.6][6.0]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Use live report interval first. Optional demographic profile requires explicit applicability; do not infer sex/age from this sample."
+      ],
+      "specimen": "blood",
+      "optional_reference_profiles": [
+        {
+          "applicability": "male",
+          "lower": "4.6",
+          "upper": "6",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "source": "songshan_manual"
+        },
+        {
+          "applicability": "female",
+          "lower": "3.9",
+          "upper": "5.5",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "source": "songshan_manual"
+        }
+      ],
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "blood_rdw_cv",
+      "display_name_zh_tw": "紅血球分布寬度",
+      "source_match": {
+        "order_code": "08011C",
+        "item_name": "RDW-CV",
+        "unit_raw": "%"
+      },
+      "configuration_key": "blood_rdw_cv",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "11.5",
+        "upper": "14.5",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[11.5][14.5]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": "100"
+      }
+    },
+    {
+      "id": "blood_segment_neutrophil_percentage",
+      "display_name_zh_tw": "分葉嗜中性球比例",
+      "source_match": {
+        "order_code": "08013C",
+        "item_name": "Segment Neutrophil",
+        "unit_raw": "%"
+      },
+      "configuration_key": "blood_segment_neutrophil_percentage",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "40",
+        "upper": "74",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[40][74]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "A missing dash means no result, not zero. Create personal settings only when a real result is encountered.",
+        "Relative percentage alone does not establish absolute-cell-count severity. Do not duplicate total and segment neutrophils in derived counts."
+      ],
+      "specimen": "blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": "100"
+      }
+    },
+    {
+      "id": "serum_sodium",
+      "display_name_zh_tw": "鈉",
+      "source_match": {
+        "order_code": "09021C",
+        "item_name": "Sodium(Na)",
+        "unit_raw": "mmol/L"
+      },
+      "configuration_key": "serum_sodium",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "136",
+        "upper": "145",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[136][145]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Live report136–145 differs from the2022 manual136–146; preserve the report value."
+      ],
+      "specimen": "serum_or_plasma",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "urine_specific_gravity",
+      "display_name_zh_tw": "尿液比重",
+      "source_match": {
+        "order_code": "06012C",
+        "item_name": "Specific Gravity",
+        "unit_raw": "無單位"
+      },
+      "configuration_key": "urine_specific_gravity",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "1.003",
+        "upper": "1.035",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[1.003][1.035]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "spot_urine_total_protein",
+      "display_name_zh_tw": "隨機尿總蛋白濃度",
+      "source_match": {
+        "order_code": "09040C",
+        "item_name": "Total protein-spot urine",
+        "unit_raw": "mg/dL"
+      },
+      "configuration_key": "spot_urine_total_protein",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": null,
+      "default_rule": "unclassified",
+      "notes": [
+        "No universal risk bands for this spot concentration; interpret reported PCR separately."
+      ],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "serum_triglycerides",
+      "display_name_zh_tw": "三酸甘油脂",
+      "source_match": {
+        "order_code": "09004C",
+        "item_name": "Triglyceride",
+        "unit_raw": "mg/dL"
+      },
+      "configuration_key": "serum_triglycerides",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "0",
+        "upper": "150",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[0][150]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "adult_triglycerides",
+      "notes": [],
+      "specimen": "serum_or_plasma",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "urine_pcr",
+      "display_name_zh_tw": "尿蛋白／肌酸酐比值",
+      "source_match": {
+        "order_code": "09040C",
+        "item_name": "UPCR",
+        "unit_raw": "mg/g"
+      },
+      "configuration_key": "urine_pcr",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": null,
+      "default_rule": "pcr_categories",
+      "notes": [],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "serum_uric_acid",
+      "display_name_zh_tw": "尿酸",
+      "source_match": {
+        "order_code": "09013C",
+        "item_name": "Uric acid",
+        "unit_raw": "mg/dL"
+      },
+      "configuration_key": "serum_uric_acid",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "4.4",
+        "upper": "7.6",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[4.4][7.6]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Use live report interval first. Optional demographic profile requires explicit applicability; do not infer sex/age from this sample."
+      ],
+      "specimen": "serum_or_plasma",
+      "optional_reference_profiles": [
+        {
+          "applicability": "male",
+          "lower": "4.4",
+          "upper": "7.6",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "source": "songshan_manual"
+        },
+        {
+          "applicability": "female",
+          "lower": "2.3",
+          "upper": "6.6",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "source": "songshan_manual"
+        }
+      ],
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "urine_urobilinogen",
+      "display_name_zh_tw": "尿膽素原",
+      "source_match": {
+        "order_code": "06012C",
+        "item_name": "Urobilinogen",
+        "unit_raw": "無單位"
+      },
+      "configuration_key": "urine_urobilinogen",
+      "kind": "measurement",
+      "value_kind": "qualitative_or_ordinal",
+      "reference_profile": {
+        "expected_values": [
+          "Normal"
+        ],
+        "source": "songshan_manual",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "qualitative_reference",
+      "notes": [],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "urine_wbc_microscopy",
+      "display_name_zh_tw": "尿液白血球鏡檢",
+      "source_match": {
+        "order_code": "06012C",
+        "item_name": "W.B.C.",
+        "unit_raw": "/HPF"
+      },
+      "configuration_key": "urine_wbc_microscopy",
+      "kind": "measurement",
+      "value_kind": "numeric_or_interval",
+      "reference_profile": {
+        "lower": "0",
+        "upper": "5",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "songshan_manual",
+        "scope": "songshan_microscopy_profile",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "blood_wbc_count",
+      "display_name_zh_tw": "白血球計數",
+      "source_match": {
+        "order_code": "08011C",
+        "item_name": "WBC",
+        "unit_raw": "x10^3/uL"
+      },
+      "configuration_key": "blood_wbc_count",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "4.5",
+        "upper": "11.0",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[4.5][11.0]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "venous_total_co2",
+      "display_name_zh_tw": "靜脈血總二氧化碳",
+      "source_match": {
+        "order_code": "09041B",
+        "item_name": "ctCO2",
+        "unit_raw": "mmol/L"
+      },
+      "configuration_key": "venous_total_co2",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "24",
+        "upper": "28",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[24][28]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [],
+      "specimen": "venous_blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "egfr",
+      "display_name_zh_tw": "估算腎絲球過濾率",
+      "source_match": {
+        "order_code": "09015C",
+        "item_name": "eGFR",
+        "unit_raw": "無單位"
+      },
+      "configuration_key": "egfr",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": null,
+      "default_rule": "egfr_categories",
+      "notes": [],
+      "specimen": "verify_source",
+      "canonical_unit": "mL/min/1.73m2",
+      "require_source_unit_or_verified_adapter": true,
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "plasma_hs_troponin_i",
+      "display_name_zh_tw": "高敏感度心肌肌鈣蛋白I",
+      "source_match": {
+        "order_code": "09099C",
+        "item_name": "hs Troponin I",
+        "unit_raw": "ng/L"
+      },
+      "configuration_key": "plasma_hs_troponin_i",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "0",
+        "upper": "34.2",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[0][34.2]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Use live report interval first. Optional demographic profile requires explicit applicability; do not infer sex/age from this sample.",
+        "Assay-specific99th-percentile context and serial change matter; a single number does not diagnose/exclude myocardial infarction."
+      ],
+      "specimen": "verify_source",
+      "optional_reference_profiles": [
+        {
+          "applicability": "male",
+          "lower": "0",
+          "upper": "34.2",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "source": "songshan_manual"
+        },
+        {
+          "applicability": "female",
+          "lower": "0",
+          "upper": "15.6",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "source": "songshan_manual"
+        }
+      ],
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "venous_ph",
+      "display_name_zh_tw": "靜脈血酸鹼值",
+      "source_match": {
+        "order_code": "09041B",
+        "item_name": "pH",
+        "unit_raw": "無單位"
+      },
+      "configuration_key": "venous_ph",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "7.32",
+        "upper": "7.43",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "provided_report_reference",
+        "scope": "provided_report_profile",
+        "raw_reference_template": "[7.32][7.43]",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "notes": [
+        "Use supplied report7.32–7.43. Reject the manual typo72.43."
+      ],
+      "specimen": "venous_blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": "14"
+      }
+    },
+    {
+      "id": "manual_smear_status",
+      "display_name_zh_tw": "人工閱片狀態",
+      "source_match": {
+        "order_code": "08013C",
+        "item_name": "是否人工閱片",
+        "unit_raw": "無單位"
+      },
+      "configuration_key": null,
+      "kind": "metadata",
+      "value_kind": "text",
+      "reference_profile": null,
+      "default_rule": "unclassified",
+      "notes": [],
+      "specimen": "verify_source",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    }
+  ],
+  "copyright": "Copyright (c) 2026 bestkakkoi llc. All rights reserved."
+}

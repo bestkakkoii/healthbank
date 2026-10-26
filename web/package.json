@@ -1,0 +1,20 @@
+{
+  "name": "@bestkakkoi/healthbank-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "build": "node ../scripts/build-web.mjs",
+    "typecheck": "node ../scripts/build-web.mjs --check"
+  },
+  "dependencies": {
+    "react": "file:vendor/react-main.tgz",
+    "react-dom": "file:vendor/react-dom-main.tgz",
+    "scheduler": "file:vendor/scheduler-main.tgz"
+  },
+  "devDependencies": {
+    "@types/react": "file:vendor/types-react",
+    "@types/react-dom": "file:vendor/types-react-dom"
+  }
+}

@@ -1,0 +1,17 @@
+.tools/
+node_modules/
+web/node_modules/
+internal/webui/dist/
+dist/
+data/
+.env
+.env.*
+upload/
+uploads/
+reports/
+*.sqlite*
+*.db
+*.key
+*.pem
+*.log
+__pycache__/

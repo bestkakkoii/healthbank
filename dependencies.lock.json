@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "policy": "Direct source dependencies pinned to verified upstream default-branch HEAD; transitive dependencies retain locked upstream versions. No claim that every transitive package is main HEAD.",
+  "sources": [
+    {
+      "name": "Go",
+      "repository": "https://github.com/golang/go",
+      "branch": "master",
+      "commit": "dac9fe5ea9bed1733cb27fbd91aa43457de980b4",
+      "version": "devel go1.28",
+      "archive_sha256": "c23747152b90adc07fecc0d068bc2b95c6a5bf51639547da553cda151996ae9f"
+    },
+    {
+      "name": "React / React DOM / Scheduler",
+      "repository": "https://github.com/react/react",
+      "branch": "main",
+      "commit": "fd51cb10dd154aee73e4e7948005c02968651c3d",
+      "package_versions": [
+        "19.3.0",
+        "19.3.0",
+        "0.28.0"
+      ],
+      "archive_sha256": "38adcc54b4a3161232254328c3dbf5cdb0ba874ac9104edf5f5051e066cf6507"
+    },
+    {
+      "name": "TypeScript",
+      "repository": "https://github.com/microsoft/TypeScript",
+      "branch": "main",
+      "commit": "49e69830214c55a8cc361aa3c4e7412d0afd02fe",
+      "version": "7.1.0-dev",
+      "archive_sha256": "470cc78cd0144272f1b9437055437ba4e0147c0bc53db4a9759b55933a94d61d"
+    },
+    {
+      "name": "esbuild",
+      "repository": "https://github.com/evanw/esbuild",
+      "branch": "main",
+      "commit": "f6058f8364fe7ab91ca57a83e02577ed74c9cae4",
+      "reported_version": "0.28.2"
+    },
+    {
+      "name": "SQLite Go driver",
+      "repository": "https://gitlab.com/cznic/sqlite",
+      "branch": "master",
+      "commit": "683b7278591f31956cee8ed4602cd3fe275ff620"
+    },
+    {
+      "name": "MySQL Go driver",
+      "repository": "https://github.com/go-sql-driver/mysql",
+      "branch": "master",
+      "commit": "4b12a5b6e7fb8951a847f1b61485a59f337ada18"
+    },
+    {
+      "name": "Go net/html",
+      "repository": "https://github.com/golang/net",
+      "branch": "master",
+      "commit": "05c76ee9adc59087cf3ba77ee9c8fcfab61bf61c"
+    },
+    {
+      "name": "React type declarations",
+      "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped",
+      "branch": "master",
+      "commit": "28db822755d04098fc7cab2013b15ca9f0c58c7f",
+      "packaging_changes": "Removed devDependencies/scripts and normalized workspace-only dependency specifiers; declaration content unchanged."
+    }
+  ],
+  "build_runtime": {
+    "node": "24.22.1",
+    "npm": "11.9.0",
+    "go_bootstrap": "1.27.3",
+    "go_bootstrap_sha256": "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40",
+    "react_upstream_package_manager": "yarn1.22.22 with frozen upstream yarn.lock"
+  },
+  "vendored_packages": {
+    "scheduler-main.tgz": "c64e8d8cb716ae3bcef457a833127ab9ad5c55d7fbf3bb89030f368a2f81e17c",
+    "react-main.tgz": "c1d9d0e081f89765454b79b8b7aa81d2d42ae98c06a96914d952975bbda8b2a5",
+    "react-dom-main.tgz": "02f22648ec195371d9772c667cda0ce211eeefeac57e746a3d4d4d151996dfcb"
+  },
+  "go_runtime_modules": [
+    {
+      "module": "filippo.io/edwards25519",
+      "version": "v1.2.0",
+      "sum": "h1:crnVqOiS4jqYleHd9vaKZ+HKtHfllngJIiOpNpoJsjo=",
+      "license_files": [
+        "licenses/filippo.io__edwards25519/LICENSE"
+      ]
+    },
+    {
+      "module": "github.com/dustin/go-humanize",
+      "version": "v1.1.0",
+      "sum": "h1:dbKTrvD0klcbBV/h4AWJdMuZogJACoMlvWIWZ5b2xWg=",
+      "license_files": [
+        "licenses/github.com__dustin__go-humanize/LICENSE"
+      ]
+    },
+    {
+      "module": "github.com/go-sql-driver/mysql",
+      "version": "v1.10.2-0.20261016105952-4b12a5b6e7fb",
+      "sum": "h1:F1xycI4kqB8VKbgMQBzhKnUubWB/KiyTJbWKEZZ8ogc=",
+      "license_files": [
+        "licenses/github.com__go-sql-driver__mysql/AUTHORS",
+        "licenses/github.com__go-sql-driver__mysql/LICENSE"
+      ]
+    },
+    {
+      "module": "github.com/google/uuid",
+      "version": "v1.6.0",
+      "sum": "h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=",
+      "license_files": [
+        "licenses/github.com__google__uuid/LICENSE"
+      ]
+    },
+    {
+      "module": "github.com/remyoudompheng/bigfft",
+      "version": "v0.0.0-20230129092748-24d4a6f8daec",
+      "sum": "h1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=",
+      "license_files": [
+        "licenses/github.com__remyoudompheng__bigfft/LICENSE"
+      ]
+    },
+    {
+      "module": "golang.org/x/net",
+      "version": "v0.61.1-0.20261022225259-05c76ee9adc5",
+      "sum": "h1:hiB9drdBUxaK1tPuoZFMsl8PahKhCSAXmbM4XcF4HTU=",
+      "license_files": [
+        "licenses/golang.org__x__net/LICENSE"
+      ]
+    },
+    {
+      "module": "golang.org/x/sys",
+      "version": "v0.49.0",
+      "sum": "h1:XbzkgYJHdqh/8m2Uu0W/dQv8nktxx4BFHp1M0gROTXA=",
+      "license_files": [
+        "licenses/golang.org__x__sys/LICENSE"
+      ]
+    },
+    {
+      "module": "modernc.org/libc",
+      "version": "v1.79.0",
+      "sum": "h1:9Dvvv++bAMSkSuBzuOFAatbTV5OIoq6Y6FohmD3e7q8=",
+      "license_files": [
+        "licenses/modernc.org__libc/AUTHORS",
+        "licenses/modernc.org__libc/LICENSE-3RD-PARTY.md",
+        "licenses/modernc.org__libc/LICENSE"
+      ]
+    },
+    {
+      "module": "modernc.org/mathutil",
+      "version": "v1.7.1",
+      "sum": "h1:GCZVGXdaN8gTqB1Mf/usp1Y/hSqgI2vAGGP4jZMCxOU=",
+      "license_files": [
+        "licenses/modernc.org__mathutil/AUTHORS",
+        "licenses/modernc.org__mathutil/LICENSE"
+      ]
+    },
+    {
+      "module": "modernc.org/memory",
+      "version": "v1.12.1",
+      "sum": "h1:nFMiWrpStgZczNl6XI9GnIk/rWhYIyHGUaR04pGbp9g=",
+      "license_files": [
+        "licenses/modernc.org__memory/AUTHORS",
+        "licenses/modernc.org__memory/LICENSE-GO",
+        "licenses/modernc.org__memory/LICENSE-MMAP-GO",
+        "licenses/modernc.org__memory/LICENSE",
+        "licenses/modernc.org__memory/LICENSE-LOGO"
+      ]
+    },
+    {
+      "module": "modernc.org/sqlite",
+      "version": "v1.61.1-0.20261025171635-683b7278591f",
+      "sum": "h1:KC74vcoVsPS0QONdOd9TbHel7K3StwlJYxPwMau4dUw=",
+      "license_files": [
+        "licenses/modernc.org__sqlite/AUTHORS",
+        "licenses/modernc.org__sqlite/LICENSE-3RD-PARTY.md",
+        "licenses/modernc.org__sqlite/LICENSE-SQLITE_VEC",
+        "licenses/modernc.org__sqlite/LICENSE-SQLITE",
+        "licenses/modernc.org__sqlite/LICENSE"
+      ]
+    }
+  ],
+  "verified_date": "2026-10-27"
+}

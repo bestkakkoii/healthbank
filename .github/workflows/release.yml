@@ -1,0 +1,93 @@
+# Copyright 2026 bestkakkoi llc.
+# SPDX-License-Identifier: MIT
+name: Linux release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Semantic version for the downloadable build artifacts"
+        type: string
+        required: true
+        default: v1.0.0
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write # Only the final tag-triggered step creates a draft release.
+    env:
+      CI: "true"
+      GOTOOLCHAIN: local
+      RELEASE_VERSION: ${{ inputs.version || github.ref_name }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # main, pinned 2026-10-26
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # main, pinned 2026-10-26
+        with:
+          node-version: "24.22.1"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Build pinned upstream tools and React packages
+        run: bash scripts/bootstrap-upstream.sh
+      - name: Install frontend dependencies
+        run: npm --prefix web ci
+      - name: Type-check and compile frontend
+        run: npm --prefix web run build
+      - name: Verify Go code
+        run: |
+          .tools/go/bin/go test ./...
+          .tools/go/bin/go vet ./...
+      - name: Build Linux release archives and checksums
+        env:
+          GO: ${{ github.workspace }}/.tools/go/bin/go
+          COMMIT: ${{ github.sha }}
+        run: |
+          export SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"
+          bash scripts/release.sh "$RELEASE_VERSION"
+          cd dist/releases
+          sha256sum -c SHA256SUMS
+      - name: Upload build artifacts for review
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # main, pinned 2026-10-26
+        with:
+          name: healthbank-${{ inputs.version || github.ref_name }}
+          path: |
+            dist/releases/*.tar.gz
+            dist/releases/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 7
+      - name: Preserve existing Release or prepare a draft for a pushed tag
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          # Listing succeeds with an empty array when no release exists. Unlike
+          # a tag-specific 404, API/auth failures cannot be mistaken for absence.
+          release_tags="$(gh api --paginate "repos/$GH_REPO/releases?per_page=100" --jq '.[].tag_name')" || {
+            api_status=$?
+            printf '%s\n' 'Release lookup failed; inspect the GitHub API error above. No release will be created.' >&2
+            exit "$api_status"
+          }
+          while IFS= read -r existing_tag; do
+            if [[ "$existing_tag" == "$RELEASE_VERSION" ]]; then
+              printf 'Release %s already exists; leaving its publication state and assets unchanged.\n' "$RELEASE_VERSION"
+              exit 0
+            fi
+          done <<< "$release_tags"
+          gh release create "$RELEASE_VERSION" dist/releases/*.tar.gz dist/releases/SHA256SUMS \
+            --verify-tag --draft --title "Healthbank $RELEASE_VERSION" --generate-notes
