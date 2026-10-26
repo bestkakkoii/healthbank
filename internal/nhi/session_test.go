@@ -1,14 +1,16 @@
-// Copyright (c) 2026 bestkakkoi llc. All rights reserved.
+// Copyright (c) 2026 bestkakkoii llc. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 package nhi
 
 import (
+	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"image"
+	"image/png"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -62,10 +64,11 @@ func respondJSON(t *testing.T, w http.ResponseWriter, value any) {
 }
 
 func TestSourceDerivedFlowWithFullSearch(t *testing.T) {
-	image, err := base64.StdEncoding.DecodeString("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a+T8AAAAASUVORK5CYII=")
-	if err != nil {
+	var imageBuffer bytes.Buffer
+	if err := png.Encode(&imageBuffer, image.NewRGBA(image.Rect(0, 0, 2, 1))); err != nil {
 		t.Fatal(err)
 	}
+	imageBytes := imageBuffer.Bytes()
 	var challengeID string
 	var loginCalls, refreshCalls, searchCalls, logoutCalls atomic.Int32
 	session := fixtureSession(t, func(w http.ResponseWriter, r *http.Request) {
@@ -77,7 +80,7 @@ func TestSourceDerivedFlowWithFullSearch(t *testing.T) {
 			challengeID = r.URL.Query().Get("id")
 			http.SetCookie(w, &http.Cookie{Name: "fixture_session", Value: "synthetic", Path: "/", Secure: true})
 			w.Header().Set("Content-Type", "image/png")
-			_, _ = w.Write(image)
+			_, _ = w.Write(imageBytes)
 		case loginPath:
 			loginCalls.Add(1)
 			if r.Method != http.MethodPost || r.Header.Get("Authorization") != "Bearer null" || r.Header.Get("X-Requested-With") != "XMLHttpRequest" {
@@ -135,8 +138,12 @@ func TestSourceDerivedFlowWithFullSearch(t *testing.T) {
 	})
 	ctx := context.Background()
 	challenge, err := session.Challenge(ctx)
-	if err != nil || challenge.ContentType != "image/png" || len(challenge.Image) != len(image) || challenge.ID == "" || !challenge.ExpiresAt.After(time.Now()) {
+	if err != nil || challenge.ContentType != "image/png" || len(challenge.Image) != len(imageBytes) || challenge.ID == "" || !challenge.ExpiresAt.After(time.Now()) {
 		t.Fatalf("CAPTCHA failed: %v", err)
+	}
+	decodedImage, format, err := image.Decode(bytes.NewReader(challenge.Image))
+	if err != nil || format != "png" || decodedImage.Bounds().Dx() != 2 || decodedImage.Bounds().Dy() != 1 {
+		t.Fatal("CAPTCHA bytes did not decode into the complete synthetic image")
 	}
 	err = session.Login(ctx, Credentials{NationalID: "a000000000", CardNumber: "12345678", Password: "synthetic-password", Captcha: " TEST "})
 	if err != nil {
@@ -174,6 +181,8 @@ func TestFailuresDoNotBecomeEmptySuccessOrLeakUpstreamText(t *testing.T) {
 		{name: "missing_item", body: `[{"assaY_VALUE":"1"}]`, count: 1, status: 200, code: "UPSTREAM_CHANGED"},
 		{name: "bad_field", body: `[{"assaY_ITEM_NAME":"Synthetic item","assaY_VALUE":true}]`, count: 1, status: 200, code: "UPSTREAM_CHANGED"},
 		{name: "unavailable", body: `SECRET_DATA`, count: 0, status: 503, code: "UPSTREAM_UNAVAILABLE"},
+		{name: "authenticated_unauthorized", body: `SECRET_DATA`, count: 0, status: 401, code: "SESSION_EXPIRED"},
+		{name: "authenticated_forbidden", body: `SECRET_DATA`, count: 0, status: 403, code: "SESSION_EXPIRED"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			session := fixtureSession(t, func(w http.ResponseWriter, r *http.Request) {
@@ -192,6 +201,9 @@ func TestFailuresDoNotBecomeEmptySuccessOrLeakUpstreamText(t *testing.T) {
 			var actual *Error
 			if !errors.As(err, &actual) || actual.Code != tc.code {
 				t.Fatalf("want %s, got %v", tc.code, err)
+			}
+			if tc.code == "SESSION_EXPIRED" && session.token != "" {
+				t.Fatal("expired official authentication was retained")
 			}
 			if strings.Contains(err.Error(), "SECRET_DATA") || len(report.Records) != 0 {
 				t.Fatal("failed response leaked or was treated as valid records")

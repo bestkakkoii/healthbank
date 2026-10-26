@@ -1,16 +1,16 @@
 ﻿# Healthbank v1：寶塔部署與資料庫遷移
 
-© 2026 bestkakkoi llc. All rights reserved. 原始碼採 MIT 授權，詳見 `LICENSE`。
+© 2026 bestkakkoii llc. All rights reserved. 原始碼採 MIT 授權，詳見 `LICENSE`。
 
 專案倉庫：[bestkakkoii/healthbank](https://github.com/bestkakkoii/healthbank)。Linux 套件與校驗清單的發行入口：[GitHub Releases](https://github.com/bestkakkoii/healthbank/releases)。
 
 ## 一、第一次部署：上傳、選執行檔、綁域名、啟動
 
-**本次正式部署平台為 Debian 13（trixie）x64。使用 `healthbank_1.0.1_linux_amd64.tar.gz`；`amd64` 在發行檔名中同時代表 Intel／AMD 的 64 位元 x86 主機。ARM64 包供其他主機使用，這台 Debian 主機不選它。**
+**本次正式部署平台為 Debian 13（trixie）x64。使用 `healthbank_1.0.2_linux_amd64.tar.gz`；`amd64` 在發行檔名中同時代表 Intel／AMD 的 64 位元 x86 主機。ARM64 包供其他主機使用，這台 Debian 主機不選它。**
 
 發行包內的 `healthbank` 已包含編譯完成的前端與 Go 後端。執行主機不需要安裝 Node.js、Python、Go 編譯器、SQLite 服務或瀏覽器自動化程式。使用預設 SQLite 時也不用先建立資料庫。
 
-1. 在寶塔「檔案」把對應架構的壓縮檔上傳到應用程式目錄並解壓縮，例如 `/www/wwwroot/healthbank/`。一般 Intel／AMD 64 位元主機選 `healthbank_1.0.1_linux_amd64.tar.gz`；ARM 64 位元主機選 `healthbank_1.0.1_linux_arm64.tar.gz`。版本號以實際下載檔名為準。
+1. 在寶塔「檔案」把對應架構的壓縮檔上傳到應用程式目錄並解壓縮，例如 `/www/wwwroot/healthbank/`。一般 Intel／AMD 64 位元主機選 `healthbank_1.0.2_linux_amd64.tar.gz`；ARM 64 位元主機選 `healthbank_1.0.2_linux_arm64.tar.gz`。版本號以實際下載檔名為準。
 2. 開啟「網站 → Go 項目 → 添加項目」，依下表填寫。寶塔若自動產生完整執行命令，保留指向該執行檔的命令即可，不需要 `serve` 參數。
 3. 綁定已解析到本機的域名，使用寶塔提供的域名／外網映射功能，讓 Nginx 轉送到 `127.0.0.1:8787`。在站點 SSL 設定啟用 HTTPS，供手機與筆電正式登入使用。
 4. 點「啟動」，開啟 `https://你的域名/`。SQLite 與必要的服務設定會自動建立在執行檔旁的 `data/` 目錄；不論寶塔啟動時採用哪一個工作目錄，都會使用同一個位置。
@@ -156,9 +156,11 @@ MySQL 驅動、建表與匯入路徑均已實作。若該發行版的驗證紀�
 | 官方網站登入失敗、驗證碼過期 | 重新取得驗證碼並由使用者填寫；這不等同於本服務或資料庫故障 |
 | 官方查詢暫時無回應 | 稍後重新登入查詢，或先使用已下載資料的匯入功能；不會把失敗結果當成新的檢驗數值 |
 
-### 網站可開啟，但圖形驗證碼回傳 502
+### 網站可開啟，但圖形驗證碼無法取得
 
-登入視窗會自動建立工作階段並取得官方驗證碼圖片；使用者只需辨識及輸入圖片文字。若 `/api/health` 與 `/api/session` 正常，只有 `/api/auth/captcha` 失敗，不能直接歸因於 Go 未啟動。Cloudflare 的錯誤頁可能取代原始 502 回應，需在部署主機取得原始錯誤碼。
+登入視窗會自動建立工作階段並取得官方驗證碼圖片；使用者只需辨識及輸入圖片文字。若 `/api/health` 與 `/api/session` 正常，只有 `/api/auth/captcha` 失敗，不能直接歸因於 Go 未啟動。
+
+v1.0.2 起，官方連線失敗使用 HTTP 424 搭配結構化錯誤，區分 DNS、TLS、逾時、連線失敗及官方 HTTP 狀態，不再全部回成本應用的 502。畫面會顯示安全的錯誤代碼、可取得的連線回應狀態與查詢代碼。Cloudflare／Nginx 的自訂錯誤規則仍可能替換錯誤回應；若畫面仍只有通用 502，請從部署主機讀取原始回應。
 
 在寶塔終端執行以下唯讀檢查，直接呼叫 Go 的本機端點，不經 Nginx 或 Cloudflare。它不需要登入資料，最多等待 45 秒；成功時會省略圖片及挑戰識別字串：
 
@@ -172,27 +174,32 @@ sed -E 's/"image_url":"[^"]*/"image_url":"[image omitted]/g;s/"challenge_id":"[^
 | 原始結果 | 下一個檢查方向 |
 | --- | --- |
 | HTTP 200 且圖片已取得 | 本機取圖成功；核對同時段公開請求、Nginx 與 Cloudflare 的轉送回應。 |
-| `NETWORK` | 部署主機對官方的 DNS、TLS、代理、連線或回應讀取失敗；此版本將這些原因歸在同一錯誤碼。 |
-| `UPSTREAM_UNAVAILABLE` | 官方請求收到非成功 HTTP 狀態；不能單憑此碼宣稱官網全面停機。 |
-| `UPSTREAM_CHANGED` | 官方請求回傳成功狀態，但內容不是支援的驗證碼圖片。 |
+| `DNS_FAILED` | 部署主機的對外連線未完成 DNS 解析；檢查主機解析器與網路。 |
+| `TIMEOUT` | 對外連線或回應逾時；核對對外 HTTPS 連線與官方服務的當時狀態。 |
+| `TLS_CERTIFICATE`／`TLS_FAILED` | 檢查系統時間、CA 憑證或 TLS 連線；不可用關閉憑證驗證替代修復。 |
+| `CONNECTION_REFUSED`／`CONNECTION_RESET`／`CONNECTION_FAILED` | 對外連線被拒絕、重設或無法建立；檢查路由、出口及主機連線設定。 |
+| `NETWORK`／`RESPONSE_INTERRUPTED` | 未分類的連線失敗，或回應沒有完整收到。 |
+| `UPSTREAM_UNAVAILABLE` | 連線收到非成功 HTTP 狀態；查看 `upstream_status`。不能單憑此碼宣稱官網全面停機。 |
+| `UPSTREAM_ACCESS_DENIED` | 尚未登入的官方請求收到 401／403；這不表示使用者登入已逾時，也不能僅依狀態碼斷言是機器人阻擋。 |
+| `CAPTCHA_INVALID_IMAGE` | 請求回傳成功狀態，但內容不是支援的驗證碼圖片。 |
 | 連線拒絕或 HTTP 000 | 核對實際 Go 監聽位址與程序狀態；若改過端口，指令也要使用該端口。 |
 
-應用回傳的 `request_id` 可對照寶塔 Go 項目日誌中的 `request failed`、`code` 與 `request_id`。只提供錯誤 JSON、HTTP 狀態及對應錯誤日誌即可定位；不要貼出登入請求、Cookie、密碼或檢驗資料。
+應用回傳的 `request_id` 可對照寶塔 Go 項目日誌中的 `official request failed`、`code`、`request_id` 與可取得的 `upstream_status`。只需提供錯誤 JSON、HTTP 狀態及對應錯誤日誌；不需登入請求、Cookie、密碼或檢驗資料。網站管理者應依這些證據繼續定位；某一測試環境的取圖失敗不代表其他網路也失敗。
 
 ## 八、給開發者：建立 Linux Release
 
 先按專案 README 完成相依套件準備、測試及前端建置，確認 `internal/webui/dist/index.html` 已存在，再執行：
 
 ```bash
-bash scripts/release.sh v1.0.1
+bash scripts/release.sh v1.0.2
 ```
 
 腳本產生：
 
 ```text
-dist/releases/healthbank_1.0.1_linux_amd64.tar.gz
-dist/releases/healthbank_1.0.1_linux_arm64.tar.gz
-dist/releases/healthbank_1.0.1_source.tar.gz
+dist/releases/healthbank_1.0.2_linux_amd64.tar.gz
+dist/releases/healthbank_1.0.2_linux_arm64.tar.gz
+dist/releases/healthbank_1.0.2_source.tar.gz
 dist/releases/SHA256SUMS
 ```
 

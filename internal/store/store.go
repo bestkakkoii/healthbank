@@ -1,4 +1,4 @@
-// Copyright 2026 bestkakkoi llc.
+// Copyright 2026 bestkakkoii llc.
 // SPDX-License-Identifier: MIT
 
 // Package store persists configuration documents, never medical observations or

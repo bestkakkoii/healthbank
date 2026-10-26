@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2026 bestkakkoi llc.
+# Copyright 2026 bestkakkoii llc.
 # SPDX-License-Identifier: MIT
 """Deterministic local release archives. Python is a build-time dependency only."""
 

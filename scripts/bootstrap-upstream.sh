@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2026 bestkakkoi llc. SPDX-License-Identifier: MIT
+# Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
 # Developer/CI toolchain bootstrap; end users run the precompiled executable.
 set -euo pipefail
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"

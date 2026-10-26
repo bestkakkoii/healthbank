@@ -2,7 +2,8 @@
 
 **將健康存摺逐行列出的檢驗結果，整理成年度比較、長期趨勢與個人基準。**
 
-Copyright © 2026 **bestkakkoi llc.** All rights reserved.  
+Copyright © 2026 **bestkakkoii llc.** All rights reserved.
+
 專案程式碼採 MIT 授權；第三方元件保留其各自授權。
 
 [專案原始碼](https://github.com/bestkakkoii/healthbank) · [Linux 發行版本](https://github.com/bestkakkoii/healthbank/releases)
@@ -11,7 +12,7 @@ Copyright © 2026 **bestkakkoi llc.** All rights reserved.
 
 **主要部署目標：Debian 13（trixie）x64／x86_64。請選 `linux_amd64`，採 `GOAMD64=v1` 與純 Go 靜態編譯。**
 
-1. 一般 Intel／AMD 64 位元主機下載 `healthbank_1.0.1_linux_amd64.tar.gz`；ARM64 主機下載 `linux_arm64`。
+1. 一般 Intel／AMD 64 位元主機下載 `healthbank_1.0.2_linux_amd64.tar.gz`；ARM64 主機下載 `linux_arm64`。
 2. 在寶塔檔案管理中上傳並解壓縮，例如放在 `/www/wwwroot/healthbank/`。解壓後可把套件內層目錄當成專案目錄。
 3. 在寶塔 **Go 專案**新增專案，選擇解壓出的 **`healthbank` 執行檔**。無需啟動參數，預設服務位址為 **`127.0.0.1:8787`**；面板需要填埠號時填 **8787**。
 4. 綁定已指向這台主機的網域，啟動專案。由寶塔的網站／Go 專案反向代理映射至該埠號，使用該網域瀏覽。正式登入請使用寶塔管理的 **HTTPS**。
@@ -34,14 +35,14 @@ Copyright © 2026 **bestkakkoi llc.** All rights reserved.
 | --- | --- |
 | 檢驗總覽 | 最近檢查、涵蓋年度、優先檢視、關注項目、來源與完整性提醒 |
 | 年度比較 | 每列為檢查日期、每欄為檢驗項目；可按年份分組或連續列出日期；搜尋、類別／年度篩選、關注／異常篩選；同日多筆結果分開保留 |
-| 數值趨勢 | 實際日期間隔、原院或個人參考陰影、對數刻度、完整明細、SVG 圖表下載 |
+| 數值趨勢 | 手機預設呈現完整時間範圍、實際日期間隔、原院或個人參考陰影、對數刻度、完整明細、SVG 圖表下載 |
 | 個人設定 | Light／Dark／跟隨系統、文字大小、關注項目、已出現檢驗項目的個人上下限與最多16個不重疊分級區間 |
 
-可匯出 UTF-8 CSV，也可使用「列印／PDF」開啟瀏覽器列印。報表、圖表與匯出內容附有 **bestkakkoi llc** 版權。介面可在筆電及現代 iOS Safari 使用；實體 iPhone／Safari 的最後驗收仍需在部署後完成。
+可匯出 UTF-8 CSV，也可使用「列印／PDF」開啟瀏覽器列印。報表、圖表與匯出內容附有 **bestkakkoii llc.** 版權。介面可在筆電及現代 iOS Safari 使用；實體 iPhone／Safari 的最後驗收仍需在部署後完成。
 
-比較表固定左側日期欄，檢驗項目橫向展開；同日同項目有多筆結果時，會在同一格中分筆呈現。列印時每段最多 4 個項目欄，重複日期與項目標題，便於逐頁閱讀。
+比較表固定左側日期欄，檢驗項目橫向展開；手機日期欄縮至約三分之一可視寬度，以年份／月日分行，不隨閱讀字級成倍加寬。上方提供可見的左右捲動滑桿與箭頭按鈕，桌面閱讀長表格時保留操作列，不必先捲到最底部。列高隨實際內容調整，短內容緊湊呈現，長內容自然換行。同日同項目有多筆結果時，會在同一格中分筆呈現；該日期列會隨內容較多的儲存格增高。列印時每段最多 4 個項目欄，重複日期與項目標題，便於逐頁閱讀。
 
-「個人設定 → 閱讀字級」提供 100%、110%、120%、150% 及 200% 五種字級。文字放大時，操作列與表單會換行；比較表及趨勢圖保留各自的橫向捲動區。基礎字級採相對尺寸，配合瀏覽器字級偏好與 Safari 網頁縮放；這不等同於已驗證所有 iOS 系統 Dynamic Type 設定。
+「個人設定 → 閱讀字級」提供 100%、110%、120%、150% 及 200% 五種字級。文字放大時，操作列與表單會換行；比較表保留獨立的橫向捲動區。趨勢圖依容器寬度與字級重算座標，減少或換行日期刻度，保留所有可繪製資料點，預設不需左右捲動即可看完整時間範圍。基礎字級採相對尺寸，配合瀏覽器字級偏好與 Safari 網頁縮放；這不等同於已驗證所有 iOS 系統 Dynamic Type 設定。
 
 ## 資料與醫學判讀原則
 
@@ -97,7 +98,7 @@ npm --prefix web ci
 npm --prefix web run build
 .tools/go/bin/go test ./...
 .tools/go/bin/go vet ./...
-GO="$PWD/.tools/go/bin/go" bash scripts/release.sh v1.0.1
+GO="$PWD/.tools/go/bin/go" bash scripts/release.sh v1.0.2
 ```
 
 輸出為 `dist/releases/` 內兩種 Linux架構套件、原始碼套件與 `SHA256SUMS`。二進位採 `CGO_ENABLED=0`；伺服器不需編譯工具或外部動態 SQLite 函式庫。原始碼包不含真實報告、登入資料、資料庫、金鑰或開發快取。
@@ -116,4 +117,4 @@ GO="$PWD/.tools/go/bin/go" bash scripts/release.sh v1.0.1
 - [貢獻方式](CONTRIBUTING.md)
 - [第三方授權](THIRD_PARTY_NOTICES.md)
 
-© 2026 bestkakkoi llc. All rights reserved.
+© 2026 bestkakkoii llc. All rights reserved.

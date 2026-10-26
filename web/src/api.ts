@@ -1,4 +1,4 @@
-// Copyright (c) 2026 bestkakkoi llc. All rights reserved.
+// Copyright (c) 2026 bestkakkoii llc. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 export type Level = 1 | 2 | 3 | 4 | 5;
@@ -119,6 +119,8 @@ export class ApiError extends Error {
     public code: string,
     public status: number,
     public requestId?: string,
+    public upstreamStatus?: number,
+    public upstreamCode?: string,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -158,13 +160,30 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
   if (!response.ok) {
     const detail = (
-      payload as { error?: { message?: string; code?: string; request_id?: string } } | null
+      payload as {
+        error?: {
+          message?: string;
+          code?: string;
+          request_id?: string;
+          upstream_status?: number;
+          upstream_code?: string;
+        };
+      } | null
     )?.error;
+    const upstreamStatus = detail?.upstream_status;
     throw new ApiError(
       detail?.message ?? `服務暫時無法完成要求（HTTP ${response.status}）。`,
       detail?.code ?? 'http_error',
       response.status,
       detail?.request_id,
+      typeof upstreamStatus === 'number' && Number.isInteger(upstreamStatus) &&
+        upstreamStatus >= 100 && upstreamStatus <= 599
+        ? upstreamStatus
+        : undefined,
+      typeof detail?.upstream_code === 'string' &&
+        /^(?:[A-Z][0-9]{3}[A-Z]?|[0-9]{4})$/.test(detail.upstream_code)
+        ? detail.upstream_code
+        : undefined,
     );
   }
   if (payload === null)
@@ -215,8 +234,15 @@ export const defaultSettings = (): Settings => ({
 });
 
 export function readableError(error: unknown): string {
-  if (error instanceof ApiError)
-    return error.message + (error.requestId ? `（查詢代碼：${error.requestId}）` : '');
+  if (error instanceof ApiError) {
+    const details: string[] = [];
+    if (error.status === 424 && /^[A-Z_]{1,48}$/.test(error.code))
+      details.push(`錯誤代碼：${error.code}`);
+    if (error.upstreamStatus) details.push(`連線回應：HTTP ${error.upstreamStatus}`);
+    if (error.upstreamCode) details.push(`官方代碼：${error.upstreamCode}`);
+    if (error.requestId) details.push(`查詢代碼：${error.requestId}`);
+    return error.message + (details.length ? `（${details.join('；')}）` : '');
+  }
   if (error instanceof TypeError) return '目前無法連線到服務，請確認網路後重試。';
   return error instanceof Error ? error.message : '操作未完成，請稍後再試。';
 }

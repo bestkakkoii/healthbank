@@ -1,4 +1,4 @@
-// Copyright (c) 2026 bestkakkoi llc. All rights reserved.
+// Copyright (c) 2026 bestkakkoii llc. All rights reserved.
 // SPDX-License-Identifier: MIT
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import type { Level } from './api';
@@ -202,7 +202,7 @@ export function Icon({
 export function Copyright({ className = '' }: { className?: string }) {
   return (
     <small className={`copyright ${className}`}>
-      © {new Date().getFullYear()} bestkakkoi llc. All rights reserved.
+      © {new Date().getFullYear()} bestkakkoii llc. All rights reserved.
     </small>
   );
 }

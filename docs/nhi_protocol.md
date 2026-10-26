@@ -1,6 +1,6 @@
 ﻿# NHI connector protocol and verification boundary
 
-Copyright (c) 2026 bestkakkoi llc. SPDX-License-Identifier: MIT.
+Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
 This document describes the source-derived connector in `internal/nhi`. It is
 an implementation of the official web application's observed requests, not a
@@ -186,8 +186,10 @@ for up to six refreshes. The connector has no background timer: `Fetch`
 refreshes first when the last token acquisition is at least eight minutes
 old, and `Refresh` is available explicitly. Application-level session expiry
 must still be enforced; a refresh does not create an indefinitely persistent
-login. HTTP 401/403 and the observed expired-token code `9999` clear local
-authentication.
+login. HTTP 401/403 on authenticated requests and the observed expired-token
+code `9999` clear local authentication. A 401/403 response to an anonymous
+CAPTCHA or login transport request is instead `UPSTREAM_ACCESS_DENIED`;
+it cannot establish that a previously authenticated session has expired.
 
 `Logout` makes a bounded official logout request and closes local state in all
 cases. `Close` is a network-free disposal path for timeouts or process shutdown.
@@ -205,7 +207,7 @@ Production TLS settings and the fixed production origin are unchanged.
 
 The tests exercise:
 
-- CAPTCHA retrieval, image detection and cookie continuity.
+- CAPTCHA retrieval, complete synthetic PNG decoding and cookie continuity.
 - Exact five-field login payload, ID uppercase and eight-digit card prefix.
 - Accepted official success codes, bearer forwarding and token refresh.
 - A 52-record full result, demonstrating retrieval beyond the initial page.
@@ -213,7 +215,81 @@ The tests exercise:
 - Explicit incomplete-result, expired-session, bad-schema and HTTP failures.
 - No automatic replay of a failed manual CAPTCHA/login attempt.
 - Logout/local disposal, safe errors and redirect-origin restrictions.
+- Typed network causes, safe upstream HTTP status, and error/log redaction.
+
+## Application dependency errors (v1.0.2)
+
+The application maps official dependency failures to HTTP 424 with safe
+`error.code`, `error.message`, `error.request_id`, optional numeric
+`error.upstream_status` and a recognized `error.upstream_code`. Actual input
+errors remain HTTP 400, authentication errors remain HTTP 401, and internal
+initialization/request-construction failures remain HTTP 500. This replaces
+the previous blanket application HTTP 502; proxy custom-error rules can still
+replace responses and must be verified on the deployment.
+
+Network causes are classified from Go error types without copying raw error
+text, URLs, proxy addresses, cookies, identifiers or official response bodies.
+No automatic CAPTCHA/login retry, alternate official origin, disabled TLS
+validation or transport fingerprint change was added.
+
+On 2026-10-27 (Asia/Taipei), one bounded call through the production connector
+received HTTP 503 after 4.073 seconds. No image was obtained, so no live login
+was attempted. The exact login submission remains verified against the local
+synthetic HTTPS fixture, not an authenticated live account.
 
 These fixtures establish implementation behavior against the observed
 protocol. They do not replace a live authorized sign-in acceptance test after
 deployment or prove that the official internal protocol has remained stable.
+
+## Direct-device access and official integration options
+
+Reviewed 2026-10-27 (Asia/Taipei). These are architecture findings, not a claim
+that NHI approves this application's use of its internal web endpoints.
+
+The user's own browser can open the official site and sign in normally.
+However, a page on the self-hosted application origin cannot thereby read the
+official tab, its authenticated DOM or its storage. Browser `fetch` calls need
+the official origin's applicable CORS permission; credentialed requests have
+additional origin/credential and cookie requirements. Adding CORS headers on
+the self-hosted server does not grant permission to read official responses.
+No usable NHI CORS response was verified in this environment. See
+[MDN same-origin policy](https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Same-origin_policy)
+and [credentialed CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS).
+
+| Approach | Practical scope for this project |
+| --- | --- |
+| Existing Go connector | Keeps the no-install family browser workflow. The deployment's actual upstream failure must first be established using the safe error code and status. |
+| Official site → saved file → import | Official login originates from the user's device. The existing importer accepts the validated saved HTML/ZIP structure and parses it in Go memory; this is not browser-only processing. |
+| Browser-only direct requests | Requires explicit official cross-origin cooperation and compatible session handling; not established by the current evidence. |
+| Browser extension | A separate, explicitly installed component can operate with narrowly granted site permission. Both complete-history retrieval and each browser's behavior need validation. |
+| Official NHI SDK app | A reviewed native Android/iOS integration with API keys and a different installation/distribution model. It is not a drop-in JavaScript or Go public API. |
+
+[Chrome extension networking](https://developer.chrome.com/docs/extensions/develop/concepts/network-requests)
+distinguishes extension-origin access with host permissions from ordinary page
+and content-script requests. [Apple Safari extensions](https://developer.apple.com/safari/extensions/)
+support iPhone, iPad and Mac, but require installing/enabling the extension;
+this changes the original zero-install website requirement.
+
+The [NHI SDK application instructions](https://www.nhi.gov.tw/ch/dl-26951-93ca1150ceb34ba4beaf29b9f9223d70-1.pdf)
+describe test identities followed by reviewed production access. The
+[management rules revised 2026-10-12](https://www.nhi.gov.tw/ch/dl-26950-70acff31efa540ee939ca186e139b2a4-1.pdf)
+set organizational eligibility and review requirements. No application,
+contract or new permission was submitted as part of this release.
+
+NHI's [public feature timeline](https://www.nhi.gov.tw/ch/lp-4142-1.html)
+lists HTML, PDF, XML and JSON downloads. This does not establish that every
+official export matches the supplied saved-page structure: bulk HTML requires
+its own format validation, and JSON/XML import is not implemented here.
+
+Copying a visitor's User-Agent would change one header; the Go connection
+would still originate from the server, use its transport and maintain its own
+isolated cookie jar. It would not become the visitor's existing Safari session.
+The observed HTTP 503 is insufficient to attribute a failure to fingerprinting
+or a ban, so no fingerprint cloning, proxy rotation or access-control bypass
+was introduced.
+
+If official login moves entirely to the device in a future version, the
+current server-verified identity linkage for cross-device settings must also
+be redesigned. Importing a file or supplying an identity string does not prove
+ownership of an existing saved configuration. Browser-only parsing and a
+separate settings-sync identity would be distinct implementation work.

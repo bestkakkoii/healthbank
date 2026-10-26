@@ -1,6 +1,6 @@
 ﻿# Data handling and reporting
 
-Copyright (c) 2026 bestkakkoi llc. SPDX-License-Identifier: MIT.
+Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
 Use HTTPS for real login and medical data. Keep the Go listener on localhost behind the app-specific reverse proxy. The application stores configuration only, but login credentials and medical data still pass through its memory.
 

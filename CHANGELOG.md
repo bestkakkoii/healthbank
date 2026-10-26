@@ -1,6 +1,18 @@
 ﻿# Changelog
 
-Copyright (c) 2026 bestkakkoi llc. SPDX-License-Identifier: MIT.
+Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
+
+## v1.0.2 — 2026-10-27 (Asia/Taipei)
+
+- Added the Healthbank heart/pulse SVG favicon, a 16/32/48px ICO fallback and a 180px Apple touch icon; all icons are embedded in the Go executable.
+- Added a visible horizontal slider and left/right buttons above the comparison table, synchronized with native scrolling and resizing. Desktop controls remain available while reading long tables; narrow and short layouts retain their normal page flow.
+- Fitted trend charts to the available width on phones, including enlarged reading sizes. Dates and titles wrap or use fewer labels while every plottable observation keeps its original date and value; pointer selection resolves to the nearest visible point.
+- Removed artificial comparison-row height and excess padding. Values and status badges share a wrapping line where possible, complete metadata remains visible, and touch targets stay usable.
+- Narrowed the fixed date column on phones and short landscape layouts independently of enlarged text. Dates stack as year/month-day while complete accessible, desktop and printed labels remain available.
+- Removed artificial chart-option height at enlarged reading sizes and contained the full-record table's hidden label within its local scroller, eliminating an additional whole-page horizontal overflow.
+- Corrected project-owned copyright and company attribution to bestkakkoii llc. without changing persisted configuration identifiers.
+- Replaced blanket upstream HTTP 502 responses with structured dependency errors and safe DNS/TLS/timeout/connection causes. Anonymous CAPTCHA refusals are no longer reported as expired logins; numeric upstream status and recognized codes remain available for diagnosis.
+- Strengthened synthetic HTTPS tests to decode the CAPTCHA image and verify the exact login payload, matching challenge ID and cookie continuity. A bounded real CAPTCHA request from the build environment still received HTTP 503; live login is not claimed as verified.
 
 ## v1.0.1 — 2026-10-27 (Asia/Taipei)
 

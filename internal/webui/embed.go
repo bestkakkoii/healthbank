@@ -1,4 +1,4 @@
-// Copyright (c) 2026 bestkakkoi llc. SPDX-License-Identifier: MIT
+// Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
 package webui
 
 import (

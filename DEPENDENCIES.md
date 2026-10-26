@@ -1,6 +1,6 @@
 ﻿# Dependency provenance
 
-Copyright (c) 2026 bestkakkoi llc. SPDX-License-Identifier: MIT.
+Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
 Direct dependencies were resolved against their official upstream default branches on 2026-10-26 UTC, then pinned to immutable commits. Build reproducibility uses these commits, not a moving branch. Transitive versions follow the resolved upstream dependency graph and are locked in go.sum / web/package-lock.json; they are not all claimed to be upstream HEAD.
 

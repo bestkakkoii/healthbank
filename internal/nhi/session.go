@@ -1,4 +1,4 @@
-// Copyright (c) 2026 bestkakkoi llc. All rights reserved.
+// Copyright (c) 2026 bestkakkoii llc. All rights reserved.
 // SPDX-License-Identifier: MIT
 
 // Package nhi implements the card-number login and other laboratory results
@@ -119,7 +119,7 @@ func New() (*Session, error) {
 		Timeout:   35 * time.Second,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			if req.URL.Scheme != "https" || req.URL.Host != "myhealthbank.nhi.gov.tw" || len(via) >= 3 {
-				return errors.New("official-site redirect rejected")
+				return errRedirectRejected
 			}
 			return nil
 		},
@@ -176,7 +176,7 @@ func (s *Session) Challenge(ctx context.Context) (Challenge, error) {
 	switch contentType {
 	case "image/png", "image/jpeg", "image/gif":
 	default:
-		return Challenge{}, failure("UPSTREAM_CHANGED", "健保署未回傳有效的圖形驗證碼，請稍後重試。")
+		return Challenge{}, failure("CAPTCHA_INVALID_IMAGE", "官方連線未回傳有效的圖形驗證碼圖片，請稍後再試。")
 	}
 	s.challengeID = id
 	s.challengeExpiry = now.Add(5 * time.Minute)
@@ -347,19 +347,22 @@ func (s *Session) request(ctx context.Context, method, path string, query url.Va
 	}
 	response, err := s.client.Do(req)
 	if err != nil {
-		return nil, nil, failure("NETWORK", "暫時無法連線至健保署，請稍後重試。")
+		return nil, nil, networkFailure(err)
 	}
 	defer response.Body.Close()
 	if response.StatusCode == http.StatusUnauthorized || response.StatusCode == http.StatusForbidden {
-		s.clearAuth()
-		return nil, nil, &Error{Code: "SESSION_EXPIRED", Message: "健保署未接受此工作階段，請重新登入。", HTTPStatus: response.StatusCode}
+		if authenticated {
+			s.clearAuth()
+			return nil, nil, &Error{Code: "SESSION_EXPIRED", Message: "健保署未接受此工作階段，請重新登入。", HTTPStatus: response.StatusCode}
+		}
+		return nil, nil, &Error{Code: "UPSTREAM_ACCESS_DENIED", Message: "官方連線拒絕此請求（HTTP " + strconv.Itoa(response.StatusCode) + "）。目前尚未完成登入，請網站管理者確認主機的官方連線。", HTTPStatus: response.StatusCode}
 	}
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		return nil, nil, &Error{Code: "UPSTREAM_UNAVAILABLE", Message: "健保署服務目前未能完成請求，請稍後重試。", HTTPStatus: response.StatusCode}
+		return nil, nil, &Error{Code: "UPSTREAM_UNAVAILABLE", Message: "官方連線收到 HTTP " + strconv.Itoa(response.StatusCode) + "，目前無法完成請求，請稍後再試。", HTTPStatus: response.StatusCode}
 	}
 	body, err := io.ReadAll(io.LimitReader(response.Body, limit+1))
 	if err != nil {
-		return nil, nil, failure("NETWORK", "健保署回傳資料中斷，請重新取得資料。")
+		return nil, nil, responseReadFailure(err, response.StatusCode)
 	}
 	if int64(len(body)) > limit {
 		return nil, nil, failure("RESPONSE_TOO_LARGE", "資料超出單次讀取範圍，請縮短日期區間後重試。")

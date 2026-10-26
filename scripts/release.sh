@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Copyright 2026 bestkakkoi llc.
+# Copyright 2026 bestkakkoii llc.
 # SPDX-License-Identifier: MIT
 set -euo pipefail
 
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-version="${1:-${VERSION:-v1.0.1}}"
+version="${1:-${VERSION:-v1.0.2}}"
 if [[ ! "$version" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
   printf '%s\n' 'Version must be a semantic version such as v1.0.0 or v1.0.0-rc.1.' >&2
   exit 2

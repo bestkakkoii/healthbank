@@ -1,6 +1,6 @@
-// Copyright (c) 2026 bestkakkoi llc. SPDX-License-Identifier: MIT
+// Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
 import { spawnSync } from 'node:child_process';
-import { readFileSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { readFileSync, mkdirSync, writeFileSync, rmSync, copyFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -28,6 +28,10 @@ if (!process.argv.includes('--check')) {
     '<link rel="stylesheet" href="/app.css"><script type="module" src="/app.js"></script>');
   if (html.includes('/src/main.tsx')) throw new Error('Source entry not replaced');
   writeFileSync(path.join(out, 'index.html'), html);
+  // Include browser and Home Screen icons in the single executable deployment.
+  for (const asset of ['favicon.svg', 'favicon.ico', 'apple-touch-icon.png']) {
+    copyFileSync(path.join(web, 'public', asset), path.join(out, asset));
+  }
   // Absolute build paths are not needed by the production browser.
   rmSync(path.join(out, 'build-meta.json'));
   console.log('Built embedded production frontend.');

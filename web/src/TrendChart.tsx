@@ -1,6 +1,6 @@
-// Copyright (c) 2026 bestkakkoi llc. All rights reserved.
+// Copyright (c) 2026 bestkakkoii llc. All rights reserved.
 // SPDX-License-Identifier: MIT
-import { useId, useMemo, useRef, useState } from 'react';
+import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ItemOverride, LabRecord } from './api';
 import {
   dateLabel,
@@ -13,16 +13,37 @@ import {
 } from './model';
 import { Copyright, Icon, LevelBadge } from './ui';
 
-const WIDTH = 920;
-const HEIGHT = 390;
-const MARGIN = { top: 34, right: 36, bottom: 80, left: 78 };
-const PLOT_WIDTH = WIDTH - MARGIN.left - MARGIN.right;
-const PLOT_HEIGHT = HEIGHT - MARGIN.top - MARGIN.bottom;
-const numberLabel = (n: number) =>
-  new Intl.NumberFormat('zh-TW', { maximumSignificantDigits: 5, maximumFractionDigits: 4 }).format(
-    n,
-  );
+const numberLabel = (n: number, compact: boolean) => {
+  const label = new Intl.NumberFormat('zh-TW', {
+    maximumSignificantDigits: compact ? 3 : 5,
+    useGrouping: !compact,
+  }).format(n);
+  // Only axis text is shortened; coordinates and the complete record retain the value.
+  return compact && label.length > 6 ? n.toExponential(1).replace('e+', 'e') : label;
+};
 const day = (value: string) => Date.parse(`${value.slice(0, 10)}T00:00:00Z`);
+const textWidth = (text: string, size: number) =>
+  [...text].reduce((width, character) => width + size * (/[^\x00-\x7F]/.test(character) ? 1 : 0.63), 0);
+
+function wrapChartText(text: string, width: number, size: number): string[] {
+  const lines: string[] = [];
+  let line = '';
+  for (const character of text) {
+    if (line && textWidth(line + character, size) > width) {
+      const space = line.lastIndexOf(' ');
+      if (space > line.length / 2) {
+        lines.push(line.slice(0, space));
+        line = line.slice(space + 1);
+      } else {
+        lines.push(line.trim());
+        line = '';
+      }
+    }
+    line += character;
+  }
+  if (line.trim()) lines.push(line.trim());
+  return lines;
+}
 
 export function TrendChart({
   group,
@@ -36,6 +57,9 @@ export function TrendChart({
   const [logarithmic, setLogarithmic] = useState(false);
   const [showReference, setShowReference] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [viewport, setViewport] = useState({ width: 920, fontSize: 16 });
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const fontProbeRef = useRef<HTMLSpanElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const titleId = useId();
   const descriptionId = useId();
@@ -48,6 +72,29 @@ export function TrendChart({
   );
   const dated = sorted.filter((record) => Number.isFinite(day(record.exam_date)));
   const exact = dated.filter(isExact);
+  const hasPoints = exact.length > 0;
+  useLayoutEffect(() => {
+    const element = viewportRef.current;
+    const probe = fontProbeRef.current;
+    if (!element || !probe) return;
+    const measure = () => {
+      const width = element.clientWidth;
+      if (!width) return;
+      const fontSize = Number.parseFloat(getComputedStyle(probe).fontSize) || 16;
+      setViewport((previous) =>
+        previous.width === width && previous.fontSize === fontSize
+          ? previous
+          : { width, fontSize },
+      );
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    // This em-sized probe also responds to app/browser text-size changes when
+    // the container's width itself has not changed.
+    observer.observe(probe);
+    measure();
+    return () => observer.disconnect();
+  }, [hasPoints]);
   const unsupported = group.records.length - exact.length;
   const canLog = exact.length > 1 && exact.every((record) => record.numeric_value! > 0);
   const useLog = logarithmic && canLog;
@@ -91,18 +138,68 @@ export function TrendChart({
     minX -= 86400000 * 15;
     maxX += 86400000 * 15;
   }
-  const x = (date: string) => MARGIN.left + ((day(date) - minX) / (maxX - minX)) * PLOT_WIDTH;
+  const width = viewport.width;
+  const fontSize = viewport.fontSize;
+  const compact = width < 560;
+  const plotHeight = Math.round(Math.max(200, Math.min(280, width * 0.4 + 90), fontSize * 5));
+  const yTickCount = plotHeight >= fontSize * 7 ? 5 : 3;
+  const yTicks = Array.from({ length: yTickCount }, (_, i) =>
+    inverse(minY + ((maxY - minY) * i) / (yTickCount - 1)),
+  );
+  const yTickLabels = yTicks.map((tick) => numberLabel(tick, compact));
+  const titleLines = wrapChartText(
+    `${group.name} · ${group.unit}${useLog ? '（對數）' : ''}`,
+    Math.max(1, width - 24),
+    fontSize,
+  );
+  const margin = {
+    top: 14 + titleLines.length * fontSize * 1.35,
+    right: Math.max(24, fontSize * 0.8),
+    left: Math.max(48, ...yTickLabels.map((label) => textWidth(label, fontSize) + 12)),
+  };
+  const plotWidth = Math.max(1, width - margin.left - margin.right);
+  const dateRows = compact ? (plotWidth < fontSize * 6.5 ? 3 : 2) : 1;
+  const dateLines = (date: string) =>
+    dateRows === 1
+      ? [dateLabel(date)]
+      : dateRows === 2
+        ? [date.slice(0, 4), date.slice(5, 10).replace('-', '/')]
+        : [date.slice(0, 4), `${Number(date.slice(5, 7))}月`, `${Number(date.slice(8, 10))}日`];
+  const dateWidth = fontSize * (dateRows === 1 ? 6.3 : dateRows === 2 ? 3.15 : 2.52);
+  const dateBaseY = margin.top + plotHeight + fontSize + 12;
+  const copyrightSize = Math.max(14, fontSize * 0.85);
+  const copyrightLines = wrapChartText(
+    `© ${new Date().getFullYear()} bestkakkoii llc.`,
+    Math.max(1, width - 24),
+    copyrightSize,
+  );
+  const copyrightY =
+    dateBaseY + (dateRows - 1) * fontSize * 1.2 + fontSize * 0.2 + copyrightSize + 18;
+  const height = Math.ceil(
+    copyrightY +
+      (copyrightLines.length - 1) * copyrightSize * 1.25 +
+      copyrightSize * 0.35 +
+      12,
+  );
+  const x = (date: string) => margin.left + ((day(date) - minX) / (maxX - minX)) * plotWidth;
   const y = (value: number) =>
-    MARGIN.top + PLOT_HEIGHT - ((transform(value) - minY) / (maxY - minY)) * PLOT_HEIGHT;
-  const yTicks = Array.from({ length: 5 }, (_, i) => inverse(minY + ((maxY - minY) * i) / 4));
+    margin.top + plotHeight - ((transform(value) - minY) / (maxY - minY)) * plotHeight;
   const dates = [...new Set(dated.map((record) => record.exam_date))];
-  // Use actual elapsed time on the x-axis, not equally spaced visit positions.
+  const maxDateTicks = Math.max(2, Math.min(6, Math.floor(plotWidth / (dateWidth + fontSize)) + 1));
+  // Thin labels only. Every observation keeps its real elapsed-time coordinate.
   const tickDates =
-    dates.length <= 5
+    dates.length <= maxDateTicks &&
+    dates.every((date, index) => index === 0 || x(date) - x(dates[index - 1]) >= dateWidth + fontSize)
       ? dates
-      : [0, 1, 2, 3, 4].map((index) =>
-          new Date(minX + ((maxX - minX) * index) / 4).toISOString().slice(0, 10),
-        );
+      : [
+          ...new Set(
+            Array.from({ length: maxDateTicks }, (_, index) =>
+              new Date(minX + ((maxX - minX) * index) / (maxDateTicks - 1))
+                .toISOString()
+                .slice(0, 10),
+            ),
+          ),
+        ];
   const segments: LabRecord[][] = [];
   let segment: LabRecord[] = [];
   const sameDateCounts = new Map<string, number>();
@@ -117,6 +214,25 @@ export function TrendChart({
   }
   if (segment.length) segments.push(segment);
   const active = exact.find((record) => record.id === activeId);
+
+  function nearestPoint(clientX: number, clientY: number): LabRecord | null {
+    const bounds = svgRef.current?.getBoundingClientRect();
+    if (!bounds || !bounds.width || !bounds.height) return null;
+    const pointerX = ((clientX - bounds.left) / bounds.width) * width;
+    const pointerY = ((clientY - bounds.top) / bounds.height) * height;
+    if (pointerY < margin.top - 14 || pointerY > margin.top + plotHeight + 14) return null;
+    let nearest: LabRecord | null = null;
+    let distance = Math.max(28, fontSize) ** 2;
+    for (const record of exact) {
+      const candidate =
+        (x(record.exam_date) - pointerX) ** 2 + (y(record.numeric_value!) - pointerY) ** 2;
+      if (candidate < distance) {
+        nearest = record;
+        distance = candidate;
+      }
+    }
+    return nearest;
+  }
 
   function exportSvg() {
     const element = svgRef.current;
@@ -140,8 +256,8 @@ export function TrendChart({
         target.style.setProperty(property, style.getPropertyValue(property));
     });
     copy.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-    copy.setAttribute('width', String(WIDTH));
-    copy.setAttribute('height', String(HEIGHT));
+    copy.setAttribute('width', String(width));
+    copy.setAttribute('height', String(height));
     copy.style.background = getComputedStyle(document.documentElement)
       .getPropertyValue('--surface')
       .trim();
@@ -191,150 +307,178 @@ export function TrendChart({
       </div>
       {exact.length ? (
         <div className="chart-container">
-          <svg
-            ref={svgRef}
-            viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-            className="trend-svg"
-            role="img"
-            aria-labelledby={`${titleId} ${descriptionId}`}
-          >
-            <title id={titleId}>{group.name}歷年趨勢</title>
-            <desc id={descriptionId}>
-              {exact.length} 筆確切數值，單位 {group.unit}，日期從 {dateLabel(dated[0]?.exam_date)}{' '}
-              至 {dateLabel(dated.at(-1)?.exam_date ?? '')}。{useLog ? '縱軸使用對數刻度。' : ''}
-              所有結果亦列於下方可操作的明細表。
-            </desc>
-            <rect width={WIDTH} height={HEIGHT} className="chart-background" />
-            <text x={MARGIN.left} y={18} className="axis-title">
-              {group.name} · {group.unit}
-              {useLog ? '（對數）' : ''}
-            </text>
-            {showReference &&
-              exact.map((record, index) => {
-                const low = lowFor(record),
-                  high = highFor(record);
-                if (
-                  (low === null && high === null) ||
-                  (useLog && ((low !== null && low <= 0) || (high !== null && high <= 0)))
-                )
-                  return null;
-                const left =
-                  index === 0
-                    ? MARGIN.left
-                    : (x(exact[index - 1].exam_date) + x(record.exam_date)) / 2;
-                const right =
-                  index === exact.length - 1
-                    ? MARGIN.left + PLOT_WIDTH
-                    : (x(record.exam_date) + x(exact[index + 1].exam_date)) / 2;
-                const top = high === null ? MARGIN.top : y(high),
-                  bottom = low === null ? MARGIN.top + PLOT_HEIGHT : y(low);
-                if (bottom < top) return null;
-                return (
-                  <g key={record.id} className="reference-area">
-                    <rect
-                      x={left}
-                      y={Math.max(MARGIN.top, top)}
-                      width={Math.max(0, right - left)}
-                      height={Math.max(
-                        0,
-                        Math.min(MARGIN.top + PLOT_HEIGHT, bottom) - Math.max(MARGIN.top, top),
-                      )}
-                    />
-                    {high !== null && <line x1={left} x2={right} y1={top} y2={top} />}{' '}
-                    {low !== null && <line x1={left} x2={right} y1={bottom} y2={bottom} />}
-                  </g>
-                );
-              })}
-            {yTicks.map((tick, index) => (
-              <g key={index}>
-                <line
-                  x1={MARGIN.left}
-                  x2={WIDTH - MARGIN.right}
-                  y1={y(tick)}
-                  y2={y(tick)}
-                  className="chart-grid"
-                />
-                <text x={MARGIN.left - 14} y={y(tick) + 5} textAnchor="end" className="axis-label">
-                  {numberLabel(tick)}
-                </text>
-              </g>
-            ))}
-            {tickDates.map((date) => (
-              <g key={date}>
-                <line
-                  x1={x(date)}
-                  x2={x(date)}
-                  y1={HEIGHT - MARGIN.bottom}
-                  y2={HEIGHT - MARGIN.bottom + 5}
-                  className="chart-axis"
-                />
-                <text
-                  x={x(date)}
-                  y={HEIGHT - MARGIN.bottom + 27}
-                  textAnchor="middle"
-                  className="axis-label"
-                >
-                  {dateLabel(date)}
-                </text>
-              </g>
-            ))}
-            {segments.map(
-              (part, index) =>
-                part.length >= 2 && (
-                  <polyline
-                    key={index}
-                    points={part
-                      .map((record) => `${x(record.exam_date)},${y(record.numeric_value!)}`)
-                      .join(' ')}
-                    className="chart-line"
-                  />
-                ),
-            )}
-            {exact.map((record) => (
-              <g key={record.id} className={`chart-point level-${record.level ?? 0}`}>
-                <circle
-                  cx={x(record.exam_date)}
-                  cy={y(record.numeric_value!)}
-                  r={activeId === record.id ? 8 : 6}
-                  className="point-dot"
-                />
-                <circle
-                  cx={x(record.exam_date)}
-                  cy={y(record.numeric_value!)}
-                  r="28"
-                  fill="transparent"
-                  stroke="none"
-                  tabIndex={0}
-                  role="button"
-                  aria-label={`${dateLabel(record.exam_date)}，${record.result} ${record.unit}，${record.institution || ''}，開啟明細`}
-                  onMouseEnter={() => setActiveId(record.id)}
-                  onMouseLeave={() => setActiveId(null)}
-                  onFocus={() => setActiveId(record.id)}
-                  onBlur={() => setActiveId(null)}
-                  onClick={() => onDetail(record)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      onDetail(record);
-                    }
-                  }}
-                >
-                  <title>
-                    {dateLabel(record.exam_date)} · {record.result} {record.unit} ·{' '}
-                    {record.institution}
-                  </title>
-                </circle>
-              </g>
-            ))}
-            <text
-              x={WIDTH - MARGIN.right}
-              y={HEIGHT - 14}
-              textAnchor="end"
-              className="chart-copyright"
+          <div className="chart-viewport" ref={viewportRef}>
+            <span className="chart-font-probe" ref={fontProbeRef} aria-hidden="true" />
+            <svg
+              ref={svgRef}
+              viewBox={`0 0 ${width} ${height}`}
+              width={width}
+              height={height}
+              className="trend-svg"
+              role="img"
+              aria-labelledby={`${titleId} ${descriptionId}`}
+              onPointerMove={(event) => setActiveId(nearestPoint(event.clientX, event.clientY)?.id ?? null)}
+              onPointerLeave={() => setActiveId(null)}
+              onClick={(event) => {
+                const record = nearestPoint(event.clientX, event.clientY);
+                if (record) onDetail(record);
+              }}
             >
-              © {new Date().getFullYear()} bestkakkoi llc. All rights reserved.
-            </text>
-          </svg>
+              <title id={titleId}>{group.name}歷年趨勢</title>
+              <desc id={descriptionId}>
+                {exact.length} 筆確切數值，單位 {group.unit}，日期從 {dateLabel(dated[0]?.exam_date)}{' '}
+                至 {dateLabel(dated.at(-1)?.exam_date ?? '')}。{useLog ? '縱軸使用對數刻度。' : ''}
+                所有結果亦列於下方可操作的明細表。
+              </desc>
+              <rect width={width} height={height} className="chart-background" />
+              {titleLines.map((line, index) => (
+                <text x={12} y={8 + fontSize + index * fontSize * 1.35} className="axis-title" key={index}>
+                  {line}
+                </text>
+              ))}
+              {showReference &&
+                exact.map((record, index) => {
+                  const low = lowFor(record),
+                    high = highFor(record);
+                  if (
+                    (low === null && high === null) ||
+                    (useLog && ((low !== null && low <= 0) || (high !== null && high <= 0)))
+                  )
+                    return null;
+                  const left =
+                    index === 0
+                      ? margin.left
+                      : (x(exact[index - 1].exam_date) + x(record.exam_date)) / 2;
+                  const right =
+                    index === exact.length - 1
+                      ? margin.left + plotWidth
+                      : (x(record.exam_date) + x(exact[index + 1].exam_date)) / 2;
+                  const top = high === null ? margin.top : y(high),
+                    bottom = low === null ? margin.top + plotHeight : y(low);
+                  if (bottom < top) return null;
+                  return (
+                    <g key={record.id} className="reference-area">
+                      <rect
+                        x={left}
+                        y={Math.max(margin.top, top)}
+                        width={Math.max(0, right - left)}
+                        height={Math.max(
+                          0,
+                          Math.min(margin.top + plotHeight, bottom) - Math.max(margin.top, top),
+                        )}
+                      />
+                      {high !== null && <line x1={left} x2={right} y1={top} y2={top} />}{' '}
+                      {low !== null && <line x1={left} x2={right} y1={bottom} y2={bottom} />}
+                    </g>
+                  );
+                })}
+              {yTicks.map((tick, index) => (
+                <g key={index}>
+                  <line
+                    x1={margin.left}
+                    x2={width - margin.right}
+                    y1={y(tick)}
+                    y2={y(tick)}
+                    className="chart-grid"
+                  />
+                  <text x={margin.left - 12} y={y(tick) + fontSize * 0.35} textAnchor="end" className="axis-label">
+                    {yTickLabels[index]}
+                  </text>
+                </g>
+              ))}
+              {tickDates.map((date) => (
+                <g key={date}>
+                  <line
+                    x1={x(date)}
+                    x2={x(date)}
+                    y1={margin.top + plotHeight}
+                    y2={margin.top + plotHeight + 5}
+                    className="chart-axis"
+                  />
+                  <text
+                    x={Math.max(12 + dateWidth / 2, Math.min(width - 12 - dateWidth / 2, x(date)))}
+                    y={dateBaseY}
+                    textAnchor="middle"
+                    className="axis-label"
+                    aria-label={dateLabel(date)}
+                  >
+                    {dateLines(date).map((line, index) => (
+                      <tspan
+                        x={Math.max(12 + dateWidth / 2, Math.min(width - 12 - dateWidth / 2, x(date)))}
+                        dy={index === 0 ? 0 : fontSize * 1.2}
+                        key={index}
+                      >
+                        {line}
+                      </tspan>
+                    ))}
+                  </text>
+                </g>
+              ))}
+              {segments.map(
+                (part, index) =>
+                  part.length >= 2 && (
+                    <polyline
+                      key={index}
+                      points={part
+                        .map((record) => `${x(record.exam_date)},${y(record.numeric_value!)}`)
+                        .join(' ')}
+                      className="chart-line"
+                    />
+                  ),
+              )}
+              {exact.map((record) => (
+                <g key={record.id} className={`chart-point level-${record.level ?? 0}`}>
+                  <circle
+                    cx={x(record.exam_date)}
+                    cy={y(record.numeric_value!)}
+                    r={activeId === record.id ? 8 : 6}
+                    className="point-dot"
+                  />
+                  <circle
+                    cx={x(record.exam_date)}
+                    cy={y(record.numeric_value!)}
+                    r="22"
+                    fill="transparent"
+                    stroke="none"
+                    className="chart-point-target"
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`${dateLabel(record.exam_date)}，${record.result} ${record.unit}，${record.institution || ''}，開啟明細`}
+                    onFocus={() => setActiveId(record.id)}
+                    onBlur={() => setActiveId(null)}
+                    onClick={(event) => {
+                      // Assistive technology may activate the focused SVG button
+                      // without pointer coordinates; retain its exact identity.
+                      event.stopPropagation();
+                      onDetail(record);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        onDetail(record);
+                      }
+                    }}
+                  >
+                    <title>
+                      {dateLabel(record.exam_date)} · {record.result} {record.unit} ·{' '}
+                      {record.institution}
+                    </title>
+                  </circle>
+                </g>
+              ))}
+              {copyrightLines.map((line, index) => (
+                <text
+                  x={width - 12}
+                  y={copyrightY + index * copyrightSize * 1.25}
+                  textAnchor="end"
+                  className="chart-copyright"
+                  key={index}
+                >
+                  {line}
+                </text>
+              ))}
+            </svg>
+          </div>
           <div className="chart-live-value" aria-live="polite">
             {active ? (
               <>
@@ -367,7 +511,7 @@ export function TrendChart({
       {exact.length > 0 && (
         <p className="chart-footnote">
           <Icon name="info" size={16} />
-          圖表可左右滑動，點選資料點查看原始報告。陰影依各次報告的適用參考值分段呈現；同日多筆結果全部保留，不推測當日先後順序。
+          圖表完整呈現所選期間，點選資料點查看原始報告；密集或重疊的資料點可由下方完整紀錄逐筆查閱。陰影依各次報告的適用參考值分段呈現；同日多筆結果全部保留，不推測當日先後順序。
         </p>
       )}
       <div className="chart-records">

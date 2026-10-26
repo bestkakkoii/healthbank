@@ -1,4 +1,4 @@
-// Copyright (c) 2026 bestkakkoi llc. SPDX-License-Identifier: MIT
+// Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
 package main
 
 import (
@@ -32,7 +32,7 @@ func main() {
 }
 func run(args []string) error {
 	if len(args) == 1 && (args[0] == "--version" || args[0] == "version") {
-		fmt.Printf("healthbank %s\ncommit %s\nbuilt %s\nCopyright (c) 2026 bestkakkoi llc.\n", version, commit, buildTime)
+		fmt.Printf("healthbank %s\ncommit %s\nbuilt %s\nCopyright (c) 2026 bestkakkoii llc.\n", version, commit, buildTime)
 		return nil
 	}
 	if len(args) == 1 && (args[0] == "--help" || args[0] == "-h") {
@@ -96,7 +96,7 @@ func run(args []string) error {
 	defer stop()
 	failures := make(chan error, 1)
 	go func() { failures <- httpServer.Serve(listener) }()
-	slog.Info("healthbank started", "version", version, "address", cfg.Addr, "database", cfg.Driver, "copyright", "2026 bestkakkoi llc.")
+	slog.Info("healthbank started", "version", version, "address", cfg.Addr, "database", cfg.Driver, "copyright", "2026 bestkakkoii llc.")
 	select {
 	case err := <-failures:
 		if !errors.Is(err, http.ErrServerClosed) {

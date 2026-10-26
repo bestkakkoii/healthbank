@@ -1,6 +1,6 @@
 ﻿# Third-party notices
 
-Copyright (c) 2026 bestkakkoi llc. for the Healthbank application. Third-party works retain their own copyrights and licenses.
+Copyright (c) 2026 bestkakkoii llc. for the Healthbank application. Third-party works retain their own copyrights and licenses.
 
 ## Runtime components
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 bestkakkoi llc. All rights reserved.
+// Copyright (c) 2026 bestkakkoii llc. All rights reserved.
 // SPDX-License-Identifier: MIT
 import type { LabRecord, Level } from './api';
 
@@ -201,7 +201,7 @@ export function toCsv(records: LabRecord[]): string {
       r.order_code,
       r.source,
       r.interpretation,
-      `© ${new Date().getFullYear()} bestkakkoi llc. All rights reserved.`,
+      `© ${new Date().getFullYear()} bestkakkoii llc. All rights reserved.`,
     ]),
   ];
   return '\ufeff' + rows.map((row) => row.map(quote).join(',')).join('\r\n');

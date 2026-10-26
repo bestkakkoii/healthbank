@@ -1,4 +1,4 @@
-// Copyright (c) 2026 bestkakkoi llc. All rights reserved.
+// Copyright (c) 2026 bestkakkoii llc. All rights reserved.
 // SPDX-License-Identifier: MIT
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
@@ -598,7 +598,7 @@ export default function App() {
           </div>
           <div>
             <b>健康映覽</b>
-            <span>HEALTHBANK · BY BESTKAKKOI</span>
+            <span>HEALTHBANK · BY BESTKAKKOII</span>
           </div>
         </div>
         <div className="workspace-label">個人健康工作站</div>
@@ -633,7 +633,7 @@ export default function App() {
             </div>
           </div>
           <div className="sidebar-meta">
-            <span>bestkakkoi llc</span>
+            <span>bestkakkoii llc.</span>
             <span>{session.version ? `v${session.version.replace(/^v/, '')}` : 'v1'}</span>
           </div>
         </div>

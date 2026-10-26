@@ -1,4 +1,4 @@
-// Copyright (c) 2026 bestkakkoi llc. SPDX-License-Identifier: MIT
+// Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
 package server
 
 import (
@@ -15,6 +15,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -29,6 +30,8 @@ import (
 const cookieName = "healthbank_session"
 const sessionLifetime = 30 * time.Minute
 const maxSessions = 64
+
+var upstreamCodePattern = regexp.MustCompile(`^(?:[A-Z][0-9]{3}[A-Z]?|[0-9]{4})$`)
 
 type session struct {
 	mu                       sync.Mutex
@@ -289,20 +292,59 @@ func (a *App) fail(w http.ResponseWriter, r *http.Request, status int, code, mes
 	a.json(w, status, map[string]any{"error": map[string]string{"code": code, "message": message, "request_id": id}})
 }
 func (a *App) upstreamError(w http.ResponseWriter, r *http.Request, err error) {
+	detail := struct {
+		Code           string `json:"code"`
+		Message        string `json:"message"`
+		RequestID      string `json:"request_id"`
+		UpstreamStatus int    `json:"upstream_status,omitempty"`
+		UpstreamCode   string `json:"upstream_code,omitempty"`
+	}{
+		Code:      "upstream_failed",
+		Message:   "官方連線未能完成，請稍後重試或匯入已另存的報告。",
+		RequestID: w.Header().Get("X-Request-ID"),
+	}
+	// This app is reachable, but the requested action depends on an official
+	// request that failed. Do not disguise that distinction as an origin 502.
+	status := http.StatusFailedDependency
 	var e *nhi.Error
 	if errors.As(err, &e) {
-		status := 502
-		code := strings.ToUpper(e.Code)
-		if strings.Contains(code, "EXPIRED") || strings.Contains(code, "NOT_AUTHENTICATED") || code == "AUTH_FAILED" {
-			status = 401
+		known := true
+		switch e.Code {
+		case "INVALID_INPUT", "CHALLENGE_REQUIRED":
+			status = http.StatusBadRequest
+		case "SESSION_EXPIRED", "AUTH_FAILED", "CLOSED":
+			status = http.StatusUnauthorized
+		case "INITIALIZATION_FAILED", "REQUEST_FAILED":
+			status = http.StatusInternalServerError
+		case "NETWORK", "DNS_FAILED", "TIMEOUT", "TLS_CERTIFICATE", "TLS_FAILED",
+			"CONNECTION_REFUSED", "CONNECTION_RESET", "CONNECTION_FAILED", "REQUEST_CANCELED",
+			"UPSTREAM_REDIRECT_REJECTED", "RESPONSE_INTERRUPTED", "CAPTCHA_INVALID_IMAGE",
+			"UPSTREAM_ACCESS_DENIED", "UPSTREAM_UNAVAILABLE", "UPSTREAM_CHANGED",
+			"UPSTREAM_REJECTED", "RESPONSE_TOO_LARGE", "INCOMPLETE_RESPONSE":
+		default:
+			known = false
 		}
-		if code == "INVALID_INPUT" || code == "CHALLENGE_REQUIRED" {
-			status = 400
+		if known {
+			detail.Code, detail.Message = e.Code, e.Message
 		}
-		a.fail(w, r, status, e.Code, e.Message)
-		return
+		if e.HTTPStatus >= 100 && e.HTTPStatus <= 599 {
+			detail.UpstreamStatus = e.HTTPStatus
+		}
+		if upstreamCodePattern.MatchString(e.UpstreamCode) {
+			detail.UpstreamCode = e.UpstreamCode
+		}
 	}
-	a.fail(w, r, 502, "upstream_failed", "官方服務暫時無法連線，請稍後重試或匯入已另存的報告。")
+	if status == http.StatusFailedDependency || status >= 500 {
+		attributes := []slog.Attr{slog.String("code", detail.Code), slog.String("request_id", detail.RequestID)}
+		if detail.UpstreamStatus != 0 {
+			attributes = append(attributes, slog.Int("upstream_status", detail.UpstreamStatus))
+		}
+		if detail.UpstreamCode != "" {
+			attributes = append(attributes, slog.String("upstream_code", detail.UpstreamCode))
+		}
+		slog.LogAttrs(r.Context(), slog.LevelWarn, "official request failed", attributes...)
+	}
+	a.json(w, status, map[string]any{"error": detail})
 }
 func decodeJSON(w http.ResponseWriter, r *http.Request, v any) error {
 	r.Body = http.MaxBytesReader(w, r.Body, 256<<10)
@@ -359,6 +401,7 @@ func (a *App) captcha(w http.ResponseWriter, r *http.Request, s *session) {
 			return
 		}
 	}
+	s.challenge = ""
 	ch, err := s.official.Challenge(r.Context())
 	if err != nil {
 		a.upstreamError(w, r, err)

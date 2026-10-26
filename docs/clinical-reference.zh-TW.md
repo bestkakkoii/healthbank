@@ -1,6 +1,6 @@
 ﻿# Healthbank v1 臨床參考與顏色判讀說明
 
-Copyright (c) 2026 bestkakkoi llc. All rights reserved. SPDX-License-Identifier: MIT.
+Copyright (c) 2026 bestkakkoii llc. All rights reserved. SPDX-License-Identifier: MIT.
 
 文件版本：v1。來源查核日期：2026-10-27（臺灣時間）。
 
@@ -309,4 +309,4 @@ v1 會以隨版本提供的目前規則，重新顯示工作階段中的歷史�
 [S10]: https://www.aarc.org/wp-content/uploads/2025/03/davis-et-al-2013-aarc-clinical-practice-guideline-blood-gas-analysis-and-hemoximetry-2013.pdf
 [S11]: https://wd.vghtpe.gov.tw/path/Fpage.action?fid=7351&muid=5616
 
-Copyright (c) 2026 bestkakkoi llc.
+Copyright (c) 2026 bestkakkoii llc.
