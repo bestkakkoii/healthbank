@@ -2837,8 +2837,8 @@
 @layer responsive {
   @media (max-width: 780px), (max-height: 32rem) and (max-width: 70rem) {
     .comparison-scroll {
-      /* About one third of a narrow content area, independent of app text scaling. */
-      --comparison-date-width: clamp(86px, calc(33.333vw - 15px), 110px);
+      /* Keep the date below one third of a narrow content area, independent of text scaling. */
+      --comparison-date-width: clamp(84px, calc(30vw - 12px), 104px);
     }
     .comparison-screen .comparison-table .date-column {
       width: var(--comparison-date-width);
@@ -2847,7 +2847,7 @@
       padding-inline: 4px;
     }
     .comparison-screen .comparison-date-label {
-      font-size: max(16px, 0.85rem);
+      font-size: max(16px, 0.75rem);
     }
     .comparison-screen .comparison-date-year,
     .comparison-screen .comparison-date-monthday {

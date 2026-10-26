@@ -69,8 +69,17 @@ func TestSourceDerivedFlowWithFullSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 	imageBytes := imageBuffer.Bytes()
+	rows := make([]map[string]any, 52)
+	for i := range rows {
+		rows[i] = map[string]any{
+			"reaL_INSPECT_DATE": "114/03/20", "funC_DATE": "114/03/02", "assaY_UPLOAD_DATE": "114/04/01",
+			"ordeR_CODE": "TEST01", "ordeR_NAME": "Synthetic panel", "assaY_ITEM_NAME": fmt.Sprintf("Synthetic item %d", i),
+			"assaY_VALUE": "大於等於30", "uniT_DATA": "test-unit", "consulT_VALUE": "[1][10]",
+			"hosP_ABBR": "Synthetic institution", "orI_TYPE": "A", "assaY_MARK": 1,
+		}
+	}
 	var challengeID string
-	var loginCalls, refreshCalls, searchCalls, logoutCalls atomic.Int32
+	var loginCalls, refreshCalls, pageLoadCalls, searchCalls, logoutCalls atomic.Int32
 	session := fixtureSession(t, func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case captchaPath:
@@ -105,6 +114,7 @@ func TestSourceDerivedFlowWithFullSearch(t *testing.T) {
 			}
 			respondJSON(t, w, map[string]string{"error_code": "0000", "jwt_token": "synthetic.refreshed.token"})
 		case pageLoadPath:
+			pageLoadCalls.Add(1)
 			if r.Header.Get("Authorization") != "Bearer synthetic.refreshed.token" {
 				t.Error("missing refreshed bearer token")
 			}
@@ -112,20 +122,15 @@ func TestSourceDerivedFlowWithFullSearch(t *testing.T) {
 			if q.Get("s_sort") != "A1" || q.Get("s_type") != "" || q.Get("nowPage") != "1" || q.Get("pageDataCount") != "50" || q.Get("s_date") != "2025-01-01" || q.Get("e_date") != "2025-12-31" {
 				t.Error("incorrect page-load query")
 			}
-			respondJSON(t, w, map[string]any{"sdate": "2025-01-01", "edate": "2025-12-31", "counts": "52", "sP_IHKE3409S02_Data": []any{}})
+			respondJSON(t, w, map[string]any{"sdate": "2025-03-01", "edate": "2025-12-31", "counts": "52", "sP_IHKE3409S02_Data": rows[:50]})
 		case searchPath:
 			searchCalls.Add(1)
-			if r.URL.Query().Has("nowPage") || r.URL.Query().Has("pageDataCount") {
-				t.Error("full-search request must not be paginated")
+			q := r.URL.Query()
+			if len(q) != 4 || q.Get("s_type") != "" || q.Get("s_sort") != "A1" || q.Get("s_date") != "2025-03-01" || q.Get("e_date") != "2025-12-31" {
+				t.Error("full search must use the returned interval and omit pagination")
 			}
-			rows := make([]map[string]any, 52)
-			for i := range rows {
-				rows[i] = map[string]any{
-					"reaL_INSPECT_DATE": "114/01/20", "funC_DATE": "114/01/02", "assaY_UPLOAD_DATE": "114/02/01",
-					"ordeR_CODE": "TEST01", "ordeR_NAME": "Synthetic panel", "assaY_ITEM_NAME": fmt.Sprintf("Synthetic item %d", i),
-					"assaY_VALUE": "大於等於30", "uniT_DATA": "test-unit", "consulT_VALUE": "[1][10]",
-					"hosP_ABBR": "Synthetic institution", "orI_TYPE": "A", "assaY_MARK": 1,
-				}
+			if r.Header.Get("Authorization") != "Bearer synthetic.refreshed.token" {
+				t.Error("full search lost the refreshed bearer token")
 			}
 			respondJSON(t, w, rows)
 		case logoutPath:
@@ -154,11 +159,19 @@ func TestSourceDerivedFlowWithFullSearch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(report.Records) != 52 || report.ReportedCount != 52 || searchCalls.Load() != 1 || refreshCalls.Load() != 1 || loginCalls.Load() != 1 {
+	if len(report.Records) != 52 || report.ReportedCount != 52 || pageLoadCalls.Load() != 1 || searchCalls.Load() != 1 || refreshCalls.Load() != 1 || loginCalls.Load() != 1 {
 		t.Fatal("did not fetch the full result set")
 	}
+	if report.StartDate != "2025-03-01" || report.EndDate != "2025-12-31" {
+		t.Fatal("effective official interval was replaced by the requested interval")
+	}
+	for i, row := range report.Records {
+		if row.ItemName != fmt.Sprintf("Synthetic item %d", i) {
+			t.Fatal("initial page was appended to or substituted for the complete result")
+		}
+	}
 	row := report.Records[0]
-	if row.CheckDate != "114/01/20" || row.VisitDate != "114/01/02" || row.UploadDate != "114/02/01" || row.Result != "大於等於30" || row.OfficialFlag != "1" || row.Reference != "[1][10]" {
+	if row.CheckDate != "114/03/20" || row.VisitDate != "114/03/02" || row.UploadDate != "114/04/01" || row.Result != "大於等於30" || row.OfficialFlag != "1" || row.Reference != "[1][10]" {
 		t.Fatal("original laboratory/date semantics were not preserved")
 	}
 	if err := session.Logout(ctx); err != nil || logoutCalls.Load() != 1 || session.token != "" || session.client.Jar != nil || !session.closed {

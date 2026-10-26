@@ -143,8 +143,8 @@ export default function App() {
   const [onlyAbnormal, setOnlyAbnormal] = useState(false);
   const [granularity, setGranularity] = useState<'date' | 'year'>('year');
   const [selectedGroupId, setSelectedGroupId] = useState('');
-  const [dateFrom, setDateFrom] = useState(`${new Date().getFullYear() - 4}-01-01`);
-  const [dateTo, setDateTo] = useState(today);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [rangeOpen, setRangeOpen] = useState(false);
   const mainHeading = useRef<HTMLHeadingElement>(null);
   const settings = session.settings;
@@ -180,8 +180,14 @@ export default function App() {
         if (controller.signal.aborted) return;
         if (results[0].status === 'fulfilled') setCatalog(results[0].value);
         else setError(`參考項目目錄暫時無法載入。${readableError(results[0].reason)}`);
-        if (results[1].status === 'fulfilled') setReport(results[1].value);
-        else setError(readableError(results[1].reason));
+        if (results[1].status === 'fulfilled') {
+          const current = results[1].value;
+          setReport(current);
+          if (current.official_query) {
+            setDateFrom(current.official_query.start_date);
+            setDateTo(current.official_query.end_date);
+          }
+        } else setError(readableError(results[1].reason));
       } catch (error) {
         if (!controller.signal.aborted) setError(readableError(error));
       } finally {
@@ -383,7 +389,7 @@ export default function App() {
     setBaseline(null);
     setLoginOpen(false);
     navigate('overview');
-    await fetchReports();
+    await fetchReports(true);
   }
 
   async function expireOfficialSession() {
@@ -413,15 +419,22 @@ export default function App() {
     }
   }
 
-  async function fetchReports() {
-    if (!dateFrom || !dateTo || dateFrom > dateTo) {
+  async function fetchReports(useOfficialDefault = false) {
+    const from = useOfficialDefault ? '' : dateFrom;
+    const to = useOfficialDefault ? '' : dateTo;
+    if ((from || to) && (!from || !to || from > to)) {
       setError('請選擇有效的開始與結束日期，開始日期不可晚於結束日期。');
       return;
     }
     setBusy('正在向健康存摺取得檢驗資料…');
     setError('');
     try {
-      await receiveReports(await api.reports(dateFrom, dateTo));
+      const result = await api.reports(from, to);
+      await receiveReports(result);
+      if (result.official_query) {
+        setDateFrom(result.official_query.start_date);
+        setDateTo(result.official_query.end_date);
+      }
       setRangeOpen(false);
       setMessage('檢驗資料已更新。');
     } catch (error) {
@@ -819,6 +832,18 @@ export default function App() {
               </button>
             </Alert>
           )}
+          {report.official_query && (
+            <Alert>
+              <strong>本次取得 {report.records.length} 筆原始結果</strong>
+              <br />
+              官方查詢期間：{dateLabel(report.official_query.start_date)}～
+              {dateLabel(report.official_query.end_date)}；
+              {report.official_query.reported_count === null
+                ? '官方未提供總筆數。'
+                : `官方回報 ${report.official_query.reported_count} 筆。`}
+              完整性核對適用於這個期間。
+            </Alert>
+          )}
           {report.warnings
             .filter((warning) => !isDemo || !warning.startsWith('示範模式：'))
             .map((warning, index) => (
@@ -846,7 +871,7 @@ export default function App() {
                   value={dateFrom}
                   onChange={(event) => setDateFrom(event.target.value)}
                   max={dateTo}
-                  required
+                  required={!!dateTo}
                 />
               </label>
               <span className="date-range-separator">至</span>
@@ -858,11 +883,19 @@ export default function App() {
                   onChange={(event) => setDateTo(event.target.value)}
                   min={dateFrom}
                   max={today()}
-                  required
+                  required={!!dateFrom}
                 />
               </label>
               <button className="button primary" type="submit" disabled={!!busy}>
                 取得此範圍
+              </button>
+              <button
+                className="button secondary"
+                type="button"
+                disabled={!!busy}
+                onClick={() => void fetchReports(true)}
+              >
+                官網預設期間
               </button>
             </form>
           )}

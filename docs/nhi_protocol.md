@@ -128,6 +128,12 @@ are Gregorian dates; ROC year conversion is an application/import concern.
 An explicit interval requires both endpoints and an end date not before the
 start date.
 
+The v1.0.2 frontend starts with empty dates and adopts the returned effective
+interval; it no longer imposes an initial four-year window. The saved component
+does not establish an earliest available date or a maximum permitted range.
+Its default interval is therefore not evidence of all available history. Users
+can request an earlier explicit interval, subject to the official response.
+
 The complete search uses `s_type`, `s_date`, `e_date`, and `s_sort` only. Source
 is left empty to include A/B/C/D, and `A1` means newest inspection date first.
 There is no assay/category filter in the connector.
@@ -152,6 +158,18 @@ rows and changed schemas are not treated as empty reports.
 Requests time out after 35 seconds each. JSON bodies are limited to 16 MiB,
 authentication responses to 64 KiB, and complete reports to 50,000 records.
 Oversized data produces an explicit request to shorten the selected interval.
+
+The application exposes transient `official_query` metadata alongside the
+report: `start_date`, `end_date`, and `reported_count`. The last field is `null`
+when the official total is unavailable, not a fabricated count from the array.
+The UI displays the actual record count and these effective dates. Metadata is
+available on the current-report endpoint and is cleared with the session;
+imports, demo reports and anonymous responses omit it. Completeness is scoped
+to the effective query interval, not a claim of lifetime coverage.
+
+For `INCOMPLETE_RESPONSE` only, the API includes `error.expected_count` and
+`error.received_count` when `0 <= received < expected <= 50000`. A received
+count of zero is retained. Invalid pairs and unrelated errors omit both fields.
 
 ## Row mapping
 
@@ -210,12 +228,16 @@ The tests exercise:
 - CAPTCHA retrieval, complete synthetic PNG decoding and cookie continuity.
 - Exact five-field login payload, ID uppercase and eight-digit card prefix.
 - Accepted official success codes, bearer forwarding and token refresh.
-- A 52-record full result, demonstrating retrieval beyond the initial page.
+- An initial 50-record page followed by exactly 52 full-search records, with
+  original order, no duplicated initial rows, exactly four search parameters
+  and a server-adjusted effective date propagated to the full query.
 - Separate inspection/visit/upload dates and original qualitative value text.
 - Explicit incomplete-result, expired-session, bad-schema and HTTP failures.
 - No automatic replay of a failed manual CAPTCHA/login attempt.
 - Logout/local disposal, safe errors and redirect-origin restrictions.
 - Typed network causes, safe upstream HTTP status, and error/log redaction.
+- Four API metadata/logout cases and eleven count-diagnostic validation cases
+  in `internal/server/report_metadata_test.go`.
 
 ## Application dependency errors (v1.0.2)
 

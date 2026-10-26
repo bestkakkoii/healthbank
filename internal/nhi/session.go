@@ -41,7 +41,8 @@ const (
 	maxJSONBytes   = 16 << 20
 	maxImageBytes  = 512 << 10
 	maxAuthBytes   = 64 << 10
-	maxRecords     = 50000
+	// MaxReportRecords bounds one official query and its count diagnostics.
+	MaxReportRecords = 50000
 )
 
 var (

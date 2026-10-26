@@ -73,6 +73,11 @@ export interface ReportResponse {
   fetched_at: string;
   complete: boolean;
   warnings: string[];
+  official_query?: {
+    start_date: string;
+    end_date: string;
+    reported_count: number | null;
+  };
 }
 
 export interface CatalogItem {
@@ -121,6 +126,7 @@ export class ApiError extends Error {
     public requestId?: string,
     public upstreamStatus?: number,
     public upstreamCode?: string,
+    public incompleteCounts?: { expected: number; received: number },
   ) {
     super(message);
     this.name = 'ApiError';
@@ -167,10 +173,22 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
           request_id?: string;
           upstream_status?: number;
           upstream_code?: string;
+          expected_count?: number;
+          received_count?: number;
         };
       } | null
     )?.error;
     const upstreamStatus = detail?.upstream_status;
+    const expectedCount = detail?.expected_count;
+    const receivedCount = detail?.received_count;
+    const incompleteCounts =
+      detail?.code === 'INCOMPLETE_RESPONSE' &&
+      typeof expectedCount === 'number' && Number.isSafeInteger(expectedCount) &&
+      typeof receivedCount === 'number' && Number.isSafeInteger(receivedCount) &&
+      expectedCount > 0 && expectedCount <= 50000 &&
+      receivedCount >= 0 && receivedCount < expectedCount
+        ? { expected: expectedCount, received: receivedCount }
+        : undefined;
     throw new ApiError(
       detail?.message ?? `服務暫時無法完成要求（HTTP ${response.status}）。`,
       detail?.code ?? 'http_error',
@@ -184,6 +202,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
         /^(?:[A-Z][0-9]{3}[A-Z]?|[0-9]{4})$/.test(detail.upstream_code)
         ? detail.upstream_code
         : undefined,
+      incompleteCounts,
     );
   }
   if (payload === null)
@@ -240,6 +259,8 @@ export function readableError(error: unknown): string {
       details.push(`錯誤代碼：${error.code}`);
     if (error.upstreamStatus) details.push(`連線回應：HTTP ${error.upstreamStatus}`);
     if (error.upstreamCode) details.push(`官方代碼：${error.upstreamCode}`);
+    if (error.incompleteCounts)
+      details.push(`已收到 ${error.incompleteCounts.received} 筆／官方回報 ${error.incompleteCounts.expected} 筆`);
     if (error.requestId) details.push(`查詢代碼：${error.requestId}`);
     return error.message + (details.length ? `（${details.join('；')}）` : '');
   }

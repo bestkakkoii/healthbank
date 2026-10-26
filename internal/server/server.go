@@ -41,6 +41,7 @@ type session struct {
 	official                 *nhi.Session
 	settings                 lab.Settings
 	raw                      []lab.RawRecord
+	officialQuery            *officialQueryMetadata
 	fetched                  string
 	complete                 bool
 	warnings                 []string
@@ -159,6 +160,7 @@ func (s *session) clear() {
 	s.mode = "anonymous"
 	s.settings = lab.DefaultSettings()
 	s.raw = nil
+	s.officialQuery = nil
 	s.fetched = ""
 	s.complete = false
 	s.warnings = []string{}
@@ -298,6 +300,8 @@ func (a *App) upstreamError(w http.ResponseWriter, r *http.Request, err error) {
 		RequestID      string `json:"request_id"`
 		UpstreamStatus int    `json:"upstream_status,omitempty"`
 		UpstreamCode   string `json:"upstream_code,omitempty"`
+		ExpectedCount  *int   `json:"expected_count,omitempty"`
+		ReceivedCount  *int   `json:"received_count,omitempty"`
 	}{
 		Code:      "upstream_failed",
 		Message:   "官方連線未能完成，請稍後重試或匯入已另存的報告。",
@@ -332,6 +336,10 @@ func (a *App) upstreamError(w http.ResponseWriter, r *http.Request, err error) {
 		}
 		if upstreamCodePattern.MatchString(e.UpstreamCode) {
 			detail.UpstreamCode = e.UpstreamCode
+		}
+		if e.Code == "INCOMPLETE_RESPONSE" && e.ReceivedCount >= 0 && e.ExpectedCount > e.ReceivedCount && e.ExpectedCount <= nhi.MaxReportRecords {
+			expected, received := e.ExpectedCount, e.ReceivedCount
+			detail.ExpectedCount, detail.ReceivedCount = &expected, &received
 		}
 	}
 	if status == http.StatusFailedDependency || status >= 500 {

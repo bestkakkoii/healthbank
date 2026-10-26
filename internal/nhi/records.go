@@ -81,7 +81,7 @@ func (s *Session) Fetch(ctx context.Context, query Query) (Report, error) {
 		s.invalidateOnAuthError(err)
 		return Report{}, err
 	}
-	if meta.count > maxRecords {
+	if meta.count > MaxReportRecords {
 		return Report{}, failure("RESPONSE_TOO_LARGE", "檢驗項目過多，請縮短日期區間後重試。")
 	}
 	params.Del("nowPage")
@@ -215,7 +215,7 @@ func parseRecords(body []byte) ([]Record, error) {
 	if decodeJSON(trimmed, &upstream) != nil {
 		return nil, changedError()
 	}
-	if len(upstream) > maxRecords {
+	if len(upstream) > MaxReportRecords {
 		return nil, failure("RESPONSE_TOO_LARGE", "檢驗項目過多，請縮短日期區間後重試。")
 	}
 	records := make([]Record, 0, len(upstream))

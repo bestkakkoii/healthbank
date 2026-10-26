@@ -16,10 +16,38 @@ import (
 )
 
 type reportResponse struct {
-	Records   []lab.Record `json:"records"`
-	FetchedAt string       `json:"fetched_at"`
-	Complete  bool         `json:"complete"`
-	Warnings  []string     `json:"warnings"`
+	Records       []lab.Record           `json:"records"`
+	FetchedAt     string                 `json:"fetched_at"`
+	Complete      bool                   `json:"complete"`
+	Warnings      []string               `json:"warnings"`
+	OfficialQuery *officialQueryMetadata `json:"official_query,omitempty"`
+}
+
+// officialQueryMetadata describes the interval returned by NHI, not an inferred
+// lifetime history. An unavailable upstream total is explicitly null.
+type officialQueryMetadata struct {
+	StartDate     string `json:"start_date"`
+	EndDate       string `json:"end_date"`
+	ReportedCount *int   `json:"reported_count"`
+}
+
+func (s *session) setOfficialReport(report nhi.Report) {
+	raw := make([]lab.RawRecord, 0, len(report.Records))
+	for _, v := range report.Records {
+		raw = append(raw, lab.RawRecord{CheckDate: v.CheckDate, OrderCode: v.OrderCode, OrderName: v.OrderName, ItemName: v.ItemName, Result: v.Result, Unit: v.Unit, Reference: v.Reference, Institution: v.Institution, VisitDate: v.VisitDate, Source: v.Source, OfficialFlag: v.OfficialFlag})
+	}
+	s.raw = raw
+	s.officialQuery = &officialQueryMetadata{StartDate: report.StartDate, EndDate: report.EndDate}
+	if report.ReportedCount >= 0 {
+		count := report.ReportedCount
+		s.officialQuery.ReportedCount = &count
+	}
+	s.fetched = time.Now().UTC().Format(time.RFC3339)
+	s.complete = report.ReportedCount >= 0
+	s.warnings = []string{}
+	if report.ReportedCount < 0 {
+		s.warnings = append(s.warnings, "官方未提供總筆數；已讀取查詢回傳的完整陣列，但無法比對總筆數。")
+	}
 }
 
 func (a *App) persistDiscovered(ctx context.Context, s *session) error {
@@ -79,7 +107,7 @@ func (a *App) currentResponse(s *session) reportResponse {
 			break
 		}
 	}
-	return reportResponse{Records: records, FetchedAt: s.fetched, Complete: s.complete, Warnings: warnings}
+	return reportResponse{Records: records, FetchedAt: s.fetched, Complete: s.complete, Warnings: warnings, OfficialQuery: s.officialQuery}
 }
 func (a *App) fetchReports(w http.ResponseWriter, r *http.Request, s *session) {
 	if s.mode != "official" || s.official == nil {
@@ -118,17 +146,7 @@ func (a *App) fetchReports(w http.ResponseWriter, r *http.Request, s *session) {
 		a.upstreamError(w, r, err)
 		return
 	}
-	raw := make([]lab.RawRecord, 0, len(report.Records))
-	for _, v := range report.Records {
-		raw = append(raw, lab.RawRecord{CheckDate: v.CheckDate, OrderCode: v.OrderCode, OrderName: v.OrderName, ItemName: v.ItemName, Result: v.Result, Unit: v.Unit, Reference: v.Reference, Institution: v.Institution, VisitDate: v.VisitDate, Source: v.Source, OfficialFlag: v.OfficialFlag})
-	}
-	s.raw = raw
-	s.fetched = time.Now().UTC().Format(time.RFC3339)
-	s.complete = report.ReportedCount >= 0
-	s.warnings = []string{}
-	if report.ReportedCount < 0 {
-		s.warnings = append(s.warnings, "官方未提供總筆數；已讀取查詢回傳的完整陣列，但無法比對總筆數。")
-	}
+	s.setOfficialReport(report)
 	_ = a.catalog.Normalize(s.raw, &s.settings)
 	if err := a.persistDiscovered(r.Context(), s); err != nil {
 		s.warnings = append(s.warnings, "檢驗資料已取得，但新項目設定未能同步；請稍後重新取得資料。")
