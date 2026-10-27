@@ -1,23 +1,41 @@
-﻿# Dependency provenance
+# Dependency provenance
 
 Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
+
+## Runtime refresh and current verification scope
+
+The runtime snapshot prepared on 2026-10-27T08:46:19Z updates React/DOM/Scheduler to
+`e9df86ca6991b779ee50bc744ad8bbdeefa9bae6` and the MySQL driver to
+`c9e0863414a0e47bd708fcbc93d4adc611d15a5e`. The source-build workflow is
+[40475265417](https://github.com/bestkakkoii/healthbank/actions/runs/40475265417).
+Its immutable archive SHA-256 is
+`5865f3446041614b10e0b66285d8c8a5a21ebaabef4626160c20169106c81ef7`.
+The lock, local package integrity, bootstrap hash and Go module selections were
+updated together. The temporary build isolated React's Closure dependency to a
+compatible Java 21 runtime after the newer default Java rejected that build;
+this is a build-only upstream compatibility boundary, not a production dependency.
+
+The privacy/comparison batch adds no dependencies and verifies those pinned inputs
+offline. Earlier full-graph/registry audit timestamps below remain historical;
+this refresh is not a new all-dependency HEAD or vulnerability audit. The npm audit
+in that artifact preparation belongs to that run, not to the subsequent code batch.
 
 ## Verified snapshot and scope
 
 Official upstream source and release metadata were checked on **2026-10-27, Asia/Taipei**. The initial source snapshot completed at **09:21:04+08:00**; the complete selected Go graph audit completed at **09:26:44+08:00**. These are immutable snapshots, not moving branch dependencies. `dependencies.lock.json` records exact source commits, archive hashes, selected module versions, license paths, compiler build graphs, and the later lint-tool inventory (registry snapshot completed at **09:34:53+08:00**).
 
-Every third-party Go module actually linked into the Linux application is at its verified official upstream HEAD. Newest compatible source or official release/prerelease versions are used for direct frontend/build/lint tools. This does **not** mean every transitive package in every upstream build graph has been forced to its newest major version: upstream peer/API constraints, graph-only modules, and the separate TypeScript lint API are explicitly retained and documented below.
+At the initial complete audit, every third-party Go module linked into the Linux application was at its verified official upstream HEAD; later runtime-only refresh scope is stated above. Newest compatible source or official release/prerelease versions are used for direct frontend/build/lint tools. This does **not** mean every transitive package in every upstream build graph has been forced to its newest major version: upstream peer/API constraints, graph-only modules, and the separate TypeScript lint API are explicitly retained and documented below.
 
 ## Application and compiler sources
 
 | Component | Verified source/version | Result |
 | --- | --- | --- |
 | Go | golang/go master `6c49ac311e5642fa5399b46c736295a9dc4eeec9` | Source-built `devel go1.28`; used for application, native TypeScript, esbuild and govulncheck builds |
-| React / React DOM / Scheduler | facebook/react main `fd51cb10dd154aee73e4e7948005c02968651c3d` | Source-built packages reporting 19.3.0 / 19.3.0 / 0.28.0 |
+| React / React DOM / Scheduler | facebook/react main `e9df86ca6991b779ee50bc744ad8bbdeefa9bae6` | Source-built packages reporting 19.3.0 / 19.3.0 / 0.28.0 |
 | Production TypeScript | microsoft/TypeScript main `49e69830214c55a8cc361aa3c4e7412d0afd02fe` | Source-built native compiler reporting 7.1.0-dev |
 | esbuild | evanw/esbuild main `f6058f8364fe7ab91ca57a83e02577ed74c9cae4` | Source-built compiler reporting 0.28.2; source identity remains the recorded commit |
 | SQLite Go driver | cznic/sqlite master `e6990422658b8c9b79328fc5bbda69cc892d70ee` | Pure Go; actual `SELECT sqlite_version()` returned **3.54.1** |
-| MySQL Go driver | go-sql-driver/mysql master `aca61c8f4a21f1d79d197dae3f985b0283b80c96` | Updated optional runtime adapter; tested with isolated official MySQL 26.10.0 |
+| MySQL Go driver | go-sql-driver/mysql master `c9e0863414a0e47bd708fcbc93d4adc611d15a5e` | Updated optional runtime adapter; latest local batch skips live MySQL (no DSN); earlier integration is historical |
 | HTML tokenizer | golang/net master `05c76ee9adc59087cf3ba77ee9c8fcfab61bf61c` | Streaming memory-only saved-report parser |
 | React declarations | DefinitelyTyped master `0d5b76188fd585fe187acb6cffbe08071f2bdd16` | Vendored declaration content unchanged from the verified upstream directories |
 | ESLint / @eslint/js | eslint/eslint main `161558ae1391a8649a8d69a8b2c2e555b40121b9` | Unmodified source packages reporting 10.13.0 / 10.0.1 |

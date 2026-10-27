@@ -1,4 +1,4 @@
-// Copyright (c) 2026 bestkakkoii llc. All rights reserved.
+// Copyright (c) 2026 bestkakkoii llc.
 // SPDX-License-Identifier: MIT
 
 // Package nhi implements the card-number login and other laboratory results
@@ -90,15 +90,17 @@ type Credentials struct {
 // Calls are serialized so a CAPTCHA cannot be replaced during its login.
 // The application must expire and Close sessions when no longer needed.
 type Session struct {
-	mu              sync.Mutex
-	client          *http.Client
-	token           string
-	tokenObtainedAt time.Time
-	challengeID     string
-	challengeExpiry time.Time
-	bootstrapped    bool
-	closed          bool
-	lastDiagnostics *Diagnostics
+	mu                 sync.Mutex
+	client             *http.Client
+	token              string
+	tokenObtainedAt    time.Time
+	challengeID        string
+	challengeExpiry    time.Time
+	bootstrapped       bool
+	closed             bool
+	lastDiagnostics    *Diagnostics
+	selfPaidReferences map[string]string
+	westernReferences  map[string]westernReference
 }
 
 // New creates an isolated connector. It cannot target a caller-supplied URL.
@@ -351,7 +353,11 @@ func (s *Session) close() {
 	}
 }
 
-func (s *Session) clearAuth() { s.token, s.tokenObtainedAt = "", time.Time{} }
+func (s *Session) clearAuth() {
+	s.token, s.tokenObtainedAt = "", time.Time{}
+	s.selfPaidReferences = nil
+	s.westernReferences = nil
+}
 
 func (s *Session) request(ctx context.Context, method, path string, query url.Values, payload []byte, limit int64, authenticated bool) (result []byte, headers http.Header, requestErr error) {
 	if authenticated && s.token == "" {

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 bestkakkoii llc. All rights reserved.
+// Copyright (c) 2026 bestkakkoii llc.
 // SPDX-License-Identifier: MIT
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
@@ -25,6 +25,12 @@ import {
 } from './Dialogs';
 import { ComparisonTable } from './ComparisonTable';
 import { TrendChart } from './TrendChart';
+import { ClinicalComparison } from './ClinicalComparison';
+import { AnalysisExport, MultiIndicator, LipidCalculation, PortableReportExport } from './AnalysisTools';
+import { PersonalRecords } from './PersonalRecords';
+import { SupplementaryData, CoverageSummary } from './SupplementaryData';
+import { AnalysisProvider, AnalysisStamp } from './AnalysisContext';
+import { PrivacyNotice } from './PrivacyNotice';
 import {
   categoryLabel,
   dateLabel,
@@ -422,7 +428,7 @@ export default function App() {
     else setError(`資料已取得，但參考項目目錄無法更新。${readableError(results[1].reason)}`);
   }
 
-  async function loggedIn(next: Session) {
+  async function loggedIn(next: Session, notice = '') {
     sessionGeneration.current += 1;
     setSession(next);
     setCsrfToken(next.csrf_token);
@@ -434,6 +440,7 @@ export default function App() {
     setLoginOpen(false);
     navigate('overview');
     await fetchReports('all_history');
+    if (notice) setMessage(notice);
   }
 
   async function expireOfficialSession() {
@@ -529,12 +536,12 @@ export default function App() {
     }
   }
 
-  async function logout() {
+  async function logout(deleteRemote = false) {
     const generation = ++sessionGeneration.current;
     setBusy('正在結束使用階段…');
     setError('');
     try {
-      const next = await api.logout();
+      const next = deleteRemote ? await api.deleteSettings(settings.revision) : await api.logout();
       if (generation !== sessionGeneration.current) return;
       setSession({
         ...next,
@@ -548,7 +555,7 @@ export default function App() {
       clearReportRange();
       resetFilters();
       navigate('overview');
-      setMessage('已結束使用階段並清除目前報告。');
+      setMessage(deleteRemote ? '伺服器現行設定已刪除，本站所有裝置工作階段已失效；本機保存及營運者備份須另行管理。' : '已結束使用階段並清除目前報告。');
     } catch (error) {
       if (generation === sessionGeneration.current) setError(readableError(error));
     } finally {
@@ -731,6 +738,8 @@ export default function App() {
   );
 
   return (
+    <AnalysisProvider key={`${session.mode}:${session.csrf_token ?? ''}`} initial={settings.analysis} persisted={persisted}
+      onSave={analysis => commitSettings({ ...settings, analysis })}>
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
         跳到主要內容
@@ -910,6 +919,9 @@ export default function App() {
             </div>
           </div>
 
+          {(view === 'comparison' || view === 'trends' || view === 'settings') && <details className="panel compact-disclosure"><summary>判讀條件</summary><ClinicalComparison records={report.records} /></details>}
+          <AnalysisStamp />
+          {view !== 'settings' && <CoverageSummary report={report} />}
           {rangeOpen && persisted && (
             <form
               id="report-date-range"
@@ -1419,7 +1431,7 @@ export default function App() {
               )}
 
               {view === 'trends' && (
-                <Panel
+                <><Panel
                   title="單項數值趨勢"
                   subtitle="同一項目與單位，按實際時間比較"
                   action={
@@ -1508,12 +1520,20 @@ export default function App() {
                     </div>
                   )}
                 </Panel>
+                <MultiIndicator groups={groups.map(group => ({ ...group, records: year === 'all' ? group.records : group.records.filter(record => record.exam_date.startsWith(year)) }))} settings={settings} onDetail={setDetail} />
+                <LipidCalculation records={report.records} /></>
               )}
             </>
           )}
 
           {!booting && view === 'settings' && (
             <>
+              <div className="panel analysis-tools"><h2>同步設定管理</h2><p>不包含原始帳密、生日、檢驗結果或個人用藥紀錄；假名化設定仍可連結同一使用者。</p>
+                <button className="button secondary" onClick={() => downloadText(JSON.stringify(settings, null, 2), 'healthbank-設定.json', 'application/json')}>匯出目前設定</button>
+                {persisted && <button className="button secondary" disabled={controlsBusy} onClick={() => {
+                  if (window.confirm('刪除伺服器上此使用者的全部設定，並使本站所有裝置登出？此操作不能復原。瀏覽器記住的資料及營運者備份不會由此一併清除。')) void logout(true);
+                }}>刪除伺服器設定並登出所有裝置</button>}
+              </div>
               <div className="settings-columns">
                 <Panel title="閱讀與外觀" subtitle="依使用裝置與閱讀習慣調整">
                   <div className="setting-block">
@@ -1586,8 +1606,10 @@ export default function App() {
                   <button
                     className="button secondary"
                     onClick={() => {
-                      clearRememberedLogin();
-                      setMessage('這部裝置記住的證號與健保卡號已清除。');
+                      try {
+                        clearRememberedLogin();
+                        setMessage('這部裝置記住的證號與健保卡號已清除；密碼管理員的密碼不受影響。');
+                      } catch (failure) { setError(readableError(failure)); }
                     }}
                   >
                     <Icon name="trash" size={18} />
@@ -1731,6 +1753,10 @@ export default function App() {
             </>
           )}
 
+
+          {view !== 'settings' && <><AnalysisExport records={view === 'trends' && trendGroup ? trendGroup.records : filteredGroups.flatMap(group => group.records)} /><PortableReportExport records={report.records} /></>}
+          <div hidden={view === 'settings'}><SupplementaryData key={`${session.mode}:${session.csrf_token ?? ''}`} authenticated={persisted} from={dateFrom} to={dateTo} /></div>
+          <div hidden={view !== 'trends' && view !== 'settings'}><PersonalRecords key={`${session.mode}:${session.profile_key || report.fetched_at}`} profileKey={session.profile_key ?? ''} /></div>
           <div className="print-only print-running-footer">
             <Copyright />
           </div>
@@ -1740,7 +1766,8 @@ export default function App() {
               <span>檢驗資料整理與長期追蹤</span>
             </div>
             <Copyright />
-            <span className="footer-note">顏色為整理提示，請結合完整病史與專業判斷。</span>
+            <span className="footer-note">顏色為整理提示，請結合完整病史與專業判斷。 · MIT License</span>
+            <PrivacyNotice />
           </footer>
         </main>
       </div>
@@ -1813,5 +1840,6 @@ export default function App() {
         </Modal>
       )}
     </div>
+    </AnalysisProvider>
   );
 }

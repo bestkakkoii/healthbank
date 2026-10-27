@@ -1,5 +1,8 @@
-// Copyright (c) 2026 bestkakkoii llc. All rights reserved.
+// Copyright (c) 2026 bestkakkoii llc.
 // SPDX-License-Identifier: MIT
+import { useAnalysis, ScenarioBadge } from './AnalysisContext';
+import { referenceForRecord } from './clinical-comparison';
+import { DifferenceSummary } from './DifferenceSummary';
 import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ItemOverride, LabRecord } from './api';
 import {
@@ -57,11 +60,18 @@ export function TrendChart({
   group,
   override,
   onDetail,
+  timeDomain,
 }: {
+  timeDomain?: readonly [number, number] | undefined;
   group: MeasurementGroup;
   override: ItemOverride | undefined;
   onDetail: (record: LabRecord) => void;
 }) {
+  const analysis = useAnalysis();
+  const scenarioEnabled = analysis !== null && analysis.preferences.mode !== 'off';
+  const scenario = analysis ? (analysis.preferences.mode === 'comparison' ? analysis.preferences.comparison : analysis.preferences.primary) : null;
+  const scenarioCaption = scenarioEnabled && scenario ? `${analysis.preferences.mode === 'comparison' ? '模擬比較' : '基準'}：${analysis.preferences.mode === 'primary' && analysis.birthDate ? '依採檢日計齡' : `${scenario.age ?? '未知'}歲`}／${scenario.sex === 'male' ? '男性' : scenario.sex === 'female' ? '女性' : '性別未知'}` : '原院／個人基準';
+  const scenarioReference = (record: LabRecord) => analysis ? referenceForRecord(record, analysis.preferences, analysis.birthDate) : null;
   const [logarithmic, setLogarithmic] = useState(false);
   const [showReference, setShowReference] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -112,16 +122,16 @@ export function TrendChart({
   const usesPersonalReference = (record: LabRecord) =>
     hasPersonalReference && record.rule_source.startsWith('personal');
   const personalReferenceCount = exact.filter(usesPersonalReference).length;
-  const referenceLegend =
+  const referenceLegend = scenarioEnabled && !exact.some(record => scenarioReference(record) !== null) ? '此項目前沒有適用的情境範本；原院旗標仍保留' : scenarioEnabled ? `${analysis.preferences.mode === 'comparison' ? '比較' : '基準'}情境具名範本（非原院旗標）` :
     personalReferenceCount === 0
       ? '原院參考區間'
       : personalReferenceCount === exact.length
         ? '個人參考區間'
         : '個人／原院參考區間（依各筆適用規則）';
   const lowFor = (record: LabRecord) =>
-    numeric(usesPersonalReference(record) ? override?.reference_low : record.reference_low);
+    scenarioEnabled ? scenarioReference(record)?.low ?? null : numeric(usesPersonalReference(record) ? override?.reference_low : record.reference_low);
   const highFor = (record: LabRecord) =>
-    numeric(usesPersonalReference(record) ? override?.reference_high : record.reference_high);
+    scenarioEnabled ? scenarioReference(record)?.high ?? null : numeric(usesPersonalReference(record) ? override?.reference_high : record.reference_high);
   const transform = (n: number) => (useLog ? Math.log10(n) : n);
   const inverse = (n: number) => (useLog ? 10 ** n : n);
   const rangeValues = exact.flatMap((record) => [
@@ -140,7 +150,7 @@ export function TrendChart({
   maxY += padding;
   if (!useLog && rangeValues.length && rangeValues.every((value) => value >= 0))
     minY = Math.max(0, minY);
-  let [minX, maxX] = finiteExtent(dated.map((record) => day(record.exam_date))) ?? [0, 1];
+  let [minX, maxX] = timeDomain ?? finiteExtent(dated.map((record) => day(record.exam_date))) ?? [0, 1];
   const oneDate = minX === maxX;
   if (oneDate) {
     minX -= 86400000 * 15;
@@ -156,7 +166,7 @@ export function TrendChart({
   );
   const yTickLabels = yTicks.map((tick) => numberLabel(tick, compact));
   const titleLines = wrapChartText(
-    `${group.name} · ${group.unit}${useLog ? '（對數）' : ''}`,
+    `${group.name} · ${group.unit}${useLog ? '（對數）' : ''} · ${scenarioCaption}`,
     Math.max(1, width - 24),
     fontSize,
   );
@@ -225,6 +235,8 @@ export function TrendChart({
   }
   if (segment.length) segments.push(segment);
   const active = exact.find((record) => record.id === activeId);
+  const sharedDate = analysis?.selectedDate ?? '';
+  const synchronized = exact.filter(record => record.exam_date === sharedDate);
 
   function nearestPoint(clientX: number, clientY: number): LabRecord | null {
     const bounds = svgRef.current?.getBoundingClientRect();
@@ -281,6 +293,9 @@ export function TrendChart({
 
   return (
     <section className="trend-section">
+      <DifferenceSummary group={group} />
+      <p className="helper-text">{referenceLegend}；色點仍保留原院／獨立警示。</p>
+      {sharedDate && <p role="status">同步日期 {dateLabel(sharedDate)}：{synchronized.length ? synchronized.map(record => `${record.result} ${record.unit}`).join('；') : '此項當日未取得精確值'}</p>}
       <div className="chart-toolbar">
         <div className="chart-description">
           <span className="chart-line-key" />
@@ -336,7 +351,7 @@ export function TrendChart({
                 if (record) onDetail(record);
               }}
             >
-              <title id={titleId}>{group.name}歷年趨勢</title>
+              <title id={titleId}>{group.name}歷年趨勢 · {scenarioCaption}</title>
               <desc id={descriptionId}>
                 {exact.length} 筆確切數值，單位 {group.unit}，日期從 {dateLabel(dated[0]?.exam_date ?? '')}{' '}
                 至 {dateLabel(dated.at(-1)?.exam_date ?? '')}。{useLog ? '縱軸使用對數刻度。' : ''}
@@ -383,6 +398,7 @@ export function TrendChart({
                     </g>
                   );
                 })}
+              {sharedDate && day(sharedDate) >= minX && day(sharedDate) <= maxX && <line className="chart-cursor" x1={x(sharedDate)} x2={x(sharedDate)} y1={margin.top} y2={margin.top + plotHeight} />}
               {yTicks.map((tick, index) => (
                 <g key={index}>
                   <line
@@ -455,7 +471,7 @@ export function TrendChart({
                     tabIndex={0}
                     role="button"
                     aria-label={`${dateLabel(record.exam_date)}，${record.result} ${record.unit}，${record.institution || ''}，開啟明細`}
-                    onFocus={() => setActiveId(record.id)}
+                    onFocus={() => { setActiveId(record.id); analysis?.setSelectedDate(record.exam_date); }}
                     onBlur={() => setActiveId(null)}
                     onClick={(event) => {
                       // Assistive technology may activate the focused SVG button
@@ -555,7 +571,7 @@ export function TrendChart({
                     )}
                   </td>
                   <td>
-                    <LevelBadge level={record.level} compact />
+                    <ScenarioBadge record={record} /><LevelBadge level={record.level} compact />
                   </td>
                   <td>{referenceLabel(record)}</td>
                   <td>{record.institution || '未提供'}</td>
@@ -563,7 +579,7 @@ export function TrendChart({
                     <button
                       className="icon-button"
                       aria-label={`查看 ${dateLabel(record.exam_date)} ${record.result} 的詳細資料`}
-                      onClick={() => onDetail(record)}
+                      onClick={() => { analysis?.setSelectedDate(record.exam_date); onDetail(record); }}
                     >
                       <Icon name="chevron" />
                     </button>

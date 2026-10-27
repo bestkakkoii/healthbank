@@ -16,23 +16,32 @@ pseudonymous subject linkage, not medical observations. See the [README](../READ
 [clinical interpretation rules](clinical-reference.zh-TW.md) and
 [connector verification boundary](nhi_protocol.md) for implemented behaviour.
 
-Additional datasets and JSON/XML imports below are **not implemented**. Public
-documentation confirms that features exist in the official service; it does not
-verify an authenticated connector, an individual account's records or completeness.
+Additional category connectors and **Healthbank-format** JSON/XML imports are
+implemented in the next prerelease candidate from publicly observed SPA contracts
+and synthetic fixtures. They are **not authenticated-live verified**; third-party
+NHI JSON/XML/PDF formats, official SDK integration and account completeness are
+not implemented. Public documentation alone is not authentication evidence.
 
 ## Priorities
 
-| Priority | Proposed outcome | Acceptance gate |
-| --- | --- | --- |
-| P0 | A focused clinician discussion report extending existing print/export: selected concerns, relevant trends, latest/prior values and appointment questions. | Preserve original values, units, dates, reference intervals and provenance; disclose query coverage and gaps; verify readable print and enlarged-text mobile layouts. |
-| P1 | Medication and clinical-event timelines aligned with laboratory results. | Verify each source contract; distinguish prescriptions, dispensing and confirmed actual intake; preserve uncertain dates and original drug identifiers; never infer treatment effects. |
-| P1 | User-controlled JSON/XML import and a portable longitudinal archive. | Validate actual export schemas with sanitized fixtures; retain source provenance and legitimate repeated measurements; define archive ownership and storage before implementation. |
-| P2 | Optional observation context and original narrative reports. | Separate patient notes from institutional records; record measurement conditions when known; preserve original imaging/pathology/discharge text and its dates. |
-| Later | Preventive screening and vaccination history; links to validated decision aids. | Verify dataset scope and applicable guidance; do not infer eligibility, diagnoses or risk scores from missing inputs. |
+Order: complete retrieval → correct normalization → comfortable comparison →
+evidence-bound analysis. Do not replace existing patient habits or grow a teaching
+portal, daily task system or automatic treatment recommender.
 
-The first outcome can use the existing laboratory dataset. Further ingestion should
-follow demonstrated user value and verified contracts, rather than collecting every
-category offered by the official portal.
+| Priority | Outcome | Current boundary / acceptance gate |
+| --- | --- | --- |
+| P0 | Actual historical coverage | Verify requested periods, default filters, source selectors, pagination and independent counts against authorized live records. Synthetic protocol fixtures are not live completeness evidence. |
+| P0 | Private-device login convenience | Multi-user opt-in remembered ID/card fields; password-manager-native form; manual CAPTCHA. Offline component/storage tests exist; real browser managers and devices still require verification. |
+| P0 | Practical age/sex comparison | Two immediate scenarios with sourced creatinine/ALP templates and guarded CKD-EPI; original values and flags immutable. Whole-table bands, richer templates and explicit setting sync remain pending. |
+| P1 | Same-period comparisons, coordinated charts and simple export | Exact differences plus measurement interval; preserve same-date duplicates, source methods and missing-data semantics. No arbitrary causal or danger score. |
+| P1 | Additional official numeric results | First inspect preventive/self-paid examinations for actual extra results. Verify every authenticated contract and source overlap before integration. |
+| P2 | Optional prescribing/encounter/report context | Show source records alongside a selected date; no claim that prescriptions prove actual intake. Public-SPA based, whitelisted read-only category connectors are implemented with strict response handling and synthetic tests; real-account acceptance remains pending. |
+| Optional | Personal products or medication notes | An optional device-local list with explicit save/export/import/delete and interval matching is implemented; no daily entry or medical notes in server settings. |
+
+Scientific research supplies internal constants, formula coefficients, eligibility
+and invalid-calculation guards. It does not justify a knowledgebase or fabricated
+five-level categories. Clinical rules, exact versions and provenance are separate
+from UI presentation. No runtime or toolkit upgrade authorizes a new medical rule.
 
 ## Official data candidates
 

@@ -4,7 +4,7 @@
 set -euo pipefail
 
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-version="${1:-${VERSION:-v1.0.3-rc.5}}"
+version="${1:-${VERSION:-}}"
 if [[ ! "$version" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
   printf '%s\n' 'Version must be a semantic version such as v1.0.0 or v1.0.0-rc.1.' >&2
   exit 2
@@ -22,6 +22,8 @@ release_root_documents=(
 release_documents=(
   docs/deployment.zh-TW.md
   docs/clinical-reference.zh-TW.md
+  docs/comparison-engine.md
+  docs/privacy.zh-TW.md
   docs/nhi_protocol.md
   docs/verification.zh-TW.md
   docs/quality-audit.zh-TW.md
@@ -35,6 +37,7 @@ release_document_assets=(
 command -v "$go_command" >/dev/null
 command -v "$python_command" >/dev/null
 command -v "$node_command" >/dev/null
+"$python_command" -W error "$repo_root/scripts/test_release.py"
 if [[ ! -s "$repo_root/internal/webui/dist/index.html" ]]; then
   printf '%s\n' 'Compiled frontend is missing. Build the frontend into internal/webui/dist before releasing.' >&2
   exit 1

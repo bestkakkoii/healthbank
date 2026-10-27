@@ -171,7 +171,7 @@ func (a *App) importReports(w http.ResponseWriter, r *http.Request, s *session) 
 	r.Body = http.MaxBytesReader(w, r.Body, maxBytes+(64<<10))
 	reader, err := r.MultipartReader()
 	if err != nil {
-		a.fail(w, r, 400, "invalid_upload", "請選擇HTML或ZIP檔案。")
+		a.fail(w, r, 400, "invalid_upload", "請選擇HTML、ZIP或本站可攜JSON／XML檔案。")
 		return
 	}
 	var data []byte
@@ -199,7 +199,7 @@ func (a *App) importReports(w http.ResponseWriter, r *http.Request, s *session) 
 		}
 	}
 	if filename == "" || len(data) == 0 {
-		a.fail(w, r, 400, "empty_upload", "請選擇非空白的HTML或ZIP檔案。")
+		a.fail(w, r, 400, "empty_upload", "請選擇非空白的HTML、ZIP或本站可攜JSON／XML檔案。")
 		return
 	}
 	rows, warnings, err := lab.ParseImport(filename, data)
@@ -246,11 +246,12 @@ func (a *App) saveSettings(w http.ResponseWriter, r *http.Request, s *session) {
 	// Known definitions are server-owned. The browser cannot manufacture a
 	// profile or submit arbitrary JSON for persistent storage.
 	var input struct {
-		Revision  int64                   `json:"revision"`
-		Theme     string                  `json:"theme"`
-		FontScale float64                 `json:"font_scale"`
-		Favorites []string                `json:"favorites"`
-		Overrides map[string]lab.Override `json:"overrides"`
+		Analysis  *lab.AnalysisPreferences `json:"analysis"`
+		Revision  int64                    `json:"revision"`
+		Theme     string                   `json:"theme"`
+		FontScale float64                  `json:"font_scale"`
+		Favorites []string                 `json:"favorites"`
+		Overrides map[string]lab.Override  `json:"overrides"`
 	}
 	if err := decodeJSON(w, r, &input); err != nil {
 		a.fail(w, r, 400, "invalid_settings", "設定格式不正確。")
@@ -260,7 +261,7 @@ func (a *App) saveSettings(w http.ResponseWriter, r *http.Request, s *session) {
 		a.fail(w, r, 500, "settings_read", "無法讀取個人設定。")
 		return
 	}
-	next := lab.Settings{Revision: input.Revision, Theme: input.Theme, FontScale: input.FontScale, Favorites: input.Favorites, Overrides: input.Overrides, Known: s.settings.Known}
+	next := lab.Settings{Analysis: input.Analysis, Revision: input.Revision, Theme: input.Theme, FontScale: input.FontScale, Favorites: input.Favorites, Overrides: input.Overrides, Known: s.settings.Known}
 	if next.Favorites == nil {
 		next.Favorites = []string{}
 	}

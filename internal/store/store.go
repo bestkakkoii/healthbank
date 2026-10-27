@@ -64,7 +64,7 @@ type Store struct {
 	driver string
 }
 
-// DefaultSQLitePath returns the executable-adjacent data path used on BaoTa.
+// DefaultSQLitePath returns the executable-adjacent data path used by executable-first deployments.
 func DefaultSQLitePath() (string, error) {
 	executable, err := os.Executable()
 	if err != nil {

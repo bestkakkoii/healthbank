@@ -4,9 +4,9 @@ Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
 ## Product and boundaries
 
-Healthbank is a self-hosted Traditional Chinese laboratory-results viewer for older adults with some medical literacy. The release must remain an executable-first BaoTa deployment: upload/extract, select the Go executable, bind the site, start. The primary deployment target is Debian 13 (trixie) x86_64 using the linux_amd64 release (GOAMD64=v1, CGO_ENABLED=0). React assets and the clinical catalog are embedded. SQLite is default; MySQL is selectable through the same store contract.
+Healthbank is a self-hosted Traditional Chinese laboratory-results viewer for older adults with some medical literacy. The release is a generic executable-first deployment: extract, run the Go executable and configure an HTTPS reverse proxy. No hosting panel is required. The primary deployment target is Debian 13 (trixie) x86_64 using the linux_amd64 release (GOAMD64=v1, CGO_ENABLED=0). React assets and the clinical catalog are embedded. SQLite is default; MySQL is selectable through the same store contract.
 
-Read README.md, docs/clinical-reference.zh-TW.md, and docs/nhi_protocol.md before changing behavior. Communicate user-facing work in Taiwan Traditional Chinese; technical collaboration may be English.
+Read README.md, docs/clinical-reference.zh-TW.md, docs/comparison-engine.md, docs/privacy.zh-TW.md, docs/nhi_protocol.md and docs/verification.zh-TW.md before changing behavior. Communicate user-facing work in Taiwan Traditional Chinese; technical collaboration may be English.
 
 Never persist medical observations, original identity/card numbers, passwords, official tokens/cookies, report HTML, or login histories. Only validated configuration documents and pseudonymous verified-subject keys belong in SQL. Keep the stable HMAC key outside SQL. Device-local ID/card memory is explicit and clearable. Imported files and demos never authenticate a person or attach to their persisted profile.
 
@@ -22,7 +22,7 @@ Never persist medical observations, original identity/card numbers, passwords, o
 - web/src: accessible React/TypeScript interface. Native SVG charts avoid an extra charting runtime.
 - web/public: branded SVG/ICO favicon and Apple touch icon, copied into the embedded frontend by the build script.
 - scripts: source-pinned tool bootstrap, typed ESLint runner, strict frontend build/manifest verification, deterministic release archive packaging.
-- web/tests: seven synthetic data-model cases for CSV, lossless grouping, exact chart points, rule previews, and large-history chart domains.
+- web/tests: focused synthetic data-model cases for CSV, lossless grouping, exact chart points, rule previews, and large-history chart domains.
 - web/dependency-audit.json: every resolved frontend dependency instance, incoming upstream ranges, latest compatible versions, and explicit retained constraints.
 
 ## Invariants
@@ -49,7 +49,7 @@ Use scripts/bootstrap-upstream.sh, dependencies.lock.json and web/package-lock.j
 
 Bootstrap installs the Node.js, npm and Go/compiler revisions recorded in dependencies.lock.json. Add .tools/bin and .tools/go/bin to PATH after it returns; unset an inherited GOROOT and use GOTOOLCHAIN=local, GOENV=off and GOWORK=off for reproducible verification. Production compilation uses the pinned native TypeScript compiler; typescript-eslint separately uses its supported JavaScript compiler API. Do not suppress an unsupported-version warning or bypass peer requirements to merge those two roles. Compiler caches are keyed by source and Go revisions and validated against actual embedded Go metadata.
 
-Run npm --prefix web run lint (typed strictTypeChecked rules, current React Hooks recommendations and --max-warnings 0), the strict TypeScript production build, and npm --prefix web test. The seven model tests cover substantive data invariants rather than CSS implementation. Fix defects behind diagnostics; do not lower severities, hide warnings or introduce broad assertions solely to obtain a clean report. Review any intentional lint-policy options in context.
+Run npm --prefix web run lint (typed strictTypeChecked rules, current React Hooks recommendations and --max-warnings 0), the strict TypeScript production build, and npm --prefix web test. The model tests cover substantive data invariants rather than CSS implementation. Fix defects behind diagnostics; do not lower severities, hide warnings or introduce broad assertions solely to obtain a clean report. Review any intentional lint-policy options in context.
 
 Run gofmt, the full Go suite, the race suite, go vet, go mod verify, and Linux amd64/arm64 cross-compilation. The grading/parser, settings isolation/migration and official-protocol fixture tests protect substantive invariants. MySQL integration is opt-in locally via HEALTHBANK_TEST_MYSQL_DSN to an isolated empty synthetic database; CI provisions the digest-pinned MySQL service declared in its workflows. Concrete tested revisions and migration evidence belong in docs/verification.zh-TW.md. An absent DSN means a skip, not a pass. Do not use a production database for integration tests.
 
@@ -59,10 +59,19 @@ npm audit and govulncheck use live advisory databases and may legitimately fail 
 
 Keep credentialless CAPTCHA retrieval evidence, earlier connection failures, and the exact tested executable identity in docs/verification.zh-TW.md. Image retrieval does not establish authenticated login, historical completeness, global official availability, or successful display on a user’s deployment.
 
-Recheck visual changes in a browser and disclose missing real-device verification. The authenticated live NHI flow remains unverified unless a user actually completes an authorized login on a reachable deployment. An upstream HTTP503 is an availability result, not evidence of global outage or bot detection. Do not request credentials in chat or solve CAPTCHA automatically. The synthetic MySQL test does not certify the user's database, Debian 13/BaoTa deployment or physical iOS/Safari environment.
+Recheck visual changes in a browser and disclose missing real-device verification. The authenticated live NHI flow remains unverified unless a user actually completes an authorized login on a reachable deployment. An upstream HTTP503 is an availability result, not evidence of global outage or bot detection. Do not request credentials in chat or solve CAPTCHA automatically. The synthetic MySQL test does not certify the user's database, deployment environment or physical iOS/Safari environment.
 
 The `diagnose-nhi` command uses the production connector without loading configuration, opening SQL, or acquiring the serving instance lock. It must not accept an upstream override or credentials, retry authentication, print image/challenge contents, or downgrade TLS. Diagnostic phases identify observed client-side progress, not the responsible remote component; a negotiated TLS peer may be a configured proxy.
 
 ## Release
 
 The source archive is explicitly allowlisted by scripts/release.py. Keep raw reports, upload directories, .tools, databases, identity.key, environment files and logs outside it. Build and verify the compiled frontend before Go embedding. Review and stage every new allowlisted source file; the archive selection is not limited to already tracked files. Use a clean commit and semantic version, set SOURCE_DATE_EPOCH to that commit timestamp, produce Linux amd64/arm64 tar.gz archives and SHA256SUMS, and include notices/licenses and deployment/clinical/verification documents. Local packaging does not authorize publication to GitHub or a user's server.
+
+## Active maintenance policy
+
+User-facing reports use Taiwan Traditional Chinese. Agent delegation, coordination and
+handoffs use concise technical English; pass this policy to any newly delegated agent.
+Use the simplest sufficient representation and keep evidence/ownership explicit.
+No agent was delegated during this work batch. Static checks must stay strict; dynamic
+tests should protect relevant risks, not inflate counts. Runtime exceptions and recovered
+failures must remain traceable without leaking credentials or health content.

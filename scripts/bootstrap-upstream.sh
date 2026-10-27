@@ -4,7 +4,7 @@
 set -euo pipefail
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 task_tools="$repo_root/.tools"
-go_revision="6c49ac311e5642fa5399b46c736295a9dc4eeec9"
+go_revision="41cb39b794bfe81144930746ccf72440a0382adb"
 ts_revision="49e69830214c55a8cc361aa3c4e7412d0afd02fe"
 esbuild_revision="f6058f8364fe7ab91ca57a83e02577ed74c9cae4"
 govulncheck_revision="e672cbe8fbc8c76e28fcb6db0efd9ce354e0dac5"
@@ -86,7 +86,7 @@ if [[ ! -x "$go_install/bin/go" ]]; then
   mkdir -p "$task_tools/bootstrap"
   tar -xzf "$bootstrap_archive" -C "$task_tools/bootstrap"
   go_archive="$task_tools/downloads/go-$go_revision.tar.gz"
-  download_verified "https://codeload.github.com/golang/go/tar.gz/$go_revision" "$go_archive" "d8cf6e974c19525714231130345acaf2085b2b840360dd68f72f2c439f2c5429"
+  download_verified "https://codeload.github.com/golang/go/tar.gz/$go_revision" "$go_archive" "73ac97a98dc60355c3f4eb205bc032ddc3191f6ea8a0aaff31cf02f79d55191e"
   tar -xzf "$go_archive" -C "$task_tools/build"
   printf 'devel go1.28-%s\n' "$go_revision" > "$task_tools/build/go-$go_revision/VERSION"
   (cd "$task_tools/build/go-$go_revision/src"; GOROOT_BOOTSTRAP="$task_tools/bootstrap/go" ./make.bash)
@@ -139,7 +139,7 @@ import hashlib,pathlib,sys
 root=pathlib.Path(sys.argv[1])/'web/vendor'
 expected={
  'react-main.tgz':'c1d9d0e081f89765454b79b8b7aa81d2d42ae98c06a96914d952975bbda8b2a5',
- 'react-dom-main.tgz':'02f22648ec195371d9772c667cda0ce211eeefeac57e746a3d4d4d151996dfcb',
+ 'react-dom-main.tgz':'efaaf57f2b0f8e39b27b1759c0d08401f29ac670ce0877b808cd17928d35319d',
  'scheduler-main.tgz':'c64e8d8cb716ae3bcef457a833127ab9ad5c55d7fbf3bb89030f368a2f81e17c',
  'eslint-main.tgz':'eb1cd508a65aaf6c0493eeaf72eefac27cffb3606d7d375d41f2e258c2311e43',
  'eslint-js-main.tgz':'8ecd352ee99b1c8291bee007f43d58356ae5057782de9635563aec2e604dcee2',

@@ -1,5 +1,6 @@
-// Copyright (c) 2026 bestkakkoii llc. All rights reserved.
+// Copyright (c) 2026 bestkakkoii llc.
 // SPDX-License-Identifier: MIT
+import { ScenarioBadge } from './AnalysisContext';
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { LabRecord } from './api';
 import {
@@ -241,6 +242,7 @@ function ResultCell({
               <LevelBadge level={record.level} compact />
               {record.official_flag === '1' && <span className="official-flag-badge">原院異常</span>}
             </span>
+            <ScenarioBadge record={record} />
             {record.institution && <span className="cell-institution">{record.institution}</span>}
             {reference !== recentReference && (
               <span className="cell-reference">當次原院參考：{reference}</span>

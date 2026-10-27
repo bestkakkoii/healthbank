@@ -1,8 +1,8 @@
-﻿# Healthbank v1 臨床參考與顏色判讀說明
+# Healthbank 臨床參考與顏色判讀說明
 
-Copyright (c) 2026 bestkakkoii llc. All rights reserved. SPDX-License-Identifier: MIT.
+Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
-文件版本：v1。來源查核日期：2026-10-27（臺灣時間）。
+來源查核日期：2026-10-27（臺灣時間）。
 
 本文件說明目前程式實際採用的辨識、參考區間與提醒規則，供閱讀報表的使用者及維護者共同查核。內建目錄包含 **80 個項目定義：78 個檢驗／觀察項目，以及 2 個檢驗流程附註**。78 個觀察項目共用 **76 組設定**；數值、定性文字、半定量結果都可能是觀察項目，不表示每項都有五段數字門檻。尚未匯入報告時，就能查看及調整這 76 組內建設定。
 
@@ -375,3 +375,9 @@ v1 會以隨版本提供的目前規則，重新顯示工作階段中的歷史�
 [S19]: https://www.nice.org.uk/guidance/ng239/chapter/recommendations
 
 Copyright (c) 2026 bestkakkoii llc.
+
+## 獨立年齡／性別情境比較
+
+現另提供血液肌酸酐及 ALP 的具名範本比較，以及條件確認後的 CKD-EPI 2021 估算。
+這是與原始判讀分開的瀏覽器端功能，不改寫前述原院分級；完整來源、公式及尚未完成範圍見
+[計算契約](comparison-engine.md)。

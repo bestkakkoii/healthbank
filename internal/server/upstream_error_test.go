@@ -1,4 +1,4 @@
-// Copyright (c) 2026 bestkakkoii llc. All rights reserved.
+// Copyright (c) 2026 bestkakkoii llc.
 // SPDX-License-Identifier: MIT
 
 package server
@@ -70,7 +70,7 @@ func TestUpstreamErrorsKeepDiagnosticsWithoutBecomingGatewayErrors(t *testing.T)
 			if response.Code != tc.status || detail.Code != tc.code || detail.UpstreamStatus != tc.upstreamStatus || detail.UpstreamCode != tc.upstreamCode {
 				t.Fatal("upstream status mapping or safe diagnostic metadata changed")
 			}
-			if detail.RequestID == "" || detail.RequestID != response.Header().Get("X-Request-ID") || response.Header().Get("Cache-Control") != "no-store" {
+			if detail.RequestID == "" || detail.RequestID != response.Header().Get("X-Request-ID") || response.Header().Get("Cache-Control") != "no-store, private" || response.Header().Get("X-Accel-Buffering") != "no" || response.Header().Get("Pragma") != "no-cache" {
 				t.Fatal("correlation ID or no-store response policy was lost")
 			}
 			if detail.Message == "" || strings.Contains(response.Body.String(), "SECRET") || strings.Contains(logs.String(), "SECRET") {

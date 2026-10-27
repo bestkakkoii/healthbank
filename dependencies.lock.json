@@ -6,21 +6,21 @@
       "name": "Go",
       "repository": "https://github.com/golang/go",
       "branch": "master",
-      "commit": "6c49ac311e5642fa5399b46c736295a9dc4eeec9",
+      "commit": "41cb39b794bfe81144930746ccf72440a0382adb",
       "version": "devel go1.28",
-      "archive_sha256": "d8cf6e974c19525714231130345acaf2085b2b840360dd68f72f2c439f2c5429"
+      "archive_sha256": "73ac97a98dc60355c3f4eb205bc032ddc3191f6ea8a0aaff31cf02f79d55191e"
     },
     {
       "name": "React / React DOM / Scheduler",
       "repository": "https://github.com/facebook/react",
       "branch": "main",
-      "commit": "fd51cb10dd154aee73e4e7948005c02968651c3d",
+      "commit": "e9df86ca6991b779ee50bc744ad8bbdeefa9bae6",
       "package_versions": [
         "19.3.0",
         "19.3.0",
         "0.28.0"
       ],
-      "archive_sha256": "38adcc54b4a3161232254328c3dbf5cdb0ba874ac9104edf5f5051e066cf6507"
+      "archive_sha256": "cd4e93ecb5e509aaa0d950cb19bff95a7c4fb615a70dad0ec90eb20d956629f5"
     },
     {
       "name": "TypeScript",
@@ -47,7 +47,7 @@
       "name": "MySQL Go driver",
       "repository": "https://github.com/go-sql-driver/mysql",
       "branch": "master",
-      "commit": "aca61c8f4a21f1d79d197dae3f985b0283b80c96"
+      "commit": "c9e0863414a0e47bd708fcbc93d4adc611d15a5e"
     },
     {
       "name": "Go net/html",
@@ -117,7 +117,7 @@
   "vendored_packages": {
     "scheduler-main.tgz": "c64e8d8cb716ae3bcef457a833127ab9ad5c55d7fbf3bb89030f368a2f81e17c",
     "react-main.tgz": "c1d9d0e081f89765454b79b8b7aa81d2d42ae98c06a96914d952975bbda8b2a5",
-    "react-dom-main.tgz": "02f22648ec195371d9772c667cda0ce211eeefeac57e746a3d4d4d151996dfcb",
+    "react-dom-main.tgz": "efaaf57f2b0f8e39b27b1759c0d08401f29ac670ce0877b808cd17928d35319d",
     "eslint-main.tgz": "eb1cd508a65aaf6c0493eeaf72eefac27cffb3606d7d375d41f2e258c2311e43",
     "eslint-js-main.tgz": "8ecd352ee99b1c8291bee007f43d58356ae5057782de9635563aec2e604dcee2"
   },
@@ -142,13 +142,13 @@
     },
     {
       "module": "github.com/go-sql-driver/mysql",
-      "version": "v1.10.2-0.20261027012121-aca61c8f4a21",
-      "sum": "h1:rFm2Ptao+jQep8EUqsQZEKsKeNF/kfNuF3BWou2eAs8=",
+      "version": "v1.10.2-0.20261027070611-c9e0863414a0",
+      "sum": "h1:fzCxeHqUk7HSJXUG2mglZ+Qd/rIAkyUq70XwwX7U908=",
       "license_files": [
         "licenses/github.com__go-sql-driver__mysql/AUTHORS",
         "licenses/github.com__go-sql-driver__mysql/LICENSE"
       ],
-      "upstream_commit": "aca61c8f4a21f1d79d197dae3f985b0283b80c96"
+      "upstream_commit": "c9e0863414a0e47bd708fcbc93d4adc611d15a5e"
     },
     {
       "module": "github.com/google/uuid",
@@ -272,13 +272,13 @@
     },
     {
       "module": "github.com/go-sql-driver/mysql",
-      "version": "v1.10.2-0.20261027012121-aca61c8f4a21",
+      "version": "v1.10.2-0.20261027070611-c9e0863414a0",
       "role": "linux-runtime",
       "repository": "https://github.com/go-sql-driver/mysql",
-      "upstream_commit": "aca61c8f4a21f1d79d197dae3f985b0283b80c96",
+      "upstream_commit": "c9e0863414a0e47bd708fcbc93d4adc611d15a5e",
       "source_url": "https://api.github.com/repos/go-sql-driver/mysql/commits?per_page=1",
-      "sum": "h1:rFm2Ptao+jQep8EUqsQZEKsKeNF/kfNuF3BWou2eAs8=",
-      "upstream_head_version": "v1.10.2-0.20261027012121-aca61c8f4a21",
+      "sum": "h1:fzCxeHqUk7HSJXUG2mglZ+Qd/rIAkyUq70XwwX7U908=",
+      "upstream_head_version": "v1.10.2-0.20261027070611-c9e0863414a0",
       "at_upstream_head": true
     },
     {
@@ -982,7 +982,7 @@
       "integrity": "sha512-6wQuFs+VF1dfWG3cfHVt/idb5DcHJPf5vLHpktv+bXtv4a1OHXQtmwUNRWSOMtjgMTuWYI8v37/QCvmnxPnzrQ==",
       "registry_url": "https://registry.npmjs.org/react",
       "upstream_repository": "https://github.com/facebook/react",
-      "upstream_commit": "fd51cb10dd154aee73e4e7948005c02968651c3d",
+      "upstream_commit": "e9df86ca6991b779ee50bc744ad8bbdeefa9bae6",
       "retained_reason": "Current official source commit is pinned; registry version labels cannot order this source snapshot."
     },
     {
@@ -990,10 +990,10 @@
       "version": "19.3.0",
       "role": "browser-runtime",
       "resolved": "file:vendor/react-dom-main.tgz",
-      "integrity": "sha512-OnygMU3FZLAaEPiDuIAs+CJknlz244X79ftN+0RUgzxvWiCJpLWlB+ruVl/MQCA//FTjW8MFJqbIjStVgStmsw==",
+      "integrity": "sha512-zi/OSjuVrtc6ioefKm8kKg18TJnqo4WNNTNvMwhYT1AnUYAL/s47KlfpVtbPimZt6u8flkfX2f/CPKMlOYXXFw==",
       "registry_url": "https://registry.npmjs.org/react-dom",
       "upstream_repository": "https://github.com/facebook/react",
-      "upstream_commit": "fd51cb10dd154aee73e4e7948005c02968651c3d",
+      "upstream_commit": "e9df86ca6991b779ee50bc744ad8bbdeefa9bae6",
       "retained_reason": "Current official source commit is pinned; registry version labels cannot order this source snapshot."
     },
     {
@@ -1004,7 +1004,7 @@
       "integrity": "sha512-490Z4bfyVHmO61cgHY0dYQvwJTukdXro0W5nq9+FqAo3hOMA4eddaCG0gwXQkY415qKZ3Yfvq8VDTMpFdAtEdg==",
       "registry_url": "https://registry.npmjs.org/scheduler",
       "upstream_repository": "https://github.com/facebook/react",
-      "upstream_commit": "fd51cb10dd154aee73e4e7948005c02968651c3d",
+      "upstream_commit": "e9df86ca6991b779ee50bc744ad8bbdeefa9bae6",
       "retained_reason": "Current official source commit is pinned; registry version labels cannot order this source snapshot."
     },
     {
@@ -1053,5 +1053,13 @@
       "role": "Local isolated MySQL test-server shared-library dependency; not linked into Healthbank."
     }
   },
-  "verified_complete_at": "2026-10-27 09:34:53+08:00"
+  "verified_complete_at": "2026-10-27 09:34:53+08:00",
+  "runtime_refresh": {
+    "checked_at": "2026-10-27T08:46:19.154355+00:00",
+    "react_commit": "e9df86ca6991b779ee50bc744ad8bbdeefa9bae6",
+    "mysql_commit": "c9e0863414a0e47bd708fcbc93d4adc611d15a5e",
+    "scope": "Runtime-only refresh; earlier full-graph audit timestamps remain historical.",
+    "react_build_java": "openjdk 21.0.12.1 2026-08-18 LTS\nOpenJDK Runtime Environment Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS)\nOpenJDK 64-Bit Server VM Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS, mixed mode, sharing)",
+    "compatibility_exception": "React pinned Closure Compiler rejects stderr emitted by the runner default JDK. Isolate its source build to available Temurin 21; do not suppress stderr or alter application checks."
+  }
 }

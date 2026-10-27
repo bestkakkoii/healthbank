@@ -1,10 +1,10 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ES2023",
     "lib": [
       "DOM",
       "DOM.Iterable",
-      "ES2022"
+      "ES2023"
     ],
     "jsx": "react-jsx",
     "module": "ESNext",

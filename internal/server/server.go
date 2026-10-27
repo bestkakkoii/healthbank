@@ -48,15 +48,16 @@ type session struct {
 	lastChallenge            time.Time
 }
 type App struct {
-	mu       sync.Mutex
-	sessions map[string]*session
-	store    *store.Store
-	catalog  *lab.Catalog
-	secret   []byte
-	version  string
-	mux      *http.ServeMux
-	stop     chan struct{}
-	done     chan struct{}
+	retentionGate sync.RWMutex // Settings deletion is rare and must invalidate all old-session writes.
+	mu            sync.Mutex
+	sessions      map[string]*session
+	store         *store.Store
+	catalog       *lab.Catalog
+	secret        []byte
+	version       string
+	mux           *http.ServeMux
+	stop          chan struct{}
+	done          chan struct{}
 }
 
 func New(db *store.Store, secret []byte, version string) (*App, error) {
@@ -68,11 +69,14 @@ func New(db *store.Store, secret []byte, version string) (*App, error) {
 	a.mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
 		a.json(w, http.StatusOK, map[string]string{"status": "ok", "version": a.version})
 	})
+	a.mux.HandleFunc("GET /api/privacy", a.privacyInfo)
+	a.mux.HandleFunc("DELETE /api/settings", a.withSession(a.deleteSettings))
 	a.mux.HandleFunc("GET /api/session", a.withSession(a.getSession))
 	a.mux.HandleFunc("GET /api/auth/captcha", a.withSession(a.captcha))
 	a.mux.HandleFunc("POST /api/auth/login", a.withSession(a.login))
 	a.mux.HandleFunc("POST /api/auth/logout", a.withSession(a.logout))
 	a.mux.HandleFunc("GET /api/reports", a.withSession(a.fetchReports))
+	a.mux.HandleFunc("GET /api/supplementary", a.withSession(a.supplementary))
 	a.mux.HandleFunc("GET /api/reports/current", a.withSession(a.currentReports))
 	a.mux.HandleFunc("POST /api/reports/import", a.withSession(a.importReports))
 	a.mux.HandleFunc("POST /api/reports/demo", a.withSession(a.demo))
@@ -106,7 +110,9 @@ func (a *App) Handler() http.Handler {
 		w.Header().Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
 		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
 		if strings.HasPrefix(r.URL.Path, "/api/") {
-			w.Header().Set("Cache-Control", "no-store")
+			w.Header().Set("Cache-Control", "no-store, private")
+			w.Header().Set("Pragma", "no-cache")
+			w.Header().Set("X-Accel-Buffering", "no")
 		}
 		a.mux.ServeHTTP(w, r)
 	})
@@ -178,6 +184,13 @@ func (a *App) setCookie(w http.ResponseWriter, r *http.Request, id string) {
 }
 func (a *App) withSession(next func(http.ResponseWriter, *http.Request, *session)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodDelete && r.URL.Path == "/api/settings" {
+			a.retentionGate.Lock()
+			defer a.retentionGate.Unlock()
+		} else {
+			a.retentionGate.RLock()
+			defer a.retentionGate.RUnlock()
+		}
 		a.mu.Lock()
 		var s *session
 		var id string
@@ -372,7 +385,7 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, v any) error {
 	return nil
 }
 func (a *App) sessionView(s *session) map[string]any {
-	return map[string]any{"authenticated": s.mode == "official", "mode": s.mode, "settings": s.settings, "version": a.version, "csrf_token": s.csrf}
+	return map[string]any{"authenticated": s.mode == "official", "mode": s.mode, "settings": s.settings, "version": a.version, "csrf_token": s.csrf, "profile_key": s.subject}
 }
 func (a *App) refreshSettings(ctx context.Context, s *session) error {
 	if s.subject == "" {
@@ -466,7 +479,14 @@ func (a *App) login(w http.ResponseWriter, r *http.Request, s *session) {
 func (a *App) logout(w http.ResponseWriter, r *http.Request, s *session) {
 	if s.official != nil && s.mode == "official" {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		_ = s.official.Logout(ctx)
+		if err := s.official.Logout(ctx); err != nil {
+			code := "UNKNOWN"
+			var upstream *nhi.Error
+			if errors.As(err, &upstream) {
+				code = upstream.Code
+			}
+			slog.WarnContext(r.Context(), "official logout incomplete; local session will still be cleared", "code", code)
+		}
 		cancel()
 	}
 	s.clear()

@@ -1,4 +1,4 @@
-﻿# 資料保護與問題回報
+# 資料保護與問題回報
 
 Copyright © 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
@@ -29,3 +29,9 @@ Healthbank 是自架的檢驗資料閱讀工具。設定資料庫不保存檢驗
 不要在公開 Issue 揭露可利用的敏感細節或真實使用者資料。若尚無維護者明確提供的私人管道，可先提出不含漏洞細節與敏感資訊的聯絡請求，待維護者確認管道後再提供必要內容。
 
 私人聯絡管道與回應安排以維護者確認的內容為準。版本修正與已知限制以 [Releases](https://github.com/bestkakkoii/healthbank/releases)、[CHANGELOG](CHANGELOG.md) 及驗證紀錄為準。
+
+## 裝置記憶與情境分析
+
+新裝置不預先勾選記住證號／卡號；可管理多位使用者，密碼不寫入網站儲存。
+年齡／性別與生日只在頁面記憶體計算。跨裝置SQL仍只保存假名化設定，不是完全匿名。
+具體保存位置、營運者義務與部署查核見[資料處理說明](docs/privacy.zh-TW.md)。

@@ -1,0 +1,109 @@
+{
+  "checked_at": "2026-10-27T08:07:06.450491+00:00",
+  "sources": [
+    {
+      "name": "Go",
+      "repository": "https://github.com/golang/go",
+      "pinned": "6c49ac311e5642fa5399b46c736295a9dc4eeec9",
+      "exit_code": 0,
+      "response": "ref: refs/heads/master\tHEAD\n6c49ac311e5642fa5399b46c736295a9dc4eeec9\tHEAD\n",
+      "error": ""
+    },
+    {
+      "name": "React / React DOM / Scheduler",
+      "repository": "https://github.com/facebook/react",
+      "pinned": "fd51cb10dd154aee73e4e7948005c02968651c3d",
+      "exit_code": 0,
+      "response": "ref: refs/heads/main\tHEAD\ne9df86ca6991b779ee50bc744ad8bbdeefa9bae6\tHEAD\n",
+      "error": ""
+    },
+    {
+      "name": "TypeScript",
+      "repository": "https://github.com/microsoft/TypeScript",
+      "pinned": "49e69830214c55a8cc361aa3c4e7412d0afd02fe",
+      "exit_code": 0,
+      "response": "ref: refs/heads/main\tHEAD\n49e69830214c55a8cc361aa3c4e7412d0afd02fe\tHEAD\n",
+      "error": ""
+    },
+    {
+      "name": "esbuild",
+      "repository": "https://github.com/evanw/esbuild",
+      "pinned": "f6058f8364fe7ab91ca57a83e02577ed74c9cae4",
+      "exit_code": 0,
+      "response": "ref: refs/heads/main\tHEAD\nf6058f8364fe7ab91ca57a83e02577ed74c9cae4\tHEAD\n",
+      "error": ""
+    },
+    {
+      "name": "SQLite Go driver",
+      "repository": "https://gitlab.com/cznic/sqlite",
+      "pinned": "e6990422658b8c9b79328fc5bbda69cc892d70ee",
+      "exit_code": 0,
+      "response": "ref: refs/heads/master\tHEAD\ne6990422658b8c9b79328fc5bbda69cc892d70ee\tHEAD\n",
+      "error": "warning: redirecting to https://gitlab.com/cznic/sqlite.git/\n"
+    },
+    {
+      "name": "MySQL Go driver",
+      "repository": "https://github.com/go-sql-driver/mysql",
+      "pinned": "aca61c8f4a21f1d79d197dae3f985b0283b80c96",
+      "exit_code": 0,
+      "response": "ref: refs/heads/master\tHEAD\nc9e0863414a0e47bd708fcbc93d4adc611d15a5e\tHEAD\n",
+      "error": ""
+    },
+    {
+      "name": "Go net/html",
+      "repository": "https://github.com/golang/net",
+      "pinned": "05c76ee9adc59087cf3ba77ee9c8fcfab61bf61c",
+      "exit_code": 0,
+      "response": "ref: refs/heads/master\tHEAD\n05c76ee9adc59087cf3ba77ee9c8fcfab61bf61c\tHEAD\n",
+      "error": ""
+    },
+    {
+      "name": "React type declarations",
+      "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped",
+      "pinned": "0d5b76188fd585fe187acb6cffbe08071f2bdd16",
+      "exit_code": 0,
+      "response": "ref: refs/heads/master\tHEAD\n0d5b76188fd585fe187acb6cffbe08071f2bdd16\tHEAD\n",
+      "error": ""
+    },
+    {
+      "name": "ESLint / @eslint/js",
+      "repository": "https://github.com/eslint/eslint",
+      "pinned": "161558ae1391a8649a8d69a8b2c2e555b40121b9",
+      "exit_code": 0,
+      "response": "ref: refs/heads/main\tHEAD\n161558ae1391a8649a8d69a8b2c2e555b40121b9\tHEAD\n",
+      "error": ""
+    },
+    {
+      "name": "govulncheck",
+      "repository": "https://github.com/golang/vuln",
+      "pinned": "e672cbe8fbc8c76e28fcb6db0efd9ce354e0dac5",
+      "exit_code": 0,
+      "response": "ref: refs/heads/master\tHEAD\ne672cbe8fbc8c76e28fcb6db0efd9ce354e0dac5\tHEAD\n",
+      "error": ""
+    },
+    {
+      "name": "GitHub Actions checkout",
+      "repository": "https://github.com/actions/checkout",
+      "pinned": "f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a",
+      "exit_code": 0,
+      "response": "ref: refs/heads/main\tHEAD\nf548e57e544e1ff5a4c46bf1e1b8685f8e4a348a\tHEAD\n",
+      "error": ""
+    },
+    {
+      "name": "GitHub Actions setup-node",
+      "repository": "https://github.com/actions/setup-node",
+      "pinned": "949feb2413d6458794dcd2491c4babbbce0c15c1",
+      "exit_code": 0,
+      "response": "ref: refs/heads/main\tHEAD\n949feb2413d6458794dcd2491c4babbbce0c15c1\tHEAD\n",
+      "error": ""
+    },
+    {
+      "name": "GitHub Actions upload-artifact",
+      "repository": "https://github.com/actions/upload-artifact",
+      "pinned": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+      "exit_code": 0,
+      "response": "ref: refs/heads/main\tHEAD\ncf430e030ddbb5b0abf93d22962f4752f3646cd9\tHEAD\n",
+      "error": ""
+    }
+  ]
+}

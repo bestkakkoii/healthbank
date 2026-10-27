@@ -1,6 +1,26 @@
-﻿# Changelog
+# Changelog
+
+## v1.0.3-rc.6 — 2026-10-27 (Asia/Taipei)
+
+- Added verified-source age/sex scenario templates for nine analytes, instant table badges and trend-reference overlays; original institutional flags remain independent. Explicitly synchronize scenario settings after official authentication, never the optional birthday.
+- Added opt-in device-local personal-use notes with export/import/delete and no daily reminders; no medical values or notes in the server settings database.
+- Added same-domain multi-indicator charts, guarded pairwise non-HDL, readable before/after differences, and context-labelled CSV/print plus Healthbank-versioned portable JSON/XML. Third-party official formats are not assumed compatible.
+- Added read-only supplementary official-category connectors based on public JS source and synthetic fixtures, preserving provenance and not claiming verified live account coverage.
+- Added current operator disclosures, pseudonymous-settings deletion and session invalidation, stronger private/no-store policy, and documented external deployment privacy caveats.
+- Linux binary archives unpack directly to `healthbank`, docs and metadata without an extra enclosing directory; existing `data/` remains untouched.
+- Real official login and older-year completeness, actual operator legal validation, physical Safari, host retention audit and authentic portal subcategory fixtures require external acceptance.
 
 Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
+
+## Unreleased — privacy and comparison work
+
+- Opt-in device-local multi-user login fields, per-user/all-user forgetting, and safe storage diagnostics; passwords remain in the browser manager/open form only.
+- Read submitted form values so silent browser autofill is not lost; prevent stale identity/card pairing and keep credentials in the open form after a failed manual challenge.
+- Add source-bound age/sex comparison for NCKU blood-creatinine and ALP templates and opt-in adult CKD-EPI 2021 estimates. No demographic persistence, original-result mutation or whole-table regrading.
+- Strengthen API non-storage headers and generic proxy guidance; distinguish pseudonymous settings from medical observations and device-local storage.
+- Generalize executable-first deployment documentation and align first-party MIT notices.
+- Runtime inputs taken from the separately verified React/MySQL source snapshot; this is not a new full dependency-graph freshness audit.
+
 
 ## v1.0.3-rc.5 — 2026-10-27 (Asia/Taipei)
 

@@ -82,7 +82,9 @@ def create_archive(kind: str, root: Path, destination: Path, epoch: int, prefix:
             with gzip.GzipFile(filename="", mode="wb", fileobj=output, mtime=epoch) as compressed:
                 with tarfile.open(fileobj=compressed, mode="w", format=tarfile.PAX_FORMAT) as archive:
                     for file in selected:
-                        add_file(archive, file, f"{prefix}/{file.relative_to(root).as_posix()}", epoch)
+                        relative_name = file.relative_to(root).as_posix()
+                        name = f"{prefix}/{relative_name}" if prefix else relative_name
+                        add_file(archive, file, name, epoch)
         temporary.replace(destination)
     finally:
         temporary.unlink(missing_ok=True)
@@ -112,7 +114,9 @@ def main() -> None:
     root = Path(sys.argv[2]).resolve()
     destination = Path(sys.argv[3]).resolve()
     epoch = int(sys.argv[4])
-    prefix = sys.argv[5] if len(sys.argv) > 5 else root.name
+    # Deployable binaries extract directly into the selected application directory.
+    # Source bundles keep their conventional versioned source directory.
+    prefix = "" if command == "binary" else (sys.argv[5] if len(sys.argv) > 5 else root.name)
     create_archive(command, root, destination, epoch, prefix)
 
 

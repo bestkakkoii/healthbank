@@ -1,5 +1,6 @@
-// Copyright (c) 2026 bestkakkoii llc. All rights reserved.
+// Copyright (c) 2026 bestkakkoii llc.
 // SPDX-License-Identifier: MIT
+import type { AnalysisPreferences } from './clinical-comparison';
 
 export type Level = 1 | 2 | 3 | 4 | 5;
 export type Theme = 'light' | 'dark' | 'system';
@@ -24,6 +25,7 @@ export interface ItemOverride {
 
 export interface Settings {
   revision: number;
+  analysis?: AnalysisPreferences | null;
   theme: Theme;
   font_scale: number;
   favorites: string[];
@@ -34,12 +36,17 @@ export interface Settings {
   >;
 }
 
+export interface PrivacyInfo {
+  operator: string; contact: string; processing_region: string; backup_retention: string;
+  session_idle_minutes: number; cleanup_interval_seconds: number; privacy_revision: string; settings_retention: string;
+}
 export interface Session {
   authenticated: boolean;
   mode: SessionMode;
   settings: Settings;
   version: string;
   csrf_token?: string;
+  profile_key?: string;
 }
 
 export interface LabRecord {
@@ -69,6 +76,14 @@ export interface LabRecord {
   official_flag?: string;
 }
 
+export interface SupplementEntry {
+  date: string; institution: string; title: string; source: string;
+  fields: { name: string; value: string; unit?: string }[]; detail_id?: string;
+}
+export interface SupplementReport {
+  category: string; entries: SupplementEntry[]; coverage: string; fetched_at: string;
+  start_date?: string; end_date?: string; complete: boolean;
+}
 export interface ReportResponse {
   records: LabRecord[];
   fetched_at: string;
@@ -257,6 +272,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
+  supplementary: (category: string, from: string, to: string, detail: string, signal: AbortSignal) =>
+    request<SupplementReport>(`/api/supplementary?${new URLSearchParams({ category, from, to, detail })}`, { signal }),
+  privacy: (signal?: AbortSignal) => request<PrivacyInfo>('/api/privacy', signal ? { signal } : {}),
+  deleteSettings: (revision: number) => request<Session>('/api/settings', { method: 'DELETE', body: JSON.stringify({ revision }) }),
   session: (signal?: AbortSignal) => request<Session>('/api/session', { signal: signal ?? null }),
   captcha: (signal?: AbortSignal) => request<CaptchaResponse>('/api/auth/captcha', { signal: signal ?? null }),
   login: (body: LoginInput) =>
@@ -282,6 +301,7 @@ export const api = {
         font_scale: settings.font_scale,
         favorites: settings.favorites,
         overrides: settings.overrides,
+        analysis: settings.analysis ?? null,
       }),
     }),
 };
