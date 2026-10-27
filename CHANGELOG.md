@@ -2,6 +2,20 @@
 
 Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
+## v1.0.3-rc.2 — 2026-10-27 (Asia/Taipei)
+
+This prerelease completes built-in settings visibility and researched warning profiles. Official CAPTCHA, authenticated login and complete live retrieval remain unverified.
+
+- Exposed all 76 unique built-in measurement configurations before import, including source categories, named reference templates, units, aliases and independent alert explanations. No placeholder results or observed-item records are created.
+- Added CK-MB activity, unspecified-context blood glucose, capillary postprandial glucose, D-dimer with unresolved FEU/DDU, homocysteine, intact PTH, vitamin B12 and a separate urine-protein qualitative source channel. Added the verified `Creatinine(健檢)` alias.
+- Added unit-checked independent potassium, total-calcium, sodium, chloride, hemoglobin, hematocrit, platelet and WBC reminders from the explicitly named VGH notification policy. Extended existing low-glucose alerts to the two added blood-glucose contexts. Conditional age, specialty, outpatient and specimen-dependent thresholds remain inactive.
+- Kept Trace/± findings unclassified pending original-method context instead of universally labelling them abnormal. Original flags remain visible.
+- Kept method-dependent reference templates as visible previews; they do not silently replace missing original references or invent universal five-level danger cutoffs.
+- Added per-item and confirmed reset-all actions that remove personal thresholds while preserving appearance, reading size, favorites and original report contents. Validated saves and portable settings now accept unobserved built-ins.
+- Reconciled verified legacy dynamic aliases without losing conflicting personal settings. Persisted conflict state prevents a reset canonical value from being silently replaced by an older override.
+- Normalized fullwidth comparison symbols while preserving original text, exact interval endpoints and the absence of invented chart points.
+- Refreshed pinned Go and SQLite upstream snapshots and React declaration provenance, keeping remaining direct sources unchanged after verification.
+
 ## v1.0.3-rc.1 — 2026-10-27 (Asia/Taipei)
 
 This prerelease adds actionable connection diagnostics. It is not a verified fix for official CAPTCHA or login availability.

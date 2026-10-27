@@ -225,7 +225,7 @@ func (a *App) catalogResponse(w http.ResponseWriter, r *http.Request, s *session
 	for i := range out.Items {
 		var newest *lab.Record
 		for j := range rows {
-			if rows[j].ItemID == out.Items[i].ID && (newest == nil || rows[j].ExamDate > newest.ExamDate) {
+			if rows[j].ConfigurationKey == out.Items[i].Key && (newest == nil || rows[j].ExamDate > newest.ExamDate) {
 				newest = &rows[j]
 			}
 		}
@@ -261,7 +261,7 @@ func (a *App) saveSettings(w http.ResponseWriter, r *http.Request, s *session) {
 	if next.Overrides == nil {
 		next.Overrides = map[string]lab.Override{}
 	}
-	if err := lab.ValidateSettings(next, s.settings.Known); err != nil {
+	if err := lab.ValidateSettings(next, a.catalog.ConfigurableItems(s.settings.Known)); err != nil {
 		a.fail(w, r, 400, "invalid_settings", err.Error())
 		return
 	}
@@ -307,5 +307,10 @@ func ValidatePortableSettings(data []byte) (lab.Settings, error) {
 	if err := lab.ValidateKnown(s.Known); err != nil {
 		return s, err
 	}
-	return s, lab.ValidateSettings(s, s.Known)
+	catalog, err := lab.LoadCatalog()
+	if err != nil {
+		return s, err
+	}
+	catalog.ReconcileSettings(&s)
+	return s, lab.ValidateSettings(s, catalog.ConfigurableItems(s.Known))
 }

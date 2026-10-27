@@ -20,7 +20,7 @@ The Go runtime dependencies below are unmodified. Complete license texts are bun
 | modernc.org/libc | v1.79.0 | `licenses/modernc.org__libc/AUTHORS`, `licenses/modernc.org__libc/LICENSE-3RD-PARTY.md`, `licenses/modernc.org__libc/LICENSE` |
 | modernc.org/mathutil | v1.7.1 | `licenses/modernc.org__mathutil/AUTHORS`, `licenses/modernc.org__mathutil/LICENSE` |
 | modernc.org/memory | v1.12.1 | `licenses/modernc.org__memory/AUTHORS`, `licenses/modernc.org__memory/LICENSE-GO`, `licenses/modernc.org__memory/LICENSE-MMAP-GO`, `licenses/modernc.org__memory/LICENSE`, `licenses/modernc.org__memory/LICENSE-LOGO` |
-| modernc.org/sqlite | v1.61.1-0.20261025171635-683b7278591f | `licenses/modernc.org__sqlite/AUTHORS`, `licenses/modernc.org__sqlite/LICENSE-3RD-PARTY.md`, `licenses/modernc.org__sqlite/LICENSE-SQLITE_VEC`, `licenses/modernc.org__sqlite/LICENSE-SQLITE`, `licenses/modernc.org__sqlite/LICENSE` |
+| modernc.org/sqlite | v1.61.1-0.20261026192429-e6990422658b | `licenses/modernc.org__sqlite/AUTHORS`, `licenses/modernc.org__sqlite/LICENSE-3RD-PARTY.md`, `licenses/modernc.org__sqlite/LICENSE-SQLITE_VEC`, `licenses/modernc.org__sqlite/LICENSE-SQLITE`, `licenses/modernc.org__sqlite/LICENSE` |
 
 The MySQL driver is licensed under MPL-2.0. Its unmodified covered source is available at https://github.com/go-sql-driver/mysql/tree/4b12a5b6e7fb8951a847f1b61485a59f337ada18. The application does not alter those covered files.
 

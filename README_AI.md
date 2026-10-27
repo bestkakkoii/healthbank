@@ -32,9 +32,9 @@ Never persist medical observations, original identity/card numbers, passwords, o
 5. Match names, codes and units together. Never conflate urine/blood Albumin, PH/pH, RBC/WBC, or spot concentration with ratios.
 6. Reference flags and official flags survive personal overrides. Reference conformity is not a diagnosis or validated danger score.
 7. Compare exact rational decimals; do not round first. Inequalities/ranges stay intervals and never become fabricated chart points.
-8. A custom green interval cannot erase independently applicable low-glucose/high-TG alert floors. Preserve guaranteed alerts and uncertain categories separately.
+8. A custom green interval cannot erase independently applicable low-glucose, high-TG or explicitly enabled named-laboratory alert floors. Preserve exact endpoints, units, guaranteed alerts and uncertain categories separately; conditional institutional rules remain inactive without their required context.
 9. A missing eGFR unit cannot be silently confirmed by a personal threshold. Source profile demographics/methods are not inferred.
-10. Metadata and never-observed missing results do not create configuration entries. Shared ACR settings do not collapse the source measurement channels.
+10. Expose all built-in measurement configurations before import, without populating observed items or creating results. Metadata remains excluded; unknown dynamic entries require an observation. Shared ACR and urine-protein settings never collapse source channels. Named reference profiles are previews unless explicitly enabled for fallback. Reset removes overrides and cannot resurrect a preserved conflicting legacy override; retain unrelated appearance/favorites.
 11. No external scripts/fonts/analytics, report localStorage, service-worker report cache, uploaded script execution, or multipart disk spooling.
 12. All human-facing output retains bestkakkoii llc. copyright. Synthetic demonstrations must be conspicuously labelled.
 13. Comparison rows are inspection dates and columns are item identities. Annual mode groups dates without aggregating values; preserve every same-date observation within its own item cell. Print column batches must use the same lossless matrix.

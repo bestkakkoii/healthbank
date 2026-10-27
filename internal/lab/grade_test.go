@@ -343,7 +343,13 @@ func TestSharedACRConfigurationAndSettingsExcludeObservations(t *testing.T) {
 	}
 	normalized := catalog.Normalize(rows, &settings)
 	configuration := catalog.ForSettings(settings)
-	if len(normalized) != 2 || normalized[0].ID == normalized[1].ID || normalized[0].ConfigurationKey != normalized[1].ConfigurationKey || len(configuration.Items) != 1 {
+	matching := 0
+	for _, item := range configuration.Items {
+		if item.Key == "urine_albumin_creatinine_ratio" {
+			matching++
+		}
+	}
+	if len(normalized) != 2 || normalized[0].ID == normalized[1].ID || normalized[0].ConfigurationKey != normalized[1].ConfigurationKey || matching != 1 {
 		t.Fatal("shared ACR configuration was duplicated or separate observations were merged")
 	}
 	document, err := settings.Document()

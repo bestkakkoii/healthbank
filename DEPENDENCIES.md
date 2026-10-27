@@ -6,14 +6,14 @@ Direct dependencies were resolved against their official upstream default branch
 
 | Component | Pinned upstream source | Build result |
 | --- | --- | --- |
-| Go | golang/go master `dac9fe5ea9bed1733cb27fbd91aa43457de980b4` | Source-built devel go1.28; application Linux builds use this compiler |
+| Go | golang/go master `84831ad47e254fc9f80341f1e5b6b9d36c9422bd` | Source-built devel go1.28; application Linux builds use this compiler |
 | React / React DOM / Scheduler | react/react main `fd51cb10dd154aee73e4e7948005c02968651c3d` | Source-built packages 19.3.0 / 19.3.0 / 0.28.0 |
 | TypeScript | microsoft/TypeScript main `49e69830214c55a8cc361aa3c4e7412d0afd02fe` | Source-built native compiler reports7.1.0-dev |
 | esbuild | evanw/esbuild main `f6058f8364fe7ab91ca57a83e02577ed74c9cae4` | Source-built compiler reports0.28.2; Go module pseudoversion records the actual commit |
-| SQLite driver | cznic/sqlite master `683b7278591f31956cee8ed4602cd3fe275ff620` | Pure Go, no external SQLite shared library |
+| SQLite driver | cznic/sqlite master `e6990422658b8c9b79328fc5bbda69cc892d70ee` | Pure Go, no external SQLite shared library |
 | MySQL driver | go-sql-driver/mysql master `4b12a5b6e7fb8951a847f1b61485a59f337ada18` | Optional runtime adapter |
 | HTML tokenizer | golang/net master `05c76ee9adc59087cf3ba77ee9c8fcfab61bf61c` | Streaming memory-only saved-report parser |
-| React type declarations | DefinitelyTyped master `28db822755d04098fc7cab2013b15ca9f0c58c7f` | Vendored declaration content; workspace-only packaging metadata normalized |
+| React type declarations | DefinitelyTyped master `0d5b76188fd585fe187acb6cffbe08071f2bdd16` | Vendored declaration content unchanged from the preceding pin; current HEAD directory entries verified identical, provenance updated |
 
 Full source URLs, archive SHA-256 values, package hashes and runtime module license paths are in `dependencies.lock.json`.
 

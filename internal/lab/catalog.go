@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"sort"
 	"strings"
 )
@@ -20,19 +21,37 @@ type match struct {
 	Unit string `json:"unit_raw"`
 }
 type Definition struct {
-	ID        string   `json:"id"`
-	Name      string   `json:"display_name_zh_tw"`
-	Match     match    `json:"source_match"`
-	Key       string   `json:"configuration_key"`
-	Kind      string   `json:"kind"`
-	ValueKind string   `json:"value_kind"`
-	Rule      string   `json:"default_rule"`
-	Specimen  string   `json:"specimen"`
-	Notes     []string `json:"notes"`
-	Domain    struct {
+	ID          string            `json:"id"`
+	Name        string            `json:"display_name_zh_tw"`
+	Match       match             `json:"source_match"`
+	Aliases     []match           `json:"source_aliases,omitempty"`
+	Key         string            `json:"configuration_key"`
+	Kind        string            `json:"kind"`
+	ValueKind   string            `json:"value_kind"`
+	Rule        string            `json:"default_rule"`
+	Alerts      []string          `json:"alert_rules,omitempty"`
+	Reference   *ReferenceProfile `json:"reference_profile"`
+	Description string            `json:"description_zh_tw,omitempty"`
+	Sources     []string          `json:"sources,omitempty"`
+	Specimen    string            `json:"specimen"`
+	Notes       []string          `json:"notes"`
+	Domain      struct {
 		Minimum *string `json:"minimum"`
 		Maximum *string `json:"maximum"`
 	} `json:"physical_domain"`
+}
+
+// ReferenceProfile is a named preview, separate from each report's immutable
+// interval. Applicability is never inferred from coincident numeric limits.
+type ReferenceProfile struct {
+	Lower             *string  `json:"lower"`
+	Upper             *string  `json:"upper"`
+	LowerInclusive    bool     `json:"lower_inclusive"`
+	UpperInclusive    bool     `json:"upper_inclusive"`
+	Expected          []string `json:"expected_values,omitempty"`
+	Source            string   `json:"source"`
+	Scope             string   `json:"scope,omitempty"`
+	AutomaticFallback bool     `json:"automatic_fallback_allowed"`
 }
 type ruleBand struct {
 	Band
@@ -40,12 +59,16 @@ type ruleBand struct {
 	Category     string `json:"category"`
 }
 type Rule struct {
-	Kind    string     `json:"kind"`
-	Unit    string     `json:"unit"`
-	Aliases []string   `json:"unit_aliases"`
-	Bands   []ruleBand `json:"bands"`
-	Sources []string   `json:"sources"`
-	Meaning string     `json:"meaning"`
+	Kind         string     `json:"kind"`
+	Unit         string     `json:"unit"`
+	Aliases      []string   `json:"unit_aliases"`
+	Bands        []ruleBand `json:"bands"`
+	Sources      []string   `json:"sources"`
+	Meaning      string     `json:"meaning"`
+	Description  string     `json:"description,omitempty"`
+	NormalText   []string   `json:"normal_text_values,omitempty"`
+	PositiveText []string   `json:"positive_text_values,omitempty"`
+	ReviewText   []string   `json:"review_text_values,omitempty"`
 }
 type sourceDefinition struct {
 	Title         string `json:"title"`
@@ -75,8 +98,13 @@ func unitKey(s string) string {
 func (c *Catalog) match(r RawRecord) Definition {
 	for _, d := range c.Items {
 		// Exact names preserve urine PH versus blood pH, even with identical units.
-		if strings.EqualFold(strings.TrimSpace(r.OrderCode), d.Match.Code) && strings.TrimSpace(r.ItemName) == d.Match.Name && unitKey(r.Unit) == unitKey(d.Match.Unit) {
+		if matchesSource(r, d.Match) {
 			return d
+		}
+		for _, alias := range d.Aliases {
+			if matchesSource(r, alias) {
+				return d
+			}
 		}
 		// eGFR is catalogued from a unit-less export. Explicit verified units may
 		// select the same analyte, but the grading engine still rejects absent units.
@@ -84,9 +112,15 @@ func (c *Catalog) match(r RawRecord) Definition {
 			return d
 		}
 	}
-	sum := sha256.Sum256([]byte(r.OrderCode + "\x00" + r.ItemName + "\x00" + unitKey(r.Unit)))
-	id := "custom_" + hex.EncodeToString(sum[:10])
+	id := dynamicID(r.OrderCode, r.ItemName, r.Unit)
 	return Definition{ID: id, Key: id, Name: r.ItemName, Match: match{r.OrderCode, r.ItemName, r.Unit}, Kind: "measurement", Rule: "report_reference"}
+}
+func matchesSource(r RawRecord, m match) bool {
+	return strings.EqualFold(strings.TrimSpace(r.OrderCode), m.Code) && strings.TrimSpace(r.ItemName) == m.Name && unitKey(r.Unit) == unitKey(m.Unit)
+}
+func dynamicID(code, name, unit string) string {
+	sum := sha256.Sum256([]byte(code + "\x00" + name + "\x00" + unitKey(unit)))
+	return "custom_" + hex.EncodeToString(sum[:10])
 }
 func category(d Definition) string {
 	id := d.ID
@@ -96,8 +130,16 @@ func category(d Definition) string {
 	switch {
 	case strings.Contains(id, "triglyceride") || strings.Contains(id, "cholesterol"):
 		return "lipids"
-	case id == "fasting_plasma_glucose" || id == "blood_hba1c":
+	case id == "fasting_plasma_glucose" || id == "blood_hba1c" || id == "blood_glucose_unspecified" || id == "capillary_postprandial_glucose":
 		return "glucose"
+	case id == "blood_ck_mb_activity":
+		return "cardiac"
+	case id == "blood_total_homocysteine" || id == "serum_total_vitamin_b12":
+		return "nutrition"
+	case id == "plasma_d_dimer_unspecified":
+		return "coagulation"
+	case id == "blood_intact_pth":
+		return "renal"
 	case strings.HasPrefix(id, "venous_"):
 		return "blood_gas"
 	case strings.HasPrefix(id, "blood_"):
@@ -120,16 +162,22 @@ func category(d Definition) string {
 }
 
 type CatalogItem struct {
-	ID          string   `json:"id"`
-	Key         string   `json:"configuration_key"`
-	Name        string   `json:"display_name"`
-	Category    string   `json:"category"`
-	Unit        string   `json:"unit"`
-	Low         *string  `json:"reference_low"`
-	High        *string  `json:"reference_high"`
-	Rule        any      `json:"default_rule"`
-	Description string   `json:"description"`
-	Sources     []string `json:"sources"`
+	ID          string            `json:"id"`
+	Key         string            `json:"configuration_key"`
+	Name        string            `json:"display_name"`
+	Category    string            `json:"category"`
+	Unit        string            `json:"unit"`
+	Low         *string           `json:"reference_low"`
+	High        *string           `json:"reference_high"`
+	Rule        any               `json:"default_rule"`
+	Description string            `json:"description"`
+	Sources     []string          `json:"sources"`
+	Builtin     bool              `json:"builtin"`
+	Aliases     []string          `json:"aliases"`
+	OrderCodes  []string          `json:"order_codes"`
+	Reference   *ReferenceProfile `json:"default_reference"`
+	Alerts      []Rule            `json:"alert_rules"`
+	ValueKind   string            `json:"value_kind"`
 }
 type Source struct {
 	ID      string `json:"id"`
@@ -144,29 +192,49 @@ type CatalogResponse struct {
 
 func (c *Catalog) ForSettings(s Settings) CatalogResponse {
 	out := CatalogResponse{Items: []CatalogItem{}, Sources: []Source{}}
-	ids := make([]string, 0, len(s.Known))
-	for id := range s.Known {
+	known := c.ConfigurableItems(s.Known)
+	ids := make([]string, 0, len(known))
+	for id := range known {
 		ids = append(ids, id)
 	}
 	sort.Strings(ids)
 	seen := map[string]bool{}
 	for _, id := range ids {
-		k := s.Known[id]
+		k := known[id]
 		if seen[k.Key] {
 			continue
 		}
 		seen[k.Key] = true
-		item := CatalogItem{ID: k.ID, Key: k.Key, Name: k.Name, Category: k.Category, Unit: k.Unit, Sources: []string{}, Description: "依本次檢驗的原院參考值顯示；個人設定只改變顯示基準。"}
+		item := CatalogItem{ID: k.ID, Key: k.Key, Name: k.Name, Category: k.Category, Unit: k.Unit, Sources: []string{}, Aliases: []string{k.Name}, OrderCodes: []string{}, Alerts: []Rule{}, Description: "依本次檢驗的原院參考值顯示；個人設定只改變顯示基準。"}
+		if k.LegacyFor != "" {
+			item.Description = "此舊版名稱曾有不同的個人規則，為避免覆蓋而獨立保留。新版結果使用對應的內建項目；還原此舊版設定後即可移除保留項目。"
+		}
 		for _, d := range c.Items {
-			if d.ID == k.ID {
+			if d.Key == k.Key && d.Kind == "measurement" {
+				item.Builtin = true
+				item.ValueKind = d.ValueKind
 				rule := c.Rules[d.Rule]
 				item.Rule = rule
-				item.Sources = rule.Sources
-				if item.Sources == nil {
-					item.Sources = []string{}
+				item.Sources = appendUnique(item.Sources, rule.Sources...)
+				item.Sources = appendUnique(item.Sources, d.Sources...)
+				item.Aliases = appendUnique(item.Aliases, d.Match.Name)
+				item.OrderCodes = appendUnique(item.OrderCodes, d.Match.Code)
+				for _, alias := range d.Aliases {
+					item.Aliases = appendUnique(item.Aliases, alias.Name)
+					item.OrderCodes = appendUnique(item.OrderCodes, alias.Code)
+				}
+				if item.Reference == nil && d.Reference != nil {
+					item.Reference = d.Reference
+					item.Sources = appendUnique(item.Sources, d.Reference.Source)
+				}
+				if len(item.Alerts) == 0 {
+					for _, id := range d.Alerts {
+						alert := c.Rules[id]
+						item.Alerts = append(item.Alerts, alert)
+						item.Sources = appendUnique(item.Sources, alert.Sources...)
+					}
 				}
 				item.Description = description(d)
-				break
 			}
 		}
 		out.Items = append(out.Items, item)
@@ -182,7 +250,92 @@ func (c *Catalog) ForSettings(s Settings) CatalogResponse {
 	sort.Slice(out.Sources, func(i, j int) bool { return out.Sources[i].ID < out.Sources[j].ID })
 	return out
 }
+
+// ConfigurableItems exposes built-ins without claiming they were observed or
+// persisting a copy of the catalog in every user's SQL settings document.
+func (c *Catalog) ConfigurableItems(known map[string]KnownItem) map[string]KnownItem {
+	out := make(map[string]KnownItem, len(known)+len(c.Items))
+	for id, item := range known {
+		out[id] = item
+	}
+	for _, d := range c.Items {
+		if d.Kind != "measurement" || d.Key == "" {
+			continue
+		}
+		unit := d.Match.Unit
+		if rule := c.Rules[d.Rule]; rule.Unit != "" {
+			unit = rule.Unit
+		}
+		out[d.ID] = KnownItem{ID: d.ID, Key: d.Key, Name: d.Name, Unit: unit, Category: category(d)}
+	}
+	return out
+}
+
+// ReconcileSettings promotes formerly dynamic identities now recognized by a
+// verified source match. Conflicting personal edits remain explicitly labelled
+// instead of being discarded; resets can subsequently remove the conflict.
+func (c *Catalog) ReconcileSettings(s *Settings) {
+	for _, d := range c.Items {
+		if d.Kind != "measurement" || d.Key == "" {
+			continue
+		}
+		matches := append([]match{d.Match}, d.Aliases...)
+		for _, m := range matches {
+			oldID := dynamicID(m.Code, m.Name, m.Unit)
+			old, ok := s.Known[oldID]
+			if !ok || old.ID != oldID || old.Key != oldID || unitKey(old.Unit) != unitKey(m.Unit) {
+				continue
+			}
+			previous, hasPrevious := s.Overrides[oldID]
+			current, hasCurrent := s.Overrides[d.Key]
+			if old.LegacyFor == d.Key && hasPrevious {
+				continue
+			}
+			if hasPrevious && hasCurrent && !reflect.DeepEqual(previous, current) {
+				old.Name = m.Name + "（保留的舊版設定）"
+				old.LegacyFor = d.Key
+				s.Known[oldID] = old
+				continue
+			}
+			if hasPrevious {
+				s.Overrides[d.Key] = previous
+				delete(s.Overrides, oldID)
+			}
+			for i, key := range s.Favorites {
+				if key == oldID {
+					s.Favorites[i] = d.Key
+				}
+			}
+			s.Favorites = appendUnique([]string{}, s.Favorites...)
+			delete(s.Known, oldID)
+			s.Known[d.ID] = KnownItem{ID: d.ID, Key: d.Key, Name: d.Name, Unit: old.Unit, Category: category(d)}
+		}
+	}
+}
+
+func appendUnique(values []string, additions ...string) []string {
+	for _, value := range additions {
+		if value == "" {
+			continue
+		}
+		present := false
+		for _, existing := range values {
+			if existing == value {
+				present = true
+				break
+			}
+		}
+		if !present {
+			values = append(values, value)
+		}
+	}
+	return values
+}
+
 func description(d Definition) string {
+	if d.Description != "" {
+		return d.Description
+	}
 	switch d.ID {
 	case "egfr":
 		return "KDIGO G1–G5（G3a／G3b分開標示）；須確認單位，單次結果無法判定慢性病程，亦須合看白蛋白尿。"
@@ -212,6 +365,8 @@ func clinicalCategoryLabel(value string) string {
 		"normal_to_mildly_increased_protein": "正常至輕度蛋白尿增加",
 		"moderately_increased_protein":       "中度蛋白尿增加",
 		"severely_increased_protein":         "重度蛋白尿增加",
+		"vgh_critical_threshold":             "臺北榮總危急值門檻參考",
+		"vgh_abnormal_notification":          "臺北榮總異常值通報門檻參考",
 	}
 	if label, ok := labels[value]; ok {
 		return label

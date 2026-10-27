@@ -149,8 +149,8 @@ func TestDemoSessionDynamicSettingsAndRevisionGuards(t *testing.T) {
 		t.Fatalf("anonymous official report fetch accepted: %d", denied.Code)
 	}
 	before := decodeResponse[lab.CatalogResponse](t, browser.request(http.MethodGet, "/api/catalog", nil, "", ""), http.StatusOK)
-	if len(before.Items) != 0 {
-		t.Fatal("unseen items appeared as personal configuration")
+	if len(before.Items) == 0 || len(initial.Settings.Known) != 0 {
+		t.Fatal("built-in defaults must be visible without inventing observed items")
 	}
 	demo := decodeResponse[reportResponse](t, browser.jsonRequest(t, http.MethodPost, "/api/reports/demo", map[string]any{}), http.StatusOK)
 	if len(demo.Records) == 0 || !demo.Complete || len(demo.Warnings) == 0 {
@@ -337,10 +337,17 @@ func TestVerifiedFixtureSharesSettingsAcrossDevicesButNotResults(t *testing.T) {
 		t.Fatalf("verified fixture did not persist encountered definitions: %+v", view)
 	}
 	catalog := decodeResponse[lab.CatalogResponse](t, first.request(http.MethodGet, "/api/catalog", nil, "", ""), http.StatusOK)
-	if len(catalog.Items) != 1 {
-		t.Fatalf("fixture should configure only its one encountered item: %d", len(catalog.Items))
+	if len(catalog.Items) <= 1 || len(view.Settings.Known) != 1 {
+		t.Fatalf("built-ins must be visible while only the actual encounter is persisted: %d", len(catalog.Items))
 	}
-	key := catalog.Items[0].Key
+	key := "serum_alt"
+	found := false
+	for _, item := range catalog.Items {
+		found = found || item.Key == key
+	}
+	if !found {
+		t.Fatal("observed ALT disappeared from the built-in catalog")
+	}
 	settings := view.Settings
 	settings.Theme, settings.FontScale = "dark", 2
 	settings.Favorites = []string{key}

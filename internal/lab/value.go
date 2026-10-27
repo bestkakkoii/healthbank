@@ -27,6 +27,11 @@ var exactPattern = regexp.MustCompile("^" + decimalPattern + "$")
 var boundPattern = regexp.MustCompile(`^(>=|<=|>|<|≥|≤|大於等於|小於等於|大於|小於)\s*(` + decimalPattern + `)$`)
 var rangePattern = regexp.MustCompile(`^(` + decimalPattern + `)\s*(?:-|–|~|～|至)\s*(` + decimalPattern + `)$`)
 var ordinalPattern = regexp.MustCompile(`^(?:[1-4]\+|\+{1,4}|±|trace)$`)
+var comparisonGlyphs = strings.NewReplacer("＜", "<", "＞", ">", "＝", "=", "≦", "≤", "≧", "≥")
+
+func numericText(raw string) string {
+	return comparisonGlyphs.Replace(strings.TrimSpace(raw))
+}
 
 func decimal(s string) (*big.Rat, bool) {
 	s = strings.TrimSpace(s)
@@ -37,8 +42,8 @@ func decimal(s string) (*big.Rat, bool) {
 	return r, ok
 }
 func parseValue(raw string) parsedValue {
-	s := strings.TrimSpace(raw)
-	p := parsedValue{text: s, kind: "text"}
+	s := numericText(raw)
+	p := parsedValue{text: strings.TrimSpace(raw), kind: "text"}
 	if s == "" || s == "-" || s == "--" || s == "—" {
 		p.kind = "missing"
 		return p

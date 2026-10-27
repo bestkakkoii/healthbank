@@ -5,8 +5,8 @@
   "status": "v1_source_catalog_with_explicit_applicability_guards",
   "scope": "Taiwan-oriented adult laboratory reference templates and sourced category rules. No universal2026 Asian five-level clinical danger standard is claimed.",
   "personal_observations_included": false,
-  "source_item_count": 72,
-  "measurement_definition_count": 70,
+  "source_item_count": 80,
+  "measurement_definition_count": 78,
   "palette": [
     {
       "level": 1,
@@ -80,7 +80,7 @@
     "unit_policy": "Compare only matching/verified-convertible units. Missing unit is unknown, not automatically dimensionless.",
     "personal_overrides": "Affect selected personal display rules; do not erase original laboratory flags or independently applicable critical alerts.",
     "year_policy": "Use source-effective versions;2026 verification date does not make older publications2026 editions. Preserve old reference context when recoloring under a selected current profile.",
-    "critical_policy": "Source critical flags retained independently. Institutional optional profiles are disabled until explicitly selected and applicable.",
+    "critical_policy": "Preserve source flags independently. Enable explicitly named, unconditioned Taipei VGH application-alert templates with specimen/unit guards; conditional age, outpatient, specialty and unspecified blood-gas thresholds remain inactive.",
     "unknown_policy": "Gray. No invented numeric cutoff or default-safe classification."
   },
   "settings_storage_contract": {
@@ -113,14 +113,14 @@
     ],
     "browser_login_memory": "Earlier requested device-local login-field memory is separate from server configuration storage; it contains identity information and must be optional/clearable. If no browser PII retention is intended, disable it and rely on password-manager/user entry.",
     "browser_report_storage": "No localStorage/IndexedDB/service-worker cache of report results; authenticated report responses use no-store.",
-    "configuration_creation": "Upsert only for real observed measurements; ignore missing/metadata; share a configuration_key only after analyte/unit/method identity is verified. Retrieval never overwrites personal settings.",
+    "configuration_creation": "Expose all built-in measurement settings before import; add genuinely observed unknown measurements only, excluding missing/metadata. Deduplicate verified configuration keys and preserve separate source channels. Built-in definitions are not copied into each SQL document. Reset removes overrides; it does not freeze current defaults into personal settings.",
     "concurrency": "Unique user_key+configuration_key; atomic transaction; version check on edits to prevent phone/desktop lost updates.",
     "retention_consequence": "Old reports unavailable from the source cannot be reconstructed after session end when results are not persisted."
   },
   "sources": {
     "provided_report_reference": {
       "type": "user_supplied_reference_template",
-      "title": "Supplied report reference fields; no patient observations retained",
+      "title": "初始報告參考範本（不含個人結果；非通用基準）",
       "verified_date": "2026-10-27",
       "scope": "Use only as a named laboratory profile; live report reference wins."
     },
@@ -191,7 +191,7 @@
       "updated_date": "2025-12-12",
       "verified_date": "2026-10-27",
       "url": "https://wd.vghtpe.gov.tw/path/Fpage.action?fid=7351&muid=5616",
-      "scope": "Optional named template only; not a Taiwan-wide rule or the Songshan policy."
+      "scope": "Unconditioned thresholds only, explicitly named application alerts; not an originating-lab flag or Taiwan-wide calibrated severity scale."
     },
     "aarc_venous_gases": {
       "type": "professional_guideline",
@@ -207,6 +207,60 @@
       "published_date": "2022-05-05",
       "verified_date": "2026-10-27",
       "url": "https://enews.tsgh.ndmutsgh.edu.tw/edm/content_detail.aspx?eid=1892"
+    },
+    "cych_urine_protein": {
+      "title": "嘉義基督教醫院：尿蛋白定性檢查（06003C）",
+      "url": "https://www.cych.org.tw/lab/6_%E9%A0%85%E7%9B%AE%E6%9F%A5%E8%A9%A2/find.asp?sh1=0104~",
+      "updated_date": "2026-06-08",
+      "verified_date": "2026-10-27",
+      "type": "primary_clinical_source"
+    },
+    "cych_homocysteine": {
+      "title": "嘉義基督教醫院：同半胱胺酸，Atellica IM",
+      "url": "https://www.cych.org.tw/lab/6_%E9%A0%85%E7%9B%AE%E6%9F%A5%E8%A9%A2/find.asp?sh1=0796~",
+      "updated_date": "2025-04-12",
+      "verified_date": "2026-10-27",
+      "type": "primary_clinical_source"
+    },
+    "edah_vitamin_b12": {
+      "title": "義大醫院：維生素 B12，CMIA 參考區間",
+      "url": "https://exdep.edah.org.tw/cp/index.php/zh-tw/2017-06-26-08-19-55/2017-06-28-09-06-14/756-vit-b12",
+      "verified_date": "2026-10-27",
+      "type": "primary_clinical_source"
+    },
+    "ucl_intact_pth": {
+      "title": "大安聯合醫事檢驗所：完整副甲狀腺素，Siemens Atellica IM",
+      "url": "https://www.ucl.com.tw/webshop/shop/ServiceQueryInfo.asp?GoodsID=D0104064&GoodstypeID=D0&MiddleID=D010",
+      "updated_date": "2026-07-20",
+      "verified_date": "2026-10-27",
+      "type": "primary_clinical_source"
+    },
+    "vgh_ck_mb_activity": {
+      "title": "臺北榮總：CK-MB 活性檢驗參考值",
+      "url": "https://wd.vghtpe.gov.tw/path/files/file_D_Main_biochemistry_CK-MB.pdf",
+      "access_note": "Official indexed PDF text verified; full-page retrieval unavailable.",
+      "verified_date": "2026-10-27",
+      "type": "primary_clinical_source"
+    },
+    "ash_d_dimer": {
+      "title": "美國血液學會：D-dimer 檢測與 FEU／DDU 差異",
+      "url": "https://www.hematology.org/covid-19/covid-19-and-d-dimer",
+      "verified_date": "2026-10-27",
+      "type": "primary_clinical_source"
+    },
+    "kdigo_ckd_mbd": {
+      "title": "KDIGO 2017 CKD-MBD 指引更新",
+      "edition": "2017",
+      "url": "https://kdigo.org/wp-content/uploads/2017/02/2017-KDIGO-CKD-MBD-GL-Update.pdf",
+      "verified_date": "2026-10-27",
+      "type": "primary_clinical_source"
+    },
+    "nice_b12": {
+      "title": "NICE NG239：維生素 B12 缺乏評估",
+      "url": "https://www.nice.org.uk/guidance/ng239/chapter/recommendations",
+      "access_note": "Official indexed recommendation text verified; full-page retrieval unavailable.",
+      "verified_date": "2026-10-27",
+      "type": "primary_clinical_source"
     }
   },
   "rules": {
@@ -227,12 +281,36 @@
       "mapping": {
         "expected": 1,
         "unexpected": 3,
-        "unknown": null
+        "unknown": null,
+        "method_dependent_review": null
       },
       "sources": [
         "songshan_manual"
       ],
-      "meaning": "Qualitative abnormal flag, not illness severity. Do not map the number of plus signs directly to L1–L5."
+      "meaning": "Qualitative abnormal flag, not illness severity. Do not map the number of plus signs directly to L1–L5.",
+      "normal_text_values": [
+        "Negative",
+        "Not Found",
+        "Normal",
+        "None"
+      ],
+      "positive_text_values": [
+        "Positive",
+        "1+",
+        "2+",
+        "3+",
+        "4+",
+        "+",
+        "++",
+        "+++",
+        "++++"
+      ],
+      "description": "陰性或符合預期的定性文字顯示 L1；陽性或加號顯示 L3 提醒核對。Trace／± 的意義依方法而異，須核對原院說明，未直接指定異常級別。加號數量不代表危險等級。",
+      "review_text_values": [
+        "Trace",
+        "±",
+        "+/-"
+      ]
     },
     "unclassified": {
       "kind": "unclassified",
@@ -296,7 +374,8 @@
       "conditions": [
         "Adult profile. Verify fasting status for lower-level classification; large elevations still warrant attention when nonfasting."
       ],
-      "meaning": "Source thresholds mapped into five application colors. L5 does not diagnose pancreatitis or mean every asymptomatic patient needs emergency admission."
+      "meaning": "Source thresholds mapped into five application colors. L5 does not diagnose pancreatitis or mean every asymptomatic patient needs emergency admission.",
+      "description": "三酸甘油脂顯著升高需醫療評估；如合併腹痛或嘔吐應即時就醫。"
     },
     "egfr_categories": {
       "kind": "numeric_bands",
@@ -541,7 +620,224 @@
           "category": "ADA_level1_hypoglycemia"
         }
       ],
-      "meaning": "Source hypoglycemia categories mapped to application alert colors; ADA level3 requires clinical assistance and cannot be inferred numerically."
+      "meaning": "Source hypoglycemia categories mapped to application alert colors; ADA level3 requires clinical assistance and cannot be inferred numerically.",
+      "description": "血糖低於70 mg/dL的警示與是否空腹無關；ADA臨床第3級須依是否需他人協助判定。"
+    },
+    "vgh_alert_serum_potassium": {
+      "kind": "numeric_bands",
+      "unit": "mmol/L",
+      "sources": [
+        "vgh_notifications"
+      ],
+      "bands": [
+        {
+          "lower": "0",
+          "upper": "2",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "display_level": 5,
+          "category": "vgh_critical_threshold"
+        },
+        {
+          "lower": "2",
+          "upper": "2.5",
+          "lower_inclusive": false,
+          "upper_inclusive": true,
+          "display_level": 4,
+          "category": "vgh_abnormal_notification"
+        },
+        {
+          "lower": "6.5",
+          "upper": null,
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 5,
+          "category": "vgh_critical_threshold"
+        }
+      ],
+      "meaning": "Unconditioned Taipei VGH notification thresholds mapped to application alerts. No assertion of current emergency or originating laboratory critical flag.",
+      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。"
+    },
+    "vgh_alert_serum_total_calcium": {
+      "kind": "numeric_bands",
+      "unit": "mg/dL",
+      "sources": [
+        "vgh_notifications"
+      ],
+      "bands": [
+        {
+          "lower": "0",
+          "upper": "6.5",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "display_level": 4,
+          "category": "vgh_abnormal_notification"
+        },
+        {
+          "lower": "13",
+          "upper": "15",
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 4,
+          "category": "vgh_abnormal_notification"
+        },
+        {
+          "lower": "15",
+          "upper": null,
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 5,
+          "category": "vgh_critical_threshold"
+        }
+      ],
+      "meaning": "Unconditioned Taipei VGH notification thresholds mapped to application alerts. No assertion of current emergency or originating laboratory critical flag.",
+      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。"
+    },
+    "vgh_alert_serum_sodium": {
+      "kind": "numeric_bands",
+      "unit": "mmol/L",
+      "sources": [
+        "vgh_notifications"
+      ],
+      "bands": [
+        {
+          "lower": "0",
+          "upper": "115",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "display_level": 4,
+          "category": "vgh_abnormal_notification"
+        },
+        {
+          "lower": "160",
+          "upper": null,
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 4,
+          "category": "vgh_abnormal_notification"
+        }
+      ],
+      "meaning": "Unconditioned Taipei VGH notification thresholds mapped to application alerts. No assertion of current emergency or originating laboratory critical flag.",
+      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。"
+    },
+    "vgh_alert_serum_chloride": {
+      "kind": "numeric_bands",
+      "unit": "mmol/L",
+      "sources": [
+        "vgh_notifications"
+      ],
+      "bands": [
+        {
+          "lower": "0",
+          "upper": "75",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "display_level": 4,
+          "category": "vgh_abnormal_notification"
+        },
+        {
+          "lower": "125",
+          "upper": null,
+          "lower_inclusive": true,
+          "upper_inclusive": false,
+          "display_level": 4,
+          "category": "vgh_abnormal_notification"
+        }
+      ],
+      "meaning": "Unconditioned Taipei VGH notification thresholds mapped to application alerts. No assertion of current emergency or originating laboratory critical flag.",
+      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。"
+    },
+    "vgh_alert_blood_hemoglobin": {
+      "kind": "numeric_bands",
+      "unit": "g/dL",
+      "sources": [
+        "vgh_notifications"
+      ],
+      "bands": [
+        {
+          "lower": "0",
+          "upper": "5",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "display_level": 4,
+          "category": "vgh_abnormal_notification"
+        }
+      ],
+      "meaning": "Unconditioned Taipei VGH notification thresholds mapped to application alerts. No assertion of current emergency or originating laboratory critical flag.",
+      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。"
+    },
+    "vgh_alert_blood_hematocrit": {
+      "kind": "numeric_bands",
+      "unit": "%",
+      "sources": [
+        "vgh_notifications"
+      ],
+      "bands": [
+        {
+          "lower": "0",
+          "upper": "16",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "display_level": 4,
+          "category": "vgh_abnormal_notification"
+        },
+        {
+          "lower": "60",
+          "upper": "100",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "display_level": 4,
+          "category": "vgh_abnormal_notification"
+        }
+      ],
+      "meaning": "Unconditioned Taipei VGH notification thresholds mapped to application alerts. No assertion of current emergency or originating laboratory critical flag.",
+      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。"
+    },
+    "vgh_alert_blood_platelet_count": {
+      "kind": "numeric_bands",
+      "unit": "x10^3/uL",
+      "sources": [
+        "vgh_notifications"
+      ],
+      "bands": [
+        {
+          "lower": "0",
+          "upper": "30",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "display_level": 4,
+          "category": "vgh_abnormal_notification"
+        }
+      ],
+      "meaning": "Unconditioned Taipei VGH notification thresholds mapped to application alerts. No assertion of current emergency or originating laboratory critical flag.",
+      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。"
+    },
+    "vgh_alert_blood_wbc_count": {
+      "kind": "numeric_bands",
+      "unit": "x10^3/uL",
+      "sources": [
+        "vgh_notifications"
+      ],
+      "bands": [
+        {
+          "lower": "0",
+          "upper": "1.2",
+          "lower_inclusive": true,
+          "upper_inclusive": true,
+          "display_level": 4,
+          "category": "vgh_abnormal_notification"
+        },
+        {
+          "lower": "100",
+          "upper": null,
+          "lower_inclusive": false,
+          "upper_inclusive": false,
+          "display_level": 4,
+          "category": "vgh_abnormal_notification"
+        }
+      ],
+      "meaning": "Unconditioned Taipei VGH notification thresholds mapped to application alerts. No assertion of current emergency or originating laboratory critical flag.",
+      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。"
     }
   },
   "optional_institutional_profiles": {
@@ -756,6 +1052,16 @@
             "Age18orolder"
           ]
         }
+      ],
+      "active_unconditioned_rule_ids": [
+        "vgh_alert_serum_potassium",
+        "vgh_alert_serum_total_calcium",
+        "vgh_alert_serum_sodium",
+        "vgh_alert_serum_chloride",
+        "vgh_alert_blood_hemoglobin",
+        "vgh_alert_blood_hematocrit",
+        "vgh_alert_blood_platelet_count",
+        "vgh_alert_blood_wbc_count"
       ]
     }
   },
@@ -821,7 +1127,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[7][52]",
         "automatic_fallback_allowed": false
       },
@@ -850,7 +1156,7 @@
         "lower_inclusive": true,
         "upper_inclusive": false,
         "source": "songshan_manual",
-        "scope": "songshan_urine_albumin_method",
+        "scope": "三總松山尿白蛋白檢測參考範本；須核對檢測方法。",
         "automatic_fallback_allowed": false
       },
       "default_rule": "report_reference",
@@ -878,7 +1184,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[3.5][5.7]",
         "automatic_fallback_allowed": false
       },
@@ -952,7 +1258,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[7][25]",
         "automatic_fallback_allowed": false
       },
@@ -1007,7 +1313,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[0][5]",
         "automatic_fallback_allowed": false
       },
@@ -1038,7 +1344,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[0][1.5]",
         "automatic_fallback_allowed": false
       },
@@ -1115,7 +1421,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[30][223]",
         "automatic_fallback_allowed": false
       },
@@ -1144,7 +1450,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[0][1.0]",
         "automatic_fallback_allowed": false
       },
@@ -1175,7 +1481,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[8.6][10.3]",
         "automatic_fallback_allowed": false
       },
@@ -1187,7 +1493,10 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "alert_rules": [
+        "vgh_alert_serum_total_calcium"
+      ]
     },
     {
       "id": "urine_casts",
@@ -1232,7 +1541,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[101][109]",
         "automatic_fallback_allowed": false
       },
@@ -1242,7 +1551,10 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "alert_rules": [
+        "vgh_alert_serum_chloride"
+      ]
     },
     {
       "id": "serum_total_cholesterol",
@@ -1261,7 +1573,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[0][200]",
         "automatic_fallback_allowed": false
       },
@@ -1330,7 +1642,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[0.7][1.3]",
         "automatic_fallback_allowed": false
       },
@@ -1360,7 +1672,14 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "source_aliases": [
+        {
+          "order_code": "09015C",
+          "item_name": "Creatinine(健檢)",
+          "unit_raw": "mg/dL"
+        }
+      ]
     },
     {
       "id": "spot_urine_creatinine",
@@ -1427,7 +1746,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[0][7]",
         "automatic_fallback_allowed": false
       },
@@ -1458,7 +1777,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "songshan_manual",
-        "scope": "songshan_microscopy_profile",
+        "scope": "三總松山尿液鏡檢參考範本；須核對每視野計數方法。",
         "automatic_fallback_allowed": false
       },
       "default_rule": "report_reference",
@@ -1514,7 +1833,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[70][100]",
         "automatic_fallback_allowed": false
       },
@@ -1529,7 +1848,10 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "alert_rules": [
+        "blood_glucose_low_alerts"
+      ]
     },
     {
       "id": "venous_bicarbonate",
@@ -1548,7 +1870,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[23][27]",
         "automatic_fallback_allowed": false
       },
@@ -1577,7 +1899,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[40][]",
         "automatic_fallback_allowed": false
       },
@@ -1608,7 +1930,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[13.5][18.0]",
         "automatic_fallback_allowed": false
       },
@@ -1638,7 +1960,10 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "alert_rules": [
+        "vgh_alert_blood_hemoglobin"
+      ]
     },
     {
       "id": "blood_hba1c",
@@ -1657,7 +1982,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[4.0][6.0]",
         "automatic_fallback_allowed": false
       },
@@ -1691,7 +2016,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[40][54]",
         "automatic_fallback_allowed": false
       },
@@ -1721,7 +2046,10 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": "100"
-      }
+      },
+      "alert_rules": [
+        "vgh_alert_blood_hematocrit"
+      ]
     },
     {
       "id": "urine_ketones",
@@ -1766,7 +2094,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[0][130]",
         "automatic_fallback_allowed": false
       },
@@ -1824,7 +2152,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[19][48]",
         "automatic_fallback_allowed": false
       },
@@ -1855,7 +2183,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[25.4][34.6]",
         "automatic_fallback_allowed": false
       },
@@ -1884,7 +2212,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[30][37]",
         "automatic_fallback_allowed": false
       },
@@ -1913,7 +2241,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[79][100]",
         "automatic_fallback_allowed": false
       },
@@ -1942,7 +2270,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[0][30]",
         "automatic_fallback_allowed": false
       },
@@ -1973,7 +2301,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[3.4][9]",
         "automatic_fallback_allowed": false
       },
@@ -2004,7 +2332,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[0][125]",
         "automatic_fallback_allowed": false
       },
@@ -2054,7 +2382,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[40][74]",
         "automatic_fallback_allowed": false
       },
@@ -2111,7 +2439,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[60][85]",
         "automatic_fallback_allowed": false
       },
@@ -2169,7 +2497,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[36][50]",
         "automatic_fallback_allowed": false
       },
@@ -2218,7 +2546,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[4.5][7.5]",
         "automatic_fallback_allowed": false
       },
@@ -2247,7 +2575,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[35][50]",
         "automatic_fallback_allowed": false
       },
@@ -2278,7 +2606,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[2.5][5.0]",
         "automatic_fallback_allowed": false
       },
@@ -2307,7 +2635,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[150][400]",
         "automatic_fallback_allowed": false
       },
@@ -2317,7 +2645,10 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "alert_rules": [
+        "vgh_alert_blood_platelet_count"
+      ]
     },
     {
       "id": "serum_potassium",
@@ -2336,7 +2667,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[3.5][5.1]",
         "automatic_fallback_allowed": false
       },
@@ -2346,7 +2677,10 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "alert_rules": [
+        "vgh_alert_serum_potassium"
+      ]
     },
     {
       "id": "urine_protein_dipstick",
@@ -2392,7 +2726,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "songshan_manual",
-        "scope": "songshan_microscopy_profile",
+        "scope": "三總松山尿液鏡檢參考範本；須核對每視野計數方法。",
         "automatic_fallback_allowed": false
       },
       "default_rule": "report_reference",
@@ -2420,7 +2754,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[4.6][6.0]",
         "automatic_fallback_allowed": false
       },
@@ -2469,7 +2803,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[11.5][14.5]",
         "automatic_fallback_allowed": false
       },
@@ -2498,14 +2832,14 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[40][74]",
         "automatic_fallback_allowed": false
       },
       "default_rule": "report_reference",
       "notes": [
-        "A missing dash means no result, not zero. Create personal settings only when a real result is encountered.",
-        "Relative percentage alone does not establish absolute-cell-count severity. Do not duplicate total and segment neutrophils in derived counts."
+        "Relative percentage alone does not establish absolute-cell-count severity. Do not duplicate total and segment neutrophils in derived counts.",
+        "A missing dash is not zero. Built-in settings remain visible before observations; absent results are never synthesized."
       ],
       "specimen": "blood",
       "physical_domain": {
@@ -2530,7 +2864,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[136][145]",
         "automatic_fallback_allowed": false
       },
@@ -2542,7 +2876,10 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "alert_rules": [
+        "vgh_alert_serum_sodium"
+      ]
     },
     {
       "id": "urine_specific_gravity",
@@ -2561,7 +2898,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[1.003][1.035]",
         "automatic_fallback_allowed": false
       },
@@ -2612,7 +2949,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[0][150]",
         "automatic_fallback_allowed": false
       },
@@ -2622,7 +2959,10 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "alert_rules": [
+        "adult_triglycerides"
+      ]
     },
     {
       "id": "urine_pcr",
@@ -2661,7 +3001,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[4.4][7.6]",
         "automatic_fallback_allowed": false
       },
@@ -2736,7 +3076,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "songshan_manual",
-        "scope": "songshan_microscopy_profile",
+        "scope": "三總松山尿液鏡檢參考範本；須核對每視野計數方法。",
         "automatic_fallback_allowed": false
       },
       "default_rule": "report_reference",
@@ -2764,7 +3104,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[4.5][11.0]",
         "automatic_fallback_allowed": false
       },
@@ -2774,7 +3114,10 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "alert_rules": [
+        "vgh_alert_blood_wbc_count"
+      ]
     },
     {
       "id": "venous_total_co2",
@@ -2793,7 +3136,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[24][28]",
         "automatic_fallback_allowed": false
       },
@@ -2844,7 +3187,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[0][34.2]",
         "automatic_fallback_allowed": false
       },
@@ -2894,7 +3237,7 @@
         "lower_inclusive": true,
         "upper_inclusive": true,
         "source": "provided_report_reference",
-        "scope": "provided_report_profile",
+        "scope": "初始報告所列的參考區間；年齡、性別與檢驗方法未完整確認，不視為通用基準。",
         "raw_reference_template": "[7.32][7.43]",
         "automatic_fallback_allowed": false
       },
@@ -2927,7 +3270,306 @@
         "minimum": "0",
         "maximum": null
       }
+    },
+    {
+      "id": "blood_ck_mb_activity",
+      "display_name_zh_tw": "肌酸激酶 MB 同功酶活性",
+      "source_match": {
+        "order_code": "09071C",
+        "item_name": "CK-MB",
+        "unit_raw": "U/L"
+      },
+      "source_aliases": [],
+      "configuration_key": "blood_ck_mb_activity",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "0",
+        "upper": "25",
+        "lower_inclusive": true,
+        "upper_inclusive": false,
+        "source": "vgh_ck_mb_activity",
+        "scope": "臺北榮總 CK-MB 活性檢測；方法相符才適用",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "alert_rules": [],
+      "description_zh_tw": "CK-MB 活性以 U/L 表示，與 CK-MB 質量（ng/mL）及總 CK 不同。優先使用原院區間；參考範本不能單獨診斷或排除心肌梗塞。",
+      "sources": [
+        "vgh_ck_mb_activity"
+      ],
+      "notes": [],
+      "specimen": "serum_or_plasma",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "plasma_d_dimer_unspecified",
+      "display_name_zh_tw": "D-二聚體（計量制未註明）",
+      "source_match": {
+        "order_code": "08079B",
+        "item_name": "D-D diamer",
+        "unit_raw": "ng/mL"
+      },
+      "source_aliases": [
+        {
+          "order_code": "08079B",
+          "item_name": "D-Dimer",
+          "unit_raw": "ng/mL"
+        },
+        {
+          "order_code": "08079B",
+          "item_name": "D-dimer",
+          "unit_raw": "ng/mL"
+        },
+        {
+          "order_code": "08079B",
+          "item_name": "D dimer",
+          "unit_raw": "ng/mL"
+        }
+      ],
+      "configuration_key": "plasma_d_dimer_unspecified",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": null,
+      "default_rule": "report_reference",
+      "alert_rules": [],
+      "description_zh_tw": "須確認 FEU／DDU 計量制與檢驗方法；只有 ng/mL 不足以套用 500 的門檻或年齡校正。依原院區間顯示，不能由單次數值確診或排除血栓。",
+      "sources": [
+        "ash_d_dimer"
+      ],
+      "notes": [],
+      "specimen": "plasma",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "blood_glucose_unspecified",
+      "display_name_zh_tw": "血糖（空腹狀態未註明）",
+      "source_match": {
+        "order_code": "09005C",
+        "item_name": "Glucose",
+        "unit_raw": "mg/dL"
+      },
+      "source_aliases": [],
+      "configuration_key": "blood_glucose_unspecified",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": null,
+      "default_rule": "report_reference",
+      "alert_rules": [
+        "blood_glucose_low_alerts"
+      ],
+      "description_zh_tw": "未註明空腹狀態，不套用空腹或糖負荷試驗界值；依原院或個人基準顯示，低血糖警示仍適用。",
+      "sources": [
+        "ada_hypoglycemia"
+      ],
+      "notes": [],
+      "specimen": "blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "capillary_postprandial_glucose",
+      "display_name_zh_tw": "飯後微血管血糖",
+      "source_match": {
+        "order_code": "09140C",
+        "item_name": "Glucose-PC(飯後)-微血管採血法",
+        "unit_raw": "mg/dL"
+      },
+      "source_aliases": [],
+      "configuration_key": "capillary_postprandial_glucose",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": null,
+      "default_rule": "report_reference",
+      "alert_rules": [
+        "blood_glucose_low_alerts"
+      ],
+      "description_zh_tw": "須確認餐後採血時間；一般飯後血糖不等同75克口服葡萄糖耐受試驗。依原院或個人目標顯示，保留低血糖警示；不自動套用180 mg/dL治療目標。",
+      "sources": [
+        "ada_hypoglycemia"
+      ],
+      "notes": [],
+      "specimen": "capillary_blood",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "blood_total_homocysteine",
+      "display_name_zh_tw": "同半胱胺酸",
+      "source_match": {
+        "order_code": "12151C",
+        "item_name": "Homocysteine",
+        "unit_raw": "umol/L"
+      },
+      "source_aliases": [],
+      "configuration_key": "blood_total_homocysteine",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "5.6",
+        "upper": "19.6",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "cych_homocysteine",
+        "scope": "嘉義基督教醫院成人 Atellica IM 參考範本；檢體與方法須核對",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "alert_rules": [],
+      "description_zh_tw": "參考區間依血清／血漿及分析方法不同；應合看腎功能、B12與葉酸。偏高不等同已確診血栓或B12缺乏，沒有通用五級危險門檻。",
+      "sources": [
+        "cych_homocysteine"
+      ],
+      "notes": [],
+      "specimen": "serum_or_plasma",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "blood_intact_pth",
+      "display_name_zh_tw": "完整副甲狀腺素（I-PTH）",
+      "source_match": {
+        "order_code": "09122C",
+        "item_name": "I-PTH",
+        "unit_raw": "pg/mL"
+      },
+      "source_aliases": [
+        {
+          "order_code": "09122C",
+          "item_name": "Intact PTH",
+          "unit_raw": "pg/mL"
+        },
+        {
+          "order_code": "09122C",
+          "item_name": "PTH-i",
+          "unit_raw": "pg/mL"
+        }
+      ],
+      "configuration_key": "blood_intact_pth",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "18.5",
+        "upper": "88.0",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "ucl_intact_pth",
+        "scope": "大安聯合血清／Siemens Atellica IM；血漿範圍不同",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "alert_rules": [],
+      "description_zh_tw": "依原院方法與檢體參考區間判讀，並合看鈣、磷及歷次趨勢。未透析慢性腎臟病的最佳PTH值未定；透析專屬目標不會自動套用。",
+      "sources": [
+        "ucl_intact_pth",
+        "kdigo_ckd_mbd"
+      ],
+      "notes": [],
+      "specimen": "serum_or_plasma",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "serum_total_vitamin_b12",
+      "display_name_zh_tw": "維生素 B12（總量）",
+      "source_match": {
+        "order_code": "09129C",
+        "item_name": "Vitamin B12",
+        "unit_raw": "pg/mL"
+      },
+      "source_aliases": [
+        {
+          "order_code": "09129C",
+          "item_name": "Vit. B12",
+          "unit_raw": "pg/mL"
+        },
+        {
+          "order_code": "09129C",
+          "item_name": "Vitamin B-12",
+          "unit_raw": "pg/mL"
+        }
+      ],
+      "configuration_key": "serum_total_vitamin_b12",
+      "kind": "measurement",
+      "value_kind": "numeric",
+      "reference_profile": {
+        "lower": "187",
+        "upper": "883",
+        "lower_inclusive": true,
+        "upper_inclusive": true,
+        "source": "edah_vitamin_b12",
+        "scope": "義大醫院 CMIA 總B12參考範本；不可由相同數字推定分析方法",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "report_reference",
+      "alert_rules": [],
+      "description_zh_tw": "總B12的參考區間與缺乏判斷依方法及臨床情境而異，不能與活性B12或其他單位直接共用。偏低須合看症狀與其他指標；高值也不是濃度越高越安全。",
+      "sources": [
+        "edah_vitamin_b12",
+        "nice_b12"
+      ],
+      "notes": [],
+      "specimen": "serum_or_plasma",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
+    },
+    {
+      "id": "urine_protein_qualitative",
+      "display_name_zh_tw": "尿蛋白定性",
+      "source_match": {
+        "order_code": "06003C",
+        "item_name": "Protein(qualitative)",
+        "unit_raw": "無單位"
+      },
+      "source_aliases": [
+        {
+          "order_code": "06003C",
+          "item_name": "Protein (qualitative)",
+          "unit_raw": "無單位"
+        }
+      ],
+      "configuration_key": "urine_protein_dipstick",
+      "kind": "measurement",
+      "value_kind": "qualitative_or_ordinal",
+      "reference_profile": {
+        "expected_values": [
+          "Negative",
+          "Trace"
+        ],
+        "source": "cych_urine_protein",
+        "scope": "嘉義基督教醫院尿蛋白定性；Trace定義須依方法核對",
+        "automatic_fallback_allowed": false
+      },
+      "default_rule": "qualitative_reference",
+      "alert_rules": [],
+      "description_zh_tw": "尿蛋白定性與尿蛋白試紙共用定性提醒，保留各自來源結果。加號不換算成濃度或危險級別；Trace須按原院方法說明核對。",
+      "sources": [
+        "cych_urine_protein"
+      ],
+      "notes": [],
+      "specimen": "urine",
+      "physical_domain": {
+        "minimum": "0",
+        "maximum": null
+      }
     }
   ],
-  "copyright": "Copyright (c) 2026 bestkakkoii llc. All rights reserved."
+  "copyright": "Copyright (c) 2026 bestkakkoii llc. All rights reserved.",
+  "settings_configuration_count": 76
 }

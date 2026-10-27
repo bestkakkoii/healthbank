@@ -2098,10 +2098,10 @@
   }
   .configuration-row {
     display: grid;
-    grid-template-columns: minmax(0, 1.5fr) minmax(110px, 0.9fr) minmax(100px, 0.9fr) auto;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.25fr) minmax(130px, 0.65fr);
     align-items: center;
     gap: 18px;
-    padding: 20px 25px;
+    padding: 17px 25px;
     border-bottom: 1px solid var(--border);
   }
   .configuration-row:last-child {
@@ -2137,6 +2137,27 @@
     font-weight: 600;
     margin-top: 5px;
     display: block;
+    overflow-wrap: anywhere;
+  }
+  .configuration-reference small {
+    display: block;
+    color: var(--ink-muted);
+    font-size: max(14px, 0.68rem);
+    line-height: 1.65;
+    margin-top: 5px;
+    overflow-wrap: anywhere;
+  }
+  .configuration-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    min-width: 0;
+  }
+  .configuration-actions > .button {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
   }
   .configuration-status {
     font-size: max(14px, 0.7rem);
@@ -2150,6 +2171,11 @@
     color: var(--accent);
     background: var(--accent-soft);
     border-color: var(--border-strong);
+  }
+  .configuration-name > .configuration-status {
+    margin-top: 9px;
+    max-width: 100%;
+    line-height: 1.5;
   }
   .page-footer {
     display: flex;
@@ -2756,6 +2782,23 @@
     margin-bottom: 12px;
     line-height: 1.9;
   }
+  .rule-summary h3 {
+    font-size: 0.87rem;
+    line-height: 1.6;
+    color: var(--ink);
+    margin: 0 0 9px;
+  }
+  .reference-template,
+  .independent-alerts {
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+    margin-top: 14px;
+  }
+  .baseline-mode {
+    font-size: max(14px, 0.78rem);
+    line-height: 1.75;
+    color: var(--accent-ink);
+  }
   .rule-table {
     width: 100%;
     border-collapse: collapse;
@@ -2774,6 +2817,9 @@
   .rule-table td:first-child {
     overflow-wrap: anywhere;
     max-width: 190px;
+  }
+  .rule-table td:nth-child(2) {
+    overflow-wrap: anywhere;
   }
   .two-column-fields {
     display: grid;
@@ -2996,11 +3042,14 @@
       gap: 18px;
     }
     .configuration-row {
-      grid-template-columns: minmax(0, 1.3fr) minmax(100px, 0.9fr) auto;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 14px;
     }
-    .configuration-row > div:nth-child(3) {
-      display: none;
+    .configuration-actions {
+      grid-column: 1 / -1;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
     .toast {
       left: calc(50% + 109px);
@@ -3597,30 +3646,22 @@
       font-size: max(14px, 0.7rem);
     }
     .configuration-row {
-      padding: 20px 18px;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 12px;
+      padding: 17px 18px;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 11px;
     }
     .configuration-reference {
-      grid-row: 2;
       font-size: max(14px, 0.7rem);
     }
     .configuration-reference > span {
-      display: inline;
-      margin-right: 6px;
+      display: block;
     }
     .configuration-reference > b {
-      display: inline;
+      display: block;
       font-size: 0.77rem;
     }
-    .configuration-row > div:nth-child(3) {
-      display: block;
-      grid-column: 2;
-      grid-row: 2;
-    }
-    .configuration-row > .button {
-      grid-column: 2;
-      grid-row: 1;
+    .configuration-actions > .button {
+      flex: 1 1 auto;
       padding-inline: 10px;
       font-size: max(14px, 0.69rem);
     }

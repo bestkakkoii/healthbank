@@ -6,9 +6,9 @@
       "name": "Go",
       "repository": "https://github.com/golang/go",
       "branch": "master",
-      "commit": "dac9fe5ea9bed1733cb27fbd91aa43457de980b4",
+      "commit": "84831ad47e254fc9f80341f1e5b6b9d36c9422bd",
       "version": "devel go1.28",
-      "archive_sha256": "c23747152b90adc07fecc0d068bc2b95c6a5bf51639547da553cda151996ae9f"
+      "archive_sha256": "f6f514ffabce01ca3c5f482e58da3ee5f3816dfe1c0d8310f0a4f1c09d9745b3"
     },
     {
       "name": "React / React DOM / Scheduler",
@@ -41,7 +41,7 @@
       "name": "SQLite Go driver",
       "repository": "https://gitlab.com/cznic/sqlite",
       "branch": "master",
-      "commit": "683b7278591f31956cee8ed4602cd3fe275ff620"
+      "commit": "e6990422658b8c9b79328fc5bbda69cc892d70ee"
     },
     {
       "name": "MySQL Go driver",
@@ -59,7 +59,7 @@
       "name": "React type declarations",
       "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped",
       "branch": "master",
-      "commit": "28db822755d04098fc7cab2013b15ca9f0c58c7f",
+      "commit": "0d5b76188fd585fe187acb6cffbe08071f2bdd16",
       "packaging_changes": "Removed devDependencies/scripts and normalized workspace-only dependency specifiers; declaration content unchanged."
     }
   ],
@@ -166,8 +166,8 @@
     },
     {
       "module": "modernc.org/sqlite",
-      "version": "v1.61.1-0.20261025171635-683b7278591f",
-      "sum": "h1:KC74vcoVsPS0QONdOd9TbHel7K3StwlJYxPwMau4dUw=",
+      "version": "v1.61.1-0.20261026192429-e6990422658b",
+      "sum": "h1:uRoLMLV/LC8dosKhj7B5dexzz9F9x93D6EWm5ume8ls=",
       "license_files": [
         "licenses/modernc.org__sqlite/AUTHORS",
         "licenses/modernc.org__sqlite/LICENSE-3RD-PARTY.md",

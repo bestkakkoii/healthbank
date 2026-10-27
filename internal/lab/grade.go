@@ -27,13 +27,13 @@ func parseReference(raw string) (*string, *string) {
 	}
 	v := parseValue(raw)
 	if v.kind == "range" {
-		m := rangePattern.FindStringSubmatch(strings.TrimSpace(raw))
+		m := rangePattern.FindStringSubmatch(numericText(raw))
 		return pointer(m[1]), pointer(m[2])
 	}
 	// Only inclusive unambiguous one-sided references are exposed as numeric
 	// limits; strict inequality text remains visible rather than broadened.
 	if v.kind == "inequality" {
-		m := boundPattern.FindStringSubmatch(strings.TrimSpace(raw))
+		m := boundPattern.FindStringSubmatch(numericText(raw))
 		if v.span.low != nil && v.span.lowInc {
 			return pointer(m[2]), nil
 		}
@@ -202,6 +202,7 @@ func (c *Catalog) Normalize(raw []RawRecord, s *Settings) []Record {
 	if s.Known == nil {
 		s.Known = map[string]KnownItem{}
 	}
+	c.ReconcileSettings(s)
 	for idx, r := range raw {
 		d := c.match(r)
 		p := parseValue(r.Result)
@@ -225,6 +226,9 @@ func (c *Catalog) Normalize(raw []RawRecord, s *Settings) []Record {
 			out = append(out, rec)
 			continue
 		}
+		// A verified nonnegative analyte narrows an open lower bound such as
+		// "<18" before reference comparison, without changing the source text.
+		rec.ReferenceStatus = referenceStatus(p, lo, hi)
 		rec.Interpretation = "未提供可適用的數值基準，保留原始結果。"
 		if p.kind == "missing" {
 			rec.Interpretation = "原始報告未提供結果；缺值不視為0。"
@@ -263,15 +267,19 @@ func (c *Catalog) Normalize(raw []RawRecord, s *Settings) []Record {
 		}
 		if d.Rule == "qualitative_reference" {
 			token := strings.ToLower(strings.TrimSpace(r.Result))
-			switch token {
-			case "negative", "not found", "normal", "none":
+			switch {
+			case containsToken(rule.NormalText, token):
 				rec.Level = pointer(1)
 				rec.RuleSource = "qualitative_reference"
 				rec.Interpretation = "符合此項目的預期定性結果；不代表其他檢查均正常。"
-			case "positive", "trace", "±", "1+", "2+", "3+", "4+", "+", "++", "+++", "++++":
+			case containsToken(rule.PositiveText, token):
 				rec.Level = pointer(3)
 				rec.RuleSource = "qualitative_reference"
 				rec.Interpretation = "定性／半定量異常標記；加號數量不直接對應危險級別。"
+			case containsToken(rule.ReviewText, token):
+				rec.Level = nil
+				rec.RuleSource = "qualitative_reference"
+				rec.Interpretation = "微量／弱反應的意義依檢驗方法而異，部分方法列為可接受；須核對原院參考說明，未直接指定異常級別。"
 			}
 		}
 		// Personal targets never replace the immutable source reference/flag fields.
@@ -304,27 +312,20 @@ func (c *Catalog) Normalize(raw []RawRecord, s *Settings) []Record {
 				rec.Interpretation = "依個人參考上下限顯示；原院參考標記另行保留。"
 			}
 		}
-		// Independently applicable alert categories remain visible even after a
-		// personal override. Screening diagnosis profiles remain disabled in v1.
-		if d.ID == "fasting_plasma_glucose" && unitKey(r.Unit) == "mg/dl" {
-			bands := sourceBands(c.Rules["blood_glucose_low_alerts"])
-			if alert, ok := guaranteedAlertFloor(p, bands); ok {
-				if rec.Level == nil || *rec.Level < *alert {
-					rec.Level = alert
-				}
-				rec.RuleSource += ";ada_hypoglycemia"
-				rec.Interpretation += " 血糖低於70 mg/dL的警示與是否空腹無關；ADA臨床第3級須依是否需他人協助判定。"
-				rec.Interpretation += nonexactAlertExplanation(p, bands, *alert)
+		// Independently applicable named alerts survive personal targets. Each
+		// definition selects its specimen-specific rules; units remain mandatory.
+		for _, alertID := range d.Alerts {
+			alertRule := c.Rules[alertID]
+			if !ruleMatchesUnit(alertRule, r.Unit) || !numericKind(p) {
+				continue
 			}
-		}
-		if d.ID == "serum_triglycerides" && ruleMatchesUnit(rule, r.Unit) && numericKind(p) {
-			bands := sourceBands(rule)
+			bands := sourceBands(alertRule)
 			if alert, ok := guaranteedAlertFloor(p, bands); ok {
 				if rec.Level == nil || *rec.Level < *alert {
 					rec.Level = alert
 				}
-				rec.RuleSource += ";" + strings.Join(rule.Sources, ",")
-				rec.Interpretation += " 三酸甘油脂顯著升高需醫療評估；如合併腹痛或嘔吐應即時就醫。"
+				rec.RuleSource += ";" + strings.Join(alertRule.Sources, ",")
+				rec.Interpretation += " " + alertRule.Description
 				rec.Interpretation += nonexactAlertExplanation(p, bands, *alert)
 			}
 		}
@@ -341,6 +342,14 @@ func (c *Catalog) Normalize(raw []RawRecord, s *Settings) []Record {
 	}
 	return out
 }
+func containsToken(values []string, token string) bool {
+	for _, value := range values {
+		if strings.EqualFold(strings.TrimSpace(value), token) {
+			return true
+		}
+	}
+	return false
+}
 func ValidateSettings(s Settings, known map[string]KnownItem) error {
 	if s.Theme != "light" && s.Theme != "dark" && s.Theme != "system" {
 		return fmt.Errorf("外觀必須為light、dark或system")
@@ -348,7 +357,7 @@ func ValidateSettings(s Settings, known map[string]KnownItem) error {
 	if s.FontScale < 1 || s.FontScale > 2 {
 		return fmt.Errorf("文字倍率須介於1與2")
 	}
-	if len(s.Overrides) > 500 || len(s.Favorites) > 500 || len(known) > 1000 {
+	if len(s.Overrides) > 500 || len(s.Favorites) > 500 || len(s.Known) > 1000 {
 		return fmt.Errorf("設定項目數量超出上限")
 	}
 	allowed := map[string]bool{}
@@ -358,7 +367,7 @@ func ValidateSettings(s Settings, known map[string]KnownItem) error {
 	fav := map[string]bool{}
 	for _, id := range s.Favorites {
 		if !allowed[id] {
-			return fmt.Errorf("只能收藏已出現的檢驗項目")
+			return fmt.Errorf("只能收藏內建或已出現的檢驗項目")
 		}
 		if fav[id] {
 			return fmt.Errorf("收藏項目重複")
@@ -367,7 +376,7 @@ func ValidateSettings(s Settings, known map[string]KnownItem) error {
 	}
 	for key, o := range s.Overrides {
 		if !allowed[key] {
-			return fmt.Errorf("只能設定已出現的檢驗項目")
+			return fmt.Errorf("只能設定內建或已出現的檢驗項目")
 		}
 		for _, v := range []*string{o.ReferenceLow, o.ReferenceHigh} {
 			if v != nil {
@@ -419,6 +428,9 @@ func ValidateKnown(known map[string]KnownItem) error {
 		}
 		if len(k.Name) > 300 || len(k.Unit) > 80 || len(k.Category) > 80 {
 			return fmt.Errorf("configuration definition too long")
+		}
+		if k.LegacyFor != "" && (len(k.LegacyFor) > 100 || !regexp.MustCompile(`^[a-z0-9_]+$`).MatchString(k.LegacyFor)) {
+			return fmt.Errorf("invalid legacy configuration target")
 		}
 	}
 	return nil

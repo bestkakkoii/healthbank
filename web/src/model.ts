@@ -1,6 +1,6 @@
 // Copyright (c) 2026 bestkakkoii llc. All rights reserved.
 // SPDX-License-Identifier: MIT
-import type { LabRecord, Level } from './api';
+import type { CatalogReference, LabRecord, Level, LevelBand } from './api';
 
 export const LEVELS: Record<Level, { label: string; short: string }> = {
   1: { label: '基準內', short: '基準內' },
@@ -30,6 +30,8 @@ export const CATEGORY_LABELS: Record<string, string> = {
   blood_gas: '血液氣體',
   cardiac: '心臟與肌肉',
   inflammation: '發炎與免疫',
+  nutrition: '營養與代謝',
+  coagulation: '凝血檢驗',
   other: '其他項目',
   metadata: '檢驗附註',
 };
@@ -58,9 +60,63 @@ const RULE_CATEGORY_LABELS: Record<string, string> = {
   diabetes_diagnostic_threshold_requires_confirmation: '達糖尿病診斷界值（須確認）',
   ADA_level1_hypoglycemia: 'ADA 第 1 級低血糖',
   ADA_level2_hypoglycemia: 'ADA 第 2 級低血糖',
+  vgh_abnormal_notification: '臺北榮總異常值通報範本',
+  vgh_critical_threshold: '臺北榮總危急值通報範本',
 };
 
 export const ruleCategoryLabel = (value: string) => RULE_CATEGORY_LABELS[value] || value || '—';
+
+export type RuleBand = Omit<LevelBand, 'level'> & {
+  display_level: Level;
+  category: string;
+};
+
+export function rulePreview(value: unknown) {
+  const rule = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+  const strings = (value: unknown): string[] =>
+    Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+  const bands = (Array.isArray(rule.bands) ? rule.bands : []).filter(
+    (value): value is RuleBand => {
+      if (!value || typeof value !== 'object') return false;
+      const band = value as Record<string, unknown>;
+      return (
+        (band.lower === null || typeof band.lower === 'string') &&
+        (band.upper === null || typeof band.upper === 'string') &&
+        typeof band.lower_inclusive === 'boolean' &&
+        typeof band.upper_inclusive === 'boolean' &&
+        typeof band.display_level === 'number' &&
+        [1, 2, 3, 4, 5].includes(band.display_level) &&
+        typeof band.category === 'string'
+      );
+    },
+  );
+  return {
+    kind: typeof rule.kind === 'string' ? rule.kind : '',
+    unit: typeof rule.unit === 'string' ? rule.unit : '',
+    description: typeof rule.description === 'string' ? rule.description : '',
+    normalValues: strings(rule.normal_text_values),
+    positiveValues: strings(rule.positive_text_values),
+    reviewValues: strings(rule.review_text_values),
+    sources: strings(rule.sources),
+    bands,
+  };
+}
+
+export function ruleRangeLabel(
+  range: Pick<LevelBand, 'lower' | 'upper' | 'lower_inclusive' | 'upper_inclusive'>,
+): string {
+  if (range.lower !== null && range.upper !== null)
+    return `${range.lower} ${range.lower_inclusive ? '≤' : '<'} 數值 ${range.upper_inclusive ? '≤' : '<'} ${range.upper}`;
+  if (range.lower !== null) return `數值 ${range.lower_inclusive ? '≥' : '>'} ${range.lower}`;
+  if (range.upper !== null) return `數值 ${range.upper_inclusive ? '≤' : '<'} ${range.upper}`;
+  return '全部數值';
+}
+
+export function referenceTemplateLabel(reference: CatalogReference): string {
+  if (reference.expected_values?.length) return reference.expected_values.join('／');
+  if (reference.lower === null && reference.upper === null) return '未提供數值範圍';
+  return ruleRangeLabel(reference);
+}
 
 export const categoryLabel = (value: string) => CATEGORY_LABELS[value] || value || '其他項目';
 export const dateLabel = (date: string) =>

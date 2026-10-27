@@ -91,6 +91,23 @@ export interface CatalogItem {
   default_rule: unknown;
   description: string;
   sources: string[];
+  builtin: boolean;
+  aliases: string[];
+  order_codes: string[];
+  value_kind?: string;
+  default_reference: CatalogReference | null;
+  alert_rules: unknown[];
+}
+
+export interface CatalogReference {
+  lower: string | null;
+  upper: string | null;
+  lower_inclusive: boolean;
+  upper_inclusive: boolean;
+  expected_values?: string[];
+  source: string;
+  scope?: string;
+  automatic_fallback_allowed: boolean;
 }
 
 export interface Source {

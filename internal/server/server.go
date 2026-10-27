@@ -376,6 +376,7 @@ func (a *App) sessionView(s *session) map[string]any {
 }
 func (a *App) refreshSettings(ctx context.Context, s *session) error {
 	if s.subject == "" {
+		a.catalog.ReconcileSettings(&s.settings)
 		return nil
 	}
 	doc, err := a.store.Get(ctx, s.subject)
@@ -387,6 +388,7 @@ func (a *App) refreshSettings(ctx context.Context, s *session) error {
 		return err
 	}
 	s.settings = next
+	a.catalog.ReconcileSettings(&s.settings)
 	return nil
 }
 func (a *App) getSession(w http.ResponseWriter, r *http.Request, s *session) {

@@ -82,6 +82,8 @@ type KnownItem struct {
 	Name     string `json:"name"`
 	Unit     string `json:"unit"`
 	Category string `json:"category"`
+	// LegacyFor keeps a conflicting previous target independent until reset.
+	LegacyFor string `json:"legacy_for,omitempty"`
 }
 
 func DefaultSettings() Settings {

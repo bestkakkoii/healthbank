@@ -1,3 +1,4 @@
+// Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
 import { useEffect, useState, type FormEvent, type DragEvent } from 'react';
 import {
   api,
@@ -17,9 +18,13 @@ import {
   dateLabel,
   LEVELS,
   referenceLabel,
+  referenceTemplateLabel,
   ruleCategoryLabel,
+  rulePreview,
+  ruleRangeLabel,
   sourceFlag,
   type MeasurementGroup,
+  type RuleBand,
 } from './model';
 import { Alert, Icon, LevelBadge, Loading, Modal } from './ui';
 
@@ -471,11 +476,13 @@ export function DetailDialog({
           <ul className="source-list">
             {sources.map((source) => (
               <li key={source.id}>
-                <a href={source.url} target="_blank" rel="noreferrer">
-                  {source.title}
-                  {source.edition ? ` · ${source.edition}` : ''}
-                  <Icon name="external" size={16} />
-                </a>
+                {source.url ? (
+                  <a href={source.url} target="_blank" rel="noreferrer">
+                    {source.title}
+                    {source.edition ? ` · ${source.edition}` : ''}
+                    <Icon name="external" size={16} />
+                  </a>
+                ) : <span>{source.title}{source.edition ? ` · ${source.edition}` : ''}</span>}
               </li>
             ))}
           </ul>
@@ -506,6 +513,31 @@ interface EditableBand {
   level: Level;
 }
 
+function RuleBandsTable({ bands }: { bands: RuleBand[] }) {
+  return (
+    <div className="simple-table-scroll">
+      <table className="rule-table">
+        <thead>
+          <tr>
+            <th scope="col">來源分類</th>
+            <th scope="col">數值範圍</th>
+            <th scope="col">顯示分級</th>
+          </tr>
+        </thead>
+        <tbody>
+          {bands.map((band, index) => (
+            <tr key={index}>
+              <td>{ruleCategoryLabel(band.category)}</td>
+              <td>{ruleRangeLabel(band)}</td>
+              <td><LevelBadge level={band.display_level} compact /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function DefaultRuleSummary({
   group,
   catalog,
@@ -518,74 +550,80 @@ function DefaultRuleSummary({
       item.id === group.records[0]?.item_id || item.configuration_key === group.configurationKey,
   );
   if (!item) return null;
-  const raw =
-    item.default_rule && typeof item.default_rule === 'object'
-      ? (item.default_rule as { bands?: unknown[]; unit?: string; meaning?: string })
-      : {};
-  const bands = (Array.isArray(raw.bands) ? raw.bands : []).filter(
-    (value): value is LevelBand & { display_level: Level; category: string } => {
-      if (!value || typeof value !== 'object') return false;
-      const band = value as Record<string, unknown>;
-      return (
-        (band.lower === null || typeof band.lower === 'string') &&
-        (band.upper === null || typeof band.upper === 'string') &&
-        [1, 2, 3, 4, 5].includes(Number(band.display_level))
-      );
-    },
-  );
-  const sources = catalog.sources.filter((source) => item.sources.includes(source.id));
-  const range = (band: LevelBand) =>
-    band.lower !== null && band.upper !== null
-      ? `${band.lower} ${band.lower_inclusive ? '≤' : '<'} 數值 ${band.upper_inclusive ? '≤' : '<'} ${band.upper}`
-      : band.lower !== null
-        ? `數值 ${band.lower_inclusive ? '≥' : '>'} ${band.lower}`
-        : band.upper !== null
-          ? `數值 ${band.upper_inclusive ? '≤' : '<'} ${band.upper}`
-          : '全部數值';
+  const rule = rulePreview(item.default_rule);
+  const alerts = item.alert_rules.map(rulePreview).filter((rule) => rule.bands.length > 0);
+  const reference = item.default_reference;
+  const sourceIds = new Set([
+    ...item.sources,
+    ...alerts.flatMap((alert) => alert.sources),
+    ...(reference?.source ? [reference.source] : []),
+  ]);
+  const sources = catalog.sources.filter((source) => sourceIds.has(source.id));
+  const referenceSource = catalog.sources.find((source) => source.id === reference?.source);
   return (
-    <details className="rule-summary">
-      <summary>檢視預設規則與參考來源</summary>
+    <details className="rule-summary" open>
+      <summary>預設規則、獨立警示與參考來源</summary>
       <div>
         <p>{item.description}</p>
-        {bands.length > 0 && (
+        {rule.description && rule.description !== item.description && <p>{rule.description}</p>}
+        {rule.kind === 'reference_interval' && (
+          <p>預設採各筆原院參考值：區間內顯示 L1，超出顯示 L3，資料不足顯示未判定。</p>
+        )}
+        {rule.kind === 'unclassified' && <p>保留原始結果與原院標記，不為此項目強制建立顏色分級。</p>}
+        {reference && (
+          <section className="reference-template">
+            <h3>內建參考範本</h3>
+            <p><strong>{referenceTemplateLabel(reference)}</strong> {group.unit !== '無單位' && group.unit}</p>
+            {reference.scope && <p>{reference.scope}</p>}
+            <p>
+              {reference.automatic_fallback_allowed
+                ? '原院未提供可用參考值時，依此範本與適用條件判讀。'
+                : '參考範本，須確認適用條件。此範本不會自動取代或補入原院參考值。'}
+            </p>
+            {referenceSource && <p>範本來源：{referenceSource.title}</p>}
+          </section>
+        )}
+        {rule.kind === 'qualitative_reference' && (
+          <div className="qualitative-reference">
+            <p>定性結果按文字標記；加號數量不直接對應危險程度。</p>
+            {rule.normalValues.length > 0 && <p><strong>L1 基準文字：</strong>{rule.normalValues.join('、')}</p>}
+            {rule.positiveValues.length > 0 && <p><strong>L3 異常文字：</strong>{rule.positiveValues.join('、')}</p>}
+            {rule.reviewValues.length > 0 && <p><strong>需核對方法，未直接分級：</strong>{rule.reviewValues.join('、')}</p>}
+          </div>
+        )}
+        {rule.bands.length > 0 && (
           <>
             <p className="helper-text">
-              適用單位：{raw.unit || group.unit}
+              適用單位：{rule.unit || group.unit}
               。下列顏色是本應用的顯示分級，並非所有檢驗共用的醫學危險分期；仍須確認檢體與適用條件。
             </p>
-            <div className="simple-table-scroll">
-              <table className="rule-table">
-                <thead>
-                  <tr>
-                    <th scope="col">來源分類</th>
-                    <th scope="col">數值範圍</th>
-                    <th scope="col">顯示分級</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bands.map((band, index) => (
-                    <tr key={index}>
-                      <td>{ruleCategoryLabel(band.category)}</td>
-                      <td>{range(band)}</td>
-                      <td>
-                        <LevelBadge level={band.display_level} compact />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <RuleBandsTable bands={rule.bands} />
           </>
+        )}
+        {alerts.length > 0 && (
+          <section className="independent-alerts">
+            <h3>獨立警示（個人設定不會降低）</h3>
+            <p>僅在檢體、單位與適用條件可確認時套用；歷史數值的警示不代表目前已發生急症。</p>
+            {alerts.map((alert, index) => (
+              <div key={index}>
+                {alert.description && <p>{alert.description}</p>}
+                <p>適用單位：{alert.unit || group.unit}</p>
+                <RuleBandsTable bands={alert.bands} />
+              </div>
+            ))}
+          </section>
         )}
         {sources.length > 0 && (
           <ul className="source-list">
             {sources.map((source) => (
               <li key={source.id}>
-                <a href={source.url} target="_blank" rel="noreferrer">
-                  {source.title}
-                  {source.edition ? ` · ${source.edition}` : ''}
-                  <Icon name="external" size={15} />
-                </a>
+                {source.url ? (
+                  <a href={source.url} target="_blank" rel="noreferrer">
+                    {source.title}
+                    {source.edition ? ` · ${source.edition}` : ''}
+                    <Icon name="external" size={15} />
+                  </a>
+                ) : <span>{source.title}{source.edition ? ` · ${source.edition}` : ''}</span>}
               </li>
             ))}
           </ul>
@@ -612,15 +650,18 @@ export function BaselineDialog({
 }) {
   const latest = group.records[0];
   const actualValues = group.records.filter((record) => record.value_kind !== 'missing');
-  const catalogRule = catalog.items.find(
+  const catalogItem = catalog.items.find(
     (item) => item.configuration_key === group.configurationKey,
-  )?.default_rule;
+  );
+  const catalogRule = catalogItem?.default_rule;
   const isQualitativeRule =
     catalogRule !== null &&
     typeof catalogRule === 'object' &&
     (catalogRule as { kind?: string }).kind === 'qualitative_reference';
   const qualitativeOnly =
     isQualitativeRule ||
+    ['text', 'descriptive', 'qualitative', 'qualitative_or_ordinal', 'ordinal', 'categorical', 'metadata']
+      .includes(catalogItem?.value_kind ?? '') ||
     (actualValues.length > 0 &&
       actualValues.every((record) =>
         ['text', 'qualitative', 'ordinal', 'categorical', 'metadata'].includes(record.value_kind),
@@ -691,7 +732,7 @@ export function BaselineDialog({
     }
     setBusy(true);
     try {
-      const value: ItemOverride | null = reset
+      const value: ItemOverride | null = reset || (low === '' && high === '' && bands.length === 0)
         ? null
         : {
             enabled,
@@ -729,7 +770,9 @@ export function BaselineDialog({
         <span>
           {latest
             ? `${latest.institution || '來源未提供'} · ${dateLabel(latest.exam_date)}`
-            : '此項目來自先前取得的檢驗項目設定，未儲存歷史結果。'}
+            : catalogItem?.builtin
+              ? '內建項目，可先檢視預設規則並調整個人基準。'
+              : '此項目來自先前取得的檢驗項目設定，未儲存歷史結果。'}
         </span>
       </div>
       <p className="helper-text">
@@ -739,6 +782,13 @@ export function BaselineDialog({
           : '目前未經官網登入，設定只在本次使用階段生效。'}
       </p>
       <DefaultRuleSummary group={group} catalog={catalog} />
+      <p className="baseline-mode">
+        {override?.enabled
+          ? '目前使用個人設定；還原預設規則會移除此項目的個人調整。'
+          : override
+            ? '目前個人設定已停用，正使用預設規則。'
+            : '目前使用預設規則；下方欄位僅供建立個人調整，空白不代表缺少內建基準。'}
+      </p>
       {qualitativeOnly && (
         <Alert>
           此項目目前為定性、加號或文字結果，數值上下限不適用。系統保留原始文字與適用的定性標記，不把加號換算成危險程度。
@@ -896,7 +946,7 @@ export function BaselineDialog({
             type="button"
             className="button quiet"
             onClick={() => void save(true)}
-            disabled={busy || !override}
+            disabled={busy || (!override && low === '' && high === '' && bands.length === 0)}
           >
             還原預設規則
           </button>

@@ -31,11 +31,13 @@ import {
   formatTime,
   groupRecords,
   referenceLabel,
+  referenceTemplateLabel,
+  rulePreview,
   toCsv,
   yearLabel,
   type MeasurementGroup,
 } from './model';
-import { Alert, Copyright, Icon, Legend, LevelBadge, Loading, type IconName } from './ui';
+import { Alert, Copyright, Icon, Legend, LevelBadge, Loading, Modal, type IconName } from './ui';
 
 type View = 'overview' | 'comparison' | 'trends' | 'settings';
 const NAV: { id: View; label: string; short: string; icon: IconName; eyebrow: string }[] = [
@@ -136,6 +138,8 @@ export default function App() {
   const [importOpen, setImportOpen] = useState(false);
   const [detail, setDetail] = useState<LabRecord | null>(null);
   const [baseline, setBaseline] = useState<MeasurementGroup | null>(null);
+  const [restoreBaselinesOpen, setRestoreBaselinesOpen] = useState(false);
+  const [restoreBaselinesError, setRestoreBaselinesError] = useState('');
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
   const [year, setYear] = useState('all');
@@ -230,13 +234,6 @@ export default function App() {
   }, [message]);
 
   const groups = useMemo(() => groupRecords(report.records), [report.records]);
-  const categories = useMemo(
-    () =>
-      [...new Set(groups.map((group) => group.category))].sort((a, b) =>
-        categoryLabel(a).localeCompare(categoryLabel(b), 'zh-Hant'),
-      ),
-    [groups],
-  );
   const years = useMemo(
     () =>
       [...new Set(report.records.map((record) => record.exam_date.slice(0, 4)).filter(Boolean))]
@@ -297,37 +294,67 @@ export default function App() {
     )
     .sort((a, b) => (b.level ?? 0) - (a.level ?? 0) || b.exam_date.localeCompare(a.exam_date));
   const priorityCount = latestRecords.filter((record) => record.level && record.level >= 4).length;
+  const catalogByKey = useMemo(
+    () => new Map(catalog.items.map((item) => [item.configuration_key, item])),
+    [catalog.items],
+  );
   const configuredGroups = useMemo(() => {
-    const known = Object.values(settings.known_items ?? {}).map((item) => ({
-      id: `${item.id}\u0001${item.unit}`,
-      configurationKey: item.configuration_key,
-      name: item.name,
-      abbreviation: item.name,
-      unit: item.unit || '無單位',
-      category: item.category || 'other',
-      records: [] as LabRecord[],
-    }));
-    const knownKeys = new Set(known.map((group) => group.configurationKey));
-    const observed = groups.filter(
-      (group) =>
-        group.configurationKey &&
-        group.category !== 'metadata' &&
-        (knownKeys.has(group.configurationKey) ||
-          group.records.some((record) => !['missing', 'metadata'].includes(record.value_kind))),
-    );
-    return [
-      ...new Map([...known, ...observed].map((group) => [group.configurationKey, group])).values(),
-    ].sort(
+    // The catalog owns defaults. Observations add real history, never placeholder results.
+    const configured = new Map<string, MeasurementGroup>();
+    for (const item of catalog.items) {
+      if (!item.configuration_key || item.category === 'metadata') continue;
+      configured.set(item.configuration_key, {
+        id: `${item.id}\u0001${item.unit}`,
+        configurationKey: item.configuration_key,
+        name: item.display_name,
+        abbreviation: item.aliases.find((alias) => alias !== item.display_name) || item.display_name,
+        unit: item.unit || '無單位',
+        category: item.category || 'other',
+        records: [],
+      });
+    }
+    for (const item of Object.values(settings.known_items ?? {})) {
+      if (!item.configuration_key || item.category === 'metadata' || configured.has(item.configuration_key))
+        continue;
+      configured.set(item.configuration_key, {
+        id: `${item.id}\u0001${item.unit}`,
+        configurationKey: item.configuration_key,
+        name: item.name,
+        abbreviation: item.name,
+        unit: item.unit || '無單位',
+        category: item.category || 'other',
+        records: [],
+      });
+    }
+    for (const group of groups) {
+      if (!group.configurationKey || group.category === 'metadata') continue;
+      const current = configured.get(group.configurationKey);
+      if (current) current.records.push(...group.records);
+      else if (group.records.some((record) => !['missing', 'metadata'].includes(record.value_kind)))
+        configured.set(group.configurationKey, { ...group, records: [...group.records] });
+    }
+    for (const group of configured.values())
+      group.records.sort((a, b) => b.exam_date.localeCompare(a.exam_date) || a.id.localeCompare(b.id));
+    return [...configured.values()].sort(
       (a, b) =>
         categoryLabel(a.category).localeCompare(categoryLabel(b.category), 'zh-Hant') ||
         a.name.localeCompare(b.name, 'zh-Hant'),
     );
-  }, [groups, settings.known_items]);
+  }, [catalog.items, groups, settings.known_items]);
+  const categories = useMemo(
+    () =>
+      [...new Set((view === 'settings' ? configuredGroups : groups).map((group) => group.category))]
+        .sort((a, b) => categoryLabel(a).localeCompare(categoryLabel(b), 'zh-Hant')),
+    [view, configuredGroups, groups],
+  );
   const configurableKeys = configuredGroups.map((group) => group.configurationKey);
+  const customBaselineCount = Object.keys(settings.overrides).length;
+  const builtinCount = configuredGroups.filter((group) => catalogByKey.get(group.configurationKey)?.builtin).length;
   const visibleConfigurationGroups = configuredGroups.filter(
     (group) =>
       (category === 'all' || group.category === category) &&
-      `${group.name} ${group.abbreviation}`.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
+      `${group.name} ${group.abbreviation} ${group.unit} ${catalogByKey.get(group.configurationKey)?.aliases.join(' ') ?? ''} ${catalogByKey.get(group.configurationKey)?.order_codes.join(' ') ?? ''} ${group.records.map((record) => record.order_code).join(' ')}`
+        .toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()),
   );
   const nav = NAV.find((item) => item.id === view)!;
 
@@ -387,6 +414,7 @@ export default function App() {
     setReport(EMPTY_REPORT);
     setDetail(null);
     setBaseline(null);
+    clearSessionCatalog();
     setLoginOpen(false);
     navigate('overview');
     await fetchReports(true);
@@ -396,7 +424,7 @@ export default function App() {
     setReport(EMPTY_REPORT);
     setDetail(null);
     setBaseline(null);
-    setCatalog(EMPTY_CATALOG);
+    clearSessionCatalog();
     resetFilters();
     setSession((current) => ({
       ...current,
@@ -481,6 +509,7 @@ export default function App() {
       setReport(EMPTY_REPORT);
       setDetail(null);
       setBaseline(null);
+      clearSessionCatalog();
       resetFilters();
       navigate('overview');
       setMessage('已結束使用階段並清除目前報告。');
@@ -489,6 +518,18 @@ export default function App() {
     } finally {
       setBusy('');
     }
+  }
+
+  function clearSessionCatalog() {
+    setRestoreBaselinesOpen(false);
+    setCatalog((current) => ({
+      ...current,
+      items: current.items.filter((item) => item.builtin).map((item) => ({
+        ...item,
+        reference_low: null,
+        reference_high: null,
+      })),
+    }));
   }
 
   async function commitSettings(next: Settings, reassess = false) {
@@ -500,9 +541,13 @@ export default function App() {
       setSession((current) => ({ ...current, settings: saved }));
       if (reassess && report.records.length) {
         setAssessmentStale(true);
-        const current = await api.currentReports();
-        setReport(current);
-        setAssessmentStale(false);
+        try {
+          const current = await api.currentReports();
+          setReport(current);
+          setAssessmentStale(false);
+        } catch (error) {
+          throw new Error(`設定已儲存，但報告顏色尚未重新判讀。${readableError(error)}`, { cause: error });
+        }
       }
     } finally {
       settingsLock.current = false;
@@ -526,7 +571,23 @@ export default function App() {
     if (value === null) delete overrides[key];
     else overrides[key] = value;
     await commitSettings({ ...settings, overrides }, true);
-    setMessage(persisted ? '個人基準已儲存，報告顏色已更新。' : '本次使用的個人基準已更新。');
+    setMessage(
+      value === null
+        ? '此項目已還原預設規則。'
+        : persisted
+          ? '個人基準已儲存，報告顏色已更新。'
+          : '本次使用的個人基準已更新。',
+    );
+  }
+  async function restoreAllBaselines() {
+    setRestoreBaselinesError('');
+    try {
+      await commitSettings({ ...settings, overrides: {} }, true);
+      setRestoreBaselinesOpen(false);
+      setMessage('所有個人基準已還原為預設規則，關注項目與閱讀設定已保留。');
+    } catch (error) {
+      setRestoreBaselinesError(readableError(error));
+    }
   }
 
   function exportCsv() {
@@ -1455,7 +1516,20 @@ export default function App() {
               </div>
               <Panel
                 title="個人檢驗基準"
-                subtitle={`根據實際取得的項目建立，共 ${configuredGroups.length} 組設定；新增檢驗時自動補齊。`}
+                subtitle={`內建 ${builtinCount} 組，合計 ${configuredGroups.length} 組設定。未匯入資料也可查看與調整；新項目會自動補入。`}
+                action={
+                  <button
+                    className="button secondary"
+                    disabled={settingsBusy || customBaselineCount === 0}
+                    onClick={() => {
+                      setRestoreBaselinesError('');
+                      setRestoreBaselinesOpen(true);
+                    }}
+                  >
+                    還原全部預設基準
+                    {customBaselineCount > 0 && <span>（{customBaselineCount} 項）</span>}
+                  </button>
+                }
               >
                 <div className="settings-persistence">
                   <Icon name={persisted ? 'check' : 'info'} size={18} />
@@ -1466,40 +1540,91 @@ export default function App() {
                 {toolbar}
                 {visibleConfigurationGroups.length ? (
                   <div className="configuration-list">
-                    {visibleConfigurationGroups.map((group) => (
-                      <div className="configuration-row" key={group.configurationKey}>
-                        <div className="configuration-name">
-                          <span>{categoryLabel(group.category)}</span>
-                          <b>{group.name}</b>
-                          <small>
-                            {group.abbreviation} · {group.unit}
-                          </small>
+                    {visibleConfigurationGroups.map((group) => {
+                      const item = catalogByKey.get(group.configurationKey);
+                      const rule = rulePreview(item?.default_rule);
+                      const template = item?.default_reference;
+                      const bounds = [...new Set(rule.bands.flatMap((band) => [band.lower, band.upper]))]
+                        .filter((value): value is string => value !== null);
+                      const override = settings.overrides[group.configurationKey];
+                      return (
+                        <div className="configuration-row" key={group.configurationKey}>
+                          <div className="configuration-name">
+                            <span>{categoryLabel(group.category)} · {item?.builtin ? '內建項目' : '新增項目'}</span>
+                            <b>{group.name}</b>
+                            <small>
+                              {group.abbreviation} · {group.unit}
+                              {!!item?.order_codes.length && ` · ${item.order_codes.join('／')}`}
+                            </small>
+                            <div
+                              className={`configuration-status ${override?.enabled ? 'customized' : ''}`}
+                            >
+                              {override?.enabled ? '使用個人設定' : override ? '個人設定已停用，使用預設規則' : '使用預設規則'}
+                            </div>
+                          </div>
+                          <div className="configuration-reference">
+                            <span>
+                              {rule.bands.length ? '預設來源分類' : template ? '內建參考範本' : '預設判讀'}
+                            </span>
+                            <b>
+                              {rule.bands.length
+                                ? `${rule.bands.length} 個分級區間`
+                                : template
+                                  ? referenceTemplateLabel(template)
+                                  : rule.kind === 'qualitative_reference'
+                                    ? '定性／半定量標記'
+                                    : rule.kind === 'unclassified'
+                                      ? '保留原始結果，不強制分級'
+                                      : '依各筆原院參考值'}
+                            </b>
+                            {rule.bands.length > 0 && <small>分類界限：{bounds.join('、')} {rule.unit || group.unit}</small>}
+                            {!rule.bands.length && template && !template.automatic_fallback_allowed && (
+                              <small>參考範本，須確認適用條件；不自動取代原院基準。</small>
+                            )}
+                            {!!item?.alert_rules.length && <small>另有 {item.alert_rules.length} 組獨立警示</small>}
+                            {override?.enabled && (
+                              <small>
+                                <strong>目前個人設定：</strong>
+                                {override.bands?.length
+                                  ? `${override.bands.length} 個自訂分級區間`
+                                  : referenceLabel({
+                                      reference_low: override.reference_low ?? null,
+                                      reference_high: override.reference_high ?? null,
+                                      reference_text: '',
+                                    })}
+                              </small>
+                            )}
+                            <small>
+                              {group.records[0]
+                                ? `最近原院參考值：${referenceLabel(group.records[0])}`
+                                : '本次尚無檢驗結果'}
+                            </small>
+                          </div>
+                          <div className="configuration-actions">
+                            <button
+                              className="button secondary"
+                              onClick={() => setBaseline(group)}
+                              disabled={settingsBusy}
+                              aria-label={`檢視與編輯${group.name}基準`}
+                            >
+                              <Icon name="settings" size={17} />
+                              檢視／編輯
+                            </button>
+                            {override && (
+                              <button
+                                className="button quiet"
+                                onClick={() => void saveOverride(group.configurationKey, null)
+                                  .catch((error) => setError(readableError(error)))}
+                                disabled={settingsBusy}
+                                aria-label={`還原${group.name}預設規則`}
+                              >
+                                還原預設
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        <div className="configuration-reference">
-                          <span>最近原院參考值</span>
-                          <b>
-                            {group.records[0] ? referenceLabel(group.records[0]) : '本次尚無資料'}
-                          </b>
-                        </div>
-                        <div>
-                          <span
-                            className={`configuration-status ${settings.overrides[group.configurationKey]?.enabled ? 'customized' : ''}`}
-                          >
-                            {settings.overrides[group.configurationKey]?.enabled
-                              ? '使用個人設定'
-                              : '使用預設規則'}
-                          </span>
-                        </div>
-                        <button
-                          className="button secondary"
-                          onClick={() => setBaseline(group)}
-                          disabled={settingsBusy}
-                        >
-                          <Icon name="settings" size={17} />
-                          編輯基準
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="quiet-empty">
@@ -1507,18 +1632,18 @@ export default function App() {
                     <h3>
                       {configuredGroups.length
                         ? '沒有符合條件的項目'
-                        : '取得檢驗資料後，自動建立可調整項目'}
+                        : '內建項目目錄尚未載入'}
                     </h3>
-                    <p>相同項目與單位沿用原設定，重新匯入不會重設您已調整的基準值。</p>
+                    <p>
+                      {configuredGroups.length
+                        ? '相同項目與單位沿用原設定，重新匯入不會重設您已調整的基準值。'
+                        : '請查看上方錯誤訊息並重新載入網頁；顯示內建項目不需要先匯入資料。'}
+                    </p>
                     {configuredGroups.length ? (
                       <button className="button secondary" onClick={resetFilters}>
                         清除篩選
                       </button>
-                    ) : (
-                      <button className="button secondary" onClick={() => setImportOpen(true)}>
-                        匯入檢驗資料
-                      </button>
-                    )}
+                    ) : null}
                   </div>
                 )}
               </Panel>
@@ -1584,6 +1709,27 @@ export default function App() {
           onClose={() => setBaseline(null)}
           persisted={persisted}
         />
+      )}
+      {restoreBaselinesOpen && (
+        <Modal
+          title="還原全部預設基準"
+          subtitle={`將清除 ${customBaselineCount} 項個人基準調整`}
+          onClose={() => setRestoreBaselinesOpen(false)}
+          busy={settingsBusy}
+        >
+          <p className="helper-text">
+            所有項目會重新使用內建分類、適用的獨立警示及各筆原院參考值。已匯入的檢驗結果、關注項目、顯示模式與閱讀字級均會保留。
+          </p>
+          {restoreBaselinesError && <Alert tone="error">{restoreBaselinesError}</Alert>}
+          <div className="dialog-actions">
+            <button className="button secondary" onClick={() => setRestoreBaselinesOpen(false)} disabled={settingsBusy}>
+              保留個人基準
+            </button>
+            <button className="button primary" onClick={() => void restoreAllBaselines()} disabled={settingsBusy || customBaselineCount === 0}>
+              {settingsBusy ? <Loading label="還原中…" /> : '還原全部基準'}
+            </button>
+          </div>
+        </Modal>
       )}
     </div>
   );

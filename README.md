@@ -8,13 +8,13 @@ Copyright © 2026 **bestkakkoii llc.** All rights reserved.
 
 [專案原始碼](https://github.com/bestkakkoii/healthbank) · [Linux 發行版本](https://github.com/bestkakkoii/healthbank/releases)
 
-**目前 v1.0.3-rc.1 為連線診斷預覽版，官方驗證碼、登入及完整個人資料取得尚未通過驗收。**
+**目前 v1.0.3-rc.2 為內建基準與警示更新預覽版，官方驗證碼、登入及完整個人資料取得尚未通過驗收。**
 
 ## 寶塔部署：上傳、選擇執行檔、綁定網域、啟動
 
 **主要部署目標：Debian 13（trixie）x64／x86_64。請選 `linux_amd64`，採 `GOAMD64=v1` 與純 Go 靜態編譯。**
 
-1. 一般 Intel／AMD 64 位元主機下載 `healthbank_1.0.3-rc.1_linux_amd64.tar.gz`；ARM64 主機下載 `linux_arm64`。
+1. 一般 Intel／AMD 64 位元主機下載 `healthbank_1.0.3-rc.2_linux_amd64.tar.gz`；ARM64 主機下載 `linux_arm64`。
 2. 在寶塔檔案管理中上傳並解壓縮，例如放在 `/www/wwwroot/healthbank/`。解壓後可把套件內層目錄當成專案目錄。
 3. 在寶塔 **Go 專案**新增專案，選擇解壓出的 **`healthbank` 執行檔**。無需啟動參數，預設服務位址為 **`127.0.0.1:8787`**；面板需要填埠號時填 **8787**。
 4. 綁定已指向這台主機的網域，啟動專案。由寶塔的網站／Go 專案反向代理映射至該埠號，使用該網域瀏覽。正式登入請使用寶塔管理的 **HTTPS**。
@@ -23,7 +23,15 @@ Copyright © 2026 **bestkakkoii llc.** All rights reserved.
 
 如果面板沒有保留執行權限，在檔案權限中把 `healthbank` 設為可執行（755）。不同寶塔版本的欄位名稱可能略異；完整欄位對照與可選 Nginx 設定見 [部署說明](docs/deployment.zh-TW.md)。`deploy/nginx.healthbank.conf` 只供此 APP 的網站使用；已有面板映射時不需重複加入 `location /`。
 
-## v1.0.3-rc.1 連線診斷預覽版
+## v1.0.3-rc.2 內建基準與警示更新
+
+尚未匯入任何報告，也可在「個人設定」檢視 **76 組內建設定**、適用單位、來源分類、獨立警示及具名參考範本。內建項目不會建立假的檢驗結果；未知項目仍於實際取得後補入。
+
+每個項目可「還原預設」，或使用「還原全部預設基準」一次移除個人上下限與分級區間。還原後重新依內建規則及各筆原院參考值判讀，保留主題、字級、關注項目與原始報告。尚未完成官方登入的調整只在目前使用階段生效。
+
+新增 CK-MB 活性、D-dimer、未註明空腹血糖、飯後微血管血糖、Homocysteine、I-PTH、Vitamin B12 與尿蛋白定性對應；補上 `Creatinine(健檢)` 別名，並支援全形不等式。血糖低值與已核對適用條件的電解質／血球通報門檻保留獨立警示；方法相關項目不會只因名稱或單位相同就套用另一間實驗室的範本。完整界限與來源見 [醫學規則說明](docs/clinical-reference.zh-TW.md)。
+
+## 既有連線診斷功能
 
 此預覽版用於定位真實部署的 `CONNECTION_RESET`，**尚未通過官方驗證碼、登入及資料取得驗收**，不應當成已修復登入的正式版。程式仍維持相同的 HTTPS／Cookie／登入流程。
 
@@ -48,7 +56,7 @@ Copyright © 2026 **bestkakkoii llc.** All rights reserved.
 | 檢驗總覽 | 最近檢查、涵蓋年度、優先檢視、關注項目、來源與完整性提醒 |
 | 年度比較 | 每列為檢查日期、每欄為檢驗項目；可按年份分組或連續列出日期；搜尋、類別／年度篩選、關注／異常篩選；同日多筆結果分開保留 |
 | 數值趨勢 | 手機預設呈現完整時間範圍、實際日期間隔、原院或個人參考陰影、對數刻度、完整明細、SVG 圖表下載 |
-| 個人設定 | Light／Dark／跟隨系統、文字大小、關注項目、已出現檢驗項目的個人上下限與最多16個不重疊分級區間 |
+| 個人設定 | Light／Dark／跟隨系統、文字大小、關注項目、內建及已出現檢驗項目的個人上下限與最多16個不重疊分級區間 |
 
 可匯出 UTF-8 CSV，也可使用「列印／PDF」開啟瀏覽器列印。報表、圖表與匯出內容附有 **bestkakkoii llc.** 版權。介面可在筆電及現代 iOS Safari 使用；實體 iPhone／Safari 的最後驗收仍需在部署後完成。
 
@@ -58,7 +66,7 @@ Copyright © 2026 **bestkakkoii llc.** All rights reserved.
 
 ## 資料與醫學判讀原則
 
-內建 **72 個來源項目定義：70 個測量項目、2 個流程／項目附註**，另有未知項目的動態對應。項目身分結合醫令代碼、原始名稱與單位；血液白蛋白與尿白蛋白、尿液 PH 與靜脈血液 pH 不會被合併。ACR 定量與半定量共用分類設定，但保留不同結果列。
+內建 **80 個來源項目定義：78 個測量項目、2 個流程／項目附註，合併為76組可設定項目**，另有未知項目的動態對應。項目身分結合醫令代碼、原始名稱與單位；血液白蛋白與尿白蛋白、尿液 PH 與靜脈血液 pH 不會被合併。ACR 定量與半定量、已確認的尿蛋白定性來源共用對應設定，但保留不同結果列。
 
 原院每筆報告的參考值、異常標記、檢查日期、就醫日期、單位與醫事機構都保留。個人設定改變的是顯示基準，不會改寫原始報告。
 
@@ -110,7 +118,7 @@ npm --prefix web ci
 npm --prefix web run build
 .tools/go/bin/go test ./...
 .tools/go/bin/go vet ./...
-GO="$PWD/.tools/go/bin/go" bash scripts/release.sh v1.0.3-rc.1
+GO="$PWD/.tools/go/bin/go" bash scripts/release.sh v1.0.3-rc.2
 ```
 
 輸出為 `dist/releases/` 內兩種 Linux架構套件、原始碼套件與 `SHA256SUMS`。二進位採 `CGO_ENABLED=0`；伺服器不需編譯工具或外部動態 SQLite 函式庫。原始碼包不含真實報告、登入資料、資料庫、金鑰或開發快取。
