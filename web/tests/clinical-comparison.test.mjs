@@ -52,3 +52,24 @@ test('age is evaluated on each examination date, never from inferred birthdays',
   assert.equal(exactAgeOn('2000-02-29', '2023-03-01'), 23);
   for (const [birth, exam] of [['2020-02-30','2026-01-01'],['1956-10-28',''],['2027-01-01','2026-01-01']]) assert.equal(exactAgeOn(birth, exam), null);
 });
+test('additional source partitions and one-sided limits are exact and bounded', () => {
+ assert.equal(scenarioInterval('bun', male(17)).high, 18);
+ assert.equal(scenarioInterval('bun', male(18)).high, 20);
+ assert.equal(scenarioInterval('bun', male(59)).low, 6);
+ assert.equal(scenarioInterval('bun', male(60)).low, 8);
+ assert.equal(scenarioInterval('bun', male(89)).high, 23);
+ assert.equal(scenarioInterval('bun', male(90)), null);
+ assert.equal(scenarioInterval('calcium', male(1)), null);
+ assert.equal(scenarioInterval('calcium', male(2)).low, 8.8);
+ assert.equal(scenarioInterval('calcium', male(12)).low, 8.4);
+ assert.equal(scenarioInterval('calcium', male(18)).high, 10);
+ assert.equal(scenarioInterval('calcium', male(60)).high, 10.2);
+ assert.equal(scenarioInterval('calcium', male(90)).high, 9.6);
+ assert.equal(scenarioInterval('alt', male(70)).low, null);
+ assert.equal(scenarioInterval('alt', female(70)).high, 35);
+ assert.equal(scenarioInterval('ck', female(70)).high, 192);
+ assert.equal(scenarioInterval('uric_acid', female(70)).high, 5.7);
+ assert.equal(scenarioInterval('albumin', male(17)), null);
+ assert.equal(recordAnalyte(record({order_code:'06012C',item_name:'Albumin'})), null);
+ assert.equal(compareInterval(record({order_code:'09026C',item_name:'ALT',result:'0',numeric_value:0,unit:'U/L'}),'alt',scenarioInterval('alt',male(70))), '位於情境範本內');
+});

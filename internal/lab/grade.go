@@ -351,6 +351,19 @@ func containsToken(values []string, token string) bool {
 	return false
 }
 func ValidateSettings(s Settings, known map[string]KnownItem) error {
+	if s.Analysis != nil {
+		if s.Analysis.Mode != "off" && s.Analysis.Mode != "primary" && s.Analysis.Mode != "comparison" {
+			return fmt.Errorf("未知的判讀情境模式")
+		}
+		for _, scenario := range []AnalysisScenario{s.Analysis.Primary, s.Analysis.Comparison} {
+			if scenario.Sex != "unknown" && scenario.Sex != "male" && scenario.Sex != "female" {
+				return fmt.Errorf("判讀性別條件不正確")
+			}
+			if scenario.Age != nil && (*scenario.Age < 1 || *scenario.Age > 130) {
+				return fmt.Errorf("情境年齡須介於1與130整歲")
+			}
+		}
+	}
 	if s.Theme != "light" && s.Theme != "dark" && s.Theme != "system" {
 		return fmt.Errorf("外觀必須為light、dark或system")
 	}
