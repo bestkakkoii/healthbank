@@ -1,0 +1,33 @@
+# Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
+# Temporary review-branch transport; removed before integration.
+name: Source review snapshot
+on:
+  push:
+    branches: ["work/privacy-comparison-20261027"]
+    paths: [".github/workflows/source-review.yml"]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a
+        with:
+          persist-credentials: false
+      - name: Export tracked source only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/healthbank-review"
+          git archive --format=tar HEAD | gzip -n > "$RUNNER_TEMP/healthbank-review/source.tar.gz"
+          git rev-parse HEAD > "$RUNNER_TEMP/healthbank-review/COMMIT"
+          git ls-tree -r HEAD > "$RUNNER_TEMP/healthbank-review/tree.txt"
+          cd "$RUNNER_TEMP/healthbank-review"
+          sha256sum source.tar.gz > SHA256SUMS
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: healthbank-source-review
+          path: ${{ runner.temp }}/healthbank-review/*
+          if-no-files-found: error
+          retention-days: 1
