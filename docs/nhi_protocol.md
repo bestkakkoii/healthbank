@@ -23,6 +23,15 @@ The relevant saved public bundles have these SHA-256 hashes:
 | `master.59cf95f2.js` | `cbaee1317f8d6ac1264e52d7d32881a0f0ea08c68582e4de70838df342f6332c` |
 | `chunk-vendors.5ebb76d6.js` | `a508bcee3dbbaacbd8a653baf361c32ddaf3f5040eda4af8a31da7ce522d9a8b` |
 
+On 2026-10-27 at 10:28:24 Asia/Taipei, credentialless requests re-fetched the
+[current public report bundle](https://myhealthbank.nhi.gov.tw/IHKE3000/js/IHKE3409S01.4adbbcd2.js)
+and [usage-guide bundle](https://myhealthbank.nhi.gov.tw/IHKE3000/js/IHKE3115S01.be579f6a.js),
+using paths exposed by the freshly retrieved application manifest. Both
+returned HTTP 200. The report bundle was byte-identical to the hash above;
+the 65,548-byte guide has SHA-256
+`3ec6745a8319c63b4a35e4f4eddf4768b4f30e0718dd5ce04532eb430b151222`.
+These are public-source observations, not authenticated report verification.
+
 On 2026-10-26 UTC, read-only requests from the build environment to the public
 login route and to a newly generated public CAPTCHA URL each returned HTTP
 503. A separate web retrieval of the login route timed out. This establishes
@@ -195,28 +204,41 @@ with their own official credentials.
 
 ## Report range and completeness
 
-The initial query follows the saved report component:
+The initial metadata query follows the official report component:
 
 ```text
 s_type=
-s_date=<YYYY-MM-DD or empty>
-e_date=<YYYY-MM-DD or empty>
+s_date=
+e_date=
 s_sort=A1
 nowPage=1
 pageDataCount=50
 ```
 
-Empty dates request the official default interval. The returned `sdate` and
-`edate` become the interval for the subsequent `/search` call. Explicit dates
-are Gregorian dates; ROC year conversion is an application/import concern.
-An explicit interval requires both endpoints and an end date not before the
-start date.
+Empty initialization dates request the official default interval. The official
+SPA adopts `sdate` and `edate` on initial page load, but its `btnOK()` date-filter
+action calls `/search` directly with the selected dates. It does not repeat
+`page_load` and overwrite the selection. Versions through rc.4 incorrectly
+applied that initialization behavior to every query, including explicitly
+requested historical dates.
 
-The v1.0.2 frontend starts with empty dates and adopts the returned effective
-interval; it no longer imposes an initial four-year window. The saved component
-does not establish an earliest available date or a maximum permitted range.
-Its default interval is therefore not evidence of all available history. Users
-can request an earlier explicit interval, subject to the official response.
+From rc.5, empty **application** dates mean `all_history`: resolve once to
+`1912-01-01` through today's date in Asia/Taipei, then send both dates explicitly
+to `/search`. The start is the application's conservative supported query
+floor, **not** a claimed NHI retention boundary or earliest available record.
+Two explicit application dates mean `custom` and reach `/search` unchanged.
+Incomplete, invalid, inverted or out-of-supported-year inputs fail before an
+official request. The supported application years remain 1912 through 2200.
+
+The fresh official date inputs have no `min`/`max`; `btnOK()` checks presence
+and ordering only. Unused `one_year`/`two_year`/`three_year` fields do not prove
+an active range cap. `remark_SDate` is rendered as availability information
+for sources **A/B only**, with no established wire-date format. It must not
+truncate C/D history or be treated as an all-source boundary. The official
+usage guide generally describes recent-three-year institutional laboratory
+data; a broad normal filter cannot recover records the official account no
+longer provides. Wider-query server acceptance and actual personal history
+remain authenticated deployment verification items.
 
 The complete search uses `s_type`, `s_date`, `e_date`, and `s_sort` only. Source
 is left empty to include A/B/C/D, and `A1` means newest inspection date first.
@@ -229,27 +251,38 @@ HTML page would be an incorrect completeness strategy for the live connector.
 The connector always performs the complete search and never falls back to the
 initial 50 rows when search fails.
 
-If `counts` is present, a complete search returning fewer records is rejected
-as `INCOMPLETE_RESPONSE`. The error includes `ExpectedCount` and
-`ReceivedCount`, and the returned `Report` contains interval/count metadata
-but no partial observations. A greater count is accepted because data may
-have arrived between the two reads. Missing `counts` is represented as `-1`,
-so callers can distinguish an unavailable total from zero. The complete
-array must still be structurally valid. Empty `[]` is valid when not in
-conflict with an expected count; `null`, HTML, unrelated objects, malformed
-rows and changed schemas are not treated as empty reports.
+The full search returns an array without independent range/count metadata.
+`page_load.counts` becomes the reported total only when its date interval
+exactly matches the search interval. For a wider search that contains the
+entire default interval, that count is only a known **minimum**: returning
+fewer rows is still `INCOMPLETE_RESPONSE`, while the history total remains
+unavailable. A narrower, overlapping or disjoint query cannot inherit the
+default count, including an oversized default count that does not apply to
+the requested interval.
+
+The error retains `ExpectedCount` and `ReceivedCount` but no partial
+observations; UI wording describes the expected count as "at least" for both
+exact-period and minimum guards. More records remain valid because data may
+arrive between reads. An unavailable applicable total is `-1` internally and
+`null` in the application API, never fabricated from array length. Empty `[]`
+is valid only when it does not violate a known minimum; `null`, HTML,
+unrelated objects, malformed rows and changed schemas remain failures.
 
 Requests time out after 35 seconds each. JSON bodies are limited to 16 MiB,
 authentication responses to 64 KiB, and complete reports to 50,000 records.
 Oversized data produces an explicit request to shorten the selected interval.
 
 The application exposes transient `official_query` metadata alongside the
-report: `start_date`, `end_date`, and `reported_count`. The last field is `null`
-when the official total is unavailable, not a fabricated count from the array.
-The UI displays the actual record count and these effective dates. Metadata is
-available on the current-report endpoint and is cleared with the session;
-imports, demo reports and anonymous responses omit it. Completeness is scoped
-to the effective query interval, not a claim of lifetime coverage.
+report: `mode` (`all_history` or `custom`), `start_date`, `end_date`, and
+`reported_count`. Dates are the exact submitted search interval, not an
+independently confirmed server retention interval. Metadata survives the
+current-report endpoint and is cleared with the session; imports, demos and
+anonymous responses omit it. `complete` still means an applicable independent
+count was checked, not lifetime coverage. A successful full-array response
+without that count receives a precise neutral explanation in the official UI.
+Failed refreshes retain the previous report atomically, except an expired
+authenticated session intentionally clears it. Successful refreshes reset
+display-only year/category filters so historical rows cannot remain hidden.
 
 For `INCOMPLETE_RESPONSE` only, the API includes `error.expected_count` and
 `error.received_count` when `0 <= received < expected <= 50000`. A received

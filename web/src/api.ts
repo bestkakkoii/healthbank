@@ -4,6 +4,7 @@
 export type Level = 1 | 2 | 3 | 4 | 5;
 export type Theme = 'light' | 'dark' | 'system';
 export type SessionMode = 'official' | 'import' | 'demo' | 'anonymous';
+export type ReportQueryMode = 'all_history' | 'custom';
 export type ReferenceStatus = 'within' | 'high' | 'low' | 'unknown';
 
 export interface LevelBand {
@@ -74,6 +75,7 @@ export interface ReportResponse {
   complete: boolean;
   warnings: string[];
   official_query?: {
+    mode: ReportQueryMode;
     start_date: string;
     end_date: string;
     reported_count: number | null;
@@ -300,7 +302,7 @@ export function readableError(error: unknown): string {
     if (error.upstreamStatus) details.push(`連線回應：HTTP ${error.upstreamStatus}`);
     if (error.upstreamCode) details.push(`官方代碼：${error.upstreamCode}`);
     if (error.incompleteCounts)
-      details.push(`已收到 ${error.incompleteCounts.received} 筆／官方回報 ${error.incompleteCounts.expected} 筆`);
+      details.push(`已收到 ${error.incompleteCounts.received} 筆／已知至少 ${error.incompleteCounts.expected} 筆`);
     if (error.connectionPhase)
       details.push(`最後連線階段：${connectionPhaseLabels[error.connectionPhase]}`);
     if (error.requestId) details.push(`查詢代碼：${error.requestId}`);

@@ -86,6 +86,7 @@ func TestSourceDerivedFlowWithFullSearch(t *testing.T) {
 			"hosP_ABBR": "Synthetic institution", "orI_TYPE": "A", "assaY_MARK": 1,
 		}
 	}
+	rows[0]["reaL_INSPECT_DATE"], rows[0]["funC_DATE"], rows[0]["assaY_UPLOAD_DATE"] = "112/03/20", "112/03/02", "112/04/01"
 	var challengeID string
 	var bootstrapCalls, captchaCalls, loginCalls, refreshCalls, pageLoadCalls, searchCalls, logoutCalls atomic.Int32
 	session := fixtureSession(t, func(w http.ResponseWriter, r *http.Request) {
@@ -146,15 +147,15 @@ func TestSourceDerivedFlowWithFullSearch(t *testing.T) {
 				t.Error("missing refreshed bearer token")
 			}
 			q := r.URL.Query()
-			if q.Get("s_sort") != "A1" || q.Get("s_type") != "" || q.Get("nowPage") != "1" || q.Get("pageDataCount") != "50" || q.Get("s_date") != "2025-01-01" || q.Get("e_date") != "2025-12-31" {
+			if q.Get("s_sort") != "A1" || q.Get("s_type") != "" || q.Get("nowPage") != "1" || q.Get("pageDataCount") != "50" || q.Get("s_date") != "" || q.Get("e_date") != "" {
 				t.Error("incorrect page-load query")
 			}
-			respondJSON(t, w, map[string]any{"sdate": "2025-03-01", "edate": "2025-12-31", "counts": "52", "sP_IHKE3409S02_Data": rows[:50]})
+			respondJSON(t, w, map[string]any{"sdate": "2025-03-01", "edate": "2025-12-31", "counts": "51", "sP_IHKE3409S02_Data": rows[1:51]})
 		case searchPath:
 			searchCalls.Add(1)
 			q := r.URL.Query()
-			if len(q) != 4 || q.Get("s_type") != "" || q.Get("s_sort") != "A1" || q.Get("s_date") != "2025-03-01" || q.Get("e_date") != "2025-12-31" {
-				t.Error("full search must use the returned interval and omit pagination")
+			if len(q) != 4 || q.Get("s_type") != "" || q.Get("s_sort") != "A1" || q.Get("s_date") != "2023-01-01" || q.Get("e_date") != "2025-12-31" {
+				t.Error("full search must preserve the explicit historical interval and omit pagination")
 			}
 			if r.Header.Get("Authorization") != "Bearer synthetic.refreshed.token" {
 				t.Error("full search lost the refreshed bearer token")
@@ -188,15 +189,15 @@ func TestSourceDerivedFlowWithFullSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 	session.tokenObtainedAt = time.Now().Add(-9 * time.Minute)
-	report, err := session.Fetch(ctx, Query{StartDate: "2025-01-01", EndDate: "2025-12-31"})
+	report, err := session.Fetch(ctx, Query{StartDate: "2023-01-01", EndDate: "2025-12-31"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(report.Records) != 52 || report.ReportedCount != 52 || pageLoadCalls.Load() != 1 || searchCalls.Load() != 1 || refreshCalls.Load() != 1 || loginCalls.Load() != 1 {
+	if len(report.Records) != 52 || report.ReportedCount != -1 || pageLoadCalls.Load() != 1 || searchCalls.Load() != 1 || refreshCalls.Load() != 1 || loginCalls.Load() != 1 {
 		t.Fatal("did not fetch the full result set")
 	}
-	if report.StartDate != "2025-03-01" || report.EndDate != "2025-12-31" {
-		t.Fatal("effective official interval was replaced by the requested interval")
+	if report.StartDate != "2023-01-01" || report.EndDate != "2025-12-31" || report.Mode != QueryModeCustom {
+		t.Fatal("requested historical interval was replaced by the official default")
 	}
 	for i, row := range report.Records {
 		if row.ItemName != fmt.Sprintf("Synthetic item %d", i) {
@@ -204,7 +205,7 @@ func TestSourceDerivedFlowWithFullSearch(t *testing.T) {
 		}
 	}
 	row := report.Records[0]
-	if row.CheckDate != "114/03/20" || row.VisitDate != "114/03/02" || row.UploadDate != "114/04/01" || row.Result != "大於等於30" || row.OfficialFlag != "1" || row.Reference != "[1][10]" {
+	if row.CheckDate != "112/03/20" || row.VisitDate != "112/03/02" || row.UploadDate != "112/04/01" || row.Result != "大於等於30" || row.OfficialFlag != "1" || row.Reference != "[1][10]" {
 		t.Fatal("original laboratory/date semantics were not preserved")
 	}
 	if err := session.Logout(ctx); err != nil || logoutCalls.Load() != 1 || session.token != "" || session.client.Jar != nil || !session.closed {
@@ -243,7 +244,7 @@ func TestFailuresDoNotBecomeEmptySuccessOrLeakUpstreamText(t *testing.T) {
 				_, _ = w.Write([]byte(tc.body))
 			})
 			session.token, session.tokenObtainedAt = "synthetic.token", time.Now()
-			report, err := session.Fetch(context.Background(), Query{})
+			report, err := session.Fetch(context.Background(), Query{StartDate: "2025-01-01", EndDate: "2025-12-31"})
 			var actual *Error
 			if !errors.As(err, &actual) || actual.Code != tc.code {
 				t.Fatalf("want %s, got %v", tc.code, err)

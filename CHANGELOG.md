@@ -2,6 +2,16 @@
 
 Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
+## v1.0.3-rc.5 — 2026-10-27 (Asia/Taipei)
+
+- Fixed historical queries being narrowed to the official initialization range. Explicit dates now reach the complete search unchanged; empty dates resolve to the application's conservative 1912-01-01 search floor through the current Asia/Taipei date.
+- Made all-history retrieval the login default and an explicit toolbar action, with a separate required-date custom query. Submitted bounds and query mode remain visible; identity transitions clear stale date controls.
+- Scoped official counts to their actual period. A default-period total is never presented as the history total; it is only a lower-bound guard when the requested range fully contains that default period.
+- Preserved all complete-search rows, including pre-ROC114 history and identical observations. Kept local display pagination distinct from the full official search, and retained bounded, atomic report replacement on failures.
+- Re-fetched the official public report/guide scripts, recorded their source hashes and clarified A/B-only availability metadata, all-source filtering and the absence of an independent search total. Actual authenticated history remains a deployment acceptance item.
+- Moved custom date controls directly below their action toolbar for enlarged-text mobile use. Refreshed evergreen installation, contribution and security documentation; added a branded SVG, a clearly synthetic comparison screenshot and a source-backed product roadmap.
+- Included linked documentation assets in executable archives and classified SemVer preview drafts as prereleases without changing Latest.
+
 ## v1.0.3-rc.4 — 2026-10-27 (Asia/Taipei)
 
 This prerelease refreshes verified upstream sources and adds strict checks, substantive regressions and real MySQL verification. Authenticated live NHI retrieval and physical iOS/BaoTa acceptance remain outstanding.

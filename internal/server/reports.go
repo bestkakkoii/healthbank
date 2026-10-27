@@ -23,12 +23,14 @@ type reportResponse struct {
 	OfficialQuery *officialQueryMetadata `json:"official_query,omitempty"`
 }
 
-// officialQueryMetadata describes the interval returned by NHI, not an inferred
-// lifetime history. An unavailable upstream total is explicitly null.
+// officialQueryMetadata describes the exact interval submitted to search. It
+// does not assert NHI retention or lifetime coverage. Only a total for that
+// same interval is exposed; the default-page count is not a history total.
 type officialQueryMetadata struct {
-	StartDate     string `json:"start_date"`
-	EndDate       string `json:"end_date"`
-	ReportedCount *int   `json:"reported_count"`
+	Mode          nhi.QueryMode `json:"mode"`
+	StartDate     string        `json:"start_date"`
+	EndDate       string        `json:"end_date"`
+	ReportedCount *int          `json:"reported_count"`
 }
 
 func (s *session) setOfficialReport(report nhi.Report) {
@@ -37,7 +39,7 @@ func (s *session) setOfficialReport(report nhi.Report) {
 		raw = append(raw, lab.RawRecord{CheckDate: v.CheckDate, OrderCode: v.OrderCode, OrderName: v.OrderName, ItemName: v.ItemName, Result: v.Result, Unit: v.Unit, Reference: v.Reference, Institution: v.Institution, VisitDate: v.VisitDate, Source: v.Source, OfficialFlag: v.OfficialFlag})
 	}
 	s.raw = raw
-	s.officialQuery = &officialQueryMetadata{StartDate: report.StartDate, EndDate: report.EndDate}
+	s.officialQuery = &officialQueryMetadata{Mode: report.Mode, StartDate: report.StartDate, EndDate: report.EndDate}
 	if report.ReportedCount >= 0 {
 		count := report.ReportedCount
 		s.officialQuery.ReportedCount = &count
@@ -46,7 +48,7 @@ func (s *session) setOfficialReport(report nhi.Report) {
 	s.complete = report.ReportedCount >= 0
 	s.warnings = []string{}
 	if report.ReportedCount < 0 {
-		s.warnings = append(s.warnings, "官方未提供總筆數；已讀取查詢回傳的完整陣列，但無法比對總筆數。")
+		s.warnings = append(s.warnings, "已讀取本次查詢回傳的完整資料陣列；官方未提供相同期間的獨立總筆數，無法另外核對。")
 	}
 }
 
@@ -115,6 +117,10 @@ func (a *App) fetchReports(w http.ResponseWriter, r *http.Request, s *session) {
 		return
 	}
 	from, to := r.URL.Query().Get("from"), r.URL.Query().Get("to")
+	if (from == "") != (to == "") {
+		a.fail(w, r, 400, "invalid_date", "自訂查詢須同時填寫開始與結束日期；全部歷史請使用取得全部歷史。")
+		return
+	}
 	for _, v := range []string{from, to} {
 		if v != "" {
 			if t, err := time.Parse("2006-01-02", v); err != nil || t.Year() < 1912 || t.Year() > 2200 {

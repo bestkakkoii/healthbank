@@ -11,7 +11,7 @@ on:
         description: "Semantic version for the downloadable build artifacts"
         type: string
         required: true
-        default: v1.0.3-rc.4
+        default: v1.0.3-rc.5
 
 permissions:
   contents: read
@@ -125,5 +125,10 @@ jobs:
               exit 0
             fi
           done <<< "$release_tags"
+          release_flags=(--draft)
+          # SemVer build metadata may contain a dash without being a prerelease.
+          if [[ "${RELEASE_VERSION%%+*}" == *-* ]]; then
+            release_flags+=(--prerelease --latest=false)
+          fi
           gh release create "$RELEASE_VERSION" dist/releases/*.tar.gz dist/releases/SHA256SUMS \
-            --verify-tag --draft --title "Healthbank $RELEASE_VERSION" --generate-notes
+            --verify-tag "${release_flags[@]}" --title "Healthbank $RELEASE_VERSION" --generate-notes

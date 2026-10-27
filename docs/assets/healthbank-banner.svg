@@ -1,0 +1,29 @@
+<!-- Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 280" role="img" aria-labelledby="title description">
+  <title id="title">健康映覽 · Healthbank</title>
+  <desc id="description">以綠色心形脈搏圖示呈現品牌，標示年度比較、長期趨勢與個人基準。此圖為品牌插畫，不含檢驗資料。</desc>
+  <rect width="1200" height="280" rx="24" fill="#edf5f2"/>
+  <path d="M840 0h336a24 24 0 0 1 24 24v232a24 24 0 0 1-24 24H900L840 0Z" fill="#dcece5"/>
+  <rect x="52" y="56" width="144" height="144" rx="38" fill="#176d61"/>
+  <g transform="translate(70 74) scale(4.5)" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 5a5 5 0 0 0-8 1 5 5 0 0 0-8-1c-4 4 0 9 8 15 8-6 12-11 8-15Z"/>
+    <path d="M4 12h4l2-4 3 8 2-4h5"/>
+  </g>
+  <g font-family="system-ui, -apple-system, 'Segoe UI', 'Noto Sans TC', sans-serif">
+    <text x="234" y="94" font-size="22" font-weight="600" letter-spacing="4" fill="#176d61">HEALTHBANK</text>
+    <text x="230" y="160" font-size="54" font-weight="700" fill="#163a34">健康映覽</text>
+    <text x="234" y="205" font-size="24" fill="#3a6056">年度比較 · 長期趨勢 · 個人基準</text>
+    <text x="234" y="248" font-size="16" fill="#547168">© bestkakkoii llc.</text>
+  </g>
+  <g fill="none" stroke="#176d61" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M876 208V76M876 208h248" stroke-width="2" opacity=".35"/>
+    <path d="M904 172l49-35 51 14 48-55 49 18" stroke-width="5"/>
+    <g fill="#edf5f2" stroke-width="4">
+      <circle cx="904" cy="172" r="7"/>
+      <circle cx="953" cy="137" r="7"/>
+      <circle cx="1004" cy="151" r="7"/>
+      <circle cx="1052" cy="96" r="7"/>
+      <circle cx="1101" cy="114" r="7"/>
+    </g>
+  </g>
+</svg>

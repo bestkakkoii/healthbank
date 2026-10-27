@@ -10,6 +10,7 @@ import {
   type CatalogResponse,
   type ItemOverride,
   type LabRecord,
+  type ReportQueryMode,
   type ReportResponse,
   type Session,
   type Settings,
@@ -409,6 +410,7 @@ export default function App() {
   async function receiveReports(next: ReportResponse, generation: number) {
     if (generation !== sessionGeneration.current) return;
     setReport(next);
+    if (!next.official_query) clearReportRange();
     setAssessmentStale(false);
     setError('');
     resetFilters();
@@ -428,9 +430,10 @@ export default function App() {
     setDetail(null);
     setBaseline(null);
     clearSessionCatalog();
+    clearReportRange();
     setLoginOpen(false);
     navigate('overview');
-    await fetchReports(true);
+    await fetchReports('all_history');
   }
 
   async function expireOfficialSession() {
@@ -441,6 +444,7 @@ export default function App() {
     setDetail(null);
     setBaseline(null);
     clearSessionCatalog();
+    clearReportRange();
     resetFilters();
     setSession((current) => ({
       ...current,
@@ -467,16 +471,19 @@ export default function App() {
     }
   }
 
-  async function fetchReports(useOfficialDefault = false) {
+  async function fetchReports(mode: ReportQueryMode) {
     const generation = sessionGeneration.current;
-    const from = useOfficialDefault ? '' : dateFrom;
-    const to = useOfficialDefault ? '' : dateTo;
-    if ((from || to) && (!from || !to || from > to)) {
+    const from = mode === 'all_history' ? '' : dateFrom;
+    const to = mode === 'all_history' ? '' : dateTo;
+    if (mode === 'custom' && (!from || !to || from > to)) {
       setError('請選擇有效的開始與結束日期，開始日期不可晚於結束日期。');
       return;
     }
-    setBusy('正在向健康存摺取得檢驗資料…');
+    setBusy(mode === 'all_history'
+      ? '正在向健康存摺查詢全部歷史檢驗資料…'
+      : '正在向健康存摺查詢指定期間的檢驗資料…');
     setError('');
+    setMessage('');
     try {
       const result = await api.reports(from, to);
       await receiveReports(result, generation);
@@ -486,7 +493,7 @@ export default function App() {
         setDateTo(result.official_query.end_date);
       }
       setRangeOpen(false);
-      setMessage('檢驗資料已更新。');
+      setMessage(`已取得本次查詢回傳的 ${result.records.length} 筆檢驗結果。`);
     } catch (error) {
       if (generation !== sessionGeneration.current) return;
       if (error instanceof ApiError && error.status === 401) {
@@ -538,6 +545,7 @@ export default function App() {
       setDetail(null);
       setBaseline(null);
       clearSessionCatalog();
+      clearReportRange();
       resetFilters();
       navigate('overview');
       setMessage('已結束使用階段並清除目前報告。');
@@ -546,6 +554,12 @@ export default function App() {
     } finally {
       if (generation === sessionGeneration.current) setBusy('');
     }
+  }
+
+  function clearReportRange() {
+    setDateFrom('');
+    setDateTo('');
+    setRangeOpen(false);
   }
 
   function clearSessionCatalog() {
@@ -864,14 +878,25 @@ export default function App() {
                 </>
               )}
               {persisted ? (
-                <button
-                  className="button primary"
-                  onClick={() => setRangeOpen(!rangeOpen)}
-                  disabled={controlsBusy}
-                >
-                  <Icon name="refresh" size={18} />
-                  更新資料
-                </button>
+                <>
+                  <button
+                    className="button primary"
+                    onClick={() => void fetchReports('all_history')}
+                    disabled={controlsBusy}
+                  >
+                    <Icon name="refresh" size={18} />
+                    取得全部歷史
+                  </button>
+                  <button
+                    className="button secondary"
+                    aria-expanded={rangeOpen}
+                    aria-controls={rangeOpen ? 'report-date-range' : undefined}
+                    onClick={() => setRangeOpen(!rangeOpen)}
+                    disabled={controlsBusy}
+                  >
+                    指定期間
+                  </button>
+                </>
               ) : (
                 <button
                   className="button primary"
@@ -884,6 +909,46 @@ export default function App() {
               )}
             </div>
           </div>
+
+          {rangeOpen && persisted && (
+            <form
+              id="report-date-range"
+              className="date-range-panel"
+              aria-label="指定查詢期間"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void fetchReports('custom');
+              }}
+            >
+              <label className="field">
+                開始日期
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(event) => setDateFrom(event.target.value)}
+                  max={dateTo || today()}
+                  required
+                  disabled={controlsBusy}
+                />
+              </label>
+              <span className="date-range-separator">至</span>
+              <label className="field">
+                結束日期
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(event) => setDateTo(event.target.value)}
+                  min={dateFrom}
+                  max={today()}
+                  required
+                  disabled={controlsBusy}
+                />
+              </label>
+              <button className="button primary" type="submit" disabled={controlsBusy}>
+                取得此範圍
+              </button>
+            </form>
+          )}
 
           <div className="print-only print-heading">
             <p>{isDemo ? '合成示範報告 · 非真實醫療資料' : '個人檢驗報告'}</p>
@@ -944,12 +1009,19 @@ export default function App() {
             <Alert>
               <strong>本次取得 {report.records.length} 筆原始結果</strong>
               <br />
-              官方查詢期間：{dateLabel(report.official_query.start_date)}～
+              查詢方式：{report.official_query.mode === 'all_history' ? '全部歷史' : '自訂期間'}。
+              <br />
+              實際送出查詢範圍：{dateLabel(report.official_query.start_date)}～
               {dateLabel(report.official_query.end_date)}；
               {report.official_query.reported_count === null
-                ? '官方未提供總筆數。'
-                : `官方回報 ${report.official_query.reported_count} 筆。`}
-              完整性核對適用於這個期間。
+                ? '官方未提供此範圍可獨立核對的總筆數。'
+                : `此範圍官方回報 ${report.official_query.reported_count} 筆，已完成筆數核對。`}
+              {report.official_query.mode === 'all_history' && (
+                <>
+                  <br />
+                  全部歷史從民國1年起查詢；實際可提供的歷史資料依健康存摺，這不是官方資料最早年度。
+                </>
+              )}
             </Alert>
           )}
           {report.warnings
@@ -959,55 +1031,11 @@ export default function App() {
                 {warning}
               </Alert>
             ))}
-          {!report.complete && report.records.length > 0 && (
+          {!report.complete && !report.official_query && report.records.length > 0 && (
             <Alert tone="warning">
               目前資料可能不完整。比較表僅呈現已取得的紀錄；缺少的日期不表示未曾檢驗。
             </Alert>
           )}
-          {rangeOpen && (
-            <form
-              className="date-range-panel"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void fetchReports();
-              }}
-            >
-              <label className="field">
-                開始日期
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(event) => setDateFrom(event.target.value)}
-                  max={dateTo}
-                  required={!!dateTo}
-                />
-              </label>
-              <span className="date-range-separator">至</span>
-              <label className="field">
-                結束日期
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={(event) => setDateTo(event.target.value)}
-                  min={dateFrom}
-                  max={today()}
-                  required={!!dateFrom}
-                />
-              </label>
-              <button className="button primary" type="submit" disabled={controlsBusy}>
-                取得此範圍
-              </button>
-              <button
-                className="button secondary"
-                type="button"
-                disabled={controlsBusy}
-                onClick={() => void fetchReports(true)}
-              >
-                官網預設期間
-              </button>
-            </form>
-          )}
-
           {booting ? (
             <div className="boot-screen">
               <Loading label="正在開啟健康工作站…" />
@@ -1026,13 +1054,13 @@ export default function App() {
                   <button
                     className="button primary large-button"
                     onClick={() => {
-                      if (persisted) setRangeOpen(true);
+                      if (persisted) void fetchReports('all_history');
                       else setLoginOpen(true);
                     }}
                     disabled={controlsBusy}
                   >
                     <Icon name={persisted ? 'refresh' : 'login'} />
-                    {persisted ? '更新資料' : '連接健康存摺'}
+                    {persisted ? '取得全部歷史' : '連接健康存摺'}
                   </button>
                   <button
                     className="button secondary large-button"
