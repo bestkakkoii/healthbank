@@ -1,5 +1,5 @@
 # Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
-# Temporary public-source research only; removed before publication.
+# One bounded retry after connection reset, with unchanged identity and origin.
 name: Verify remaining dataset contracts
 on:
   push:
@@ -12,12 +12,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
-      - name: Fetch explicitly observed public modules
+      - name: Fetch observed public modules once
         shell: python
         run: |
           import datetime,hashlib,json,os,pathlib,urllib.request
           out=pathlib.Path(os.environ['RUNNER_TEMP'])/'dataset-contracts';out.mkdir()
-          modules=['IHKE3306S01.88c16693.js','IHKE3306S02.48917477.js','IHKE3307S01.73c5913c.js','IHKE3307S02.d141e2ab.js','IHKE3308S01.8e1f92e5.js','IHKE3308S02.daccc485.js','IHKE3309S01.f158f613.js','IHKE3309S02.deb370e8.js','IHKE3408S02.a93b9a4e.js','IHKE3408S03.7a152af9.js']
+          modules=['IHKE3306S01.88c16693.js','IHKE3306S02.48917477.js','IHKE3307S01.73c5913c.js','IHKE3307S02.d141e2ab.js','IHKE3308S01.8e1f92e5.js','IHKE3308S02.daccc485.js','IHKE3309S01.f158f613.js','IHKE3309S02.deb370e8.js','IHKE3408S02.a93b9a4e.js','IHKE3408S03.7a152af9.js','IHKE3801S02.5603c61d.js']
           evidence=[]
           for name in modules:
               url='https://myhealthbank.nhi.gov.tw/IHKE3000/js/'+name;row={'url':url}
