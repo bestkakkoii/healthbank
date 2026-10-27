@@ -1,5 +1,5 @@
 # Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
-# Temporary review-branch tooling; removed before integration.
+# Isolated review transport, removed before integration.
 name: Source review snapshot
 on:
   push:
@@ -8,61 +8,93 @@ on:
 permissions:
   contents: read
 jobs:
-  snapshot:
+  runtime:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a
         with:
           persist-credentials: false
-      - name: Prepare pinned tools and dependencies
+      - name: Build verified runtime sources
         shell: bash
         run: |
           set -euo pipefail
           bash scripts/bootstrap-upstream.sh
           export PATH="$GITHUB_WORKSPACE/.tools/bin:$GITHUB_WORKSPACE/.tools/go/bin:$PATH"
           export GOENV=off GOWORK=off GOTOOLCHAIN=local
-          npm --prefix web ci
+          revision=e9df86ca6991b779ee50bc744ad8bbdeefa9bae6
+          curl --fail --location --connect-timeout 20 --max-time 180 "https://codeload.github.com/facebook/react/tar.gz/$revision" -o "$RUNNER_TEMP/react.tar.gz"
+          tar -xzf "$RUNNER_TEMP/react.tar.gz" -C "$RUNNER_TEMP"
+          cd "$RUNNER_TEMP/react-$revision"
+          npm exec --yes --package=yarn@1.22.22 -- yarn install --frozen-lockfile --non-interactive
+          node scripts/rollup/build.js react/index,react/jsx,react-dom/index,react-dom/client,scheduler --type=NODE_DEV,NODE_PROD
+          cd "$GITHUB_WORKSPACE"
+          go get github.com/go-sql-driver/mysql@c9e0863414a0e47bd708fcbc93d4adc611d15a5e
+          go mod tidy
           go mod vendor
-      - name: Audit upstream heads without changing pins
-        shell: bash
-        run: |
+          go list -m -json github.com/go-sql-driver/mysql > "$RUNNER_TEMP/mysql-module.json"
           python3 - <<'PY'
-          import concurrent.futures, datetime, json, pathlib, subprocess
-          lock=json.loads(pathlib.Path('dependencies.lock.json').read_text())
-          def inspect(source):
-              run=subprocess.run(['git','ls-remote','--symref',source['repository'],'HEAD'],capture_output=True,text=True,timeout=60)
-              return {'name':source['name'],'repository':source['repository'],'pinned':source['commit'],'exit_code':run.returncode,'response':run.stdout,'error':run.stderr}
-          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
-              results=list(pool.map(inspect,lock['sources']))
-          pathlib.Path('upstream-heads.json').write_text(json.dumps({'checked_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'sources':results},indent=2))
+          import datetime,gzip,hashlib,json,os,pathlib,tarfile
+          root=pathlib.Path.cwd(); temp=pathlib.Path(os.environ['RUNNER_TEMP'])
+          lock=json.loads((root/'dependencies.lock.json').read_text())
+          revision='e9df86ca6991b779ee50bc744ad8bbdeefa9bae6'
+          for package in ['react','react-dom','scheduler']:
+              source=temp/f'react-{revision}'/'build/node_modules'/package
+              destination=root/'web/vendor'/f'{package}-main.tgz'
+              with destination.open('wb') as raw, gzip.GzipFile(fileobj=raw,mode='wb',mtime=0,filename='') as zipped,tarfile.open(fileobj=zipped,mode='w') as archive:
+                  for path in sorted(source.rglob('*')):
+                      if path.is_file():
+                          info=archive.gettarinfo(str(path),arcname='package/'+path.relative_to(source).as_posix())
+                          info.uid=info.gid=0;info.uname=info.gname='';info.mtime=0;info.mode=0o644
+                          with path.open('rb') as content: archive.addfile(info,content)
+              old=lock['vendored_packages'][destination.name]
+              new=hashlib.sha256(destination.read_bytes()).hexdigest()
+              lock['vendored_packages'][destination.name]=new
+              script=root/'scripts/bootstrap-upstream.sh';script.write_text(script.read_text().replace(old,new))
+          module=json.loads((temp/'mysql-module.json').read_text())
+          for source in lock['sources']:
+              if source['name']=='React / React DOM / Scheduler':
+                  source['commit']=revision
+                  source['archive_sha256']=hashlib.sha256((temp/'react.tar.gz').read_bytes()).hexdigest()
+                  source['package_versions']=[json.loads((temp/f'react-{revision}'/'build/node_modules'/name/'package.json').read_text())['version'] for name in ['react','react-dom','scheduler']]
+              if source['name']=='MySQL Go driver': source['commit']='c9e0863414a0e47bd708fcbc93d4adc611d15a5e'
+          for key in ['go_runtime_modules','go_module_inventory']:
+              for entry in lock[key]:
+                  if entry['module']=='github.com/go-sql-driver/mysql':
+                      entry['version']=module['Version'];entry['sum']=module.get('Sum','');entry['upstream_commit']='c9e0863414a0e47bd708fcbc93d4adc611d15a5e'
+                      if 'upstream_head_version' in entry: entry['upstream_head_version']=module['Version']
+          for entry in lock['frontend_direct_packages']:
+              if entry['name'] in ['react','react-dom','scheduler']: entry['upstream_commit']=revision
+          lock['runtime_refresh']={'checked_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'react_commit':revision,'mysql_commit':'c9e0863414a0e47bd708fcbc93d4adc611d15a5e','scope':'Runtime refresh; earlier full-graph audit timestamps remain historical.'}
+          (root/'dependencies.lock.json').write_text(json.dumps(lock,indent=2,ensure_ascii=False)+'\n')
+          package_lock=root/'web/package-lock.json'; packages=json.loads(package_lock.read_text())
+          for name in ['react','react-dom','scheduler']: packages['packages'].pop('node_modules/'+name,None)
+          package_lock.write_text(json.dumps(packages,indent=2)+'\n')
           PY
-      - name: Export review tools without credentials or patient data
+          npm --prefix web install --package-lock-only --ignore-scripts
+          npm --prefix web ci
+          npm --prefix web audit --audit-level=low
+          python3 - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('dependencies.lock.json');lock=json.loads(p.read_text());packages=json.loads(pathlib.Path('web/package-lock.json').read_text())['packages']
+          for entry in lock['frontend_direct_packages']:
+              package=packages.get('node_modules/'+entry['name'])
+              if package and entry['name'] in ['react','react-dom','scheduler']:
+                  for key in ['version','integrity','resolved']:
+                      if key in package:entry[key]=package[key]
+          p.write_text(json.dumps(lock,indent=2,ensure_ascii=False)+'\n')
+          PY
+      - name: Export immutable upgrade inputs
         shell: bash
         run: |
           set -euo pipefail
-          target="$RUNNER_TEMP/healthbank-review"
-          mkdir -p "$target"
-          python3 - <<'PY'
-          import os,pathlib,shutil
-          root=pathlib.Path('.tools').resolve()
-          for name in ['node','npm','npx','tsc','esbuild','govulncheck']:
-              p=root/'bin'/name
-              resolved=p.resolve()
-              p.unlink()
-              p.symlink_to(os.path.relpath(resolved,p.parent))
-          p=root/'go'
-          resolved=p.resolve()
-          p.unlink()
-          p.symlink_to(os.path.relpath(resolved,p.parent))
-          PY
-          tar -czf "$target/verification-tools.tar.gz" .tools/bin .tools/go .tools/toolchains .tools/tsc.revision .tools/esbuild.revision web/node_modules vendor upstream-heads.json
-          git rev-parse HEAD > "$target/COMMIT"
-          cd "$target"
-          sha256sum verification-tools.tar.gz > SHA256SUMS
+          mkdir -p "$RUNNER_TEMP/runtime-upgrade"
+          tar -czf "$RUNNER_TEMP/runtime-upgrade/runtime-upgrade.tar.gz" web/vendor/react-main.tgz web/vendor/react-dom-main.tgz web/vendor/scheduler-main.tgz web/package-lock.json web/node_modules go.mod go.sum vendor dependencies.lock.json scripts/bootstrap-upstream.sh
+          cd "$RUNNER_TEMP/runtime-upgrade"
+          sha256sum runtime-upgrade.tar.gz > SHA256SUMS
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
-          name: healthbank-verification-tools
-          path: ${{ runner.temp }}/healthbank-review/*
+          name: healthbank-runtime-upgrade
+          path: ${{ runner.temp }}/runtime-upgrade/*
           if-no-files-found: error
           retention-days: 1
