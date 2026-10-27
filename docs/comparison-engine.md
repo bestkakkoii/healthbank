@@ -43,9 +43,27 @@ Every original row, including same-date duplicates, remains individually selecta
 - [NIDDK adult equations](https://www.niddk.nih.gov/research-funding/research-programs/kidney-clinical-research-epidemiology/laboratory/glomerular-filtration-rate-equations/adults):
   2021 CKD-EPI creatinine coefficients, age/sex conditions and /88.4 conversion.
 
-## Still pending
+## Implemented extension and remaining acceptance
 
-Whole-table scenario shading and reference bands; explicit opt-in cross-device
-analysis settings; additional verified assay profiles; non-HDL pairing with actual
-specimen/encounter evidence; multi-indicator chart coordination; official additional
-datasets and JSON/XML schema validation. Do not claim these are implemented.
+Nine strictly source-bound analytes are now implemented in `clinical-comparison.ts`:
+creatinine, ALP, BUN, calcium, uric acid, ALT, CK, phosphorus and serum albumin.
+The selected age and formula sex affect only applicable named scenario bounds.
+Source intervals that lack age splits remain unsplit; unknown method, specimen,
+sex or unit prevents an unjustified comparison. The original hospital flags are
+never overwritten. Scenario badges in the date-by-item table, reference bands
+on trend charts and source-labelled CSV/print information use the same model.
+
+The analysis settings document may be explicitly saved alongside pseudonymous
+settings after official authentication. Date of birth is session-only and never
+persisted. A one-click reset changes local scenario immediately but is not a
+server update until explicitly saved. This is deliberately different from a
+clinical statement of the patient's sex, age or disease risk.
+
+A separate guarded non-HDL calculation requires both compatible exact results
+and user confirmation of one collection. Multi-indicator charts use a common
+date domain but maintain their own units and axes. No interpolation or
+between-visit causal interpretation is generated.
+
+Still requiring external acceptance: institution-specific assay provenance for
+individual real results, authorized NHI account completeness, source revisions
+and cross-browser real-device testing. These cannot be simulated away.

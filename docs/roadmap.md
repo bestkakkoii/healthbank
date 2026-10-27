@@ -16,9 +16,11 @@ pseudonymous subject linkage, not medical observations. See the [README](../READ
 [clinical interpretation rules](clinical-reference.zh-TW.md) and
 [connector verification boundary](nhi_protocol.md) for implemented behaviour.
 
-Additional datasets and JSON/XML imports below are **not implemented**. Public
-documentation confirms that features exist in the official service; it does not
-verify an authenticated connector, an individual account's records or completeness.
+Additional category connectors and **Healthbank-format** JSON/XML imports are
+implemented in the next prerelease candidate from publicly observed SPA contracts
+and synthetic fixtures. They are **not authenticated-live verified**; third-party
+NHI JSON/XML/PDF formats, official SDK integration and account completeness are
+not implemented. Public documentation alone is not authentication evidence.
 
 ## Priorities
 
@@ -33,8 +35,8 @@ portal, daily task system or automatic treatment recommender.
 | P0 | Practical age/sex comparison | Two immediate scenarios with sourced creatinine/ALP templates and guarded CKD-EPI; original values and flags immutable. Whole-table bands, richer templates and explicit setting sync remain pending. |
 | P1 | Same-period comparisons, coordinated charts and simple export | Exact differences plus measurement interval; preserve same-date duplicates, source methods and missing-data semantics. No arbitrary causal or danger score. |
 | P1 | Additional official numeric results | First inspect preventive/self-paid examinations for actual extra results. Verify every authenticated contract and source overlap before integration. |
-| P2 | Optional prescribing/encounter/report context | Show source records alongside a selected date; no claim that prescriptions prove actual intake. Additional connectors remain unimplemented. |
-| Optional | Personal products or medication notes | No required daily entry or reminders. Device-only persistence/export must be explicit; never put medical notes into server configuration. Not implemented in this batch. |
+| P2 | Optional prescribing/encounter/report context | Show source records alongside a selected date; no claim that prescriptions prove actual intake. Public-SPA based, whitelisted read-only category connectors are implemented with strict response handling and synthetic tests; real-account acceptance remains pending. |
+| Optional | Personal products or medication notes | An optional device-local list with explicit save/export/import/delete and interval matching is implemented; no daily entry or medical notes in server settings. |
 
 Scientific research supplies internal constants, formula coefficients, eligibility
 and invalid-calculation guards. It does not justify a knowledgebase or fabricated

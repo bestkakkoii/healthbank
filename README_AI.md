@@ -6,7 +6,7 @@ Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
 Healthbank is a self-hosted Traditional Chinese laboratory-results viewer for older adults with some medical literacy. The release is a generic executable-first deployment: extract, run the Go executable and configure an HTTPS reverse proxy. No hosting panel is required. The primary deployment target is Debian 13 (trixie) x86_64 using the linux_amd64 release (GOAMD64=v1, CGO_ENABLED=0). React assets and the clinical catalog are embedded. SQLite is default; MySQL is selectable through the same store contract.
 
-Read README.md, docs/clinical-reference.zh-TW.md, docs/comparison-engine.md, docs/privacy.zh-TW.md and docs/nhi_protocol.md before changing behavior. Communicate user-facing work in Taiwan Traditional Chinese; technical collaboration may be English.
+Read README.md, docs/clinical-reference.zh-TW.md, docs/comparison-engine.md, docs/privacy.zh-TW.md, docs/nhi_protocol.md and docs/verification.zh-TW.md before changing behavior. Communicate user-facing work in Taiwan Traditional Chinese; technical collaboration may be English.
 
 Never persist medical observations, original identity/card numbers, passwords, official tokens/cookies, report HTML, or login histories. Only validated configuration documents and pseudonymous verified-subject keys belong in SQL. Keep the stable HMAC key outside SQL. Device-local ID/card memory is explicit and clearable. Imported files and demos never authenticate a person or attach to their persisted profile.
 
