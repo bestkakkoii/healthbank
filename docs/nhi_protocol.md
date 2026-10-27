@@ -149,9 +149,14 @@ millisecond used as a cache buster. The connector uses a cryptographic random
 source for the same numeric identifier shape.
 
 The image is provided to the user unchanged. This connector never interprets,
-solves or submits a generated answer. It accepts only PNG, JPEG or GIF image
-signatures and limits the response to 512 KiB. A local five-minute challenge
-expiry bounds use; the official site's own expiry may be shorter.
+solves or submits a generated answer. Production retrieval and `diagnose-nhi`
+share `nhi.InspectChallengeImage`: only PNG, JPEG or GIF up to 512 KiB with
+positive dimensions no larger than 2048 pixels per side are accepted. A complete
+raster decode and consistent dimensions are required before a challenge ID is
+issued. A signature-only or truncated response is rejected instead of becoming
+an unusable CAPTCHA. This validates image usability, not external availability
+or successful authentication. A local five-minute challenge expiry bounds use;
+the official site's own expiry may be shorter.
 
 The login payload is:
 

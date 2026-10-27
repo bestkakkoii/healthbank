@@ -30,6 +30,7 @@ import {
   downloadText,
   formatTime,
   groupRecords,
+  isObject,
   referenceLabel,
   referenceTemplateLabel,
   rulePreview,
@@ -80,9 +81,13 @@ function initialSettings(): Settings {
   try {
     const raw = localStorage.getItem(APPEARANCE_KEY);
     if (raw) {
-      const value = JSON.parse(raw);
-      if (['light', 'dark', 'system'].includes(value.theme)) settings.theme = value.theme;
-      if ([1, 1.1, 1.2, 1.5, 2].includes(value.font_scale)) settings.font_scale = value.font_scale;
+      const value: unknown = JSON.parse(raw);
+      if (isObject(value)) {
+        const theme = value['theme'];
+        const scale = value['font_scale'];
+        if (theme === 'light' || theme === 'dark' || theme === 'system') settings.theme = theme;
+        if (typeof scale === 'number' && [1, 1.1, 1.2, 1.5, 2].includes(scale)) settings.font_scale = scale;
+      }
     }
   } catch {
     /* Storage is optional. */
@@ -131,6 +136,7 @@ export default function App() {
   const [busy, setBusy] = useState('');
   const [settingsBusy, setSettingsBusy] = useState(false);
   const settingsLock = useRef(false);
+  const sessionGeneration = useRef(0);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [assessmentStale, setAssessmentStale] = useState(false);
@@ -154,6 +160,7 @@ export default function App() {
   const settings = session.settings;
   const persisted = session.authenticated && session.mode === 'official';
   const isDemo = session.mode === 'demo';
+  const controlsBusy = booting || settingsBusy || busy !== '';
 
   useEffect(() => {
     const controller = new AbortController();
@@ -161,7 +168,7 @@ export default function App() {
       try {
         // Establish the session cookie before issuing other session-bearing requests.
         const fetched = await api.session(controller.signal);
-        if (controller.signal.aborted) return;
+        controller.signal.throwIfAborted();
         setCsrfToken(fetched.csrf_token);
         setSession(
           fetched.mode !== 'official'
@@ -181,7 +188,7 @@ export default function App() {
             ? api.currentReports(controller.signal)
             : Promise.resolve(EMPTY_REPORT),
         ]);
-        if (controller.signal.aborted) return;
+        controller.signal.throwIfAborted();
         if (results[0].status === 'fulfilled') setCatalog(results[0].value);
         else setError(`參考項目目錄暫時無法載入。${readableError(results[0].reason)}`);
         if (results[1].status === 'fulfilled') {
@@ -207,7 +214,7 @@ export default function App() {
     const applyTheme = () => {
       const activeTheme =
         settings.theme === 'system' ? (media.matches ? 'dark' : 'light') : settings.theme;
-      document.documentElement.dataset.theme = activeTheme;
+      document.documentElement.dataset['theme'] = activeTheme;
       document.documentElement.style.colorScheme = activeTheme;
       document.documentElement.style.setProperty('--font-scale', String(settings.font_scale || 1));
       document
@@ -281,9 +288,10 @@ export default function App() {
   const uniqueDates = [...new Set(report.records.map((record) => record.exam_date))]
     .sort()
     .reverse();
-  const latestRecords = groups.flatMap((group) =>
-    group.records.filter((record) => record.exam_date === group.records[0].exam_date),
-  );
+  const latestRecords = groups.flatMap((group) => {
+    const latest = group.records[0];
+    return latest ? group.records.filter((record) => record.exam_date === latest.exam_date) : [];
+  });
   const attentionRecords = latestRecords
     .filter(
       (record) =>
@@ -356,7 +364,8 @@ export default function App() {
       `${group.name} ${group.abbreviation} ${group.unit} ${catalogByKey.get(group.configurationKey)?.aliases.join(' ') ?? ''} ${catalogByKey.get(group.configurationKey)?.order_codes.join(' ') ?? ''} ${group.records.map((record) => record.order_code).join(' ')}`
         .toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()),
   );
-  const nav = NAV.find((item) => item.id === view)!;
+  const nav = NAV.find((item) => item.id === view);
+  if (!nav) throw new Error('Unknown application view.');
 
   function navigate(next: View) {
     setView(next);
@@ -378,8 +387,9 @@ export default function App() {
     navigate('trends');
   }
 
-  async function refreshSession() {
+  async function refreshSession(generation: number) {
     const next = await api.session();
+    if (generation !== sessionGeneration.current) return;
     setCsrfToken(next.csrf_token);
     setSession(
       next.mode === 'official'
@@ -396,12 +406,14 @@ export default function App() {
     return next;
   }
 
-  async function receiveReports(next: ReportResponse) {
+  async function receiveReports(next: ReportResponse, generation: number) {
+    if (generation !== sessionGeneration.current) return;
     setReport(next);
     setAssessmentStale(false);
     setError('');
     resetFilters();
-    const results = await Promise.allSettled([refreshSession(), api.catalog()]);
+    const results = await Promise.allSettled([refreshSession(generation), api.catalog()]);
+    if (generation !== sessionGeneration.current) return;
     if (results[0].status === 'rejected')
       setError(`資料已取得，但使用階段狀態無法更新。${readableError(results[0].reason)}`);
     if (results[1].status === 'fulfilled') setCatalog(results[1].value);
@@ -409,6 +421,7 @@ export default function App() {
   }
 
   async function loggedIn(next: Session) {
+    sessionGeneration.current += 1;
     setSession(next);
     setCsrfToken(next.csrf_token);
     setReport(EMPTY_REPORT);
@@ -421,6 +434,9 @@ export default function App() {
   }
 
   async function expireOfficialSession() {
+    const generation = ++sessionGeneration.current;
+    setBusy('正在清除已到期的使用階段…');
+    setError('官方登入階段已結束，目前報告已清除。請重新連接健康存摺。');
     setReport(EMPTY_REPORT);
     setDetail(null);
     setBaseline(null);
@@ -439,15 +455,20 @@ export default function App() {
     try {
       // An expired application cookie may have been replaced by the failed GET.
       const current = await api.session();
+      if (generation !== sessionGeneration.current) return;
       setCsrfToken(current.csrf_token);
       const next = await api.logout();
+      if (generation !== sessionGeneration.current) return;
       setCsrfToken(next.csrf_token);
     } catch {
       /* Local report is already removed; the next login renews its session and CAPTCHA. */
+    } finally {
+      if (generation === sessionGeneration.current) setBusy('');
     }
   }
 
   async function fetchReports(useOfficialDefault = false) {
+    const generation = sessionGeneration.current;
     const from = useOfficialDefault ? '' : dateFrom;
     const to = useOfficialDefault ? '' : dateTo;
     if ((from || to) && (!from || !to || from > to)) {
@@ -458,7 +479,8 @@ export default function App() {
     setError('');
     try {
       const result = await api.reports(from, to);
-      await receiveReports(result);
+      await receiveReports(result, generation);
+      if (generation !== sessionGeneration.current) return;
       if (result.official_query) {
         setDateFrom(result.official_query.start_date);
         setDateTo(result.official_query.end_date);
@@ -466,41 +488,47 @@ export default function App() {
       setRangeOpen(false);
       setMessage('檢驗資料已更新。');
     } catch (error) {
+      if (generation !== sessionGeneration.current) return;
       if (error instanceof ApiError && error.status === 401) {
         await expireOfficialSession();
-        setError('官方登入階段已結束，目前報告已清除。請重新連接健康存摺。');
       } else setError(readableError(error));
     } finally {
-      setBusy('');
+      if (generation === sessionGeneration.current) setBusy('');
     }
   }
 
   async function importFile(file: File) {
+    const generation = ++sessionGeneration.current;
     const next = await api.importReports(file);
-    await receiveReports(next);
+    await receiveReports(next, generation);
+    if (generation !== sessionGeneration.current) return;
     setImportOpen(false);
     navigate('overview');
     setMessage(`已整理 ${next.records.length} 筆檢驗紀錄。`);
   }
 
   async function openDemo() {
+    const generation = ++sessionGeneration.current;
     setBusy('正在載入合成示範資料…');
     setError('');
     try {
-      await receiveReports(await api.demo());
+      await receiveReports(await api.demo(), generation);
+      if (generation !== sessionGeneration.current) return;
       navigate('overview');
     } catch (error) {
-      setError(readableError(error));
+      if (generation === sessionGeneration.current) setError(readableError(error));
     } finally {
-      setBusy('');
+      if (generation === sessionGeneration.current) setBusy('');
     }
   }
 
   async function logout() {
+    const generation = ++sessionGeneration.current;
     setBusy('正在結束使用階段…');
     setError('');
     try {
       const next = await api.logout();
+      if (generation !== sessionGeneration.current) return;
       setSession({
         ...next,
         settings: { ...next.settings, theme: settings.theme, font_scale: settings.font_scale },
@@ -514,9 +542,9 @@ export default function App() {
       navigate('overview');
       setMessage('已結束使用階段並清除目前報告。');
     } catch (error) {
-      setError(readableError(error));
+      if (generation === sessionGeneration.current) setError(readableError(error));
     } finally {
-      setBusy('');
+      if (generation === sessionGeneration.current) setBusy('');
     }
   }
 
@@ -533,22 +561,28 @@ export default function App() {
   }
 
   async function commitSettings(next: Settings, reassess = false) {
+    if (booting || busy !== '') throw new Error('資料正在更新，請稍候再修改設定。');
     if (settingsLock.current) throw new Error('上一個設定正在儲存，請稍候再操作。');
+    const generation = sessionGeneration.current;
     settingsLock.current = true;
     setSettingsBusy(true);
     try {
       const saved = await api.saveSettings(next);
+      if (generation !== sessionGeneration.current) return false;
       setSession((current) => ({ ...current, settings: saved }));
       if (reassess && report.records.length) {
         setAssessmentStale(true);
         try {
           const current = await api.currentReports();
+          if (generation !== sessionGeneration.current) return false;
           setReport(current);
           setAssessmentStale(false);
         } catch (error) {
+          if (generation !== sessionGeneration.current) return false;
           throw new Error(`設定已儲存，但報告顏色尚未重新判讀。${readableError(error)}`, { cause: error });
         }
       }
+      return true;
     } finally {
       settingsLock.current = false;
       setSettingsBusy(false);
@@ -556,21 +590,26 @@ export default function App() {
   }
 
   function changeAppearance(patch: Partial<Settings>) {
-    void commitSettings({ ...settings, ...patch }).catch((error) => setError(readableError(error)));
+    const generation = sessionGeneration.current;
+    void commitSettings({ ...settings, ...patch }).catch((error: unknown) => {
+      if (generation === sessionGeneration.current) setError(readableError(error));
+    });
   }
   function toggleFavorite(key: string) {
+    const generation = sessionGeneration.current;
     const favorites = settings.favorites.includes(key)
       ? settings.favorites.filter((value) => value !== key)
       : [...settings.favorites, key];
-    void commitSettings({ ...settings, favorites }).catch((error) =>
-      setError(readableError(error)),
-    );
+    void commitSettings({ ...settings, favorites }).catch((error: unknown) => {
+      if (generation === sessionGeneration.current) setError(readableError(error));
+    });
   }
   async function saveOverride(key: string, value: ItemOverride | null) {
-    const overrides = { ...settings.overrides };
-    if (value === null) delete overrides[key];
-    else overrides[key] = value;
-    await commitSettings({ ...settings, overrides }, true);
+    const overrides = value === null
+      ? Object.fromEntries(Object.entries(settings.overrides).filter(([entryKey]) => entryKey !== key))
+      : { ...settings.overrides, [key]: value };
+    const applied = await commitSettings({ ...settings, overrides }, true);
+    if (!applied) return;
     setMessage(
       value === null
         ? '此項目已還原預設規則。'
@@ -580,13 +619,30 @@ export default function App() {
     );
   }
   async function restoreAllBaselines() {
+    const generation = sessionGeneration.current;
     setRestoreBaselinesError('');
     try {
-      await commitSettings({ ...settings, overrides: {} }, true);
+      const applied = await commitSettings({ ...settings, overrides: {} }, true);
+      if (!applied) return;
       setRestoreBaselinesOpen(false);
       setMessage('所有個人基準已還原為預設規則，關注項目與閱讀設定已保留。');
     } catch (error) {
-      setRestoreBaselinesError(readableError(error));
+      if (generation === sessionGeneration.current) setRestoreBaselinesError(readableError(error));
+    }
+  }
+
+  async function reassessReports() {
+    const generation = sessionGeneration.current;
+    setBusy('正在重新套用設定…');
+    try {
+      const result = await api.currentReports();
+      if (generation !== sessionGeneration.current) return;
+      setReport(result);
+      setAssessmentStale(false);
+    } catch (error) {
+      if (generation === sessionGeneration.current) setError(readableError(error));
+    } finally {
+      if (generation === sessionGeneration.current) setBusy('');
     }
   }
 
@@ -737,7 +793,7 @@ export default function App() {
                         : 'system',
                 })
               }
-              disabled={settingsBusy || booting}
+              disabled={controlsBusy}
             >
               <Icon
                 name={
@@ -753,7 +809,7 @@ export default function App() {
               <button
                 className="button quiet topbar-session"
                 onClick={() => void logout()}
-                disabled={!!busy}
+                disabled={controlsBusy}
               >
                 <Icon name="logout" size={18} />
                 <span>{persisted ? '登出' : '結束瀏覽'}</span>
@@ -811,7 +867,7 @@ export default function App() {
                 <button
                   className="button primary"
                   onClick={() => setRangeOpen(!rangeOpen)}
-                  disabled={!!busy}
+                  disabled={controlsBusy}
                 >
                   <Icon name="refresh" size={18} />
                   更新資料
@@ -820,7 +876,7 @@ export default function App() {
                 <button
                   className="button primary"
                   onClick={() => setLoginOpen(true)}
-                  disabled={!!busy || booting}
+                  disabled={controlsBusy}
                 >
                   <Icon name="login" size={18} />
                   連接健康存摺
@@ -843,7 +899,7 @@ export default function App() {
                 <b>目前為合成示範資料</b>
                 <span>內容不屬於任何真實個人；設定只在示範使用階段生效。</span>
               </div>
-              <button className="text-button" onClick={() => void logout()} disabled={!!busy}>
+              <button className="text-button" onClick={() => void logout()} disabled={controlsBusy}>
                 離開示範
                 <Icon name="arrow" size={16} />
               </button>
@@ -877,17 +933,8 @@ export default function App() {
               設定已儲存，但目前顏色尚未完成重新判讀。
               <button
                 className="text-button"
-                onClick={() => {
-                  setBusy('正在重新套用設定…');
-                  void api
-                    .currentReports()
-                    .then((result) => {
-                      setReport(result);
-                      setAssessmentStale(false);
-                    })
-                    .catch((error) => setError(readableError(error)))
-                    .finally(() => setBusy(''));
-                }}
+                onClick={() => { void reassessReports(); }}
+                disabled={controlsBusy}
               >
                 重新套用設定
               </button>
@@ -947,13 +994,13 @@ export default function App() {
                   required={!!dateFrom}
                 />
               </label>
-              <button className="button primary" type="submit" disabled={!!busy}>
+              <button className="button primary" type="submit" disabled={controlsBusy}>
                 取得此範圍
               </button>
               <button
                 className="button secondary"
                 type="button"
-                disabled={!!busy}
+                disabled={controlsBusy}
                 onClick={() => void fetchReports(true)}
               >
                 官網預設期間
@@ -982,7 +1029,7 @@ export default function App() {
                       if (persisted) setRangeOpen(true);
                       else setLoginOpen(true);
                     }}
-                    disabled={!!busy}
+                    disabled={controlsBusy}
                   >
                     <Icon name={persisted ? 'refresh' : 'login'} />
                     {persisted ? '更新資料' : '連接健康存摺'}
@@ -990,7 +1037,7 @@ export default function App() {
                   <button
                     className="button secondary large-button"
                     onClick={() => setImportOpen(true)}
-                    disabled={!!busy}
+                    disabled={controlsBusy}
                   >
                     <Icon name="upload" />
                     匯入已下載網頁
@@ -999,7 +1046,7 @@ export default function App() {
                 <button
                   className="text-button demo-link"
                   onClick={() => void openDemo()}
-                  disabled={!!busy}
+                  disabled={controlsBusy}
                 >
                   先看看功能示範 <span>合成資料</span>
                   <Icon name="arrow" size={17} />
@@ -1203,6 +1250,7 @@ export default function App() {
                       <button
                         className="button secondary full-width"
                         onClick={() => setImportOpen(true)}
+                        disabled={controlsBusy}
                       >
                         <Icon name="upload" size={18} />
                         重新匯入已下載網頁
@@ -1223,7 +1271,10 @@ export default function App() {
                       <div className="favorite-grid">
                         {groups
                           .filter((group) => settings.favorites.includes(group.configurationKey))
-                          .map((group) => (
+                          .map((group) => {
+                            const latest = group.records[0];
+                            if (!latest) return null;
+                            return (
                             <button
                               className="favorite-card"
                               key={group.id}
@@ -1235,22 +1286,23 @@ export default function App() {
                                 <Icon name="trend" size={19} />
                               </span>
                               <span className="favorite-value">
-                                {group.records[0].result}
+                                {latest.result}
                                 <small>{group.unit}</small>
                               </span>
                               <span className="favorite-bottom">
-                                <LevelBadge level={group.records[0].level} compact />
+                                <LevelBadge level={latest.level} compact />
                                 <small>
-                                  {dateLabel(group.records[0].exam_date)}
+                                  {dateLabel(latest.exam_date)}
                                   {group.records.filter(
-                                    (record) => record.exam_date === group.records[0].exam_date,
+                                    (record) => record.exam_date === latest.exam_date,
                                   ).length > 1
                                     ? ' · 同日多筆'
                                     : ''}
                                 </small>
                               </span>
                             </button>
-                          ))}
+                            );
+                          })}
                       </div>
                     ) : (
                       <div className="favorite-empty">
@@ -1283,7 +1335,7 @@ export default function App() {
                   title="歷年檢驗數值"
                   subtitle={`${filteredGroups.length} 個項目 · ${filteredGroups.reduce((sum, group) => sum + group.records.length, 0)} 筆結果 · 日期為列，檢驗項目為欄`}
                   action={
-                    <div className="segmented-control" aria-label="日期列分組方式">
+                    <div className="segmented-control" role="group" aria-label="日期列分組方式">
                       <button
                         aria-pressed={granularity === 'year'}
                         className={granularity === 'year' ? 'selected' : ''}
@@ -1312,7 +1364,7 @@ export default function App() {
                       groups={filteredGroups}
                       favorites={settings.favorites}
                       granularity={granularity}
-                      saving={settingsBusy}
+                      saving={controlsBusy}
                       configurableKeys={configurableKeys}
                       onFavorite={toggleFavorite}
                       onDetail={setDetail}
@@ -1348,6 +1400,7 @@ export default function App() {
                       <button
                         className="button secondary"
                         onClick={() => setBaseline(selectedGroup)}
+                        disabled={controlsBusy}
                       >
                         <Icon name="settings" size={18} />
                         設定此項基準
@@ -1401,7 +1454,7 @@ export default function App() {
                           className={`button ${settings.favorites.includes(trendGroup.configurationKey) ? 'favorite-active' : 'secondary'}`}
                           onClick={() => toggleFavorite(trendGroup.configurationKey)}
                           disabled={
-                            settingsBusy || !configurableKeys.includes(trendGroup.configurationKey)
+                            controlsBusy || !configurableKeys.includes(trendGroup.configurationKey)
                           }
                         >
                           <Icon name="star" size={18} />
@@ -1450,7 +1503,7 @@ export default function App() {
                           key={option.value}
                           onClick={() => changeAppearance({ theme: option.value })}
                           aria-pressed={settings.theme === option.value}
-                          disabled={settingsBusy}
+                          disabled={controlsBusy}
                         >
                           <Icon name={option.icon} size={24} />
                           <span>{option.label}</span>
@@ -1475,7 +1528,7 @@ export default function App() {
                           style={{ fontSize: `${option.scale}rem` }}
                           onClick={() => changeAppearance({ font_scale: option.scale })}
                           aria-pressed={settings.font_scale === option.scale}
-                          disabled={settingsBusy}
+                          disabled={controlsBusy}
                         >
                           Aa <span>{option.label}</span>
                         </button>
@@ -1520,7 +1573,7 @@ export default function App() {
                 action={
                   <button
                     className="button secondary"
-                    disabled={settingsBusy || customBaselineCount === 0}
+                    disabled={controlsBusy || customBaselineCount === 0}
                     onClick={() => {
                       setRestoreBaselinesError('');
                       setRestoreBaselinesOpen(true);
@@ -1604,8 +1657,8 @@ export default function App() {
                             <button
                               className="button secondary"
                               onClick={() => setBaseline(group)}
-                              disabled={settingsBusy}
-                              aria-label={`檢視與編輯${group.name}基準`}
+                              disabled={controlsBusy}
+                              aria-label={`檢視／編輯：${group.name}基準`}
                             >
                               <Icon name="settings" size={17} />
                               檢視／編輯
@@ -1614,9 +1667,9 @@ export default function App() {
                               <button
                                 className="button quiet"
                                 onClick={() => void saveOverride(group.configurationKey, null)
-                                  .catch((error) => setError(readableError(error)))}
-                                disabled={settingsBusy}
-                                aria-label={`還原${group.name}預設規則`}
+                                  .catch((error: unknown) => setError(readableError(error)))}
+                                disabled={controlsBusy}
+                                aria-label={`還原預設：${group.name}規則`}
                               >
                                 還原預設
                               </button>
@@ -1683,7 +1736,7 @@ export default function App() {
         <DetailDialog
           record={detail}
           catalog={catalog}
-          canConfigure={configurableKeys.includes(detail.configuration_key)}
+          canConfigure={!controlsBusy && configurableKeys.includes(detail.configuration_key)}
           onClose={() => setDetail(null)}
           onTrend={() => {
             const group = groups.find((group) =>
@@ -1722,10 +1775,10 @@ export default function App() {
           </p>
           {restoreBaselinesError && <Alert tone="error">{restoreBaselinesError}</Alert>}
           <div className="dialog-actions">
-            <button className="button secondary" onClick={() => setRestoreBaselinesOpen(false)} disabled={settingsBusy}>
+            <button className="button secondary" onClick={() => setRestoreBaselinesOpen(false)} disabled={controlsBusy}>
               保留個人基準
             </button>
-            <button className="button primary" onClick={() => void restoreAllBaselines()} disabled={settingsBusy || customBaselineCount === 0}>
+            <button className="button primary" onClick={() => void restoreAllBaselines()} disabled={controlsBusy || customBaselineCount === 0}>
               {settingsBusy ? <Loading label="還原中…" /> : '還原全部基準'}
             </button>
           </div>

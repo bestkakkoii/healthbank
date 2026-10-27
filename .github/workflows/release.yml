@@ -11,7 +11,7 @@ on:
         description: "Semantic version for the downloadable build artifacts"
         type: string
         required: true
-        default: v1.0.3-rc.3
+        default: v1.0.3-rc.4
 
 permissions:
   contents: read
@@ -30,27 +30,63 @@ jobs:
       CI: "true"
       GOTOOLCHAIN: local
       RELEASE_VERSION: ${{ inputs.version || github.ref_name }}
+      # Disposable CI-only credentials; no production or medical data is used.
+      HEALTHBANK_TEST_MYSQL_DSN: healthbank_ci:healthbank-test-only@tcp(127.0.0.1:3306)/healthbank_test?parseTime=true
+    services:
+      mysql:
+        image: mysql:26.10.0@sha256:f51c9c01c16b0eb5d81bb70ab7e7fcb3b96abc6a54114be3a94e8e569cae7815
+        env:
+          MYSQL_DATABASE: healthbank_test
+          MYSQL_USER: healthbank_ci
+          MYSQL_PASSWORD: healthbank-test-only
+          MYSQL_ROOT_PASSWORD: healthbank-root-test-only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --host=127.0.0.1 --user=root --password=healthbank-root-test-only --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
     steps:
       - name: Check out source
-        uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # main, pinned 2026-10-26
+        uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # main, verified 2026-10-27
         with:
           persist-credentials: false
       - name: Set up Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # main, pinned 2026-10-26
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # main, verified 2026-10-27
         with:
-          node-version: "24.22.1"
+          node-version: "26.12.1"
           cache: npm
           cache-dependency-path: web/package-lock.json
       - name: Build pinned upstream tools and React packages
-        run: bash scripts/bootstrap-upstream.sh
+        run: |
+          bash scripts/bootstrap-upstream.sh
+          echo "$GITHUB_WORKSPACE/.tools/bin" >> "$GITHUB_PATH"
+          echo "$GITHUB_WORKSPACE/.tools/go/bin" >> "$GITHUB_PATH"
       - name: Install frontend dependencies
         run: npm --prefix web ci
+      - name: Require zero ESLint errors and warnings
+        run: npm --prefix web run lint
       - name: Type-check and compile frontend
         run: npm --prefix web run build
+      - name: Verify frontend data handling
+        run: npm --prefix web test
+      - name: Check npm dependency advisories
+        run: npm --prefix web audit --audit-level=low
       - name: Verify Go code
         run: |
-          .tools/go/bin/go test ./...
+          unformatted="$(.tools/go/bin/gofmt -l cmd internal)"
+          if [[ -n "$unformatted" ]]; then
+            printf '%s\n' "$unformatted"
+            exit 1
+          fi
+          .tools/go/bin/go mod verify
+          .tools/go/bin/go test -count=1 ./...
+          .tools/go/bin/go test -count=1 -race ./...
           .tools/go/bin/go vet ./...
+      - name: Check reachable Go dependency advisories
+        # Development Go lacks a comparable standard-library semver; see DEPENDENCIES.md.
+        run: .tools/bin/govulncheck ./...
       - name: Build Linux release archives and checksums
         env:
           GO: ${{ github.workspace }}/.tools/go/bin/go
@@ -62,7 +98,7 @@ jobs:
           sha256sum -c SHA256SUMS
       - name: Upload build artifacts for review
         if: github.event_name == 'workflow_dispatch'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # main, pinned 2026-10-26
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # main, verified 2026-10-27
         with:
           name: healthbank-${{ inputs.version || github.ref_name }}
           path: |

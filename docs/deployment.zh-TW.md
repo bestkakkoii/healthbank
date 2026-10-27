@@ -6,11 +6,13 @@
 
 ## 一、第一次部署：上傳、選執行檔、綁域名、啟動
 
-**本次正式部署平台為 Debian 13（trixie）x64。使用 `healthbank_1.0.3-rc.3_linux_amd64.tar.gz`；`amd64` 在發行檔名中同時代表 Intel／AMD 的 64 位元 x86 主機。ARM64 包供其他主機使用，這台 Debian 主機不選它。**
+**主要部署目標為 Debian 13（trixie）x64。使用 `healthbank_1.0.3-rc.4_linux_amd64.tar.gz`；`amd64` 在發行檔名中同時代表 Intel／AMD 的 64 位元 x86 主機。ARM64 包供其他主機使用，這台 Debian 主機不選它。**
+
+目前 v1.0.3-rc.4 仍為預覽版。本測試環境已實際用 CLI 取得並完整解碼官方驗證碼，也完成本機／合成資料及實際 MySQL 26.10.0 檢查；你的 Debian 13／寶塔網頁取圖、實體 iPhone／Safari、本人帳號登入及完整報告取得仍需驗收。實際紀錄見 [驗證文件](verification.zh-TW.md)。
 
 發行包內的 `healthbank` 已包含編譯完成的前端與 Go 後端。執行主機不需要安裝 Node.js、Python、Go 編譯器、SQLite 服務或瀏覽器自動化程式。使用預設 SQLite 時也不用先建立資料庫。
 
-1. 在寶塔「檔案」把對應架構的壓縮檔上傳到應用程式目錄並解壓縮，例如 `/www/wwwroot/healthbank/`。一般 Intel／AMD 64 位元主機選 `healthbank_1.0.3-rc.3_linux_amd64.tar.gz`；ARM 64 位元主機選 `healthbank_1.0.3-rc.3_linux_arm64.tar.gz`。版本號以實際下載檔名為準。
+1. 在寶塔「檔案」把對應架構的壓縮檔上傳到應用程式目錄並解壓縮，例如 `/www/wwwroot/healthbank/`。一般 Intel／AMD 64 位元主機選 `healthbank_1.0.3-rc.4_linux_amd64.tar.gz`；ARM 64 位元主機選 `healthbank_1.0.3-rc.4_linux_arm64.tar.gz`。版本號以實際下載檔名為準。
 2. 開啟「網站 → Go 項目 → 添加項目」，依下表填寫。寶塔若自動產生完整執行命令，保留指向該執行檔的命令即可，不需要 `serve` 參數。
 3. 綁定已解析到本機的域名，使用寶塔提供的域名／外網映射功能，讓 Nginx 轉送到 `127.0.0.1:8787`。在站點 SSL 設定啟用 HTTPS，供手機與筆電正式登入使用。
 4. 點「啟動」，開啟 `https://你的域名/`。SQLite 與必要的服務設定會自動建立在執行檔旁的 `data/` 目錄；不論寶塔啟動時採用哪一個工作目錄，都會使用同一個位置。
@@ -73,7 +75,7 @@
 
 在寶塔停止此 Go 項目，保留原本的整個 `data/` 目錄，把新的 `healthbank` 放到原位置，再點啟動。新的前端已在新執行檔內，不需手動替換前端檔案或執行 npm。資料庫結構升級由程式自動處理；若資料庫已由未來版本升級，舊程式會拒絕使用不支援的結構，避免誤讀。
 
-更新前保留上一版執行檔及整個 `data/` 備份，便於回復。這是設定備份，不會包含檢驗報告歷史。
+更新前保留上一版執行檔及整個 `data/` 備份，便於回復。這是設定備份，不會包含檢驗報告歷史。啟動後重新整理瀏覽器，確認頁面或 `./healthbank --version` 顯示 `v1.0.3-rc.4`；原有可用的寶塔轉送設定無須因這次前端與依賴更新而重建。
 
 ### 備份設定
 
@@ -140,7 +142,9 @@ DSN 語法依 [Go MySQL Driver 官方說明](https://github.com/go-sql-driver/my
 
 `settings` 的內容由應用程式的設定格式決定，不接受以此欄位儲存檢驗紀錄。匯出檔是設定備份，不是健保署原始資料格式。
 
-MySQL 驅動、建表與匯入路徑均已實作。若該發行版的驗證紀錄未記載實際 MySQL 連線測試，請把 MySQL 視為已實作但尚待你的資料庫環境驗證的選項；SQLite 為預設路徑。開發者可用獨立的空白測試資料庫設定 `HEALTHBANK_TEST_MYSQL_DSN` 執行 `go test ./internal/store -run TestMySQLIntegration -v`，測試不會刪除或截斷既有資料表。
+v1.0.3-rc.4 已在獨立的實際 **MySQL 26.10.0** 實例上完成合成設定的 SQLite → MySQL → SQLite 遷移，並檢查非空目的庫保護、身分隔離、重複／過期寫入、並行版本衝突及重新套用資料庫結構。這是測試實例的結果；你的寶塔資料庫權限、連線設定與實際遷移仍需依上述步驟確認。預設 SQLite 路徑不變，較早版本未執行 MySQL 的紀錄仍保留在驗證文件。
+
+開發者可為獨立空白測試庫設定 `HEALTHBANK_TEST_MYSQL_DSN`，再執行 `.tools/go/bin/go test -count=1 ./internal/store -run TestMySQLIntegration -v`。不得指向正式資料庫；未提供 DSN 時這個案例會略過，不能把略過當作通過。CI 另有固定映像雜湊的 MySQL 26.10.0 服務，讓完整與 race 測試實際涵蓋這條路徑。
 
 ## 七、常見狀況
 
@@ -162,7 +166,7 @@ MySQL 驅動、建表與匯入路徑均已實作。若該發行版的驗證紀�
 
 v1.0.2 起，官方連線失敗使用 HTTP 424 搭配結構化錯誤，區分 DNS、TLS、逾時、連線失敗及官方 HTTP 狀態，不再全部回成本應用的 502。畫面會顯示安全的錯誤代碼、可取得的連線回應狀態與查詢代碼。Cloudflare／Nginx 的自訂錯誤規則仍可能替換錯誤回應；若畫面仍只有通用 502，請從部署主機讀取原始回應。
 
-v1.0.3-rc.3 另提供單次診斷指令。可把套件解壓到另一個目錄，在該目錄執行，不需停機或覆蓋目前版本：
+此預覽版保留既有的單次診斷指令。可把套件解壓到另一個目錄，在該目錄執行，不需停機或覆蓋目前版本：
 
 ```bash
 chmod 755 ./healthbank
@@ -170,6 +174,8 @@ chmod 755 ./healthbank
 ```
 
 這個指令直接使用正式連接器，先讀取登入頁，再於同一個 Cookie 工作階段取圖。它不開啟資料庫、不讀取既有使用者連線、不輸入帳密、不提交登入、不輸出圖片內容或驗證碼識別字串。`image_decoded: true` 只代表完整圖片解碼成功，**不代表登入或報告取得成功**；失敗會傳回非零退出碼，不做自動重試。
+
+**本次實測：2026-10-27 09:51:27（Asia/Taipei）**，本機 v1.0.3-rc.4 驗收用執行檔只執行一次不帶帳密的指令，成功取得並完整解碼官方 PNG（100 × 36、790 bytes），總耗時 2625 ms，退出碼 0。診斷回報驗證碼階段 `complete`、193 ms、`proxy_selected: false`、TLS 1.3／h2，且 `login_attempted: false`。這次沒有提交帳號登入或拉取報告，也沒有驗證你寶塔站點的網頁圖片顯示。過去 HTTP503／重設失敗紀錄仍保留；單次成功不能推論它們的成因、官網整體狀態或其他部署主機的結果。
 
 輸出的 `diagnostics.phase` 是中斷／最後完成階段，例如 `dns`、`tcp_connect`、`proxy_connect`、`tls_handshake`、`response_headers`、`response_body`。`proxy_selected` 只表示這次連線使用了環境設定的代理，不含代理位址。TLS 版本與協議只在實際觀察到時提供；若有代理，不能把它當成獨立證明已與官方來源完成端到端握手。指令與寶塔服務若使用不同執行帳號、DNS 或代理環境，結果也可能不同。
 
@@ -201,30 +207,40 @@ sed -E 's/"image_url":"[^"]*/"image_url":"[image omitted]/g;s/"challenge_id":"[^
 
 ## 八、給開發者：建立 Linux Release
 
-先按專案 README 完成相依套件準備、測試及前端建置，確認 `internal/webui/dist/index.html` 已存在，再執行：
+先按專案 README 完成 bootstrap、相依套件準備及檢查。建置主機使用固定的 Node.js 26.12.1／npm 12.2.1、來源版 Go 與原生 TypeScript；需把 `.tools/bin` 及 `.tools/go/bin` 放在 PATH 前方。除了具型別資訊的 ESLint `--max-warnings 0`、7 個模型案例、Go／race／vet 檢查，也要驗證前端來源與產物是否一致。以下在已整理並提交的原始碼目錄執行：
 
 ```bash
-bash scripts/release.sh v1.0.3-rc.3
+export PATH="$PWD/.tools/bin:$PWD/.tools/go/bin:$PATH"
+unset GOROOT
+export GOTOOLCHAIN=local GOENV=off GOWORK=off
+npm --prefix web run lint
+npm --prefix web run build
+npm --prefix web test
+node scripts/build-web.mjs --verify
+export SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"
+GO="$PWD/.tools/go/bin/go" bash scripts/release.sh v1.0.3-rc.4
 ```
+
+前端建置會清空舊產物，並記錄來源／依賴雜湊、各產物雜湊與 Node 版本。`--verify` 及封裝腳本會拒絕來源已變更、產物被改寫或額外殘留檔案的狀態；應重新編譯，不可手動修改雜湊清單。僅有 `index.html` 存在不足以通過發行檢查。
 
 腳本產生：
 
 ```text
-dist/releases/healthbank_1.0.3-rc.3_linux_amd64.tar.gz
-dist/releases/healthbank_1.0.3-rc.3_linux_arm64.tar.gz
-dist/releases/healthbank_1.0.3-rc.3_source.tar.gz
+dist/releases/healthbank_1.0.3-rc.4_linux_amd64.tar.gz
+dist/releases/healthbank_1.0.3-rc.4_linux_arm64.tar.gz
+dist/releases/healthbank_1.0.3-rc.4_source.tar.gz
 dist/releases/SHA256SUMS
 ```
 
-兩個 Linux 執行檔以 `CGO_ENABLED=0` 建置，前端隨 Go 內嵌。原始碼包只收錄本專案明確列出的程式目錄與專案文件，排除上層上傳檔、`data/`、資料庫、密鑰、`.env`、報表、快取、`node_modules`、`.tools` 及編譯產物。已釘選的 `web/vendor/` React 套件封裝會保留，供原始碼重建使用。編譯工具可用 `GO=/完整路徑/go` 指定；`SOURCE_DATE_EPOCH` 可固定發行時間，`COMMIT` 可指定提交識別，`RELEASE_DIR` 可改輸出目錄。腳本不會推送程式碼或發布 GitHub Release。
+兩個 Linux 執行檔以 `CGO_ENABLED=0` 建置，前端隨 Go 內嵌。原始碼包只收錄本專案明確列出的程式目錄與專案文件，排除上層上傳檔、`data/`、資料庫、密鑰、`.env`、報表、快取、`node_modules`、`.tools` 及編譯產物。已釘選且實際引用的 `web/vendor/` React、ESLint 套件封裝及型別宣告會保留，供原始碼重建與檢查使用。編譯工具可用 `GO=/完整路徑/go` 指定；重複建置相同版本時，`SOURCE_DATE_EPOCH` 應固定為該提交的時間；未設定時手動腳本會採當次時間。`COMMIT` 可指定提交識別，`RELEASE_DIR` 可改輸出目錄。腳本不會推送程式碼或發布 GitHub Release。
 
 可使用 `sha256sum -c SHA256SUMS` 檢查下載檔案。GitHub 自動生成的 source.zip／source.tar.gz 與此處的有版本原始碼包屬於不同檔案，雜湊不會相同。
 
 ### GitHub Actions
 
-`CI` 工作流程會在推送到 `main`／`master`、Pull Request 或手動執行時，依專案釘選資訊建立工具與 React 套件，完成前端編譯、Go 測試、靜態檢查及兩種 Linux 架構的編譯。`Linux release` 工作流程只在手動執行時上傳 Actions 建置附件，保留 7 天。推送 `v*` 版本標籤時，若對應 Release 已存在，會保留其發布狀態及檔案；若不存在，則建立附有封裝檔的草稿供維護者檢查。API 或認證查詢錯誤會明確失敗，不會被當成沒有 Release。本機封裝、Git 推送、工作流程執行與 Release 發布是不同操作。
+`CI` 工作流程會在推送到 `main`／`master`、Pull Request 或手動執行時，依專案釘選資訊建立工具與 React 套件，完成零警告 ESLint、嚴格前端編譯、7 個模型測試、npm 公告檢查、Go 格式與模組校驗、完整／race 測試、vet、可比對的已知依賴弱點檢查，以及兩種 Linux 架構的編譯。MySQL 服務使用固定映像雜湊，供合成設定整合測試使用。`Linux release` 工作流程只在手動執行時上傳 Actions 建置附件，保留 7 天。推送 `v*` 版本標籤時，若對應 Release 已存在，會保留其發布狀態及檔案；若不存在，則建立附有封裝檔的草稿供維護者檢查。API 或認證查詢錯誤會明確失敗，不會被當成沒有 Release。本機封裝、Git 推送、工作流程執行與 Release 發布是不同操作。
 
-工作流程所使用的 GitHub 官方 Actions 皆釘選完整提交識別，不使用浮動的 `@main` 或版本標籤；Node.js 執行環境固定為 `24.22.1`。工作流程狀態應以本專案的 [Actions 執行紀錄](https://github.com/bestkakkoii/healthbank/actions)為準；本機成功編譯與 GitHub Actions 的實際執行結果分開記錄。
+工作流程所使用的 GitHub 官方 Actions 皆釘選完整提交識別，不使用浮動的 `@main` 或版本標籤；bootstrap 後的 Node.js／npm 分別固定為 `26.12.1`／`12.2.1`，透過 `GITHUB_PATH` 保留到後續步驟。所有實際連入 Linux 程式的 Go 依賴使用已核對的最新上游快照；受相容範圍限制的工具間接依賴詳列於 [依賴說明](../DEPENDENCIES.md)與 [逐項稽核](../web/dependency-audit.json)，不宣稱所有間接套件都能強制升到同一個最新主版本。工作流程狀態應以本專案的 [Actions 執行紀錄](https://github.com/bestkakkoii/healthbank/actions)為準；本機成功編譯與 GitHub Actions 的實際執行結果分開記錄。
 
 ## 官方技術依據
 

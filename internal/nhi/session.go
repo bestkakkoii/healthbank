@@ -187,15 +187,14 @@ func (s *Session) Challenge(ctx context.Context) (Challenge, error) {
 	if err != nil {
 		return Challenge{}, err
 	}
-	contentType := http.DetectContentType(body)
-	switch contentType {
-	case "image/png", "image/jpeg", "image/gif":
-	default:
-		return Challenge{}, s.annotateResponseError(failure("CAPTCHA_INVALID_IMAGE", "官方連線未回傳有效的圖形驗證碼圖片，請稍後再試。"))
+	imageInfo, err := InspectChallengeImage(body)
+	if err != nil {
+		clear(body)
+		return Challenge{}, s.annotateResponseError(err)
 	}
 	s.challengeID = id
 	s.challengeExpiry = now.Add(5 * time.Minute)
-	return Challenge{ID: id, Image: body, ContentType: contentType, ExpiresAt: s.challengeExpiry}, nil
+	return Challenge{ID: id, Image: body, ContentType: "image/" + imageInfo.Format, ExpiresAt: s.challengeExpiry}, nil
 }
 
 // bootstrap reproduces the browser's initial document request so cookies set by

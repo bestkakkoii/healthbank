@@ -2,6 +2,21 @@
 
 Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
+## v1.0.3-rc.4 — 2026-10-27 (Asia/Taipei)
+
+This prerelease refreshes verified upstream sources and adds strict checks, substantive regressions and real MySQL verification. Authenticated live NHI retrieval and physical iOS/BaoTa acceptance remain outstanding.
+
+- Updated the Go compiler, MySQL adapter and all linked Go runtime modules to verified upstream HEADs. Pinned current Node/npm, ESLint source, typed-lint alpha and React Hooks canary; inventoried every installed npm dependency and explicitly documented upstream compatibility limits.
+- Added strict typed ESLint with zero-warning failure gates, current Hooks rules, stronger TypeScript checks and seven focused model tests. Corrected unsafe local preference parsing, asynchronous request ownership, stale session responses, optional-value handling and settings edit entry points.
+- Fixed CSV formula-prefix handling while retaining valid negative numeric values. Replaced spread-based chart extrema with an iteration that handles the supported large report sizes without stack overflow.
+- Corrected visible/accessibility label mismatches, generic ARIA misuse and interactive SVG semantics. Contained absolutely positioned screen-reader text within the comparison scroller so large mobile text cannot create whole-page horizontal overflow.
+- Shared complete CAPTCHA image decoding and bounded image dimensions between production and diagnostics, rejecting truncated and oversized synthetic images before issuing a usable challenge.
+- Exercised SQLite-to-MySQL-to-SQLite settings transfer, identity isolation, revisions and concurrent writes against an isolated official MySQL 26.10.0 server. Both full Go and full race runs passed 261 test/subtest events with zero skips.
+- Hardened source-pinned bootstrap downloads and compiler-cache provenance. Added source/artifact integrity manifests and a release gate that rejects stale, changed or extra frontend files; nine isolated gate checks passed.
+- Extended CI/release checks with ESLint, frontend model tests, known-vulnerability scans and a digest-pinned MySQL service. Documented the development Go standard-library scan limitation and incomplete live/browser/device acceptance separately.
+- Added a two-part user/developer quality audit and retained bestkakkoii llc. copyright and single-executable BaoTa deployment.
+- A credentialless rc.4 QA diagnostic retrieved and fully decoded an official 100×36 PNG on this run; the restricted web preview still encountered DNS_FAILED. Neither result proves authenticated retrieval or user-host availability.
+
 ## v1.0.3-rc.3 — 2026-10-27 (Asia/Taipei)
 
 - Removed frozen date columns and annual labels in compact portrait and short-landscape layouts; all columns now scroll together. Kept readable compact dates and desktop freezing.

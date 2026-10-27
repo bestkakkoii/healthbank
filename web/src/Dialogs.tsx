@@ -1,5 +1,5 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
-import { useEffect, useState, type FormEvent, type DragEvent } from 'react';
+import { useEffect, useRef, useState, type SubmitEvent, type DragEvent } from 'react';
 import {
   api,
   readableError,
@@ -17,6 +17,7 @@ import {
   categoryLabel,
   dateLabel,
   LEVELS,
+  isObject,
   referenceLabel,
   referenceTemplateLabel,
   ruleCategoryLabel,
@@ -34,10 +35,11 @@ function rememberedFields(): { identity: string; card: string; remember: boolean
   try {
     const raw = localStorage.getItem(REMEMBER_KEY);
     if (!raw) return { identity: '', card: '', remember: true };
-    const value = JSON.parse(raw);
+    const value: unknown = JSON.parse(raw);
+    if (!isObject(value)) return { identity: '', card: '', remember: false };
     return {
-      identity: typeof value.identity === 'string' ? value.identity : '',
-      card: typeof value.card === 'string' ? value.card : '',
+      identity: typeof value['identity'] === 'string' ? value['identity'] : '',
+      card: typeof value['card'] === 'string' ? value['card'] : '',
       remember: true,
     };
   } catch {
@@ -71,33 +73,39 @@ export function LoginDialog({
   const [captchaBusy, setCaptchaBusy] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const captchaRequest = useRef<AbortController | null>(null);
 
-  async function loadCaptcha(signal?: AbortSignal) {
+  async function loadCaptcha() {
+    captchaRequest.current?.abort();
+    const controller = new AbortController();
+    captchaRequest.current = controller;
+    const { signal } = controller;
     setCaptchaBusy(true);
     setCaptcha('');
     setChallenge(null);
     try {
       const current = await api.session(signal);
-      if (signal?.aborted) return;
+      signal.throwIfAborted();
       setCsrfToken(current.csrf_token);
-      setChallenge(await api.captcha(signal));
+      const next = await api.captcha(signal);
+      signal.throwIfAborted();
+      setChallenge(next);
     } catch (error) {
-      if (!(error instanceof DOMException && error.name === 'AbortError'))
+      if (!signal.aborted)
         setError((previous) =>
           previous ? `${previous} ${readableError(error)}` : readableError(error),
         );
     } finally {
-      if (!signal?.aborted) setCaptchaBusy(false);
+      if (!signal.aborted) setCaptchaBusy(false);
     }
   }
 
   useEffect(() => {
-    const controller = new AbortController();
-    void loadCaptcha(controller.signal);
-    return () => controller.abort();
+    void loadCaptcha();
+    return () => captchaRequest.current?.abort();
   }, []);
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!challenge || busy) return;
     const compactCard = card.replace(/\s/g, '');
@@ -161,7 +169,7 @@ export function LoginDialog({
           <Icon name="external" />
         </a>
       </div>
-      <form onSubmit={submit} className="form-stack">
+      <form onSubmit={(event) => { void submit(event); }} className="form-stack">
         <label className="field">
           身分證號／居留證號
           <input
@@ -314,7 +322,7 @@ export function ImportDialog({
     setDragging(false);
     if (!busy) acceptFile(event.dataTransfer.files[0]);
   }
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!file || busy) return;
     setBusy(true);
@@ -334,7 +342,7 @@ export function ImportDialog({
       onClose={onClose}
       busy={busy}
     >
-      <form onSubmit={submit} className="form-stack">
+      <form onSubmit={(event) => { void submit(event); }} className="form-stack">
         <div
           className={`drop-zone ${dragging ? 'drag-active' : ''}`}
           onDragOver={(e) => {
@@ -643,7 +651,7 @@ export function BaselineDialog({
 }: {
   group: MeasurementGroup;
   catalog: CatalogResponse;
-  override?: ItemOverride;
+  override: ItemOverride | undefined;
   onSave: (key: string, value: ItemOverride | null) => Promise<void>;
   onClose: () => void;
   persisted: boolean;
@@ -706,10 +714,9 @@ export function BaselineDialog({
         setError('有一個分級區間沒有可包含的數值，請檢查上下界與是否包含邊界。');
         return;
       }
-      for (let i = 0; i < bands.length; i++) {
-        for (let j = i + 1; j < bands.length; j++) {
-          const a = bands[i],
-            b = bands[j];
+      for (const [i, a] of bands.entries()) {
+        for (const [j, b] of bands.entries()) {
+          if (j <= i) continue;
           const aLow = a.lower === '' ? -Infinity : Number(a.lower),
             aHigh = a.upper === '' ? Infinity : Number(a.upper);
           const bLow = b.lower === '' ? -Infinity : Number(b.lower),

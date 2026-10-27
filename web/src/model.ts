@@ -2,6 +2,14 @@
 // SPDX-License-Identifier: MIT
 import type { CatalogReference, LabRecord, Level, LevelBand } from './api';
 
+export const COPYRIGHT_YEAR = new Intl.DateTimeFormat('en', {
+  year: 'numeric', timeZone: 'Asia/Taipei',
+}).format(new Date());
+
+export function isObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
 export const LEVELS: Record<Level, { label: string; short: string }> = {
   1: { label: '基準內', short: '基準內' },
   2: { label: '邊界／留意', short: '留意' },
@@ -72,32 +80,33 @@ export type RuleBand = Omit<LevelBand, 'level'> & {
 };
 
 export function rulePreview(value: unknown) {
-  const rule = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+  const rule = isObject(value) ? value : {};
   const strings = (value: unknown): string[] =>
     Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
-  const bands = (Array.isArray(rule.bands) ? rule.bands : []).filter(
+  const candidateBands: unknown[] = Array.isArray(rule['bands']) ? rule['bands'] : [];
+  const bands = candidateBands.filter(
     (value): value is RuleBand => {
-      if (!value || typeof value !== 'object') return false;
-      const band = value as Record<string, unknown>;
+      if (!isObject(value)) return false;
+      const band = value;
       return (
-        (band.lower === null || typeof band.lower === 'string') &&
-        (band.upper === null || typeof band.upper === 'string') &&
-        typeof band.lower_inclusive === 'boolean' &&
-        typeof band.upper_inclusive === 'boolean' &&
-        typeof band.display_level === 'number' &&
-        [1, 2, 3, 4, 5].includes(band.display_level) &&
-        typeof band.category === 'string'
+        (band['lower'] === null || typeof band['lower'] === 'string') &&
+        (band['upper'] === null || typeof band['upper'] === 'string') &&
+        typeof band['lower_inclusive'] === 'boolean' &&
+        typeof band['upper_inclusive'] === 'boolean' &&
+        typeof band['display_level'] === 'number' &&
+        [1, 2, 3, 4, 5].includes(band['display_level']) &&
+        typeof band['category'] === 'string'
       );
     },
   );
   return {
-    kind: typeof rule.kind === 'string' ? rule.kind : '',
-    unit: typeof rule.unit === 'string' ? rule.unit : '',
-    description: typeof rule.description === 'string' ? rule.description : '',
-    normalValues: strings(rule.normal_text_values),
-    positiveValues: strings(rule.positive_text_values),
-    reviewValues: strings(rule.review_text_values),
-    sources: strings(rule.sources),
+    kind: typeof rule['kind'] === 'string' ? rule['kind'] : '',
+    unit: typeof rule['unit'] === 'string' ? rule['unit'] : '',
+    description: typeof rule['description'] === 'string' ? rule['description'] : '',
+    normalValues: strings(rule['normal_text_values']),
+    positiveValues: strings(rule['positive_text_values']),
+    reviewValues: strings(rule['review_text_values']),
+    sources: strings(rule['sources']),
     bands,
   };
 }
@@ -143,6 +152,16 @@ export const numeric = (value: string | null | undefined): number | null => {
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
 };
+
+export function finiteExtent(values: Iterable<number>): [number, number] | null {
+  let low = Infinity, high = -Infinity;
+  for (const value of values) {
+    if (!Number.isFinite(value)) continue;
+    low = Math.min(low, value);
+    high = Math.max(high, value);
+  }
+  return low <= high ? [low, high] : null;
+}
 export function referenceLabel(
   record: Pick<LabRecord, 'reference_low' | 'reference_high' | 'reference_text'>,
 ): string {
@@ -169,7 +188,7 @@ export interface MeasurementGroup {
 export function groupRecords(records: LabRecord[]): MeasurementGroup[] {
   const groups = new Map<string, MeasurementGroup>();
   for (const record of records) {
-    const id = `${record.item_id || record.configuration_key || record.item_name}\u0001${record.unit ?? ''}`;
+    const id = `${record.item_id || record.configuration_key || record.item_name}\u0001${record.unit}`;
     let group = groups.get(id);
     if (!group) {
       group = {
@@ -206,7 +225,9 @@ export function sourceFlag(status: LabRecord['reference_status']): string {
         : '無可用參考值判讀';
 }
 
-export function isExact(record: LabRecord): boolean {
+export type ExactRecord = LabRecord & { numeric_value: number };
+
+export function isExact(record: LabRecord): record is ExactRecord {
   // The raw value is checked as well as the server kind, so a bound/range is never shown as an exact point.
   return (
     record.numeric_value !== null &&
@@ -217,14 +238,17 @@ export function isExact(record: LabRecord): boolean {
 }
 
 export function toCsv(records: LabRecord[]): string {
-  const quote = (value: unknown) => {
+  const quote = (value: string | number | null | undefined) => {
     const raw = String(value ?? '');
-    // Neutralize spreadsheet formula injection while preserving negative numerical results.
+    // A leading minus is safe only for an entire finite decimal/scientific literal.
+    // Expressions such as -1+HYPERLINK(...) are spreadsheet formulas, not lab numbers.
     const trimmed = raw.trimStart();
-    const safe = /^[=+@]/.test(trimmed) || /^-\D/.test(trimmed) ? `'${raw}` : raw;
+    const negativeNumber = /^-(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?$/i.test(trimmed)
+      && Number.isFinite(Number(trimmed));
+    const safe = /^[=+@-]/.test(trimmed) && !negativeNumber ? `'${raw}` : raw;
     return `"${safe.replaceAll('"', '""')}"`;
   };
-  const rows: unknown[][] = [
+  const rows: (string | number | null | undefined)[][] = [
     [
       '檢查日期',
       '檢驗項目',
@@ -257,7 +281,7 @@ export function toCsv(records: LabRecord[]): string {
       r.order_code,
       r.source,
       r.interpretation,
-      `© ${new Date().getFullYear()} bestkakkoii llc. All rights reserved.`,
+      `© ${COPYRIGHT_YEAR} bestkakkoii llc. All rights reserved.`,
     ]),
   ];
   return '\ufeff' + rows.map((row) => row.map(quote).join(',')).join('\r\n');

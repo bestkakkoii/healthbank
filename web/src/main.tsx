@@ -1,19 +1,20 @@
 // Copyright (c) 2026 bestkakkoii llc. All rights reserved.
 // SPDX-License-Identifier: MIT
-import { StrictMode, Component, type ErrorInfo, type ReactNode } from 'react';
+import { StrictMode, Component, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import { COPYRIGHT_YEAR } from './model';
 import './styles.css';
 
 class ApplicationBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-  state = { failed: false };
+  override state = { failed: false };
   static getDerivedStateFromError() {
     return { failed: true };
   }
-  componentDidCatch(_error: Error, _info: ErrorInfo) {
+  override componentDidCatch() {
     /* Do not transmit medical or credential-bearing state to logging services. */
   }
-  render() {
+  override render() {
     if (this.state.failed)
       return (
         <main className="fatal-screen">
@@ -22,7 +23,7 @@ class ApplicationBoundary extends Component<{ children: ReactNode }, { failed: b
           <button className="button primary" onClick={() => window.location.reload()}>
             重新開啟工作站
           </button>
-          <small>© {new Date().getFullYear()} bestkakkoii llc. All rights reserved.</small>
+          <small>© {COPYRIGHT_YEAR} bestkakkoii llc. All rights reserved.</small>
         </main>
       );
     return this.props.children;

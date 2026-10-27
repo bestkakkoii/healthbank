@@ -4,12 +4,15 @@ import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ItemOverride, LabRecord } from './api';
 import {
   dateLabel,
+  COPYRIGHT_YEAR,
   downloadText,
   isExact,
+  finiteExtent,
   numeric,
   referenceLabel,
   sourceFlag,
   type MeasurementGroup,
+  type ExactRecord,
 } from './model';
 import { Copyright, Icon, LevelBadge } from './ui';
 
@@ -22,13 +25,18 @@ const numberLabel = (n: number, compact: boolean) => {
   return compact && label.length > 6 ? n.toExponential(1).replace('e+', 'e') : label;
 };
 const day = (value: string) => Date.parse(`${value.slice(0, 10)}T00:00:00Z`);
-const textWidth = (text: string, size: number) =>
-  [...text].reduce((width, character) => width + size * (/[^\x00-\x7F]/.test(character) ? 1 : 0.63), 0);
+const graphemes = new Intl.Segmenter('zh-TW', { granularity: 'grapheme' });
+function textWidth(text: string, size: number): number {
+  let width = 0;
+  for (const { segment } of graphemes.segment(text))
+    width += size * ((segment.codePointAt(0) ?? 0) > 0x7f ? 1 : 0.63);
+  return width;
+}
 
 function wrapChartText(text: string, width: number, size: number): string[] {
   const lines: string[] = [];
   let line = '';
-  for (const character of text) {
+  for (const { segment: character } of graphemes.segment(text)) {
     if (line && textWidth(line + character, size) > width) {
       const space = line.lastIndexOf(' ');
       if (space > line.length / 2) {
@@ -51,7 +59,7 @@ export function TrendChart({
   onDetail,
 }: {
   group: MeasurementGroup;
-  override?: ItemOverride;
+  override: ItemOverride | undefined;
   onDetail: (record: LabRecord) => void;
 }) {
   const [logarithmic, setLogarithmic] = useState(false);
@@ -96,7 +104,7 @@ export function TrendChart({
     return () => observer.disconnect();
   }, [hasPoints]);
   const unsupported = group.records.length - exact.length;
-  const canLog = exact.length > 1 && exact.every((record) => record.numeric_value! > 0);
+  const canLog = exact.length > 1 && exact.every((record) => record.numeric_value > 0);
   const useLog = logarithmic && canLog;
   const hasPersonalReference =
     override?.enabled &&
@@ -117,22 +125,22 @@ export function TrendChart({
   const transform = (n: number) => (useLog ? Math.log10(n) : n);
   const inverse = (n: number) => (useLog ? 10 ** n : n);
   const rangeValues = exact.flatMap((record) => [
-    record.numeric_value!,
+    record.numeric_value,
     ...(showReference
       ? [lowFor(record), highFor(record)].filter(
           (value): value is number => value !== null && (!useLog || value > 0),
         )
       : []),
   ]);
-  let minY = rangeValues.length ? Math.min(...rangeValues.map(transform)) : 0;
-  let maxY = rangeValues.length ? Math.max(...rangeValues.map(transform)) : 1;
+  // Full-history reports can contribute 150,000 values including references.
+  // Iteration avoids the engine-dependent argument limit of Math.min(...values).
+  let [minY, maxY] = finiteExtent(rangeValues.map(transform)) ?? [0, 1];
   const padding = (maxY - minY || Math.max(Math.abs(maxY) * 0.1, 1)) * 0.14;
   minY -= padding;
   maxY += padding;
   if (!useLog && rangeValues.length && rangeValues.every((value) => value >= 0))
     minY = Math.max(0, minY);
-  let minX = dated.length ? Math.min(...dated.map((record) => day(record.exam_date))) : 0;
-  let maxX = dated.length ? Math.max(...dated.map((record) => day(record.exam_date))) : 1;
+  let [minX, maxX] = finiteExtent(dated.map((record) => day(record.exam_date))) ?? [0, 1];
   const oneDate = minX === maxX;
   if (oneDate) {
     minX -= 86400000 * 15;
@@ -169,7 +177,7 @@ export function TrendChart({
   const dateBaseY = margin.top + plotHeight + fontSize + 12;
   const copyrightSize = Math.max(14, fontSize * 0.85);
   const copyrightLines = wrapChartText(
-    `© ${new Date().getFullYear()} bestkakkoii llc.`,
+    `© ${COPYRIGHT_YEAR} bestkakkoii llc.`,
     Math.max(1, width - 24),
     copyrightSize,
   );
@@ -189,7 +197,10 @@ export function TrendChart({
   // Thin labels only. Every observation keeps its real elapsed-time coordinate.
   const tickDates =
     dates.length <= maxDateTicks &&
-    dates.every((date, index) => index === 0 || x(date) - x(dates[index - 1]) >= dateWidth + fontSize)
+    dates.every((date, index) => {
+      const previous = dates[index - 1];
+      return previous === undefined || x(date) - x(previous) >= dateWidth + fontSize;
+    })
       ? dates
       : [
           ...new Set(
@@ -200,8 +211,8 @@ export function TrendChart({
             ),
           ),
         ];
-  const segments: LabRecord[][] = [];
-  let segment: LabRecord[] = [];
+  const segments: ExactRecord[][] = [];
+  let segment: ExactRecord[] = [];
   const sameDateCounts = new Map<string, number>();
   for (const record of dated)
     sameDateCounts.set(record.exam_date, (sameDateCounts.get(record.exam_date) ?? 0) + 1);
@@ -225,7 +236,7 @@ export function TrendChart({
     let distance = Math.max(28, fontSize) ** 2;
     for (const record of exact) {
       const candidate =
-        (x(record.exam_date) - pointerX) ** 2 + (y(record.numeric_value!) - pointerY) ** 2;
+        (x(record.exam_date) - pointerX) ** 2 + (y(record.numeric_value) - pointerY) ** 2;
       if (candidate < distance) {
         nearest = record;
         distance = candidate;
@@ -315,8 +326,9 @@ export function TrendChart({
               width={width}
               height={height}
               className="trend-svg"
-              role="img"
-              aria-labelledby={`${titleId} ${descriptionId}`}
+              role="group"
+              aria-labelledby={titleId}
+              aria-describedby={descriptionId}
               onPointerMove={(event) => setActiveId(nearestPoint(event.clientX, event.clientY)?.id ?? null)}
               onPointerLeave={() => setActiveId(null)}
               onClick={(event) => {
@@ -326,7 +338,7 @@ export function TrendChart({
             >
               <title id={titleId}>{group.name}歷年趨勢</title>
               <desc id={descriptionId}>
-                {exact.length} 筆確切數值，單位 {group.unit}，日期從 {dateLabel(dated[0]?.exam_date)}{' '}
+                {exact.length} 筆確切數值，單位 {group.unit}，日期從 {dateLabel(dated[0]?.exam_date ?? '')}{' '}
                 至 {dateLabel(dated.at(-1)?.exam_date ?? '')}。{useLog ? '縱軸使用對數刻度。' : ''}
                 所有結果亦列於下方可操作的明細表。
               </desc>
@@ -345,14 +357,13 @@ export function TrendChart({
                     (useLog && ((low !== null && low <= 0) || (high !== null && high <= 0)))
                   )
                     return null;
-                  const left =
-                    index === 0
-                      ? margin.left
-                      : (x(exact[index - 1].exam_date) + x(record.exam_date)) / 2;
-                  const right =
-                    index === exact.length - 1
-                      ? margin.left + plotWidth
-                      : (x(record.exam_date) + x(exact[index + 1].exam_date)) / 2;
+                  const previous = exact[index - 1], next = exact[index + 1];
+                  const left = previous
+                    ? (x(previous.exam_date) + x(record.exam_date)) / 2
+                    : margin.left;
+                  const right = next
+                    ? (x(record.exam_date) + x(next.exam_date)) / 2
+                    : margin.left + plotWidth;
                   const top = high === null ? margin.top : y(high),
                     bottom = low === null ? margin.top + plotHeight : y(low);
                   if (bottom < top) return null;
@@ -400,8 +411,8 @@ export function TrendChart({
                     y={dateBaseY}
                     textAnchor="middle"
                     className="axis-label"
-                    aria-label={dateLabel(date)}
                   >
+                    <title>{dateLabel(date)}</title>
                     {dateLines(date).map((line, index) => (
                       <tspan
                         x={Math.max(12 + dateWidth / 2, Math.min(width - 12 - dateWidth / 2, x(date)))}
@@ -420,7 +431,7 @@ export function TrendChart({
                     <polyline
                       key={index}
                       points={part
-                        .map((record) => `${x(record.exam_date)},${y(record.numeric_value!)}`)
+                        .map((record) => `${x(record.exam_date)},${y(record.numeric_value)}`)
                         .join(' ')}
                       className="chart-line"
                     />
@@ -430,13 +441,13 @@ export function TrendChart({
                 <g key={record.id} className={`chart-point level-${record.level ?? 0}`}>
                   <circle
                     cx={x(record.exam_date)}
-                    cy={y(record.numeric_value!)}
+                    cy={y(record.numeric_value)}
                     r={activeId === record.id ? 8 : 6}
                     className="point-dot"
                   />
                   <circle
                     cx={x(record.exam_date)}
-                    cy={y(record.numeric_value!)}
+                    cy={y(record.numeric_value)}
                     r="22"
                     fill="transparent"
                     stroke="none"

@@ -255,22 +255,22 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
-  session: (signal?: AbortSignal) => request<Session>('/api/session', { signal }),
-  captcha: (signal?: AbortSignal) => request<CaptchaResponse>('/api/auth/captcha', { signal }),
+  session: (signal?: AbortSignal) => request<Session>('/api/session', { signal: signal ?? null }),
+  captcha: (signal?: AbortSignal) => request<CaptchaResponse>('/api/auth/captcha', { signal: signal ?? null }),
   login: (body: LoginInput) =>
     request<Session>('/api/auth/login', { method: 'POST', body: JSON.stringify(body) }),
   logout: () => request<Session>('/api/auth/logout', { method: 'POST', body: '{}' }),
   reports: (from: string, to: string) =>
     request<ReportResponse>(`/api/reports?${new URLSearchParams({ from, to })}`),
   currentReports: (signal?: AbortSignal) =>
-    request<ReportResponse>('/api/reports/current', { signal }),
+    request<ReportResponse>('/api/reports/current', { signal: signal ?? null }),
   importReports: (file: File) => {
     const body = new FormData();
     body.append('file', file);
     return request<ReportResponse>('/api/reports/import', { method: 'POST', body });
   },
   demo: () => request<ReportResponse>('/api/reports/demo', { method: 'POST', body: '{}' }),
-  catalog: (signal?: AbortSignal) => request<CatalogResponse>('/api/catalog', { signal }),
+  catalog: (signal?: AbortSignal) => request<CatalogResponse>('/api/catalog', { signal: signal ?? null }),
   saveSettings: (settings: Settings) =>
     request<Settings>('/api/settings', {
       method: 'PUT',

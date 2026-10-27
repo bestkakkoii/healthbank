@@ -5,7 +5,6 @@ import type { LabRecord } from './api';
 import {
   categoryLabel,
   dateLabel,
-  LEVELS,
   referenceLabel,
   sourceFlag,
   yearLabel,
@@ -213,8 +212,9 @@ function ResultCell({
   interactive: boolean;
   onDetail: (record: LabRecord) => void;
 }) {
-  if (records.length === 0) return <span aria-label="這個日期未取得此項檢驗資料">—</span>;
-  const recentReference = referenceLabel(group.records[0]);
+  if (records.length === 0) return <><span aria-hidden="true">—</span><span className="sr-only">這個日期未取得此項檢驗資料</span></>;
+  const recent = group.records[0];
+  const recentReference = recent ? referenceLabel(recent) : '未提供';
   return (
     <div className="cell-records">
       {records.map((record, index) => {
@@ -257,9 +257,10 @@ function ResultCell({
             className={className}
             key={record.id}
             onClick={() => onDetail(record)}
-            aria-label={`${group.name}，${dateLabel(record.exam_date)}${records.length > 1 ? `，同日第 ${index + 1} 筆，共 ${records.length} 筆` : ''}，結果 ${record.result || '未提供'} ${record.unit}，${record.institution || '院所未提供'}，原院參考 ${reference}，${sourceFlag(record.reference_status)}，${record.level ? `L${record.level} ${LEVELS[record.level].label}` : '未判定'}${record.official_flag === '1' ? '，原院異常標記' : ''}，查看明細`}
           >
+            <span className="sr-only">{group.name}，{dateLabel(record.exam_date)}，單位 {record.unit}；</span>
             {content}
+            <span className="sr-only">；原院參考 {reference}，{sourceFlag(record.reference_status)}，查看明細</span>
           </button>
         ) : (
           <div className={className} key={record.id}>
@@ -337,7 +338,7 @@ export function ComparisonTable(props: ComparisonTableProps) {
                         <span className="unit-line">單位：{group.unit}</span>
                       </div>
                       <div className="header-reference">
-                        最近原院參考：{referenceLabel(group.records[0])}
+                        最近原院參考：{group.records[0] ? referenceLabel(group.records[0]) : '未提供'}
                       </div>
                     </div>
                   </div>
@@ -366,7 +367,7 @@ export function ComparisonTable(props: ComparisonTableProps) {
                         type="button"
                         className="text-button"
                         onClick={() => onConfigure(group)}
-                        disabled={!configurable}
+                        disabled={saving || !configurable}
                         aria-label={`設定${group.name}基準`}
                       >
                         <Icon name="settings" size={15} />

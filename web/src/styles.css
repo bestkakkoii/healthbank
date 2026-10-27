@@ -1360,6 +1360,8 @@
   }
   .comparison-scroll {
     --comparison-date-width: min(10.5rem, 25vw);
+    /* Keep absolutely positioned accessible text inside this local scroll container. */
+    position: relative;
     overflow: auto;
     border-top: 1px solid var(--border);
     scroll-padding: 1rem 1rem 1rem calc(var(--comparison-date-width) + 1rem);

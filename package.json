@@ -1,6 +1,6 @@
 {
   "name": "@bestkakkoi/healthbank",
-  "version": "1.0.3-rc.3",
+  "version": "1.0.3-rc.4",
   "private": true,
   "license": "MIT",
   "scripts": {
@@ -8,6 +8,6 @@
     "build": "npm --prefix web run build"
   },
   "engines": {
-    "node": ">=24.22.1"
+    "node": ">=26.12.1"
   }
 }

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import type { Level } from './api';
-import { LEVELS } from './model';
+import { COPYRIGHT_YEAR, LEVELS } from './model';
 
 export type IconName =
   | 'overview'
@@ -202,7 +202,7 @@ export function Icon({
 export function Copyright({ className = '' }: { className?: string }) {
   return (
     <small className={`copyright ${className}`}>
-      © {new Date().getFullYear()} bestkakkoii llc. All rights reserved.
+      © {COPYRIGHT_YEAR} bestkakkoii llc. All rights reserved.
     </small>
   );
 }
@@ -225,7 +225,7 @@ export function LevelBadge({ level, compact = false }: { level: Level | null; co
 
 export function Legend() {
   return (
-    <div className="level-legend" aria-label="顏色分級說明">
+    <div className="level-legend" role="group" aria-label="顏色分級說明">
       {([1, 2, 3, 4, 5] as Level[]).map((level) => (
         <LevelBadge key={level} level={level} compact />
       ))}

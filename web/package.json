@@ -1,12 +1,14 @@
 {
   "name": "@bestkakkoi/healthbank-web",
-  "version": "1.0.3-rc.3",
+  "version": "1.0.3-rc.4",
   "private": true,
   "type": "module",
   "license": "MIT",
   "scripts": {
     "build": "node ../scripts/build-web.mjs",
-    "typecheck": "node ../scripts/build-web.mjs --check"
+    "typecheck": "node ../scripts/build-web.mjs --check",
+    "lint": "node ../scripts/lint-web.mjs",
+    "test": "node --test --test-isolation=none tests/*.test.mjs"
   },
   "dependencies": {
     "react": "file:vendor/react-main.tgz",
@@ -14,7 +16,13 @@
     "scheduler": "file:vendor/scheduler-main.tgz"
   },
   "devDependencies": {
+    "@eslint/js": "file:vendor/eslint-js-main.tgz",
     "@types/react": "file:vendor/types-react",
-    "@types/react-dom": "file:vendor/types-react-dom"
+    "@types/react-dom": "file:vendor/types-react-dom",
+    "eslint": "file:vendor/eslint-main.tgz",
+    "eslint-plugin-react-hooks": "7.1.1-canary-fd51cb10-20261026",
+    "globals": "17.13.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.2-alpha.1"
   }
 }

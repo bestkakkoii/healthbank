@@ -1,18 +1,18 @@
 {
-  "schema_version": 1,
-  "policy": "Direct source dependencies pinned to verified upstream default-branch HEAD; transitive dependencies retain locked upstream versions. No claim that every transitive package is main HEAD.",
+  "schema_version": 2,
+  "policy": "Application source dependencies and every linked Linux Go module are pinned to verified official upstream HEAD snapshots. Build and lint tools use verified upstream HEAD or current official releases/prereleases. Full transitive graphs are audited; upstream compatibility constraints and graph-only older dependencies are recorded rather than bypassed with forced incompatible overrides.",
   "sources": [
     {
       "name": "Go",
       "repository": "https://github.com/golang/go",
       "branch": "master",
-      "commit": "6c0b2c39e3cbaaf44061959a352bd6c7214bf621",
+      "commit": "6c49ac311e5642fa5399b46c736295a9dc4eeec9",
       "version": "devel go1.28",
-      "archive_sha256": "fd05b0c5be1986ab6a33a9e5cdf51441eb364c61d3c02b6d08af4316656160f1"
+      "archive_sha256": "d8cf6e974c19525714231130345acaf2085b2b840360dd68f72f2c439f2c5429"
     },
     {
       "name": "React / React DOM / Scheduler",
-      "repository": "https://github.com/react/react",
+      "repository": "https://github.com/facebook/react",
       "branch": "main",
       "commit": "fd51cb10dd154aee73e4e7948005c02968651c3d",
       "package_versions": [
@@ -47,7 +47,7 @@
       "name": "MySQL Go driver",
       "repository": "https://github.com/go-sql-driver/mysql",
       "branch": "master",
-      "commit": "4b12a5b6e7fb8951a847f1b61485a59f337ada18"
+      "commit": "aca61c8f4a21f1d79d197dae3f985b0283b80c96"
     },
     {
       "name": "Go net/html",
@@ -61,19 +61,65 @@
       "branch": "master",
       "commit": "0d5b76188fd585fe187acb6cffbe08071f2bdd16",
       "packaging_changes": "Removed devDependencies/scripts and normalized workspace-only dependency specifiers; declaration content unchanged."
+    },
+    {
+      "name": "ESLint / @eslint/js",
+      "repository": "https://github.com/eslint/eslint",
+      "branch": "main",
+      "commit": "161558ae1391a8649a8d69a8b2c2e555b40121b9",
+      "package_versions": [
+        "10.13.0",
+        "10.0.1"
+      ],
+      "archive_sha256": "595f8744294ce81b0a1e51e63ecc52c98e45465f9c553dcdea9e7424f3a59e87",
+      "packaging": "Unmodified source packaged with npm pack --ignore-scripts from repository root and packages/js."
+    },
+    {
+      "name": "govulncheck",
+      "repository": "https://github.com/golang/vuln",
+      "branch": "master",
+      "commit": "e672cbe8fbc8c76e28fcb6db0efd9ce354e0dac5",
+      "version": "v1.9.0"
+    },
+    {
+      "name": "GitHub Actions checkout",
+      "repository": "https://github.com/actions/checkout",
+      "branch": "main",
+      "commit": "f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a"
+    },
+    {
+      "name": "GitHub Actions setup-node",
+      "repository": "https://github.com/actions/setup-node",
+      "branch": "main",
+      "commit": "949feb2413d6458794dcd2491c4babbbce0c15c1"
+    },
+    {
+      "name": "GitHub Actions upload-artifact",
+      "repository": "https://github.com/actions/upload-artifact",
+      "branch": "main",
+      "commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9"
     }
   ],
   "build_runtime": {
-    "node": "24.22.1",
-    "npm": "11.9.0",
+    "node": "26.12.1",
+    "npm": "12.2.1",
     "go_bootstrap": "1.27.3",
     "go_bootstrap_sha256": "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40",
-    "react_upstream_package_manager": "yarn1.22.22 with frozen upstream yarn.lock"
+    "react_upstream_package_manager": "yarn1.22.22 with frozen upstream yarn.lock",
+    "node_url": "https://nodejs.org/dist/v26.12.1/node-v26.12.1-linux-x64.tar.xz",
+    "node_archive_sha256": "6170b2d474e1c626f43cff3adc118df9fe3b573258a4fc3d850c8dbc6b079bbd",
+    "node_manifest_url": "https://nodejs.org/dist/v26.12.1/SHASUMS256.txt",
+    "npm_url": "https://registry.npmjs.org/npm/-/npm-12.2.1.tgz",
+    "npm_archive_sha256": "228bd64aaef23270dbdbd2cf3d5ef5c467602ef38c4066246cef1984adab9a67",
+    "npm_integrity": "sha512-bKCmFRVT/BB+YPEYbZwQ1XUI3N5t4xKSpU1MxOjo7z3iWzKBJ0ZXRC1xFdEN+TC7N5TdywaBzf2dMXGJq/e2PQ==",
+    "node_bundled_npm": "11.20.0; retained inside the official Node distribution but not invoked; pinned npm 12.2.1 is used."
   },
   "vendored_packages": {
     "scheduler-main.tgz": "c64e8d8cb716ae3bcef457a833127ab9ad5c55d7fbf3bb89030f368a2f81e17c",
     "react-main.tgz": "c1d9d0e081f89765454b79b8b7aa81d2d42ae98c06a96914d952975bbda8b2a5",
-    "react-dom-main.tgz": "02f22648ec195371d9772c667cda0ce211eeefeac57e746a3d4d4d151996dfcb"
+    "react-dom-main.tgz": "02f22648ec195371d9772c667cda0ce211eeefeac57e746a3d4d4d151996dfcb",
+    "eslint-main.tgz": "eb1cd508a65aaf6c0493eeaf72eefac27cffb3606d7d375d41f2e258c2311e43",
+    "eslint-js-main.tgz": "8ecd352ee99b1c8291bee007f43d58356ae5057782de9635563aec2e604dcee2"
   },
   "go_runtime_modules": [
     {
@@ -82,32 +128,36 @@
       "sum": "h1:crnVqOiS4jqYleHd9vaKZ+HKtHfllngJIiOpNpoJsjo=",
       "license_files": [
         "licenses/filippo.io__edwards25519/LICENSE"
-      ]
+      ],
+      "upstream_commit": "b182a6575cfd9f4fbb1d1d4e487a6b00a3ec06f7"
     },
     {
       "module": "github.com/dustin/go-humanize",
-      "version": "v1.1.0",
-      "sum": "h1:dbKTrvD0klcbBV/h4AWJdMuZogJACoMlvWIWZ5b2xWg=",
+      "version": "v1.1.1-0.20261013172158-f5b54ae13923",
+      "sum": "h1:0olOSbn7kxZ2AlSYt8VBfhazBdes9s3CJN/2/n/XPjU=",
       "license_files": [
         "licenses/github.com__dustin__go-humanize/LICENSE"
-      ]
+      ],
+      "upstream_commit": "f5b54ae1392365a578bb43ab728e3fcdc291f0cd"
     },
     {
       "module": "github.com/go-sql-driver/mysql",
-      "version": "v1.10.2-0.20261016105952-4b12a5b6e7fb",
-      "sum": "h1:F1xycI4kqB8VKbgMQBzhKnUubWB/KiyTJbWKEZZ8ogc=",
+      "version": "v1.10.2-0.20261027012121-aca61c8f4a21",
+      "sum": "h1:rFm2Ptao+jQep8EUqsQZEKsKeNF/kfNuF3BWou2eAs8=",
       "license_files": [
         "licenses/github.com__go-sql-driver__mysql/AUTHORS",
         "licenses/github.com__go-sql-driver__mysql/LICENSE"
-      ]
+      ],
+      "upstream_commit": "aca61c8f4a21f1d79d197dae3f985b0283b80c96"
     },
     {
       "module": "github.com/google/uuid",
-      "version": "v1.6.0",
-      "sum": "h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=",
+      "version": "v1.6.1-0.20241114170450-2d3c2a9cc518",
+      "sum": "h1:UBg1xk+oAsIVbFuGg6hdfAm7EvCv3EL80vFxJNsslqw=",
       "license_files": [
         "licenses/github.com__google__uuid/LICENSE"
-      ]
+      ],
+      "upstream_commit": "2d3c2a9cc518326daf99a383f07c4d3c44317e4d"
     },
     {
       "module": "github.com/remyoudompheng/bigfft",
@@ -115,7 +165,8 @@
       "sum": "h1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=",
       "license_files": [
         "licenses/github.com__remyoudompheng__bigfft/LICENSE"
-      ]
+      ],
+      "upstream_commit": "24d4a6f8daece64d3c9a7660d4ee0974c4e31021"
     },
     {
       "module": "golang.org/x/net",
@@ -123,25 +174,28 @@
       "sum": "h1:hiB9drdBUxaK1tPuoZFMsl8PahKhCSAXmbM4XcF4HTU=",
       "license_files": [
         "licenses/golang.org__x__net/LICENSE"
-      ]
+      ],
+      "upstream_commit": "05c76ee9adc59087cf3ba77ee9c8fcfab61bf61c"
     },
     {
       "module": "golang.org/x/sys",
-      "version": "v0.49.0",
-      "sum": "h1:XbzkgYJHdqh/8m2Uu0W/dQv8nktxx4BFHp1M0gROTXA=",
+      "version": "v0.49.1-0.20261026092948-908ab5927565",
+      "sum": "h1:Bf8y9wug4OS5TqXKTXx9fGTtlDcXKF5XXE/QeIfZ+BI=",
       "license_files": [
         "licenses/golang.org__x__sys/LICENSE"
-      ]
+      ],
+      "upstream_commit": "908ab5927565d7c3b733cd0a13e22bd2228bc1bd"
     },
     {
       "module": "modernc.org/libc",
-      "version": "v1.79.0",
-      "sum": "h1:9Dvvv++bAMSkSuBzuOFAatbTV5OIoq6Y6FohmD3e7q8=",
+      "version": "v1.79.2-0.20261026191927-bc04fe32d833",
+      "sum": "h1:+WPfAMBsuJPPHe/g0KCQvGIk2PzyLBzggqkrPyZJdoE=",
       "license_files": [
         "licenses/modernc.org__libc/AUTHORS",
         "licenses/modernc.org__libc/LICENSE-3RD-PARTY.md",
         "licenses/modernc.org__libc/LICENSE"
-      ]
+      ],
+      "upstream_commit": "bc04fe32d833c2b58f5e7bb478270abfbe5f9bb5"
     },
     {
       "module": "modernc.org/mathutil",
@@ -150,7 +204,8 @@
       "license_files": [
         "licenses/modernc.org__mathutil/AUTHORS",
         "licenses/modernc.org__mathutil/LICENSE"
-      ]
+      ],
+      "upstream_commit": "28129eec384c30a304561c3c8779e4bb29cbff12"
     },
     {
       "module": "modernc.org/memory",
@@ -162,7 +217,8 @@
         "licenses/modernc.org__memory/LICENSE-MMAP-GO",
         "licenses/modernc.org__memory/LICENSE",
         "licenses/modernc.org__memory/LICENSE-LOGO"
-      ]
+      ],
+      "upstream_commit": "bb3d99379ed7361ae4c08f11c2876aef046c2a18"
     },
     {
       "module": "modernc.org/sqlite",
@@ -174,8 +230,828 @@
         "licenses/modernc.org__sqlite/LICENSE-SQLITE_VEC",
         "licenses/modernc.org__sqlite/LICENSE-SQLITE",
         "licenses/modernc.org__sqlite/LICENSE"
-      ]
+      ],
+      "upstream_commit": "e6990422658b8c9b79328fc5bbda69cc892d70ee"
     }
   ],
-  "verified_date": "2026-10-27"
+  "verified_date": "2026-10-27",
+  "verified_at": "2026-10-27T09:21:04.951412+08:00",
+  "go_module_inventory": [
+    {
+      "module": "filippo.io/edwards25519",
+      "version": "v1.2.0",
+      "role": "linux-runtime",
+      "repository": "https://github.com/FiloSottile/edwards25519",
+      "upstream_commit": "b182a6575cfd9f4fbb1d1d4e487a6b00a3ec06f7",
+      "source_url": "https://api.github.com/repos/FiloSottile/edwards25519/commits?per_page=1",
+      "sum": "h1:crnVqOiS4jqYleHd9vaKZ+HKtHfllngJIiOpNpoJsjo=",
+      "upstream_head_version": "v1.2.0",
+      "at_upstream_head": true
+    },
+    {
+      "module": "github.com/chzyer/readline",
+      "version": "v1.5.1",
+      "role": "upstream-graph-only",
+      "repository": "https://github.com/chzyer/readline",
+      "upstream_commit": "9dfc369f8652ba9013dadffd2d2efeada64fe44d",
+      "source_url": "https://api.github.com/repos/chzyer/readline/commits?per_page=1",
+      "upstream_head_version": "v1.5.2-0.20250620033330-9dfc369f8652",
+      "at_upstream_head": false,
+      "retained_reason": "Not imported by application or application tests; selected transitively by upstream go.mod after go mod tidy. No unused forced requirement added."
+    },
+    {
+      "module": "github.com/dustin/go-humanize",
+      "version": "v1.1.1-0.20261013172158-f5b54ae13923",
+      "role": "linux-runtime",
+      "repository": "https://github.com/dustin/go-humanize",
+      "upstream_commit": "f5b54ae1392365a578bb43ab728e3fcdc291f0cd",
+      "source_url": "https://api.github.com/repos/dustin/go-humanize/commits?per_page=1",
+      "sum": "h1:0olOSbn7kxZ2AlSYt8VBfhazBdes9s3CJN/2/n/XPjU=",
+      "upstream_head_version": "v1.1.1-0.20261013172158-f5b54ae13923",
+      "at_upstream_head": true
+    },
+    {
+      "module": "github.com/go-sql-driver/mysql",
+      "version": "v1.10.2-0.20261027012121-aca61c8f4a21",
+      "role": "linux-runtime",
+      "repository": "https://github.com/go-sql-driver/mysql",
+      "upstream_commit": "aca61c8f4a21f1d79d197dae3f985b0283b80c96",
+      "source_url": "https://api.github.com/repos/go-sql-driver/mysql/commits?per_page=1",
+      "sum": "h1:rFm2Ptao+jQep8EUqsQZEKsKeNF/kfNuF3BWou2eAs8=",
+      "upstream_head_version": "v1.10.2-0.20261027012121-aca61c8f4a21",
+      "at_upstream_head": true
+    },
+    {
+      "module": "github.com/google/go-cmp",
+      "version": "v0.6.0",
+      "role": "upstream-graph-only",
+      "repository": "https://github.com/google/go-cmp",
+      "upstream_commit": "b133f1f1932e48f466f597a3346ce6f5a49a0dc1",
+      "source_url": "https://api.github.com/repos/google/go-cmp/commits?per_page=1",
+      "upstream_head_version": "v0.7.1-0.20260618073321-b133f1f1932e",
+      "at_upstream_head": false,
+      "retained_reason": "Not imported by application or application tests; selected transitively by upstream go.mod after go mod tidy. No unused forced requirement added."
+    },
+    {
+      "module": "github.com/google/pprof",
+      "version": "v0.0.0-20261026192309-dbd0ed30aa88",
+      "role": "upstream-graph-only",
+      "repository": "https://github.com/google/pprof",
+      "upstream_commit": "dbd0ed30aa888a30e21ba83b9831ac0e80d41022",
+      "source_url": "https://api.github.com/repos/google/pprof/commits?per_page=1",
+      "sum": "h1:BnzMe/RUfFezpFwXsOWHmSMNO8qt7755OL25C+AezGQ=",
+      "upstream_head_version": "v0.0.0-20261026192309-dbd0ed30aa88",
+      "at_upstream_head": true
+    },
+    {
+      "module": "github.com/google/uuid",
+      "version": "v1.6.1-0.20241114170450-2d3c2a9cc518",
+      "role": "linux-runtime",
+      "repository": "https://github.com/google/uuid",
+      "upstream_commit": "2d3c2a9cc518326daf99a383f07c4d3c44317e4d",
+      "source_url": "https://api.github.com/repos/google/uuid/commits?per_page=1",
+      "sum": "h1:UBg1xk+oAsIVbFuGg6hdfAm7EvCv3EL80vFxJNsslqw=",
+      "upstream_head_version": "v1.6.1-0.20241114170450-2d3c2a9cc518",
+      "at_upstream_head": true
+    },
+    {
+      "module": "github.com/hashicorp/golang-lru/v2",
+      "version": "v2.0.8-0.20261026131532-2bb29091a6c3",
+      "role": "upstream-graph-only",
+      "repository": "https://github.com/hashicorp/golang-lru",
+      "upstream_commit": "2bb29091a6c341aba625d23fea354c4fbaef5d6f",
+      "source_url": "https://api.github.com/repos/hashicorp/golang-lru/commits?per_page=1",
+      "sum": "h1:mrb2f8NUMN8vY76+xdaRcn/WvBdUx0r6kDeJY6FSleE=",
+      "upstream_head_version": "v2.0.8-0.20261026131532-2bb29091a6c3",
+      "at_upstream_head": true
+    },
+    {
+      "module": "github.com/ianlancetaylor/demangle",
+      "version": "v0.0.0-20250417193237-f615e6bd150b",
+      "role": "upstream-graph-only",
+      "repository": "https://github.com/ianlancetaylor/demangle",
+      "upstream_commit": "cbb8aaea4290868d87d6921d9ac25fb728339b94",
+      "source_url": "https://api.github.com/repos/ianlancetaylor/demangle/commits?per_page=1",
+      "upstream_head_version": "v0.0.0-20261012173340-cbb8aaea4290",
+      "at_upstream_head": false,
+      "retained_reason": "Not imported by application or application tests; selected transitively by upstream go.mod after go mod tidy. No unused forced requirement added."
+    },
+    {
+      "module": "github.com/kballard/go-shellquote",
+      "version": "v0.0.0-20180428030007-95032a82bc51",
+      "role": "upstream-graph-only",
+      "repository": "https://github.com/kballard/go-shellquote",
+      "upstream_commit": "95032a82bc518f77982ea72343cc1ade730072f0",
+      "source_url": "https://api.github.com/repos/kballard/go-shellquote/commits?per_page=1",
+      "upstream_head_version": "v0.0.0-20180428030007-95032a82bc51",
+      "at_upstream_head": true
+    },
+    {
+      "module": "github.com/klauspost/compress",
+      "version": "v1.19.2",
+      "role": "upstream-graph-only",
+      "repository": "https://github.com/klauspost/compress",
+      "upstream_commit": "4bc1f08dc7c8043e74df2d7e6b2d0f1984bbb908",
+      "source_url": "https://api.github.com/repos/klauspost/compress/commits?per_page=1",
+      "upstream_head_version": "v1.20.4-0.20261026131209-4bc1f08dc7c8",
+      "at_upstream_head": false,
+      "retained_reason": "Not imported by application or application tests; selected transitively by upstream go.mod after go mod tidy. No unused forced requirement added."
+    },
+    {
+      "module": "github.com/mattn/go-isatty",
+      "version": "v0.0.24",
+      "role": "upstream-graph-only",
+      "repository": "https://github.com/mattn/go-isatty",
+      "upstream_commit": "c44dc0b9c702c76577fdb7898032969e0611efc2",
+      "source_url": "https://api.github.com/repos/mattn/go-isatty/commits?per_page=1",
+      "sum": "h1:tGZZoVgT/KiqK1c8ocVLeDS8BSWMRd47J3Lbz7vsReI=",
+      "upstream_head_version": "v0.0.24",
+      "at_upstream_head": true
+    },
+    {
+      "module": "github.com/ncruces/go-strftime",
+      "version": "v1.1.0",
+      "role": "upstream-graph-only",
+      "repository": "https://github.com/ncruces/go-strftime",
+      "upstream_commit": "fa91ab7a1dcba7937c8d408d1a4477d2a348581d",
+      "source_url": "https://api.github.com/repos/ncruces/go-strftime/commits?per_page=1",
+      "sum": "h1:vtPmPWMkb539RGV9WpWT9EwJGvrOCKvMNI4obWL47Hk=",
+      "upstream_head_version": "v1.1.0",
+      "at_upstream_head": true
+    },
+    {
+      "module": "github.com/pbnjay/memory",
+      "version": "v0.0.0-20210728143218-7b4eea64cf58",
+      "role": "upstream-graph-only",
+      "repository": "https://github.com/pbnjay/memory",
+      "upstream_commit": "7b4eea64cf580186c0eceb10dc94ba3a098af46c",
+      "source_url": "https://api.github.com/repos/pbnjay/memory/commits?per_page=1",
+      "upstream_head_version": "v0.0.0-20210728143218-7b4eea64cf58",
+      "at_upstream_head": true
+    },
+    {
+      "module": "github.com/pmezard/go-difflib",
+      "version": "v1.0.0",
+      "role": "upstream-graph-only",
+      "repository": "https://github.com/pmezard/go-difflib",
+      "upstream_commit": "5d4384ee4fb2527b0a1256a821ebfc92f91efefc",
+      "source_url": "https://api.github.com/repos/pmezard/go-difflib/commits?per_page=1",
+      "upstream_head_version": "v1.0.1-0.20181226105442-5d4384ee4fb2",
+      "at_upstream_head": false,
+      "retained_reason": "Not imported by application or application tests; selected transitively by upstream go.mod after go mod tidy. No unused forced requirement added."
+    },
+    {
+      "module": "github.com/remyoudompheng/bigfft",
+      "version": "v0.0.0-20230129092748-24d4a6f8daec",
+      "role": "linux-runtime",
+      "repository": "https://github.com/remyoudompheng/bigfft",
+      "upstream_commit": "24d4a6f8daece64d3c9a7660d4ee0974c4e31021",
+      "source_url": "https://api.github.com/repos/remyoudompheng/bigfft/commits?per_page=1",
+      "sum": "h1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=",
+      "upstream_head_version": "v0.0.0-20230129092748-24d4a6f8daec",
+      "at_upstream_head": true
+    },
+    {
+      "module": "github.com/yuin/goldmark",
+      "version": "v1.4.13",
+      "role": "upstream-graph-only",
+      "repository": "https://github.com/yuin/goldmark",
+      "upstream_commit": "b84a25ffd883ed10c10cc0d7b679e407edf31f0b",
+      "source_url": "https://api.github.com/repos/yuin/goldmark/commits?per_page=1",
+      "at_upstream_head": false,
+      "retained_reason": "Default HEAD changes module path to github.com/yuin/goldmark/v2; the upstream graph still requests the v1 module. Neither is linked into the application."
+    },
+    {
+      "module": "golang.org/x/crypto",
+      "version": "v0.58.0",
+      "role": "upstream-graph-only",
+      "repository": "https://github.com/golang/crypto",
+      "upstream_commit": "1da6254a58cff58f9e77bb9e8fe3620317d4e7c8",
+      "source_url": "https://api.github.com/repos/golang/crypto/commits/master",
+      "upstream_head_version": "v0.58.1-0.20261027005312-1da6254a58cf",
+      "at_upstream_head": false,
+      "retained_reason": "Not imported by application or application tests; selected transitively by upstream go.mod after go mod tidy. No unused forced requirement added."
+    },
+    {
+      "module": "golang.org/x/exp",
+      "version": "v0.0.0-20251023183803-a4bb9ffd2546",
+      "role": "upstream-graph-only",
+      "repository": "https://github.com/golang/exp",
+      "upstream_commit": "f0251eb4aa3edefb2e1c158e57af104ae2de221a",
+      "source_url": "https://api.github.com/repos/golang/exp/commits/master",
+      "upstream_head_version": "v0.0.0-20261014143641-f0251eb4aa3e",
+      "at_upstream_head": false,
+      "retained_reason": "Not imported by application or application tests; selected transitively by upstream go.mod after go mod tidy. No unused forced requirement added."
+    },
+    {
+      "module": "golang.org/x/mod",
+      "version": "v0.42.0",
+      "role": "upstream-graph-only",
+      "repository": "https://github.com/golang/mod",
+      "upstream_commit": "b5136e5ba156da612a1efc6e49b55988a134a5e0",
+      "source_url": "https://api.github.com/repos/golang/mod/commits/master",
+      "sum": "h1:ICeL3t2L30ljSPHHxDnR4fqVcBt/zR2zJAb9juavmQg=",
+      "upstream_head_version": "v0.42.0",
+      "at_upstream_head": true
+    },
+    {
+      "module": "golang.org/x/net",
+      "version": "v0.61.1-0.20261022225259-05c76ee9adc5",
+      "role": "linux-runtime",
+      "repository": "https://github.com/golang/net",
+      "upstream_commit": "05c76ee9adc59087cf3ba77ee9c8fcfab61bf61c",
+      "source_url": "https://api.github.com/repos/golang/net/commits/master",
+      "sum": "h1:hiB9drdBUxaK1tPuoZFMsl8PahKhCSAXmbM4XcF4HTU=",
+      "upstream_head_version": "v0.61.1-0.20261022225259-05c76ee9adc5",
+      "at_upstream_head": true
+    },
+    {
+      "module": "golang.org/x/sync",
+      "version": "v0.24.1-0.20261015161703-1f920df1e8fc",
+      "role": "upstream-graph-only",
+      "repository": "https://github.com/golang/sync",
+      "upstream_commit": "1f920df1e8fcf601d1aaf0f2ea500e1d2ccce105",
+      "source_url": "https://api.github.com/repos/golang/sync/commits/master",
+      "sum": "h1:yI/2aQ3OBrGuV9OX8fim29r3iUHieOGT16UTCDk8dCA=",
+      "upstream_head_version": "v0.24.1-0.20261015161703-1f920df1e8fc",
+      "at_upstream_head": true
+    },
+    {
+      "module": "golang.org/x/sys",
+      "version": "v0.49.1-0.20261026092948-908ab5927565",
+      "role": "linux-runtime",
+      "repository": "https://github.com/golang/sys",
+      "upstream_commit": "908ab5927565d7c3b733cd0a13e22bd2228bc1bd",
+      "source_url": "https://api.github.com/repos/golang/sys/commits/master",
+      "sum": "h1:Bf8y9wug4OS5TqXKTXx9fGTtlDcXKF5XXE/QeIfZ+BI=",
+      "upstream_head_version": "v0.49.1-0.20261026092948-908ab5927565",
+      "at_upstream_head": true
+    },
+    {
+      "module": "golang.org/x/telemetry",
+      "version": "v0.0.0-20261009151841-97e8ea77aa2a",
+      "role": "upstream-graph-only",
+      "repository": "https://github.com/golang/telemetry",
+      "upstream_commit": "6cd571d43fbb06cf3ea6659089f7152e2734f215",
+      "source_url": "https://api.github.com/repos/golang/telemetry/commits/master",
+      "upstream_head_version": "v0.0.0-20261021172232-6cd571d43fbb",
+      "at_upstream_head": false,
+      "retained_reason": "Not imported by application or application tests; selected transitively by upstream go.mod after go mod tidy. No unused forced requirement added."
+    },
+    {
+      "module": "golang.org/x/term",
+      "version": "v0.47.0",
+      "role": "upstream-graph-only",
+      "repository": "https://github.com/golang/term",
+      "upstream_commit": "0851034afad912733699827b3bb94436f059797f",
+      "source_url": "https://api.github.com/repos/golang/term/commits/master",
+      "upstream_head_version": "v0.47.0",
+      "at_upstream_head": true
+    },
+    {
+      "module": "golang.org/x/text",
+      "version": "v0.43.0",
+      "role": "upstream-graph-only",
+      "repository": "https://github.com/golang/text",
+      "upstream_commit": "972f2683e8864ae75860c0da80ef7c4c5a7cdee8",
+      "source_url": "https://api.github.com/repos/golang/text/commits/master",
+      "upstream_head_version": "v0.43.1-0.20261021162616-972f2683e886",
+      "at_upstream_head": false,
+      "retained_reason": "Not imported by application or application tests; selected transitively by upstream go.mod after go mod tidy. No unused forced requirement added."
+    },
+    {
+      "module": "golang.org/x/tools",
+      "version": "v0.52.1-0.20261026193629-5dd9c3348317",
+      "role": "upstream-graph-only",
+      "repository": "https://github.com/golang/tools",
+      "upstream_commit": "5dd9c334831769ea0c3029c08a1702b9cc0a9be3",
+      "source_url": "https://api.github.com/repos/golang/tools/commits/master",
+      "sum": "h1:HQEss0Fp4TjxGi9Iqi8u3khU/naykCiGuOePhhWVRVQ=",
+      "upstream_head_version": "v0.52.1-0.20261026193629-5dd9c3348317",
+      "at_upstream_head": true
+    },
+    {
+      "module": "lukechampine.com/uint128",
+      "version": "v1.3.0",
+      "role": "upstream-graph-only",
+      "repository": "https://github.com/lukechampine/uint128",
+      "upstream_commit": "689f0db84623e754558f4e444873a5498c17a547",
+      "source_url": "https://api.github.com/repos/lukechampine/uint128/commits?per_page=1",
+      "upstream_head_version": "v1.3.1-0.20241116023720-689f0db84623",
+      "at_upstream_head": false,
+      "retained_reason": "Not imported by application or application tests; selected transitively by upstream go.mod after go mod tidy. No unused forced requirement added."
+    },
+    {
+      "module": "modernc.org/cc/v3",
+      "version": "v3.41.0",
+      "role": "upstream-graph-only",
+      "repository": "https://gitlab.com/cznic/cc",
+      "upstream_commit": "2146f6b8ba82fd4c11b8d290beb8d22fa608a9f2",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Fcc/repository/commits?per_page=1",
+      "upstream_head_version": "v3.41.1-0.20261014104448-2146f6b8ba82",
+      "at_upstream_head": false,
+      "retained_reason": "Not imported by application or application tests; selected transitively by upstream go.mod after go mod tidy. No unused forced requirement added."
+    },
+    {
+      "module": "modernc.org/cc/v4",
+      "version": "v4.30.4",
+      "role": "upstream-graph-only",
+      "repository": "https://gitlab.com/cznic/cc",
+      "upstream_commit": "2146f6b8ba82fd4c11b8d290beb8d22fa608a9f2",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Fcc/repository/commits?per_page=1",
+      "sum": "h1:Wr6wfdZmzhvQdMToc6ka0cnSj0nkvDYZGF2l7FpCVkU=",
+      "upstream_head_version": "v4.30.4",
+      "at_upstream_head": true
+    },
+    {
+      "module": "modernc.org/ccgo/v3",
+      "version": "v3.17.0",
+      "role": "upstream-graph-only",
+      "repository": "https://gitlab.com/cznic/ccgo",
+      "upstream_commit": "2d7bc714f7521e1c42f099a9c52ac978fa2a8be0",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Fccgo/repository/commits?per_page=1",
+      "upstream_head_version": "v3.17.1-0.20261025173834-2d7bc714f752",
+      "at_upstream_head": false,
+      "retained_reason": "Not imported by application or application tests; selected transitively by upstream go.mod after go mod tidy. No unused forced requirement added."
+    },
+    {
+      "module": "modernc.org/ccgo/v4",
+      "version": "v4.38.1-0.20261025173834-2d7bc714f752",
+      "role": "upstream-graph-only",
+      "repository": "https://gitlab.com/cznic/ccgo",
+      "upstream_commit": "2d7bc714f7521e1c42f099a9c52ac978fa2a8be0",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Fccgo/repository/commits?per_page=1",
+      "sum": "h1:6oPgzyc4gEOeC/9NBYRouwrw2DWh6Ucl93cqwxSN3qQ=",
+      "upstream_head_version": "v4.38.1-0.20261025173834-2d7bc714f752",
+      "at_upstream_head": true
+    },
+    {
+      "module": "modernc.org/ccorpus2",
+      "version": "v1.6.0",
+      "role": "upstream-graph-only",
+      "repository": "https://gitlab.com/cznic/ccorpus2",
+      "upstream_commit": "9f0081d92e68a08d256fa9edd1ffff59900ed68c",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Fccorpus2/repository/commits?per_page=1",
+      "upstream_head_version": "v1.6.1-0.20260504094348-9f0081d92e68",
+      "at_upstream_head": false,
+      "retained_reason": "Not imported by application or application tests; selected transitively by upstream go.mod after go mod tidy. No unused forced requirement added."
+    },
+    {
+      "module": "modernc.org/ebnf",
+      "version": "v1.1.0",
+      "role": "upstream-graph-only",
+      "repository": "https://gitlab.com/cznic/ebnf",
+      "upstream_commit": "97b6a441e3427bba37e2755f52fefeba58a650f9",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Febnf/repository/commits?per_page=1",
+      "upstream_head_version": "v1.1.1-0.20260503164720-97b6a441e342",
+      "at_upstream_head": false,
+      "retained_reason": "Not imported by application or application tests; selected transitively by upstream go.mod after go mod tidy. No unused forced requirement added."
+    },
+    {
+      "module": "modernc.org/ebnfutil",
+      "version": "v1.1.0",
+      "role": "upstream-graph-only",
+      "repository": "https://gitlab.com/cznic/ebnfutil",
+      "upstream_commit": "c6006d1dce36f088742177722961623576079f40",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Febnfutil/repository/commits?per_page=1",
+      "upstream_head_version": "v1.1.1-0.20260503164924-c6006d1dce36",
+      "at_upstream_head": false,
+      "retained_reason": "Not imported by application or application tests; selected transitively by upstream go.mod after go mod tidy. No unused forced requirement added."
+    },
+    {
+      "module": "modernc.org/fileutil",
+      "version": "v1.4.0",
+      "role": "upstream-graph-only",
+      "repository": "https://gitlab.com/cznic/fileutil",
+      "upstream_commit": "2543588afcb295e9914df64339955f24ccc2d811",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Ffileutil/repository/commits?per_page=1",
+      "sum": "h1:j6ZzNTftVS054gi281TyLjHPp6CPHr2KCxEXjEbD6SM=",
+      "upstream_head_version": "v1.4.0",
+      "at_upstream_head": true
+    },
+    {
+      "module": "modernc.org/gc/v2",
+      "version": "v2.6.6-0.20261024164318-63208d8cfd26",
+      "role": "upstream-graph-only",
+      "repository": "https://gitlab.com/cznic/gc",
+      "upstream_commit": "63208d8cfd267878a34f5caa90acc47280e79da3",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Fgc/repository/commits?per_page=1",
+      "sum": "h1:lCCMkfunuVyqIJEugS0/el+Th0ibQBhvoHJ1OaWpfxI=",
+      "upstream_head_version": "v2.6.6-0.20261024164318-63208d8cfd26",
+      "at_upstream_head": true
+    },
+    {
+      "module": "modernc.org/gc/v3",
+      "version": "v3.2.1-0.20261024164318-63208d8cfd26",
+      "role": "upstream-graph-only",
+      "repository": "https://gitlab.com/cznic/gc",
+      "upstream_commit": "63208d8cfd267878a34f5caa90acc47280e79da3",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Fgc/repository/commits?per_page=1",
+      "sum": "h1:VAr50l/c6ywT9twasg7HxYP8CUKEoZKLKMwP2Yf0AzU=",
+      "upstream_head_version": "v3.2.1-0.20261024164318-63208d8cfd26",
+      "at_upstream_head": true
+    },
+    {
+      "module": "modernc.org/goabi0",
+      "version": "v0.2.0",
+      "role": "upstream-graph-only",
+      "repository": "https://gitlab.com/cznic/goabi0",
+      "upstream_commit": "4f6d63ad55947420032700f3e5ea7fb073291031",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Fgoabi0/repository/commits?per_page=1",
+      "sum": "h1:HvEowk7LxcPd0eq6mVOAEMai46V+i7Jrj13t4AzuNks=",
+      "upstream_head_version": "v0.2.0",
+      "at_upstream_head": true
+    },
+    {
+      "module": "modernc.org/lex",
+      "version": "v1.1.1",
+      "role": "upstream-graph-only",
+      "repository": "https://gitlab.com/cznic/lex",
+      "upstream_commit": "d66a0be4b5aeef6272674b7af51978aba4ca13c9",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Flex/repository/commits?per_page=1",
+      "upstream_head_version": "v1.1.2-0.20260503171425-d66a0be4b5ae",
+      "at_upstream_head": false,
+      "retained_reason": "Not imported by application or application tests; selected transitively by upstream go.mod after go mod tidy. No unused forced requirement added."
+    },
+    {
+      "module": "modernc.org/lexer",
+      "version": "v1.0.4",
+      "role": "upstream-graph-only",
+      "repository": "https://gitlab.com/cznic/lexer",
+      "upstream_commit": "23270fbdd485631c44a79d123c53e5e5514fb7b8",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Flexer/repository/commits?per_page=1",
+      "upstream_head_version": "v1.0.6-0.20260503171629-23270fbdd485",
+      "at_upstream_head": false,
+      "retained_reason": "Not imported by application or application tests; selected transitively by upstream go.mod after go mod tidy. No unused forced requirement added."
+    },
+    {
+      "module": "modernc.org/libc",
+      "version": "v1.79.2-0.20261026191927-bc04fe32d833",
+      "role": "linux-runtime",
+      "repository": "https://gitlab.com/cznic/libc",
+      "upstream_commit": "bc04fe32d833c2b58f5e7bb478270abfbe5f9bb5",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Flibc/repository/commits?per_page=1",
+      "sum": "h1:+WPfAMBsuJPPHe/g0KCQvGIk2PzyLBzggqkrPyZJdoE=",
+      "upstream_head_version": "v1.79.2-0.20261026191927-bc04fe32d833",
+      "at_upstream_head": true
+    },
+    {
+      "module": "modernc.org/mathutil",
+      "version": "v1.7.1",
+      "role": "linux-runtime",
+      "repository": "https://gitlab.com/cznic/mathutil",
+      "upstream_commit": "28129eec384c30a304561c3c8779e4bb29cbff12",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Fmathutil/repository/commits?per_page=1",
+      "sum": "h1:GCZVGXdaN8gTqB1Mf/usp1Y/hSqgI2vAGGP4jZMCxOU=",
+      "upstream_head_version": "v1.7.1",
+      "at_upstream_head": true
+    },
+    {
+      "module": "modernc.org/memory",
+      "version": "v1.12.1",
+      "role": "linux-runtime",
+      "repository": "https://gitlab.com/cznic/memory",
+      "upstream_commit": "bb3d99379ed7361ae4c08f11c2876aef046c2a18",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Fmemory/repository/commits?per_page=1",
+      "sum": "h1:nFMiWrpStgZczNl6XI9GnIk/rWhYIyHGUaR04pGbp9g=",
+      "upstream_head_version": "v1.12.1",
+      "at_upstream_head": true
+    },
+    {
+      "module": "modernc.org/opt",
+      "version": "v0.2.0",
+      "role": "upstream-graph-only",
+      "repository": "https://gitlab.com/cznic/opt",
+      "upstream_commit": "fa5adf5b25efb8fa0dc459c2c6085cc1bedbb58c",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Fopt/repository/commits?per_page=1",
+      "sum": "h1:tGyef5ApycA7FSEOMraay9SaTk5zmbx7Tu+cJs4QKZg=",
+      "upstream_head_version": "v0.2.0",
+      "at_upstream_head": true
+    },
+    {
+      "module": "modernc.org/scannertest",
+      "version": "v1.0.2",
+      "role": "upstream-graph-only",
+      "repository": "https://gitlab.com/cznic/scannertest",
+      "upstream_commit": "9c10c43b61df8f09e399cd16f12d976b0d05170b",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Fscannertest/repository/commits?per_page=1",
+      "upstream_head_version": "v1.0.3-0.20260503180111-9c10c43b61df",
+      "at_upstream_head": false,
+      "retained_reason": "Not imported by application or application tests; selected transitively by upstream go.mod after go mod tidy. No unused forced requirement added."
+    },
+    {
+      "module": "modernc.org/sortutil",
+      "version": "v1.2.1",
+      "role": "upstream-graph-only",
+      "repository": "https://gitlab.com/cznic/sortutil",
+      "upstream_commit": "0883b54c394ecc8eb64a7ba18f8c87354eb9bdad",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Fsortutil/repository/commits?per_page=1",
+      "sum": "h1:+xyoGf15mM3NMlPDnFqrteY07klSFxLElE2PVuWIJ7w=",
+      "upstream_head_version": "v1.2.1",
+      "at_upstream_head": true
+    },
+    {
+      "module": "modernc.org/sqlite",
+      "version": "v1.61.1-0.20261026192429-e6990422658b",
+      "role": "linux-runtime",
+      "repository": "https://gitlab.com/cznic/sqlite",
+      "upstream_commit": "e6990422658b8c9b79328fc5bbda69cc892d70ee",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Fsqlite/repository/commits?per_page=1",
+      "sum": "h1:uRoLMLV/LC8dosKhj7B5dexzz9F9x93D6EWm5ume8ls=",
+      "upstream_head_version": "v1.61.1-0.20261026192429-e6990422658b",
+      "at_upstream_head": true
+    },
+    {
+      "module": "modernc.org/strutil",
+      "version": "v1.2.1",
+      "role": "upstream-graph-only",
+      "repository": "https://gitlab.com/cznic/strutil",
+      "upstream_commit": "d8d4ed6b7ebb923d9f9d8e963f28ca6f3a59afbc",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Fstrutil/repository/commits?per_page=1",
+      "sum": "h1:UneZBkQA+DX2Rp35KcM69cSsNES9ly8mQWD71HKlOA0=",
+      "upstream_head_version": "v1.2.1",
+      "at_upstream_head": true
+    },
+    {
+      "module": "modernc.org/token",
+      "version": "v1.1.1-0.20260503180953-bd4b5c4d3224",
+      "role": "upstream-graph-only",
+      "repository": "https://gitlab.com/cznic/token",
+      "upstream_commit": "bd4b5c4d3224e8cd7c6a696657ff5762658c5ea2",
+      "source_url": "https://gitlab.com/api/v4/projects/cznic%2Ftoken/repository/commits?per_page=1",
+      "sum": "h1:cvlgGY2iimJiizd50oZfHGFk4hgZSQpzC9aLwtlZ6H4=",
+      "upstream_head_version": "v1.1.1-0.20260503180953-bd4b5c4d3224",
+      "at_upstream_head": true
+    }
+  ],
+  "compiler_tool_dependencies": {
+    "tsc": {
+      "compiler_commit": "6c49ac311e5642fa5399b46c736295a9dc4eeec9",
+      "policy": "Unmodified official tool source with its own upstream module graph; these modules are not linked into Healthbank.",
+      "modules": [
+        {
+          "module": "github.com/microsoft/TypeScript/tsc",
+          "version": "(devel)"
+        },
+        {
+          "module": "github.com/klauspost/cpuid/v2",
+          "version": "v2.2.10",
+          "sum": "h1:tBs3QSyvjDyFTq3uoc/9xFpCuOsJQFNPiAhYdw2skhE="
+        },
+        {
+          "module": "github.com/mackerelio/go-osstat",
+          "version": "v0.2.8",
+          "sum": "h1:I2duicTaCGWoM53XwAwA9OIe1inu0xnVs8/pqOWWVr4="
+        },
+        {
+          "module": "github.com/zeebo/xxh3",
+          "version": "v1.1.0",
+          "sum": "h1:s7DLGDK45Dyfg7++yxI0khrfwq9661w9EN78eP/UZVs="
+        },
+        {
+          "module": "golang.org/x/sync",
+          "version": "v0.23.0",
+          "sum": "h1:KameEIfc1IkluZyXWLn39Wd4tURc6GbCiISGiZm2bQk="
+        },
+        {
+          "module": "golang.org/x/sys",
+          "version": "v0.48.0",
+          "sum": "h1:bbX/i/6MgT9BVLM9RT1thmxL04yeTAhbEz4SyadbXoo="
+        },
+        {
+          "module": "golang.org/x/term",
+          "version": "v0.46.0",
+          "sum": "h1:3+OXuTbaKDgwk8jTi3aSLHRlmWqHEUDUtxnbFigO4YE="
+        },
+        {
+          "module": "golang.org/x/text",
+          "version": "v0.42.0",
+          "sum": "h1:JbOZXgfeCPU9gacVtYliJqOhD+zhrEqK4LfdpmlUZqI="
+        }
+      ]
+    },
+    "esbuild": {
+      "compiler_commit": "6c49ac311e5642fa5399b46c736295a9dc4eeec9",
+      "policy": "Unmodified official tool source with its own upstream module graph; these modules are not linked into Healthbank.",
+      "modules": [
+        {
+          "module": "github.com/evanw/esbuild",
+          "version": "v0.28.3-0.20260809171712-f6058f8364fe",
+          "sum": "h1:y8BE2GOZoScpPnQktlpTcsVbsv4MvzapAEBbzAB02g8="
+        },
+        {
+          "module": "golang.org/x/sys",
+          "version": "v0.0.0-20220715151400-c0bba94af5f8",
+          "sum": "h1:0A+M6Uqn+Eje4kHMK80dtF3JCXC4ykBgQG4Fe06QRhQ="
+        }
+      ]
+    },
+    "govulncheck": {
+      "compiler_commit": "6c49ac311e5642fa5399b46c736295a9dc4eeec9",
+      "policy": "Unmodified official tool source with its own upstream module graph; these modules are not linked into Healthbank.",
+      "modules": [
+        {
+          "module": "golang.org/x/vuln",
+          "version": "v1.9.0",
+          "sum": "h1:12VaqnI9kJfqwRoPptxoqsUhQtdfrSbdksT7X/KY/sc="
+        },
+        {
+          "module": "golang.org/x/mod",
+          "version": "v0.42.0",
+          "sum": "h1:ICeL3t2L30ljSPHHxDnR4fqVcBt/zR2zJAb9juavmQg="
+        },
+        {
+          "module": "golang.org/x/sync",
+          "version": "v0.24.0",
+          "sum": "h1:iqiDrGoDgyuvAKrhLQthUEzU/R378N78gXbBjxed7oA="
+        },
+        {
+          "module": "golang.org/x/telemetry",
+          "version": "v0.0.0-20261010193011-f71dc92da45e",
+          "sum": "h1:P6NGsugec4oASJ+yKMNgTndeo0h2CbixZLvQIe9h5R4="
+        },
+        {
+          "module": "golang.org/x/tools",
+          "version": "v0.52.0",
+          "sum": "h1:ryxg4U63oaUYk7uOLTF37n43f4qgtGvqV4Ioit1BaEs="
+        }
+      ]
+    }
+  },
+  "audit_limitations": [
+    "A latest source commit can report a package version below a published release tag; source identity is the immutable commit, not a version-number comparison.",
+    "Native TypeScript 7 production compilation and the JavaScript TypeScript compiler API required by typescript-eslint are separate tools. The lint API must remain within the parser-supported range.",
+    "Upstream build-tool graphs (including React Classic Yarn lockfile and the TypeScript/esbuild/govulncheck module graphs) are retained rather than patched with unsupported transitive major-version overrides.",
+    "govulncheck v1.9.0 source scan returned no findings against the database last modified 2026-10-21T00:27:29Z. Its semantic-version conversion cannot classify this development Go standard-library version; zero findings do not certify the development standard library."
+  ],
+  "go_graph_audit_completed_at": "2026-10-27T09:26:44.884774+08:00",
+  "sqlite_engine": {
+    "sqlite_source_id": "2026-10-16 14:45:20 555e07ef33f69a0957d24d8e555b702464a131d6f1607f4c3c1e4551e8e6ca76",
+    "sqlite_version": "3.54.1"
+  },
+  "frontend_dependency_audit": {
+    "file": "web/dependency-audit.json",
+    "sha256": "39661deef881525e974dc2a0e8ce12f0f831a29c7052d1c24494a196b6c3a87f",
+    "checked_at": "2026-10-27 09:34:53+08:00",
+    "package_lock_sha256": "ef7de992ab1a8df5f5f70ca9997a4338c5fcc183c6e1a2c9f7c94e050179101c",
+    "installed_instances": 145,
+    "unique_package_names": 141,
+    "browser_runtime_instances": 3,
+    "build_lint_test_instances": 142,
+    "statuses": {
+      "latest-compatible": 55,
+      "latest-published": 82,
+      "verified-upstream-source": 8
+    },
+    "unresolved_required_requirements": 0,
+    "npm_audit_vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    }
+  },
+  "frontend_direct_packages": [
+    {
+      "name": "@eslint/js",
+      "version": "10.0.1",
+      "role": "build-lint-test-only",
+      "resolved": "file:vendor/eslint-js-main.tgz",
+      "integrity": "sha512-zeR9k5pd4gxjZ0abRoIaxdc7I3nDktoXZk2qOv9gCNWx3mVwEn32VRhyLaRsDiJjTs0xq/T8mfPtyuXu7GWBcA==",
+      "registry_url": "https://registry.npmjs.org/@eslint%2Fjs",
+      "upstream_repository": "https://github.com/eslint/eslint",
+      "upstream_commit": "161558ae1391a8649a8d69a8b2c2e555b40121b9",
+      "retained_reason": "Current official source commit is pinned; registry version labels cannot order this source snapshot."
+    },
+    {
+      "name": "@types/react",
+      "version": "19.3.9999",
+      "role": "build-lint-test-only",
+      "registry_url": "https://registry.npmjs.org/@types%2Freact",
+      "upstream_repository": "https://github.com/DefinitelyTyped/DefinitelyTyped",
+      "upstream_commit": "0d5b76188fd585fe187acb6cffbe08071f2bdd16",
+      "retained_reason": "Current official source commit is pinned; registry version labels cannot order this source snapshot."
+    },
+    {
+      "name": "@types/react-dom",
+      "version": "19.3.9999",
+      "role": "build-lint-test-only",
+      "registry_url": "https://registry.npmjs.org/@types%2Freact-dom",
+      "upstream_repository": "https://github.com/DefinitelyTyped/DefinitelyTyped",
+      "upstream_commit": "0d5b76188fd585fe187acb6cffbe08071f2bdd16",
+      "retained_reason": "Current official source commit is pinned; registry version labels cannot order this source snapshot."
+    },
+    {
+      "name": "eslint",
+      "version": "10.13.0",
+      "role": "build-lint-test-only",
+      "resolved": "file:vendor/eslint-main.tgz",
+      "integrity": "sha512-o7netwXmV0x/HgE8mgfW9r1o6Rk2D589Z8MX+mQU386St3Rnjkt/MJNnBko1/y90xOF9UrlLoIpyHzoDuTlilA==",
+      "registry_url": "https://registry.npmjs.org/eslint",
+      "upstream_repository": "https://github.com/eslint/eslint",
+      "upstream_commit": "161558ae1391a8649a8d69a8b2c2e555b40121b9",
+      "retained_reason": "Current official source commit is pinned; registry version labels cannot order this source snapshot."
+    },
+    {
+      "name": "eslint-plugin-react-hooks",
+      "version": "7.1.1-canary-fd51cb10-20261026",
+      "role": "build-lint-test-only",
+      "resolved": "https://registry.npmjs.org/eslint-plugin-react-hooks/-/eslint-plugin-react-hooks-7.1.1-canary-fd51cb10-20261026.tgz",
+      "integrity": "sha512-JBLf0Teqm4kgoqP5WZ1uBGiV1S3GGNnjR9uJFh7Be3SjVg6ZETx3LpZ1dkycic8J0x9LpqrXogIzU7B89SXw9A==",
+      "registry_url": "https://registry.npmjs.org/eslint-plugin-react-hooks",
+      "upstream_repository": "https://github.com/facebook/react",
+      "upstream_commit": "fd51cb10dd154aee73e4e7948005c02968651c3d",
+      "retained_reason": "Current official source commit is pinned; registry version labels cannot order this source snapshot."
+    },
+    {
+      "name": "globals",
+      "version": "17.13.0",
+      "role": "build-lint-test-only",
+      "resolved": "https://registry.npmjs.org/globals/-/globals-17.13.0.tgz",
+      "integrity": "sha512-RwMTC61u7hrG3ZJMkZQOK4JLJrKS8QtoTii63EmWvFXHqycY9FObBJQCbsLxSO8kjKhWE5kV1GC+Vb1g3RI0Zg==",
+      "registry_url": "https://registry.npmjs.org/globals",
+      "retained_reason": "Selected version is the highest published registry version, including prereleases, at the audit snapshot."
+    },
+    {
+      "name": "react",
+      "version": "19.3.0",
+      "role": "browser-runtime",
+      "resolved": "file:vendor/react-main.tgz",
+      "integrity": "sha512-6wQuFs+VF1dfWG3cfHVt/idb5DcHJPf5vLHpktv+bXtv4a1OHXQtmwUNRWSOMtjgMTuWYI8v37/QCvmnxPnzrQ==",
+      "registry_url": "https://registry.npmjs.org/react",
+      "upstream_repository": "https://github.com/facebook/react",
+      "upstream_commit": "fd51cb10dd154aee73e4e7948005c02968651c3d",
+      "retained_reason": "Current official source commit is pinned; registry version labels cannot order this source snapshot."
+    },
+    {
+      "name": "react-dom",
+      "version": "19.3.0",
+      "role": "browser-runtime",
+      "resolved": "file:vendor/react-dom-main.tgz",
+      "integrity": "sha512-OnygMU3FZLAaEPiDuIAs+CJknlz244X79ftN+0RUgzxvWiCJpLWlB+ruVl/MQCA//FTjW8MFJqbIjStVgStmsw==",
+      "registry_url": "https://registry.npmjs.org/react-dom",
+      "upstream_repository": "https://github.com/facebook/react",
+      "upstream_commit": "fd51cb10dd154aee73e4e7948005c02968651c3d",
+      "retained_reason": "Current official source commit is pinned; registry version labels cannot order this source snapshot."
+    },
+    {
+      "name": "scheduler",
+      "version": "0.28.0",
+      "role": "browser-runtime",
+      "resolved": "file:vendor/scheduler-main.tgz",
+      "integrity": "sha512-490Z4bfyVHmO61cgHY0dYQvwJTukdXro0W5nq9+FqAo3hOMA4eddaCG0gwXQkY415qKZ3Yfvq8VDTMpFdAtEdg==",
+      "registry_url": "https://registry.npmjs.org/scheduler",
+      "upstream_repository": "https://github.com/facebook/react",
+      "upstream_commit": "fd51cb10dd154aee73e4e7948005c02968651c3d",
+      "retained_reason": "Current official source commit is pinned; registry version labels cannot order this source snapshot."
+    },
+    {
+      "name": "typescript",
+      "version": "6.0.3",
+      "role": "lint-only JavaScript compiler API; production compiler remains native TypeScript 7.1.0-dev",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-6.0.3.tgz",
+      "integrity": "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==",
+      "registry_url": "https://registry.npmjs.org/typescript",
+      "retained_reason": "A newer published version is excluded by the listed upstream dependency/peer ranges or Node.js engine requirement.",
+      "registry_git_head": "050880ce59e30b356b686bd3144efe24f875ebc8",
+      "supported_parser_range": ">=4.8.4 <6.1.0"
+    },
+    {
+      "name": "typescript-eslint",
+      "version": "8.72.2-alpha.1",
+      "role": "build-lint-test-only",
+      "resolved": "https://registry.npmjs.org/typescript-eslint/-/typescript-eslint-8.72.2-alpha.1.tgz",
+      "integrity": "sha512-E5HQyTOUcX/O5ipNWaGz/fG4dIeXikak/8sEmT3iVPjoSLGYcStdrSNftX7Ne+NEiup8dmaZiShTaGyRQ4deOg==",
+      "registry_url": "https://registry.npmjs.org/typescript-eslint",
+      "retained_reason": "Selected version is the highest published registry version, including prereleases, at the audit snapshot."
+    }
+  ],
+  "verification_tools": {
+    "axe_core": {
+      "version": "4.14.0",
+      "repository": "https://github.com/dequelabs/axe-core",
+      "url": "https://registry.npmjs.org/axe-core/-/axe-core-4.14.0.tgz",
+      "integrity": "sha512-9WTZxEjsZ7b13TH8JPmbV2z8CHbl80/2hm3XPEG4JgNdQLK81IBRXmSxHfMAOkSqQeRxT/0dwNDz2GOm3zzpcQ==",
+      "archive_sha256": "2277b0a3ef47af9b52497faa3e71598e86e0a0e5e6eb295207a5657ede4709af",
+      "role": "Local browser accessibility audit only; not shipped or loaded by production pages."
+    },
+    "mysql": {
+      "version": "26.10.0",
+      "source": "https://dev.mysql.com/get/Downloads/MySQL-26.10/mysql-26.10.0-linux-glibc2.28-x86_64-minimal.tar.xz",
+      "archive_sha256": "292e196560614eb5966e5034aaa949dbd4dd69870d67f090186023e35d0e835d",
+      "vendor_md5": "5849500707bcd9babfa55c91e5760b7b",
+      "ci_image": "docker.io/library/mysql:26.10.0@sha256:f51c9c01c16b0eb5d81bb70ab7e7fcb3b96abc6a54114be3a94e8e569cae7815",
+      "official_definition_source": "https://raw.githubusercontent.com/docker-library/official-images/master/library/mysql",
+      "role": "Disposable synthetic SQLite/MySQL migration and store integration testing; not bundled with Healthbank."
+    },
+    "libaio": {
+      "repository": "https://codeberg.org/jmoyer/libaio.git",
+      "branch": "master",
+      "commit": "b8eadc9f89e8f7ab0338eacda9f98a6caea76883",
+      "role": "Local isolated MySQL test-server shared-library dependency; not linked into Healthbank."
+    }
+  },
+  "verified_complete_at": "2026-10-27 09:34:53+08:00"
 }

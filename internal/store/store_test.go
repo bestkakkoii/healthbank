@@ -10,6 +10,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -229,17 +230,38 @@ func TestMySQLIntegration(t *testing.T) {
 	if err != nil || len(before.Entries) != 0 {
 		t.Fatal("MySQL integration test requires an empty disposable settings database")
 	}
-	snapshot := Snapshot{SchemaVersion: SchemaVersion, Entries: []Entry{
-		{SubjectKey: syntheticSubject, Document: Document{Revision: 2, Settings: json.RawMessage(`{"theme":"light"}`), UpdatedAt: "2026-01-01T00:00:00Z"}},
-	}}
+	source, _ := openTestStore(t)
+	for _, raw := range []string{`{"theme":"system"}`, `{"theme":"light","font_scale":2,"favorites":[],"overrides":{}}`} {
+		current, err := source.Get(ctx, syntheticSubject)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := source.Put(ctx, syntheticSubject, current.Revision, json.RawMessage(raw)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	snapshot, err := source.Export(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := s.Import(ctx, snapshot); err != nil {
 		t.Fatal(err)
 	}
 	currentRevision := int64(2)
 	t.Cleanup(func() { _ = s.Delete(context.Background(), syntheticSubject, currentRevision) })
 	doc, err := s.Get(ctx, syntheticSubject)
-	if err != nil || doc.Revision != 2 {
+	if err != nil || doc.Revision != 2 || doc.UpdatedAt != snapshot.Entries[0].UpdatedAt || !bytes.Equal(doc.Settings, snapshot.Entries[0].Settings) {
 		t.Fatalf("MySQL migrated document: %+v, %v", doc, err)
+	}
+	if err := s.Import(ctx, snapshot); !errors.Is(err, ErrDestinationNotEmpty) {
+		t.Fatalf("MySQL nonempty import destination must not be overwritten: %v", err)
+	}
+	if _, err := s.Put(ctx, syntheticSubject, 0, json.RawMessage(`{}`)); !errors.Is(err, ErrConflict) {
+		t.Fatalf("MySQL duplicate creation must conflict: %v", err)
+	}
+	other, err := s.Get(ctx, otherSubject)
+	if err != nil || other.Revision != 0 || string(other.Settings) != `{}` {
+		t.Fatalf("MySQL subject isolation: %+v, %v", other, err)
 	}
 	updated, err := s.Put(ctx, syntheticSubject, 2, json.RawMessage(`{"theme":"dark"}`))
 	if err != nil {
@@ -248,5 +270,53 @@ func TestMySQLIntegration(t *testing.T) {
 	currentRevision = updated.Revision
 	if _, err := s.Put(ctx, syntheticSubject, 2, json.RawMessage(`{}`)); !errors.Is(err, ErrConflict) {
 		t.Fatalf("MySQL stale write: %v", err)
+	}
+	if err := s.Delete(ctx, syntheticSubject, 2); !errors.Is(err, ErrConflict) {
+		t.Fatalf("MySQL stale delete must conflict: %v", err)
+	}
+	results := make(chan error, 2)
+	for _, theme := range []string{"light", "system"} {
+		go func(theme string) {
+			_, err := s.Put(ctx, syntheticSubject, updated.Revision, json.RawMessage(`{"theme":"`+theme+`"}`))
+			results <- err
+		}(theme)
+	}
+	success, conflicts := 0, 0
+	for range 2 {
+		switch err := <-results; {
+		case err == nil:
+			success++
+		case errors.Is(err, ErrConflict):
+			conflicts++
+		default:
+			t.Fatalf("MySQL concurrent update: %v", err)
+		}
+	}
+	currentRevision++
+	if success != 1 || conflicts != 1 {
+		t.Fatalf("MySQL concurrent writes success=%d conflicts=%d", success, conflicts)
+	}
+	if err := s.migrate(ctx); err != nil {
+		t.Fatalf("MySQL schema reapplication: %v", err)
+	}
+	migrated, err := s.Export(ctx)
+	if err != nil || len(migrated.Entries) != 1 {
+		t.Fatalf("MySQL export: %v", err)
+	}
+	var portable bytes.Buffer
+	if err := EncodeSnapshot(&portable, migrated); err != nil {
+		t.Fatal(err)
+	}
+	decoded, err := DecodeSnapshot(&portable)
+	if err != nil {
+		t.Fatal(err)
+	}
+	target, _ := openTestStore(t)
+	if err := target.Import(ctx, decoded); err != nil {
+		t.Fatal(err)
+	}
+	restored, err := target.Export(ctx)
+	if err != nil || !reflect.DeepEqual(restored.Entries, migrated.Entries) {
+		t.Fatalf("MySQL-to-SQLite migration changed settings, revision, timestamp or subject: %v", err)
 	}
 }

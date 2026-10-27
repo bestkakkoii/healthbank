@@ -31,7 +31,7 @@ func TestDiagnosticRequiresCompleteRasterDecode(t *testing.T) {
 		{"html_instead_of_image", []byte("<!doctype html><title>Unavailable</title>"), false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			result, err := inspectChallenge(tc.data)
+			result, err := nhi.InspectChallengeImage(tc.data)
 			if tc.valid {
 				if err != nil || result == nil || result.Width != 160 || result.Height != 60 || result.Format != "png" || result.Bytes != len(complete) {
 					t.Fatalf("valid image was not measured: %#v, %v", result, err)

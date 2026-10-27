@@ -8,13 +8,13 @@ Copyright © 2026 **bestkakkoii llc.** All rights reserved.
 
 [專案原始碼](https://github.com/bestkakkoii/healthbank) · [Linux 發行版本](https://github.com/bestkakkoii/healthbank/releases)
 
-**目前 v1.0.3-rc.3 為手機比較表更新預覽版，官方驗證碼、登入及完整個人資料取得尚未通過驗收。**
+**目前 v1.0.3-rc.4 為依賴升級與品質檢查預覽版。本測試環境的 CLI 已成功取得並完整解碼官方驗證碼；本人帳號登入、完整報告取得，以及你的寶塔網頁取圖／顯示流程仍尚未驗收。**
 
 ## 寶塔部署：上傳、選擇執行檔、綁定網域、啟動
 
 **主要部署目標：Debian 13（trixie）x64／x86_64。請選 `linux_amd64`，採 `GOAMD64=v1` 與純 Go 靜態編譯。**
 
-1. 一般 Intel／AMD 64 位元主機下載 `healthbank_1.0.3-rc.3_linux_amd64.tar.gz`；ARM64 主機下載 `linux_arm64`。
+1. 一般 Intel／AMD 64 位元主機下載 `healthbank_1.0.3-rc.4_linux_amd64.tar.gz`；ARM64 主機下載 `linux_arm64`。
 2. 在寶塔檔案管理中上傳並解壓縮，例如放在 `/www/wwwroot/healthbank/`。解壓後可把套件內層目錄當成專案目錄。
 3. 在寶塔 **Go 專案**新增專案，選擇解壓出的 **`healthbank` 執行檔**。無需啟動參數，預設服務位址為 **`127.0.0.1:8787`**；面板需要填埠號時填 **8787**。
 4. 綁定已指向這台主機的網域，啟動專案。由寶塔的網站／Go 專案反向代理映射至該埠號，使用該網域瀏覽。正式登入請使用寶塔管理的 **HTTPS**。
@@ -22,6 +22,14 @@ Copyright © 2026 **bestkakkoii llc.** All rights reserved.
 **不必安裝 Go、Node.js、Python、Chromium 或 MySQL，也不必在伺服器編譯前端。** 前端與預設資料表已內嵌在執行檔。第一次啟動會在執行檔旁建立 `data/`。
 
 如果面板沒有保留執行權限，在檔案權限中把 `healthbank` 設為可執行（755）。不同寶塔版本的欄位名稱可能略異；完整欄位對照與可選 Nginx 設定見 [部署說明](docs/deployment.zh-TW.md)。`deploy/nginx.healthbank.conf` 只供此 APP 的網站使用；已有面板映射時不需重複加入 `location /`。
+
+## v1.0.3-rc.4 依賴升級與品質檢查
+
+使用者功能保留手機不固定欄位、完整趨勢與原始結果。這次補強 CSV 內容處理、較大型報表的圖表座標彙整，以及驗證碼圖片的完整解碼檢查；合法圖片與損壞內容的判定使用同一條驗證路徑。這項圖片處理修正已用合成測試驗證，並另有一次官方網站 CLI 取圖與完整解碼成功紀錄；尚未提交本人帳號登入，也未驗證你的寶塔網頁圖片顯示。
+
+開發流程加入具型別資訊的 **ESLint 嚴格檢查與 `--max-warnings 0`**、React Hooks 規則、**7 個前端資料模型測試**、完整 Go／race 檢查及發行前的前端來源／產物雜湊核對。已在獨立的 **MySQL 26.10.0** 測試實例驗證 SQLite → MySQL → SQLite、設定隔離及版本衝突；預設仍使用 SQLite。
+
+依賴以 **2026-10-27（Asia/Taipei）** 核對的官方來源快照或最新相容版本固定。Go 使用 1.28 開發版、正式前端編譯使用原生 TypeScript 7.1 開發版，Node.js／npm 分別固定為 **26.12.1／12.2.1**。ESLint 的型別分析另使用上游支援的 TypeScript 6.0.3 JavaScript API。所有實際連入 Linux 程式的 Go 模組已核對至上游 HEAD；受上游 API／peer 範圍限制的間接依賴逐項列明，未強制跨越不相容主版本。完整版本、來源與限制見 [依賴說明](DEPENDENCIES.md)及 [前端逐項依賴稽核](web/dependency-audit.json)。
 
 ## v1.0.3-rc.3 手機比較表更新
 
@@ -37,7 +45,7 @@ Copyright © 2026 **bestkakkoii llc.** All rights reserved.
 
 ## 既有連線診斷功能
 
-此預覽版用於定位真實部署的 `CONNECTION_RESET`，**尚未通過官方驗證碼、登入及資料取得驗收**，不應當成已修復登入的正式版。程式仍維持相同的 HTTPS／Cookie／登入流程。
+此預覽版保留用於觀察真實部署 `CONNECTION_RESET` 的診斷功能。**本次測試環境已有 CLI 官方取圖成功紀錄，但本人帳號登入、完整報告及使用者部署的網頁流程仍尚待驗收。** 這次成功不能直接推論先前連線重設的原因已修復；程式仍使用 HTTPS／Cookie／手動驗證碼登入流程。
 
 將預覽版解壓到另一個目錄，不需停止或覆蓋既有服務，即可在該目錄執行 `./healthbank diagnose-nhi`。它使用同一個正式連接器測試登入頁與圖片，只輸出連線階段、耗時、狀態及圖片解碼是否成功；不開啟資料庫，也不要求帳密。詳細解讀見 [部署診斷](docs/deployment.zh-TW.md#網站可開啟但圖形驗證碼無法取得)。
 
@@ -49,7 +57,7 @@ Copyright © 2026 **bestkakkoii llc.** All rights reserved.
 
 每位家人分別使用自己的官方登入資料。登入成功後，同一人在手機、電腦取得相同的個人設定；不需要另建 APP 帳號。檢驗結果每次向官方取得，關閉／登出或連線到期後需重新取得。
 
-新連線會先讀取官方登入頁，再使用同一個 Cookie 工作階段取得驗證碼並提交登入。這補齊一般瀏覽器的頁面載入順序；若登入頁或圖片連線失敗，會顯示錯誤代碼，不會自動重送登入。實際官方連線仍需部署驗收，不能把這項相容性修正等同於已證明解決 HTTP 503。
+新連線會先讀取官方登入頁，再使用同一個 Cookie 工作階段取得驗證碼並提交登入。這補齊一般瀏覽器的頁面載入順序；若登入頁或圖片連線失敗，會顯示錯誤代碼，不會自動重送登入。你的部署主機及網頁顯示流程仍需實際驗收；本環境的一次 CLI 取圖成功，不能等同於已證明先前 HTTP 503 或重設錯誤的成因。
 
 登入後依官網回傳的預設期間查詢，可在「更新資料」指定其他日期或再次使用官網預設期間。報表會顯示官方實際回傳的查詢期間、官方回報筆數及本次取得筆數；完整性核對只適用於該期間。連接器會在初始分頁後取得完整查詢陣列，筆數不足時明確報錯，不把初始 50 筆當成全部資料。官網預設期間是否涵蓋所有可提供歷史，仍需登入後依實際回應確認。
 
@@ -95,7 +103,9 @@ HTML／ZIP 匯入在記憶體解析十欄明細表，不執行網頁腳本，不
 
 **另存網頁可能只有當時那一頁。** 系統會明示無法證實完整歷史，不會把缺少的分頁當成沒有檢查。匯入資料沒有官方身分驗證，因此使用獨立的暫存設定，不連結到已登入者的持久設定。
 
-官方連接器已依使用者提供的官方公開程式碼實作 CAPTCHA、登入、完整查詢、更新權杖及登出，並通過本地合成協定測試。此環境對官方登入頁及 CAPTCHA 的公開 GET 曾收到 HTTP503；**沒有使用真實帳號完成線上登入驗收**。這是本次驗證限制，不能解讀為官網對所有人停機。部署主機仍需能正常連到健保署；官網介面變更時需更新連接器。詳細協定與驗證邊界見 [NHI protocol](docs/nhi_protocol.md)。
+官方連接器已依使用者提供的官方公開程式碼實作 CAPTCHA、登入、完整查詢、更新權杖及登出，並通過本地合成協定測試。此環境對官方登入頁及 CAPTCHA 的公開 GET **曾收到 HTTP503**，該歷史結果仍保留。
+
+**2026-10-27 09:51:27（Asia/Taipei）**，本機 v1.0.3-rc.4 驗收用執行檔執行一次不帶帳密的 `diagnose-nhi`，於 **2625 ms** 內取得並完整解碼官方 **100 × 36 PNG、790 bytes**；`image_decoded: true`、退出碼 0。`login_attempted: false`，**沒有使用真實帳號完成登入或拉取個人報告**。這只證明該次、該環境的 CLI 取圖成功，不能推論官網整體狀態、先前錯誤成因或你的寶塔網頁已成功。部署主機與網頁流程仍需驗收；完整紀錄見 [驗證文件](docs/verification.zh-TW.md)，協定邊界見 [NHI protocol](docs/nhi_protocol.md)。
 
 ## 保存內容與備份
 
@@ -110,20 +120,33 @@ HTML／ZIP 匯入在記憶體解析十欄明細表，不執行網頁腳本，不
 
 更新時保留整個 `data/`，尤其 **資料庫與原本的 `identity.key` 要一起備份**。遺失金鑰會使既有帳號設定無法對應。伺服器端識別屬於假名化連結，不能宣稱完全匿名。最低限度的隔離、HTTPS、同源寫入及不記錄敏感請求，已整合進程式。
 
-預設 SQLite；以 `HEALTHBANK_DB_DRIVER=mysql` 與 `HEALTHBANK_MYSQL_DSN` 可選 MySQL。提供獨立於資料庫引擎的設定匯出／匯入，匯入必須是空目的庫且保留原金鑰。**不是把 .sqlite 檔案直接交給 MySQL。** [遷移操作](docs/deployment.zh-TW.md)包含步驟；本次沒有可用的實際 MySQL 伺服器，MySQL 整合測試明確標示為未執行。
+預設 SQLite；以 `HEALTHBANK_DB_DRIVER=mysql` 與 `HEALTHBANK_MYSQL_DSN` 可選 MySQL。提供獨立於資料庫引擎的設定匯出／匯入，匯入必須是空目的庫且保留原金鑰。**不是把 .sqlite 檔案直接交給 MySQL。** [遷移操作](docs/deployment.zh-TW.md)包含步驟。v1.0.3-rc.4 已使用獨立 MySQL 26.10.0 實例及合成設定完成雙向遷移與儲存整合測試；這不表示已驗證你的寶塔資料庫、實體 Debian 13 主機或正式環境。先前版本的未執行紀錄仍保留在 [驗證文件](docs/verification.zh-TW.md)。
 
 ## 原始碼建置
 
-一般部署直接使用 Linux Release。以下僅供開發者，需 Linux x86_64建置主機、Node.js24.22.1或相容版本、npm、curl、tar、Python3，以及下載官方來源的網路。建置工具及直接依賴固定至已核對的上游提交，詳見 [DEPENDENCIES.md](DEPENDENCIES.md)。
+一般部署直接使用 Linux Release。以下僅供開發者，需 Linux x86_64 建置主機、Git、curl、支援 xz 的 tar、Python 3，以及下載官方來源的網路；Go race 檢查另需可用的 C 編譯器。bootstrap 會準備固定版本的 Node.js 26.12.1、npm 12.2.1、Go 及編譯工具，接著須把這些工具加入 PATH。官方來源提交、套件雜湊與間接依賴的相容限制見 [DEPENDENCIES.md](DEPENDENCIES.md)。
 
 ```bash
 bash scripts/bootstrap-upstream.sh
+export PATH="$PWD/.tools/bin:$PWD/.tools/go/bin:$PATH"
+unset GOROOT
+export GOTOOLCHAIN=local GOENV=off GOWORK=off
 npm --prefix web ci
+npm --prefix web run lint
 npm --prefix web run build
-.tools/go/bin/go test ./...
+npm --prefix web test
+node scripts/build-web.mjs --verify
+.tools/go/bin/go test -count=1 ./...
+.tools/go/bin/go test -count=1 -race ./...
 .tools/go/bin/go vet ./...
-GO="$PWD/.tools/go/bin/go" bash scripts/release.sh v1.0.3-rc.3
+.tools/go/bin/go mod verify
+export SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"
+GO="$PWD/.tools/go/bin/go" bash scripts/release.sh v1.0.3-rc.4
 ```
+
+`npm --prefix web run lint` 會檢查前端、模型測試與建置腳本，要求零錯誤、零警告；`npm --prefix web test` 執行 7 個模型案例。MySQL 整合測試須另設定指向專用空白測試庫的 `HEALTHBANK_TEST_MYSQL_DSN`；未設定時屬於略過，不能宣稱 MySQL 驗證通過。CI 已提供以固定映像雜湊啟動的測試服務。
+
+前端建置會先清空產物目錄，再記錄來源、依賴與產物雜湊；`--verify` 及發行腳本會拒絕來源已變更、產物被替換或新增舊檔的情況。修改前端或依賴後應重新建置，不可手動改雜湊清單。檢查套件公告可另外執行 `npm --prefix web audit --audit-level=low` 與 `.tools/bin/govulncheck ./...`；開發版 Go 標準函式庫無法由目前掃描器完整做版本比對，限制已記於依賴說明。
 
 輸出為 `dist/releases/` 內兩種 Linux架構套件、原始碼套件與 `SHA256SUMS`。二進位採 `CGO_ENABLED=0`；伺服器不需編譯工具或外部動態 SQLite 函式庫。原始碼包不含真實報告、登入資料、資料庫、金鑰或開發快取。
 

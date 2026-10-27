@@ -4,7 +4,7 @@
 set -euo pipefail
 
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-version="${1:-${VERSION:-v1.0.3-rc.3}}"
+version="${1:-${VERSION:-v1.0.3-rc.4}}"
 if [[ ! "$version" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
   printf '%s\n' 'Version must be a semantic version such as v1.0.0 or v1.0.0-rc.1.' >&2
   exit 2
@@ -14,6 +14,7 @@ archive_version="${version#v}"
 output_dir="${RELEASE_DIR:-$repo_root/dist/releases}"
 go_command="${GO:-go}"
 python_command="${PYTHON:-python3}"
+node_command="${NODE:-$repo_root/.tools/bin/node}"
 release_root_documents=(
   LICENSE README.md README_AI.md AGENTS.md CHANGELOG.md CONTRIBUTING.md
   DEPENDENCIES.md THIRD_PARTY_NOTICES.md
@@ -23,14 +24,17 @@ release_documents=(
   docs/clinical-reference.zh-TW.md
   docs/nhi_protocol.md
   docs/verification.zh-TW.md
+  docs/quality-audit.zh-TW.md
 )
 
 command -v "$go_command" >/dev/null
 command -v "$python_command" >/dev/null
+command -v "$node_command" >/dev/null
 if [[ ! -s "$repo_root/internal/webui/dist/index.html" ]]; then
   printf '%s\n' 'Compiled frontend is missing. Build the frontend into internal/webui/dist before releasing.' >&2
   exit 1
 fi
+"$node_command" "$repo_root/scripts/build-web.mjs" --verify
 for required in go.mod go.sum deploy/nginx.healthbank.conf "${release_root_documents[@]}" "${release_documents[@]}"; do
   if [[ ! -f "$repo_root/$required" ]]; then
     printf 'Required release file is missing: %s\n' "$required" >&2

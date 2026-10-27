@@ -2,14 +2,9 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
-	"image"
-	_ "image/gif"
-	_ "image/jpeg"
-	_ "image/png"
 	"io"
 	"os"
 	"os/signal"
@@ -42,7 +37,7 @@ func diagnoseNHI(out io.Writer) error {
 		challenge, err = connector.Challenge(ctx)
 		result.Diagnostics = connector.Snapshot()
 		if err == nil {
-			result.Image, err = inspectChallenge(challenge.Image)
+			result.Image, err = nhi.InspectChallengeImage(challenge.Image)
 			clear(challenge.Image)
 			result.ImageDecoded = err == nil
 		}
@@ -78,7 +73,7 @@ type diagnosticResult struct {
 	ElapsedMS      int64              `json:"elapsed_ms"`
 	ImageDecoded   bool               `json:"image_decoded"`
 	LoginAttempted bool               `json:"login_attempted"`
-	Image          *diagnosticImage   `json:"image,omitempty"`
+	Image          *nhi.ImageInfo     `json:"image,omitempty"`
 	Error          *diagnosticFailure `json:"error,omitempty"`
 	Diagnostics    *nhi.Diagnostics   `json:"diagnostics,omitempty"`
 	Copyright      string             `json:"copyright"`
@@ -88,28 +83,4 @@ type diagnosticFailure struct {
 	Code           string `json:"code"`
 	Message        string `json:"message"`
 	UpstreamStatus int    `json:"upstream_status,omitempty"`
-}
-
-type diagnosticImage struct {
-	Format string `json:"format"`
-	Width  int    `json:"width"`
-	Height int    `json:"height"`
-	Bytes  int    `json:"bytes"`
-}
-
-func inspectChallenge(data []byte) (*diagnosticImage, error) {
-	invalid := func() (*diagnosticImage, error) {
-		return nil, &nhi.Error{Code: "CAPTCHA_INVALID_IMAGE", Message: "官方回傳圖片未通過完整解碼檢查。"}
-	}
-	configuration, format, err := image.DecodeConfig(bytes.NewReader(data))
-	if err != nil || configuration.Width <= 0 || configuration.Height <= 0 ||
-		configuration.Width > 2048 || configuration.Height > 2048 {
-		return invalid()
-	}
-	decoded, decodedFormat, err := image.Decode(bytes.NewReader(data))
-	if err != nil || decodedFormat != format || decoded.Bounds().Dx() != configuration.Width ||
-		decoded.Bounds().Dy() != configuration.Height {
-		return invalid()
-	}
-	return &diagnosticImage{Format: format, Width: configuration.Width, Height: configuration.Height, Bytes: len(data)}, nil
 }
