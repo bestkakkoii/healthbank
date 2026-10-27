@@ -1,0 +1,39 @@
+# Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
+# Temporary offline-workspace transport; delete workflow and payloads before merge.
+name: Integrate repair batch
+on:
+  push:
+    branches: [work/charts-medical-export]
+    paths: ['.repair/*.json']
+permissions:
+  contents: write
+concurrency:
+  group: repair-integration
+  cancel-in-progress: false
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a
+        with:
+          fetch-depth: 2
+      - name: Apply bounded, checksum-verified source patch
+        shell: python
+        run: |
+          import base64,gzip,hashlib,json,pathlib,subprocess,tempfile
+          changed=subprocess.check_output(['git','diff-tree','--no-commit-id','--name-only','-r','HEAD'],text=True).splitlines()
+          payloads=[p for p in changed if p.startswith('.repair/') and p.endswith('.json')]
+          if len(payloads)!=1: raise ValueError('Expected one repair batch')
+          document=json.loads(pathlib.Path(payloads[0]).read_text())
+          patch=gzip.decompress(base64.b64decode(document['patch_gzip_base64'],validate=True))
+          if len(patch)>2000000 or hashlib.sha256(patch).hexdigest()!=document['sha256']: raise ValueError('Invalid patch checksum/size')
+          with tempfile.NamedTemporaryFile() as output:
+              output.write(patch);output.flush()
+              subprocess.run(['git','apply','--check',output.name],check=True)
+              subprocess.run(['git','apply','--index',output.name],check=True)
+          subprocess.run(['git','diff','--cached','--check'],check=True)
+          subprocess.run(['git','config','user.name','github-actions[bot]'],check=True)
+          subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'],check=True)
+          subprocess.run(['git','commit','-m',document['message']],check=True)
+          subprocess.run(['git','push','origin','HEAD:work/charts-medical-export'],check=True)
