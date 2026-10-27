@@ -20,14 +20,18 @@ func (a *App) supplementary(w http.ResponseWriter, r *http.Request, s *session) 
 	var err error
 	if reference := r.URL.Query().Get("detail"); reference != "" {
 		if len(reference) != 48 {
-			a.fail(w, r, 400, "invalid_detail", "請由目前自費健檢清單開啟明細。")
+			a.fail(w, r, 400, "invalid_detail", "請由目前所選類別清單開啟明細。")
 			return
 		}
-		if r.URL.Query().Get("category") == "western" {
+		if nhi.MedicalCategory(r.URL.Query().Get("category")) {
+			report, err = s.official.FetchMedicalDetail(ctx, r.URL.Query().Get("category"), reference)
+		} else if r.URL.Query().Get("category") == "western" {
 			report, err = s.official.FetchWesternDetail(ctx, reference)
 		} else {
 			report, err = s.official.FetchSelfPaidDetail(ctx, reference)
 		}
+	} else if nhi.MedicalCategory(r.URL.Query().Get("category")) {
+		report, err = s.official.FetchMedical(ctx, r.URL.Query().Get("category"), nhi.Query{StartDate: r.URL.Query().Get("from"), EndDate: r.URL.Query().Get("to")})
 	} else {
 		report, err = s.official.FetchSupplement(ctx, r.URL.Query().Get("category"), nhi.Query{StartDate: r.URL.Query().Get("from"), EndDate: r.URL.Query().Get("to")})
 	}

@@ -22,6 +22,10 @@ type SupplementField struct {
 	Unit  string `json:"unit,omitempty"`
 }
 type SupplementEntry struct {
+	Key         string            `json:"key,omitempty"`
+	Kind        string            `json:"kind,omitempty"`
+	EndDate     string            `json:"end_date,omitempty"`
+	Medicine    *MedicineOrder    `json:"medicine,omitempty"`
 	Date        string            `json:"date"`
 	Institution string            `json:"institution"`
 	Title       string            `json:"title"`

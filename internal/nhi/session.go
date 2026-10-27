@@ -101,6 +101,7 @@ type Session struct {
 	lastDiagnostics    *Diagnostics
 	selfPaidReferences map[string]string
 	westernReferences  map[string]westernReference
+	medicalReferences  map[string]map[string]medicalReference
 }
 
 // New creates an isolated connector. It cannot target a caller-supplied URL.
@@ -357,6 +358,7 @@ func (s *Session) clearAuth() {
 	s.token, s.tokenObtainedAt = "", time.Time{}
 	s.selfPaidReferences = nil
 	s.westernReferences = nil
+	s.medicalReferences = nil
 }
 
 func (s *Session) request(ctx context.Context, method, path string, query url.Values, payload []byte, limit int64, authenticated bool) (result []byte, headers http.Header, requestErr error) {
