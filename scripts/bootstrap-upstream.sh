@@ -139,7 +139,7 @@ import hashlib,pathlib,sys
 root=pathlib.Path(sys.argv[1])/'web/vendor'
 expected={
  'react-main.tgz':'c1d9d0e081f89765454b79b8b7aa81d2d42ae98c06a96914d952975bbda8b2a5',
- 'react-dom-main.tgz':'02f22648ec195371d9772c667cda0ce211eeefeac57e746a3d4d4d151996dfcb',
+ 'react-dom-main.tgz':'efaaf57f2b0f8e39b27b1759c0d08401f29ac670ce0877b808cd17928d35319d',
  'scheduler-main.tgz':'c64e8d8cb716ae3bcef457a833127ab9ad5c55d7fbf3bb89030f368a2f81e17c',
  'eslint-main.tgz':'eb1cd508a65aaf6c0493eeaf72eefac27cffb3606d7d375d41f2e258c2311e43',
  'eslint-js-main.tgz':'8ecd352ee99b1c8291bee007f43d58356ae5057782de9635563aec2e604dcee2',

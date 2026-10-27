@@ -1,4 +1,4 @@
-/* Copyright (c) 2026 bestkakkoii llc. All rights reserved. */
+/* Copyright (c) 2026 bestkakkoii llc. */
 /* SPDX-License-Identifier: MIT */
 @layer base, components, responsive, print;
 
@@ -4213,3 +4213,30 @@
     }
   }
 }
+
+/* Scenario controls reflow without fixed columns or reduced reading size. */
+.scenario-controls, .scenario-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+  gap: 1rem;
+  margin-block: 1rem;
+}
+.scenario-fields, .scenario-result {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: .75rem;
+  overflow-wrap: anywhere;
+}
+.scenario-fields .field + .field { margin-block-start: .75rem; }
+.scenario-fields legend { padding-inline: .35rem; font-weight: 650; }
+.scenario-range { font-size: 1.15em; font-weight: 700; }
+.scenario-result p { margin-block: .5rem; }
+.scenario-result small { display: block; line-height: 1.6; }
+.scenario-birthdate { margin-block: .75rem; }
+.scenario-birthdate summary { cursor: pointer; padding-block: .75rem; }
+.scenario-birthdate input { max-inline-size: 100%; }
+.scenario-confirmation { margin-block: 1rem; align-items: start; }
+.scenario-estimate { border-block-start: 1px solid var(--border); margin-block-start: .75rem; padding-block-start: .75rem; }
+.clinical-comparison input, .clinical-comparison select { min-inline-size: 0; max-inline-size: 100%; }

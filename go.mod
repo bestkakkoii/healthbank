@@ -3,7 +3,7 @@ module github.com/bestkakkoii/healthbank
 go 1.27.0
 
 require (
-	github.com/go-sql-driver/mysql v1.10.2-0.20261027012121-aca61c8f4a21
+	github.com/go-sql-driver/mysql v1.10.2-0.20261027070611-c9e0863414a0
 	golang.org/x/net v0.61.1-0.20261022225259-05c76ee9adc5
 	modernc.org/sqlite v1.61.1-0.20261026192429-e6990422658b
 )

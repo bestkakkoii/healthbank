@@ -1,4 +1,4 @@
-// Copyright (c) 2026 bestkakkoii llc. All rights reserved.
+// Copyright (c) 2026 bestkakkoii llc.
 // SPDX-License-Identifier: MIT
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { LabRecord } from './api';

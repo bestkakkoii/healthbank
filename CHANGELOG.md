@@ -1,6 +1,16 @@
-﻿# Changelog
+# Changelog
 
 Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
+
+## Unreleased — privacy and comparison work
+
+- Opt-in device-local multi-user login fields, per-user/all-user forgetting, and safe storage diagnostics; passwords remain in the browser manager/open form only.
+- Read submitted form values so silent browser autofill is not lost; prevent stale identity/card pairing and keep credentials in the open form after a failed manual challenge.
+- Add source-bound age/sex comparison for NCKU blood-creatinine and ALP templates and opt-in adult CKD-EPI 2021 estimates. No demographic persistence, original-result mutation or whole-table regrading.
+- Strengthen API non-storage headers and generic proxy guidance; distinguish pseudonymous settings from medical observations and device-local storage.
+- Generalize executable-first deployment documentation and align first-party MIT notices.
+- Runtime inputs taken from the separately verified React/MySQL source snapshot; this is not a new full dependency-graph freshness audit.
+
 
 ## v1.0.3-rc.5 — 2026-10-27 (Asia/Taipei)
 

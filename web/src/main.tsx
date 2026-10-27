@@ -1,4 +1,4 @@
-// Copyright (c) 2026 bestkakkoii llc. All rights reserved.
+// Copyright (c) 2026 bestkakkoii llc.
 // SPDX-License-Identifier: MIT
 import { StrictMode, Component, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -23,7 +23,7 @@ class ApplicationBoundary extends Component<{ children: ReactNode }, { failed: b
           <button className="button primary" onClick={() => window.location.reload()}>
             重新開啟工作站
           </button>
-          <small>© {COPYRIGHT_YEAR} bestkakkoii llc. All rights reserved.</small>
+          <small>© {COPYRIGHT_YEAR} bestkakkoii llc.</small>
         </main>
       );
     return this.props.children;

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 bestkakkoii llc. All rights reserved.
+// Copyright (c) 2026 bestkakkoii llc.
 // SPDX-License-Identifier: MIT
 
 // Package nhi implements the card-number login and other laboratory results

@@ -106,7 +106,9 @@ func (a *App) Handler() http.Handler {
 		w.Header().Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
 		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
 		if strings.HasPrefix(r.URL.Path, "/api/") {
-			w.Header().Set("Cache-Control", "no-store")
+			w.Header().Set("Cache-Control", "no-store, private")
+			w.Header().Set("Pragma", "no-cache")
+			w.Header().Set("X-Accel-Buffering", "no")
 		}
 		a.mux.ServeHTTP(w, r)
 	})

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 bestkakkoii llc. All rights reserved.
+// Copyright (c) 2026 bestkakkoii llc.
 // SPDX-License-Identifier: MIT
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
@@ -25,6 +25,8 @@ import {
 } from './Dialogs';
 import { ComparisonTable } from './ComparisonTable';
 import { TrendChart } from './TrendChart';
+import { ClinicalComparison } from './ClinicalComparison';
+import { PrivacyNotice } from './PrivacyNotice';
 import {
   categoryLabel,
   dateLabel,
@@ -422,7 +424,7 @@ export default function App() {
     else setError(`資料已取得，但參考項目目錄無法更新。${readableError(results[1].reason)}`);
   }
 
-  async function loggedIn(next: Session) {
+  async function loggedIn(next: Session, notice = '') {
     sessionGeneration.current += 1;
     setSession(next);
     setCsrfToken(next.csrf_token);
@@ -434,6 +436,7 @@ export default function App() {
     setLoginOpen(false);
     navigate('overview');
     await fetchReports('all_history');
+    if (notice) setMessage(notice);
   }
 
   async function expireOfficialSession() {
@@ -1586,8 +1589,10 @@ export default function App() {
                   <button
                     className="button secondary"
                     onClick={() => {
-                      clearRememberedLogin();
-                      setMessage('這部裝置記住的證號與健保卡號已清除。');
+                      try {
+                        clearRememberedLogin();
+                        setMessage('這部裝置記住的證號與健保卡號已清除；密碼管理員的密碼不受影響。');
+                      } catch (failure) { setError(readableError(failure)); }
                     }}
                   >
                     <Icon name="trash" size={18} />
@@ -1731,6 +1736,9 @@ export default function App() {
             </>
           )}
 
+          {(view === 'trends' || view === 'settings') && (
+            <ClinicalComparison key={`${session.mode}:${report.fetched_at}`} records={report.records} />
+          )}
           <div className="print-only print-running-footer">
             <Copyright />
           </div>
@@ -1740,7 +1748,8 @@ export default function App() {
               <span>檢驗資料整理與長期追蹤</span>
             </div>
             <Copyright />
-            <span className="footer-note">顏色為整理提示，請結合完整病史與專業判斷。</span>
+            <span className="footer-note">顏色為整理提示，請結合完整病史與專業判斷。 · MIT License</span>
+            <PrivacyNotice />
           </footer>
         </main>
       </div>

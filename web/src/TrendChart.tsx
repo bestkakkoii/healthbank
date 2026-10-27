@@ -1,4 +1,4 @@
-// Copyright (c) 2026 bestkakkoii llc. All rights reserved.
+// Copyright (c) 2026 bestkakkoii llc.
 // SPDX-License-Identifier: MIT
 import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ItemOverride, LabRecord } from './api';

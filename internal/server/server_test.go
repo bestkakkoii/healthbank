@@ -93,8 +93,11 @@ func decodeResponse[T any](t *testing.T, recorder *httptest.ResponseRecorder, st
 	if recorder.Code != status {
 		t.Fatalf("HTTP status=%d, want=%d: %s", recorder.Code, status, recorder.Body.String())
 	}
-	if recorder.Header().Get("Cache-Control") != "no-store" {
-		t.Fatal("API response can be cached")
+	if recorder.Header().Get("Cache-Control") != "no-store, private" {
+		t.Fatal("API response must be private and non-storable")
+	}
+	if recorder.Header().Get("Pragma") != "no-cache" || recorder.Header().Get("X-Accel-Buffering") != "no" {
+		t.Fatal("API privacy headers are incomplete")
 	}
 	var result T
 	if err := json.Unmarshal(recorder.Body.Bytes(), &result); err != nil {

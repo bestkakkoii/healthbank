@@ -17,7 +17,6 @@ import {
   categoryLabel,
   dateLabel,
   LEVELS,
-  isObject,
   referenceLabel,
   referenceTemplateLabel,
   ruleCategoryLabel,
@@ -29,30 +28,19 @@ import {
 } from './model';
 import { Alert, Icon, LevelBadge, Loading, Modal } from './ui';
 
-const REMEMBER_KEY = 'bestkakkoi.healthbank.login-fields';
+import {
+  forgetAllRememberedUsers, forgetRememberedUser, maskedIdentity,
+  normalizeCard, normalizeIdentity, readRememberedLogins, writeRememberedUser,
+  type LoginStorageResult,
+} from './remembered-login';
 
-function rememberedFields(): { identity: string; card: string; remember: boolean } {
-  try {
-    const raw = localStorage.getItem(REMEMBER_KEY);
-    if (!raw) return { identity: '', card: '', remember: true };
-    const value: unknown = JSON.parse(raw);
-    if (!isObject(value)) return { identity: '', card: '', remember: false };
-    return {
-      identity: typeof value['identity'] === 'string' ? value['identity'] : '',
-      card: typeof value['card'] === 'string' ? value['card'] : '',
-      remember: true,
-    };
-  } catch {
-    return { identity: '', card: '', remember: false };
-  }
+function rememberedFields(): LoginStorageResult {
+  try { return readRememberedLogins(localStorage); }
+  catch { return { users: [], lastIdentity: '', warning: '此瀏覽器無法使用本機儲存，請手動登入。[LOGIN_STORAGE_UNAVAILABLE]' }; }
 }
-
 export function clearRememberedLogin(): void {
-  try {
-    localStorage.removeItem(REMEMBER_KEY);
-  } catch {
-    /* Private browsing may disallow storage. */
-  }
+  try { forgetAllRememberedUsers(localStorage); }
+  catch { throw new Error('無法清除本機登入欄位，請由瀏覽器網站資料設定清除。[LOGIN_STORAGE_REMOVE]'); }
 }
 
 export function LoginDialog({
@@ -60,20 +48,37 @@ export function LoginDialog({
   onLogin,
 }: {
   onClose: () => void;
-  onLogin: (session: Session) => Promise<void>;
+  onLogin: (session: Session, notice?: string) => Promise<void>;
 }) {
   const [initial] = useState(rememberedFields);
-  const [identity, setIdentity] = useState(initial.identity);
-  const [card, setCard] = useState(initial.card);
-  const [remember, setRemember] = useState(initial.remember);
+  const [users, setUsers] = useState(initial.users);
+  const [identity, setIdentity] = useState(initial.lastIdentity);
+  const [card, setCard] = useState(initial.users.find(user => user.identity === initial.lastIdentity)?.card ?? '');
+  const [remember, setRemember] = useState(initial.users.length > 0);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [captcha, setCaptcha] = useState('');
   const [challenge, setChallenge] = useState<CaptchaResponse | null>(null);
   const [captchaBusy, setCaptchaBusy] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(initial.warning);
   const captchaRequest = useRef<AbortController | null>(null);
+
+  function changeIdentity(next: string) {
+    const normalized = normalizeIdentity(next);
+    if (normalized !== normalizeIdentity(identity)) {
+      setPassword(''); setCaptcha('');
+      setCard(users.find(user => user.identity === normalized)?.card ?? '');
+    }
+    setIdentity(normalized);
+  }
+  function forgetSelected() {
+    try {
+      const remaining = forgetRememberedUser(localStorage, identity);
+      setUsers(remaining.users); setRemember(false);
+      setIdentity(''); setCard(''); setPassword(''); setCaptcha('');
+    } catch (failure) { setError(readableError(failure)); }
+  }
 
   async function loadCaptcha() {
     captchaRequest.current?.abort();
@@ -108,37 +113,52 @@ export function LoginDialog({
   async function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!challenge || busy) return;
-    const compactCard = card.replace(/\s/g, '');
-    if (!/^\d{8}(?:\d{4})?$/.test(compactCard)) {
+    // Read actual form values: password-manager autofill need not fire React's change event.
+    const form = new FormData(event.currentTarget);
+    const usernameField = form.get('username'), passwordField = form.get('password');
+    const cardField = form.get('health-card-number'), captchaField = form.get('captcha');
+    if (typeof usernameField !== 'string' || typeof passwordField !== 'string' ||
+        typeof cardField !== 'string' || typeof captchaField !== 'string') {
+      setError('登入表單欄位格式不正確，請重新開啟登入視窗。[LOGIN_FORM_INVALID]');
+      return;
+    }
+    const formIdentity = normalizeIdentity(usernameField);
+    const formPassword = passwordField;
+    if (formIdentity !== normalizeIdentity(identity)) {
+      changeIdentity(formIdentity);
+      setPassword(formPassword);
+      setError('瀏覽器已切換帳號，請核對對應健保卡號並重新填寫驗證碼。');
+      return;
+    }
+    const compactCard = normalizeCard(cardField);
+    if (compactCard === null) {
       setError('健保卡號請輸入 8 碼或完整 12 碼數字。');
       return;
     }
     const body: LoginInput = {
-      identity_number: identity.trim().toUpperCase(),
-      card_number: compactCard.length === 8 ? `0000${compactCard}` : compactCard,
-      password,
-      captcha: captcha.trim(),
+      identity_number: formIdentity,
+      card_number: compactCard,
+      password: formPassword,
+      captcha: captchaField.trim(),
       challenge_id: challenge.challenge_id,
     };
     setBusy(true);
     setError('');
     try {
       const session = await api.login(body);
-      if (remember) {
-        try {
-          localStorage.setItem(
-            REMEMBER_KEY,
-            JSON.stringify({ identity: body.identity_number, card: compactCard }),
-          );
-        } catch {
-          /* Login remains usable when browser storage is disabled. */
-        }
-      } else clearRememberedLogin();
+      let notice = '';
+      try {
+        if (remember) writeRememberedUser(localStorage, { identity: body.identity_number, card: body.card_number });
+        else forgetRememberedUser(localStorage, body.identity_number);
+      } catch (failure) {
+        notice = readableError(failure);
+        console.warn('LOGIN_STORAGE_UPDATE_FAILED');
+      }
       setPassword('');
-      await onLogin(session);
+      await onLogin(session, notice);
     } catch (error) {
       setError(readableError(error));
-      setPassword('');
+      // Keep credentials only in this open form; retry remains a manual user action.
       await loadCaptcha();
     } finally {
       setBusy(false);
@@ -169,17 +189,29 @@ export function LoginDialog({
           <Icon name="external" />
         </a>
       </div>
-      <form onSubmit={(event) => { void submit(event); }} className="form-stack">
+      <form id="healthbank-login" autoComplete="on" onSubmit={(event) => { void submit(event); }} className="form-stack">
+        {users.length > 0 && <div className="form-stack">
+          <label className="field">此裝置記住的使用者
+            <select value={users.some(user => user.identity === identity) ? identity : ''}
+              disabled={busy} onChange={event => changeIdentity(event.target.value)}>
+              <option value="">其他使用者／重新輸入</option>
+              {users.map(user => <option key={user.identity} value={user.identity}>{maskedIdentity(user.identity)}</option>)}
+            </select>
+          </label>
+          <button type="button" className="button secondary" disabled={busy || !users.some(user => user.identity === identity)}
+            onClick={forgetSelected}>忘記這位使用者</button>
+        </div>}
         <label className="field">
           身分證號／居留證號
           <input
+            id="healthbank-username"
             name="username"
             autoComplete="username"
             autoCapitalize="characters"
             autoCorrect="off"
             spellCheck={false}
             value={identity}
-            onChange={(e) => setIdentity(e.target.value.toUpperCase())}
+            onChange={(e) => changeIdentity(e.target.value)}
             maxLength={12}
             required
             placeholder="請輸入您的證號"
@@ -208,6 +240,7 @@ export function LoginDialog({
           註冊密碼
           <span className="input-with-button">
             <input
+              id="healthbank-password"
               name="password"
               type={showPassword ? 'text' : 'password'}
               autoComplete="current-password"
@@ -271,15 +304,21 @@ export function LoginDialog({
             checked={remember}
             onChange={(e) => {
               setRemember(e.target.checked);
-              if (!e.target.checked) clearRememberedLogin();
+              if (!e.target.checked) {
+                try {
+                  const remaining = forgetRememberedUser(localStorage, identity);
+                  setUsers(remaining.users);
+                } catch (failure) { setError(readableError(failure)); }
+              }
             }}
             disabled={busy}
           />
           <span>在這部裝置記住證號與健保卡號</span>
         </label>
         <p className="helper-text">
-          密碼由瀏覽器或 iOS
-          密碼管理器處理，本程式不儲存密碼。個人基準值於登入後同步；檢驗結果只保留在目前使用階段。
+          僅在私人裝置啟用記憶。密碼由瀏覽器／系統密碼管理員儲存，可能需要裝置解鎖。
+          伺服器不持久保存帳密或健康內容；設定以官方驗證後的假名化識別碼同步。
+          本機資料與密碼管理員的雲端同步依您的裝置設定；網站不自製密碼保存機制。
         </p>
         {error && <Alert tone="error">{error}</Alert>}
         <button className="button primary full-width" type="submit" disabled={busy || !challenge}>
