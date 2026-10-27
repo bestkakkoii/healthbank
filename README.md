@@ -4,7 +4,7 @@
 
 **把健康存摺逐筆列出的檢驗資料，整理成易讀、可比較、可追溯的年度表格與趨勢。**
 
-[下載與發行](https://github.com/bestkakkoii/healthbank/releases) · [部署](docs/deployment.zh-TW.md) · [資料處理](docs/privacy.zh-TW.md) · [驗證](docs/verification.zh-TW.md)
+[下載與發行](https://github.com/bestkakkoii/healthbank/releases) · [部署](docs/deployment.zh-TW.md) · [資料處理](docs/privacy.zh-TW.md) · [驗證](docs/verification.zh-TW.md) · [實機驗收](docs/acceptance.zh-TW.md)
 
 獨立 MIT 開源專案，非健保署官方服務。Go 執行檔內嵌 React 前端；SQLite 預設、MySQL 選用。
 不要求特定主機面板、額外會員帳號或日常打卡。前端不載入外部腳本、字型或廣告分析服務。
