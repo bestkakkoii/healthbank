@@ -1,0 +1,61 @@
+# Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
+# Temporary immutable build/research inputs; removed before release.
+name: Prepare verified inputs
+on:
+  push:
+    branches: ["work/privacy-comparison-20261027"]
+    paths: [".github/workflows/verified-inputs.yml"]
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a
+        with:
+          persist-credentials: false
+      - name: Download named public application modules
+        shell: python
+        run: |
+          import hashlib,json,os,pathlib,urllib.request
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'verified-inputs';out.mkdir()
+          names=['IHKE3301S03.cf95c0e1.js','IHKE3301S04.e37063e2.js','IHKE3301S05.ad7ff42e.js','IHKE3301S06.d3c17df6.js','IHKE3303S02.07d29ff4.js','IHKE3304S01.7582cdc3.js','IHKE3305S01.1508dc2e.js','IHKE3408S01.0daa885f.js','IHKE3411S01.6e442f87.js','IHKE3800download.87e94a32.js','IHKE3104download.7e722c8c.js','showXML.90ff2238.js']
+          evidence=[]
+          for name in names:
+              url='https://myhealthbank.nhi.gov.tw/IHKE3000/js/'+name;row={'url':url}
+              try:
+                  with urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'Healthbank public source review'}),timeout=20) as response:body=response.read(2097153);row['status']=response.status
+                  if len(body)>2097152 or b'webpackJsonp' not in body:raise ValueError('unexpected public source response')
+                  (out/name).write_bytes(body);row['sha256']=hashlib.sha256(body).hexdigest()
+              except Exception as exc:row['error']=str(exc)
+              evidence.append(row)
+          (out/'public-sources.json').write_text(json.dumps(evidence,indent=2))
+      - name: Build audited Go revision and its dependent build tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          revision=41cb39b794bfe81144930746ccf72440a0382adb
+          curl --fail --location --connect-timeout 20 --max-time 180 "https://codeload.github.com/golang/go/tar.gz/$revision" -o "$RUNNER_TEMP/go-source.tar.gz"
+          sha256sum "$RUNNER_TEMP/go-source.tar.gz" > "$RUNNER_TEMP/verified-inputs/go-source.sha256"
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib
+          root=pathlib.Path.cwd(); sha=hashlib.sha256((pathlib.Path(os.environ['RUNNER_TEMP'])/'go-source.tar.gz').read_bytes()).hexdigest()
+          path=root/'scripts/bootstrap-upstream.sh';path.write_text(path.read_text().replace('6c49ac311e5642fa5399b46c736295a9dc4eeec9','41cb39b794bfe81144930746ccf72440a0382adb').replace('d8cf6e974c19525714231130345acaf2085b2b840360dd68f72f2c439f2c5429',sha))
+          path=root/'dependencies.lock.json';lock=json.loads(path.read_text())
+          for source in lock['sources']:
+              if source['name']=='Go':source.update(commit='41cb39b794bfe81144930746ccf72440a0382adb',archive_sha256=sha)
+          path.write_text(json.dumps(lock,indent=2)+'\n')
+          PY
+          bash scripts/bootstrap-upstream.sh
+          .tools/go/bin/go version > "$RUNNER_TEMP/verified-inputs/go-version.txt"
+          tar -czf "$RUNNER_TEMP/verified-inputs/updated-tools.tar.gz" .tools/toolchains/go-$revision .tools/toolchains/tsc-*go-$revision .tools/toolchains/esbuild-*go-$revision .tools/toolchains/govulncheck-*go-$revision scripts/bootstrap-upstream.sh dependencies.lock.json
+          cd "$RUNNER_TEMP/verified-inputs"
+          sha256sum updated-tools.tar.gz > SHA256SUMS
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: healthbank-verified-inputs
+          path: ${{ runner.temp }}/verified-inputs/*
+          retention-days: 1
+          if-no-files-found: error
