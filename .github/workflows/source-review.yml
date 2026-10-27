@@ -1,5 +1,5 @@
 # Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
-# Temporary review-branch transport; removed before integration.
+# Temporary review-branch tooling; removed before integration.
 name: Source review snapshot
 on:
   push:
@@ -10,24 +10,59 @@ permissions:
 jobs:
   snapshot:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a
         with:
           persist-credentials: false
-      - name: Export tracked source only
+      - name: Prepare pinned tools and dependencies
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/healthbank-review"
-          git archive --format=tar HEAD | gzip -n > "$RUNNER_TEMP/healthbank-review/source.tar.gz"
-          git rev-parse HEAD > "$RUNNER_TEMP/healthbank-review/COMMIT"
-          git ls-tree -r HEAD > "$RUNNER_TEMP/healthbank-review/tree.txt"
-          cd "$RUNNER_TEMP/healthbank-review"
-          sha256sum source.tar.gz > SHA256SUMS
+          bash scripts/bootstrap-upstream.sh
+          export PATH="$GITHUB_WORKSPACE/.tools/bin:$GITHUB_WORKSPACE/.tools/go/bin:$PATH"
+          export GOENV=off GOWORK=off GOTOOLCHAIN=local
+          npm --prefix web ci
+          go mod vendor
+      - name: Audit upstream heads without changing pins
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import concurrent.futures, datetime, json, pathlib, subprocess
+          lock=json.loads(pathlib.Path('dependencies.lock.json').read_text())
+          def inspect(source):
+              run=subprocess.run(['git','ls-remote','--symref',source['repository'],'HEAD'],capture_output=True,text=True,timeout=60)
+              return {'name':source['name'],'repository':source['repository'],'pinned':source['commit'],'exit_code':run.returncode,'response':run.stdout,'error':run.stderr}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+              results=list(pool.map(inspect,lock['sources']))
+          pathlib.Path('upstream-heads.json').write_text(json.dumps({'checked_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'sources':results},indent=2))
+          PY
+      - name: Export review tools without credentials or patient data
+        shell: bash
+        run: |
+          set -euo pipefail
+          target="$RUNNER_TEMP/healthbank-review"
+          mkdir -p "$target"
+          python3 - <<'PY'
+          import os,pathlib,shutil
+          root=pathlib.Path('.tools').resolve()
+          for name in ['node','npm','npx','tsc','esbuild','govulncheck']:
+              p=root/'bin'/name
+              resolved=p.resolve()
+              p.unlink()
+              p.symlink_to(os.path.relpath(resolved,p.parent))
+          p=root/'go'
+          resolved=p.resolve()
+          p.unlink()
+          p.symlink_to(os.path.relpath(resolved,p.parent))
+          PY
+          tar -czf "$target/verification-tools.tar.gz" .tools/bin .tools/go .tools/toolchains .tools/tsc.revision .tools/esbuild.revision web/node_modules vendor upstream-heads.json
+          git rev-parse HEAD > "$target/COMMIT"
+          cd "$target"
+          sha256sum verification-tools.tar.gz > SHA256SUMS
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
-          name: healthbank-source-review
+          name: healthbank-verification-tools
           path: ${{ runner.temp }}/healthbank-review/*
           if-no-files-found: error
           retention-days: 1
