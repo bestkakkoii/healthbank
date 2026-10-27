@@ -1,0 +1,39 @@
+# Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
+# Temporary research, removed before integration. Public assets only, no credentials.
+name: Read observed medical contracts
+on:
+  push:
+    branches: [work/charts-medical-export]
+    paths: [.github/workflows/medical-contracts.yml]
+permissions:
+  contents: read
+jobs:
+  read:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Download observed public SPA modules
+        shell: python
+        run: |
+          import concurrent.futures, hashlib, json, os, pathlib, urllib.request
+          target=pathlib.Path(os.environ['RUNNER_TEMP'])/'contracts'; target.mkdir()
+          names=['IHKE3303S02.07d29ff4.js','IHKE3304S02.4ead7523.js','IHKE3305S02.ff9f2963.js','IHKE3307S01.73c5913c.js','IHKE3307S02.d141e2ab.js','IHKE3308S01.8e1f92e5.js','IHKE3308S02.daccc485.js','IHKE3309S01.f158f613.js','IHKE3309S02.deb370e8.js']
+          def read(name):
+              url='https://myhealthbank.nhi.gov.tw/IHKE3000/js/'+name
+              try:
+                  with urllib.request.urlopen(url,timeout=18) as response:
+                      body=response.read(1048577)
+                      if response.status!=200 or len(body)>1048576 or b'webpackJsonp' not in body: raise ValueError('Not an expected public JS asset')
+                      (target/name).write_bytes(body)
+                      return {'name':name,'url':url,'bytes':len(body),'sha256':hashlib.sha256(body).hexdigest()}
+              except Exception as error:
+                  return {'name':name,'url':url,'error':str(error)}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool: results=list(pool.map(read,names))
+          (target/'evidence.json').write_text(json.dumps(results,indent=2),encoding='utf-8')
+          for item in results: print(item)
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: medical-contracts
+          path: ${{ runner.temp }}/contracts/*
+          if-no-files-found: error
+          retention-days: 2
