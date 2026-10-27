@@ -68,12 +68,13 @@ export function AnalysisExport({ records }: { records: LabRecord[] }) {
 
 export function PortableReportExport({ records }: { records: LabRecord[] }) {
   const [error, setError] = useState('');
+  const [textEditorMode, setTextEditorMode] = useState(false);
   function exportReport(format: 'json' | 'xml') {
     try {
-      const content = format === 'json' ? portableReportJSON(records) : portableReportXML(records);
-      downloadText(content, `healthbank-private-report.${format}`, `application/${format}`);
+      const content = format === 'json' ? portableReportJSON(records, textEditorMode) : portableReportXML(records);
+      downloadText(content, `healthbank-private-report.${format}`, `application/${format};charset=utf-8`);
       setError('');
     } catch (failure) { setError(failure instanceof Error ? failure.message : '匯出失敗；原始資料未變更。'); }
   }
-  return <div className="button-row no-print"><button className="button secondary" type="button" disabled={records.length === 0} onClick={() => { exportReport('json'); }}>匯出可攜JSON</button><button className="button secondary" type="button" disabled={records.length === 0} onClick={() => { exportReport('xml'); }}>匯出可攜XML</button><small>僅保存至您下載的檔案，含健康資料；可由本站重新匯入，不代表官方完整歷史。</small>{error && <p role="alert">{error}</p>}</div>;
+  return <div className="button-row no-print"><button className="button secondary" type="button" disabled={records.length === 0} onClick={() => { exportReport('json'); }}>匯出JSON（UTF-8）</button><button className="button secondary" type="button" disabled={records.length === 0} onClick={() => { exportReport('xml'); }}>匯出可攜XML</button><label className="checkbox-label small"><input type="checkbox" checked={textEditorMode} onChange={event => setTextEditorMode(event.target.checked)} />JSON加UTF-8識別碼（文字檢視器亂碼時使用）</label><small>僅保存至您下載的檔案，含健康資料；可由本站重新匯入，不代表官方完整歷史。</small>{error && <p role="alert">{error}</p>}</div>;
 }

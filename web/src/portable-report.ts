@@ -9,8 +9,9 @@ export function portableRows(records: LabRecord[]) {
     unit: record.unit, reference: record.reference_text, institution: record.institution,
     visit_date: record.visit_date, source: record.source, official_flag: record.official_flag ?? '' }));
 }
-export function portableReportJSON(records: LabRecord[]): string {
-  return JSON.stringify({ schema: PORTABLE_REPORT_SCHEMA, records: portableRows(records) }, null, 2);
+export function portableReportJSON(records: LabRecord[], textEditorMode = false): string {
+  // BOM is opt-in for downloaded files only, never an API JSON response.
+  return (textEditorMode ? '\uFEFF' : '') + JSON.stringify({ schema: PORTABLE_REPORT_SCHEMA, records: portableRows(records) }, null, 2) + '\n';
 }
 function xmlEscape(value: string): string {
   for (const character of value) {

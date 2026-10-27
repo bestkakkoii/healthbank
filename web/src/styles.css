@@ -4283,3 +4283,9 @@
   .analysis-context-stamp { font-size: .85rem; margin-block: .35rem .65rem; }
 }
 @media print { .compact-disclosure { display: none; } }
+
+/* Dense-date inspection keeps original points and text within the local panel. */
+.chart-scale { min-width: 0; max-width: 100%; margin: 0; }
+.chart-scale select { max-width: 100%; }
+.chart-selection { display: flex; flex-direction: column; gap: .5rem; padding: .75rem; border: 1px solid var(--border); border-radius: .5rem; max-height: 22rem; overflow: auto; }
+.chart-selection .button { white-space: normal; overflow-wrap: anywhere; text-align: start; }

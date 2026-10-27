@@ -289,12 +289,14 @@ export function toCsv(records: LabRecord[]): string {
 }
 
 export function downloadText(text: string, filename: string, mime: string): void {
-  const url = URL.createObjectURL(new Blob([text], { type: mime }));
+  const type = /charset=/i.test(mime) ? mime : `${mime};charset=utf-8`;
+  const bytes = new TextEncoder().encode(text);
+  const url = URL.createObjectURL(new Blob([bytes], { type }));
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = filename;
   document.body.append(anchor);
   anchor.click();
   anchor.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  window.setTimeout(() => URL.revokeObjectURL(url), 60000);
 }

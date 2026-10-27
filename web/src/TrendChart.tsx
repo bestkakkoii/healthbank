@@ -3,6 +3,7 @@
 import { useAnalysis, ScenarioBadge } from './AnalysisContext';
 import { referenceForRecord } from './clinical-comparison';
 import { DifferenceSummary } from './DifferenceSummary';
+import { createDatePosition, dateTime, trendGeometry, type DateScale } from './trend-model';
 import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ItemOverride, LabRecord } from './api';
 import {
@@ -27,7 +28,7 @@ const numberLabel = (n: number, compact: boolean) => {
   // Only axis text is shortened; coordinates and the complete record retain the value.
   return compact && label.length > 6 ? n.toExponential(1).replace('e+', 'e') : label;
 };
-const day = (value: string) => Date.parse(`${value.slice(0, 10)}T00:00:00Z`);
+const day = dateTime;
 const graphemes = new Intl.Segmenter('zh-TW', { granularity: 'grapheme' });
 function textWidth(text: string, size: number): number {
   let width = 0;
@@ -74,6 +75,8 @@ export function TrendChart({
   const scenarioReference = (record: LabRecord) => analysis ? referenceForRecord(record, analysis.preferences, analysis.birthDate) : null;
   const [logarithmic, setLogarithmic] = useState(false);
   const [showReference, setShowReference] = useState(true);
+  const [dateScale, setDateScale] = useState<DateScale>('elapsed');
+  const [selection, setSelection] = useState<LabRecord[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [viewport, setViewport] = useState({ width: 920, fontSize: 16 });
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -88,6 +91,7 @@ export function TrendChart({
       ),
     [group],
   );
+  const geometry = useMemo(() => trendGeometry(group.records), [group.records]);
   const dated = sorted.filter((record) => Number.isFinite(day(record.exam_date)));
   const exact = dated.filter(isExact);
   const hasPoints = exact.length > 0;
@@ -199,14 +203,18 @@ export function TrendChart({
       copyrightSize * 0.35 +
       12,
   );
-  const x = (date: string) => margin.left + ((day(date) - minX) / (maxX - minX)) * plotWidth;
+  const dates = geometry.buckets.map(bucket => bucket.date);
+  // Shared-domain comparisons stay proportional across panels.
+  const scale = timeDomain ? 'elapsed' : dateScale;
+  const position = createDatePosition(dates, [minX, maxX], scale);
+  const x = (date: string) => margin.left + position(date) * plotWidth;
   const y = (value: number) =>
     margin.top + plotHeight - ((transform(value) - minY) / (maxY - minY)) * plotHeight;
-  const dates = [...new Set(dated.map((record) => record.exam_date))];
   const maxDateTicks = Math.max(2, Math.min(6, Math.floor(plotWidth / (dateWidth + fontSize)) + 1));
   // Thin labels only. Every observation keeps its real elapsed-time coordinate.
-  const tickDates =
-    dates.length <= maxDateTicks &&
+  const tickDates = scale === 'ordinal'
+    ? [...new Set(Array.from({ length: Math.min(maxDateTicks, dates.length) }, (_, index) => dates[Math.round(index * (dates.length - 1) / Math.max(1, Math.min(maxDateTicks, dates.length) - 1))] ?? ''))].filter(Boolean)
+    : dates.length <= maxDateTicks &&
     dates.every((date, index) => {
       const previous = dates[index - 1];
       return previous === undefined || x(date) - x(previous) >= dateWidth + fontSize;
@@ -221,30 +229,17 @@ export function TrendChart({
             ),
           ),
         ];
-  const segments: ExactRecord[][] = [];
-  let segment: ExactRecord[] = [];
-  const sameDateCounts = new Map<string, number>();
-  for (const record of dated)
-    sameDateCounts.set(record.exam_date, (sameDateCounts.get(record.exam_date) ?? 0) + 1);
-  for (const record of dated) {
-    // Same-day records have no known time order; show every point without inventing a connecting sequence.
-    if (!isExact(record) || (sameDateCounts.get(record.exam_date) ?? 0) > 1) {
-      if (segment.length) segments.push(segment);
-      segment = [];
-    } else segment.push(record);
-  }
-  if (segment.length) segments.push(segment);
   const active = exact.find((record) => record.id === activeId);
   const sharedDate = analysis?.selectedDate ?? '';
   const synchronized = exact.filter(record => record.exam_date === sharedDate);
 
-  function nearestPoint(clientX: number, clientY: number): LabRecord | null {
+  function nearestPoint(clientX: number, clientY: number): ExactRecord | null {
     const bounds = svgRef.current?.getBoundingClientRect();
     if (!bounds || !bounds.width || !bounds.height) return null;
     const pointerX = ((clientX - bounds.left) / bounds.width) * width;
     const pointerY = ((clientY - bounds.top) / bounds.height) * height;
     if (pointerY < margin.top - 14 || pointerY > margin.top + plotHeight + 14) return null;
-    let nearest: LabRecord | null = null;
+    let nearest: ExactRecord | null = null;
     let distance = Math.max(28, fontSize) ** 2;
     for (const record of exact) {
       const candidate =
@@ -255,6 +250,13 @@ export function TrendChart({
       }
     }
     return nearest;
+  }
+
+  function activatePoint(record: ExactRecord, pointer = false) {
+    const nearby = pointer ? exact.filter(candidate => Math.abs(x(candidate.exam_date) - x(record.exam_date)) <= 12 && Math.abs(y(candidate.numeric_value) - y(record.numeric_value)) <= 12) : [record];
+    analysis?.setSelectedDate(record.exam_date);
+    if (nearby.length > 1) setSelection(nearby);
+    else { setSelection([]); onDetail(record); }
   }
 
   function exportSvg() {
@@ -303,6 +305,7 @@ export function TrendChart({
           {referenceLegend}
         </div>
         <div className="chart-options">
+          {!timeDomain && <label className="field chart-scale">橫軸排列<select value={dateScale} onChange={event => { setDateScale(event.target.value === 'ordinal' ? 'ordinal' : 'elapsed'); setSelection([]); }}><option value="elapsed">實際日期距離</option><option value="ordinal">檢查日期等距（展開密集點）</option></select></label>}
           <label className="checkbox-label small">
             <input
               type="checkbox"
@@ -348,13 +351,13 @@ export function TrendChart({
               onPointerLeave={() => setActiveId(null)}
               onClick={(event) => {
                 const record = nearestPoint(event.clientX, event.clientY);
-                if (record) onDetail(record);
+                if (record) activatePoint(record, true);
               }}
             >
               <title id={titleId}>{group.name}歷年趨勢 · {scenarioCaption}</title>
               <desc id={descriptionId}>
                 {exact.length} 筆確切數值，單位 {group.unit}，日期從 {dateLabel(dated[0]?.exam_date ?? '')}{' '}
-                至 {dateLabel(dated.at(-1)?.exam_date ?? '')}。{useLog ? '縱軸使用對數刻度。' : ''}
+                至 {dateLabel(dated.at(-1)?.exam_date ?? '')}。{useLog ? '縱軸使用對數刻度。' : ''}{scale === 'ordinal' ? '橫軸日期等距，不表示實際時間間隔。' : '橫軸依實際時間間隔。'}
                 所有結果亦列於下方可操作的明細表。
               </desc>
               <rect width={width} height={height} className="chart-background" />
@@ -441,18 +444,8 @@ export function TrendChart({
                   </text>
                 </g>
               ))}
-              {segments.map(
-                (part, index) =>
-                  part.length >= 2 && (
-                    <polyline
-                      key={index}
-                      points={part
-                        .map((record) => `${x(record.exam_date)},${y(record.numeric_value)}`)
-                        .join(' ')}
-                      className="chart-line"
-                    />
-                  ),
-              )}
+              {geometry.links.map((link, index) => <line key={`link-${index}`} x1={x(link.from)} x2={x(link.to)} y1={y(link.fromValue)} y2={y(link.toValue)} className="chart-line" strokeDasharray={link.ambiguous ? '5 5' : undefined}><title>{link.ambiguous ? '同日多值／非精確紀錄：範圍邊界連線，不推定先後或中間值' : '兩次觀測值連線，不代表中間曾測量'}</title></line>)}
+              {geometry.buckets.map(bucket => bucket.low !== null && bucket.high !== null && bucket.low !== bucket.high ? <line key={`range-${bucket.date}`} x1={x(bucket.date)} x2={x(bucket.date)} y1={y(bucket.low)} y2={y(bucket.high)} className="chart-line" strokeDasharray="2 3"><title>同日 {bucket.records.length} 筆原始結果，不推測先後</title></line> : null)}
               {exact.map((record) => (
                 <g key={record.id} className={`chart-point level-${record.level ?? 0}`}>
                   <circle
@@ -477,12 +470,13 @@ export function TrendChart({
                       // Assistive technology may activate the focused SVG button
                       // without pointer coordinates; retain its exact identity.
                       event.stopPropagation();
-                      onDetail(record);
+                      const nearest = event.detail > 0 ? nearestPoint(event.clientX, event.clientY) ?? record : record;
+                      activatePoint(nearest, event.detail > 0);
                     }}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault();
-                        onDetail(record);
+                        activatePoint(record);
                       }
                     }}
                   >
@@ -517,7 +511,7 @@ export function TrendChart({
                 <span>{active.institution}</span>
               </>
             ) : (
-              <span>點選資料點查看原始報告；橫軸依實際日期間隔呈現。</span>
+              <span>點選資料點查看原始報告；{scale === 'ordinal' ? '日期等距排列（非實際時間比例）' : '依實際日期間隔排列'}。密集點可展開逐筆選擇。</span>
             )}
           </div>
         </div>
@@ -529,6 +523,7 @@ export function TrendChart({
           <Copyright />
         </div>
       )}
+      {selection.length > 0 && <div className="chart-selection" role="region" aria-label="重疊資料點明細"><div className="button-row"><strong>此位置有 {selection.length} 筆結果</strong><button type="button" className="button quiet" onClick={() => setSelection([])}>關閉選擇</button></div>{selection.map(record => <button className="button secondary" key={record.id} type="button" onClick={() => { analysis?.setSelectedDate(record.exam_date); onDetail(record); }}>{dateLabel(record.exam_date)} · {record.result} {record.unit} · {record.institution} · {record.source}</button>)}</div>}
       {unsupported > 0 && (
         <p className="chart-footnote">
           <Icon name="info" size={16} />
@@ -538,7 +533,7 @@ export function TrendChart({
       {exact.length > 0 && (
         <p className="chart-footnote">
           <Icon name="info" size={16} />
-          圖表完整呈現所選期間，點選資料點查看原始報告；密集或重疊的資料點可由下方完整紀錄逐筆查閱。陰影依各次報告的適用參考值分段呈現；同日多筆結果全部保留，不推測當日先後順序。
+          同日同值共用座標但保留全部明細；同日多值用垂直範圍與虛線邊界表示，不取平均或中位數。非精確結果仍保留於明細；實線只連接相鄰可比較日期，不補造中間量測。
         </p>
       )}
       <div className="chart-records">
