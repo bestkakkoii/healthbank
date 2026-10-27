@@ -1,0 +1,48 @@
+# Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
+# Temporary bounded repair-workspace transport; remove before merging.
+name: Recover repair inputs
+on:
+  push:
+    branches: [work/charts-medical-export]
+    paths: [.github/workflows/recovery-inputs.yml]
+permissions:
+  contents: read
+jobs:
+  inputs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a
+        with:
+          persist-credentials: false
+      - name: Export exact source
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/source"
+          git archive HEAD | gzip -n > "$RUNNER_TEMP/source/source.tar.gz"
+          git rev-parse HEAD > "$RUNNER_TEMP/source/COMMIT"
+          cd "$RUNNER_TEMP/source"
+          sha256sum source.tar.gz > SHA256SUMS
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: repair-source
+          path: ${{ runner.temp }}/source/*
+          retention-days: 2
+      - name: Build current pinned inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/bootstrap-upstream.sh
+          export PATH="$GITHUB_WORKSPACE/.tools/bin:$GITHUB_WORKSPACE/.tools/go/bin:$PATH"
+          export GOTOOLCHAIN=local GOENV=off GOWORK=off
+          npm --prefix web ci
+          go mod vendor
+          mkdir -p "$RUNNER_TEMP/inputs"
+          tar -czf "$RUNNER_TEMP/inputs/tools.tar.gz" .tools/bin .tools/go .tools/toolchains web/node_modules vendor
+          cd "$RUNNER_TEMP/inputs"
+          sha256sum tools.tar.gz > SHA256SUMS
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: repair-tools
+          path: ${{ runner.temp }}/inputs/*
+          retention-days: 2
