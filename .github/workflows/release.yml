@@ -11,7 +11,6 @@ on:
         description: "Semantic version for the downloadable build artifacts"
         type: string
         required: true
-        default: v1.0.3-rc.5
 
 permissions:
   contents: read
