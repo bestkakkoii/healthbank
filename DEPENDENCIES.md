@@ -6,7 +6,7 @@ Direct dependencies were resolved against their official upstream default branch
 
 | Component | Pinned upstream source | Build result |
 | --- | --- | --- |
-| Go | golang/go master `84831ad47e254fc9f80341f1e5b6b9d36c9422bd` | Source-built devel go1.28; application Linux builds use this compiler |
+| Go | golang/go master `6c0b2c39e3cbaaf44061959a352bd6c7214bf621` | Source-built devel go1.28; application Linux builds use this compiler |
 | React / React DOM / Scheduler | react/react main `fd51cb10dd154aee73e4e7948005c02968651c3d` | Source-built packages 19.3.0 / 19.3.0 / 0.28.0 |
 | TypeScript | microsoft/TypeScript main `49e69830214c55a8cc361aa3c4e7412d0afd02fe` | Source-built native compiler reports7.1.0-dev |
 | esbuild | evanw/esbuild main `f6058f8364fe7ab91ca57a83e02577ed74c9cae4` | Source-built compiler reports0.28.2; Go module pseudoversion records the actual commit |

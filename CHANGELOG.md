@@ -2,6 +2,12 @@
 
 Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
+## v1.0.3-rc.3 — 2026-10-27 (Asia/Taipei)
+
+- Removed frozen date columns and annual labels in compact portrait and short-landscape layouts; all columns now scroll together. Kept readable compact dates and desktop freezing.
+- Removed the reserved mobile date inset and made page-arrow distance follow the actual CSS state. Corrected the accessible scroller description.
+- Refreshed the Go master source pin to 6c0b2c39e3cbaaf44061959a352bd6c7214bf621 after official upstream verification; other directly pinned sources are unchanged.
+
 ## v1.0.3-rc.2 — 2026-10-27 (Asia/Taipei)
 
 This prerelease completes built-in settings visibility and researched warning profiles. Official CAPTCHA, authenticated login and complete live retrieval remain unverified.

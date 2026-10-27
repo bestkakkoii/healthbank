@@ -2883,14 +2883,22 @@
 @layer responsive {
   @media (max-width: 780px), (max-height: 32rem) and (max-width: 70rem) {
     .comparison-scroll {
-      /* Keep the date below one third of a narrow content area, independent of text scaling. */
-      --comparison-date-width: clamp(84px, calc(30vw - 12px), 104px);
+      /* Compact layouts give the entire viewport to scrolling items, including the date. */
+      --comparison-date-width: clamp(84px, 26vw, 96px);
+      scroll-padding: 1rem;
     }
     .comparison-screen .comparison-table .date-column {
+      position: static;
+      left: auto;
+      z-index: auto;
       width: var(--comparison-date-width);
       min-width: var(--comparison-date-width);
       max-width: var(--comparison-date-width);
       padding-inline: 4px;
+    }
+    .comparison-screen .comparison-year-title {
+      position: static;
+      left: auto;
     }
     .comparison-screen .comparison-date-label {
       font-size: max(16px, 0.75rem);

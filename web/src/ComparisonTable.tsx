@@ -120,7 +120,11 @@ function ComparisonScroller({ id, children }: { id: string; children: ReactNode 
   function movePage(direction: -1 | 1) {
     const element = scrollRef.current;
     if (!element) return;
-    const dateWidth = element.querySelector('.date-column')?.getBoundingClientRect().width ?? 0;
+    const dateColumn = element.querySelector('.date-column');
+    // Compact layouts scroll every column; only reserve space for an actual frozen column.
+    const dateWidth = dateColumn && getComputedStyle(dateColumn).position === 'sticky'
+      ? dateColumn.getBoundingClientRect().width
+      : 0;
     // Advance within the visible item area, retaining a little overlap for context.
     const step = Math.max(48, (element.clientWidth - dateWidth) * 0.85);
     moveTo(element.scrollLeft + direction * step);
@@ -190,7 +194,7 @@ function ComparisonScroller({ id, children }: { id: string; children: ReactNode 
         className="comparison-scroll"
         tabIndex={0}
         role="region"
-        aria-label="日期為列、檢驗項目為欄的比較表，可左右捲動，左側日期固定"
+        aria-label="日期為列、檢驗項目為欄的比較表，可左右捲動"
       >
         {children}
       </div>

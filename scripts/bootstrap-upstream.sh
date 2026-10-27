@@ -4,7 +4,7 @@
 set -euo pipefail
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 task_tools="$repo_root/.tools"
-go_revision="84831ad47e254fc9f80341f1e5b6b9d36c9422bd"
+go_revision="6c0b2c39e3cbaaf44061959a352bd6c7214bf621"
 ts_revision="49e69830214c55a8cc361aa3c4e7412d0afd02fe"
 esbuild_revision="f6058f8364fe7ab91ca57a83e02577ed74c9cae4"
 mkdir -p "$task_tools/downloads" "$task_tools/bin" "$task_tools/build"
@@ -33,7 +33,7 @@ if [[ ! -x "$task_tools/go/bin/go" ]]; then
   download_verified "https://go.dev/dl/go1.27.3.linux-amd64.tar.gz" "$task_tools/downloads/go-bootstrap.tar.gz" "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40"
   mkdir -p "$task_tools/bootstrap"
   tar -xzf "$task_tools/downloads/go-bootstrap.tar.gz" -C "$task_tools/bootstrap"
-  download_verified "https://codeload.github.com/golang/go/tar.gz/$go_revision" "$task_tools/downloads/go-main.tar.gz" "f6f514ffabce01ca3c5f482e58da3ee5f3816dfe1c0d8310f0a4f1c09d9745b3"
+  download_verified "https://codeload.github.com/golang/go/tar.gz/$go_revision" "$task_tools/downloads/go-main.tar.gz" "fd05b0c5be1986ab6a33a9e5cdf51441eb364c61d3c02b6d08af4316656160f1"
   tar -xzf "$task_tools/downloads/go-main.tar.gz" -C "$task_tools/build"
   printf 'devel go1.28-%s\n' "$go_revision" > "$task_tools/build/go-$go_revision/VERSION"
   (cd "$task_tools/build/go-$go_revision/src"; GOROOT_BOOTSTRAP="$task_tools/bootstrap/go" ./make.bash)

@@ -4,7 +4,7 @@
 set -euo pipefail
 
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-version="${1:-${VERSION:-v1.0.3-rc.2}}"
+version="${1:-${VERSION:-v1.0.3-rc.3}}"
 if [[ ! "$version" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
   printf '%s\n' 'Version must be a semantic version such as v1.0.0 or v1.0.0-rc.1.' >&2
   exit 2

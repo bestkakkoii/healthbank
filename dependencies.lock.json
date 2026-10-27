@@ -6,9 +6,9 @@
       "name": "Go",
       "repository": "https://github.com/golang/go",
       "branch": "master",
-      "commit": "84831ad47e254fc9f80341f1e5b6b9d36c9422bd",
+      "commit": "6c0b2c39e3cbaaf44061959a352bd6c7214bf621",
       "version": "devel go1.28",
-      "archive_sha256": "f6f514ffabce01ca3c5f482e58da3ee5f3816dfe1c0d8310f0a4f1c09d9745b3"
+      "archive_sha256": "fd05b0c5be1986ab6a33a9e5cdf51441eb364c61d3c02b6d08af4316656160f1"
     },
     {
       "name": "React / React DOM / Scheduler",
