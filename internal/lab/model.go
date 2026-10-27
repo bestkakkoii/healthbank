@@ -66,12 +66,24 @@ type Override struct {
 	Bands         []Band  `json:"bands,omitempty"`
 	Enabled       bool    `json:"enabled"`
 }
+
+// AnalysisPreferences contains explicit comparison settings, never a birth date or history.
+type AnalysisScenario struct {
+	Age *int   `json:"age"`
+	Sex string `json:"sex"`
+}
+type AnalysisPreferences struct {
+	Mode       string           `json:"mode"`
+	Primary    AnalysisScenario `json:"primary"`
+	Comparison AnalysisScenario `json:"comparison"`
+}
 type Settings struct {
-	Revision  int64               `json:"revision"`
-	Theme     string              `json:"theme"`
-	FontScale float64             `json:"font_scale"`
-	Favorites []string            `json:"favorites"`
-	Overrides map[string]Override `json:"overrides"`
+	Analysis  *AnalysisPreferences `json:"analysis,omitempty"`
+	Revision  int64                `json:"revision"`
+	Theme     string               `json:"theme"`
+	FontScale float64              `json:"font_scale"`
+	Favorites []string             `json:"favorites"`
+	Overrides map[string]Override  `json:"overrides"`
 	// Known stores definitions for encountered items only; it contains no values,
 	// dates, institution, patient identifiers, or result history.
 	Known map[string]KnownItem `json:"known_items,omitempty"`

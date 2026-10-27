@@ -45,11 +45,17 @@ func ParseImport(filename string, data []byte) ([]RawRecord, []string, error) {
 		return nil, nil, errors.New("匯入檔案不可超過 12 MiB。")
 	}
 	extension := strings.ToLower(path.Ext(filename))
+	if extension == ".json" {
+		return parsePortableJSON(data)
+	}
+	if extension == ".xml" {
+		return parsePortableXML(data)
+	}
 	if extension == ".zip" || bytes.HasPrefix(data, []byte{'P', 'K', 3, 4}) || bytes.HasPrefix(data, []byte{'P', 'K', 5, 6}) {
 		return parseArchive(data)
 	}
 	if extension != ".html" && extension != ".htm" {
-		return nil, nil, errors.New("請上傳瀏覽器另存的 HTML／HTM，或包含該網頁的 ZIP。")
+		return nil, nil, errors.New("請上傳另存HTML／ZIP，或Healthbank匯出的JSON／XML可攜報表。")
 	}
 	if len(data) > maxExpandedHTML {
 		return nil, nil, errors.New("HTML 網頁內容不可超過 6 MiB。")
