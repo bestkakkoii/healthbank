@@ -9,6 +9,11 @@ Copyright © 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 3. 執行 `./healthbank`。預設本機 `127.0.0.1:8787`；由既有服務管理器管理生命週期即可。
 4. 配置HTTPS反向代理，將該網域的請求送至Go服務。前端已內嵌，不需另外設定網站root或安裝Node、Go、Python、Chromium、SQLite服務。
 
+Linux部署包不含版本名稱的外層目錄；解壓到選定目錄後，直接得到 `healthbank`、`LICENSE`、`docs/`、`deploy/` 等內容。
+執行檔保留755權限。包內不附 `data/`、資料庫或身分金鑰，不會以空白設定覆蓋既有資料。
+解壓工具自行提供的「建立同名目錄」選項不屬於壓縮包內容，直接部署時不要勾選。
+原始碼包仍有獨立的原始碼根目錄，不是用來直接部署的執行包。
+
 主要目標為Debian 13 x86_64。其他Linux與ARM64的實測情況以[驗證紀錄](verification.zh-TW.md)為準。
 需要有效CA信任、正確時間、DNS與對外HTTPS；不限定特定面板。
 
