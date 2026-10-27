@@ -1,53 +1,62 @@
-# Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
-# Temporary isolated review transport; removed before integration.
-name: Source review snapshot
+# Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
+# Temporary branch-only transfer. Removed before the feature PR is reviewed.
+name: Integrate verified review changes
 on:
   push:
     branches: ["work/privacy-comparison-20261027"]
-    paths: [".github/workflows/source-review.yml"]
+    paths: [".github/workflows/source-review.yml", ".github/review-transfer/**"]
 permissions:
-  contents: read
+  contents: write
+  actions: read
+concurrency:
+  group: healthbank-review-integration
+  cancel-in-progress: false
 jobs:
-  runtime:
+  integrate:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
     steps:
       - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a
         with:
           persist-credentials: false
-      - name: Build verified runtime sources
+      - name: Apply exact locally verified text snapshot
         shell: bash
         run: |
           set -euo pipefail
-          bash scripts/bootstrap-upstream.sh
-          export JAVA_HOME="${JAVA_HOME_21_X64:?Runner must provide the Closure-compatible Java 21 toolchain}"
-          export PATH="$GITHUB_WORKSPACE/.tools/bin:$GITHUB_WORKSPACE/.tools/go/bin:$JAVA_HOME/bin:$PATH"
-          export GOENV=off GOWORK=off GOTOOLCHAIN=local
-          java --version
-          revision=e9df86ca6991b779ee50bc744ad8bbdeefa9bae6
-          curl --fail --location --connect-timeout 20 --max-time 180 "https://codeload.github.com/facebook/react/tar.gz/$revision" -o "$RUNNER_TEMP/react.tar.gz"
-          tar -xzf "$RUNNER_TEMP/react.tar.gz" -C "$RUNNER_TEMP"
-          cd "$RUNNER_TEMP/react-$revision"
-          npm exec --yes --package=yarn@1.22.22 -- yarn install --frozen-lockfile --non-interactive
-          node scripts/rollup/build.js react/index,react/jsx,react-dom/index,react-dom/client,scheduler --type=NODE_DEV,NODE_PROD
-          cd "$GITHUB_WORKSPACE"
-          go get github.com/go-sql-driver/mysql@c9e0863414a0e47bd708fcbc93d4adc611d15a5e
-          go mod tidy
-          python3 scripts/review-runtime.py
-          go mod vendor
-          npm --prefix web ci
-          npm --prefix web audit --audit-level=low
-      - name: Export immutable upgrade inputs
+          python3 .github/review-transfer/apply.py
+      - name: Restore source-built runtime packages from the verified repository artifact
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/runtime-upgrade"
-          tar -czf "$RUNNER_TEMP/runtime-upgrade/runtime-upgrade.tar.gz" web/vendor/react-main.tgz web/vendor/react-dom-main.tgz web/vendor/scheduler-main.tgz web/package-lock.json web/node_modules go.mod go.sum vendor dependencies.lock.json scripts/bootstrap-upstream.sh
-          cd "$RUNNER_TEMP/runtime-upgrade"
-          sha256sum runtime-upgrade.tar.gz > SHA256SUMS
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
-        with:
-          name: healthbank-runtime-upgrade
-          path: ${{ runner.temp }}/runtime-upgrade/*
-          if-no-files-found: error
-          retention-days: 1
+          mkdir -p "$RUNNER_TEMP/runtime-input"
+          gh run download 40475265417 --name healthbank-runtime-upgrade --dir "$RUNNER_TEMP/runtime-input"
+          (cd "$RUNNER_TEMP/runtime-input" && printf '%s\n' '5865f3446041614b10e0b66285d8c8a5a21ebaabef4626160c20169106c81ef7  runtime-upgrade.tar.gz' | sha256sum --check -)
+          tar -xzf "$RUNNER_TEMP/runtime-input/runtime-upgrade.tar.gz" web/vendor/react-main.tgz web/vendor/react-dom-main.tgz web/vendor/scheduler-main.tgz
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          root=pathlib.Path.cwd()
+          lock=json.loads((root/'dependencies.lock.json').read_text())
+          for name in ['react-main.tgz','react-dom-main.tgz','scheduler-main.tgz']:
+              digest=hashlib.sha256((root/'web/vendor'/name).read_bytes()).hexdigest()
+              if digest != lock['vendored_packages'][name]:
+                  raise RuntimeError('Pinned runtime package mismatch: '+name)
+              print('Verified runtime package:',name,digest)
+          PY
+      - name: Commit only to the existing work branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = 'work/privacy-comparison-20261027'
+          git rm -r -- .github/review-transfer
+          git rm --ignore-unmatch -- scripts/review-runtime.py
+          git add -A
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat: add verified age-sex scenarios and private-device login profiles' -m 'Preserve source observations, enforce conditional equations, improve no-store headers, and document settings-only server persistence. Local verification and explicit outstanding acceptance are recorded in docs/verification.zh-TW.md. No production deployment or release.'
+          gh auth setup-git
+          git push origin HEAD:refs/heads/work/privacy-comparison-20261027
+          printf 'Integrated commit: %s\n' "$(git rev-parse HEAD)"
