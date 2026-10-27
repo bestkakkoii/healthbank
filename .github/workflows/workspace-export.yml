@@ -1,0 +1,32 @@
+# Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
+# Temporary recovery of the current authorized work tree; removed before release.
+name: Export current review source
+on:
+  push:
+    branches: ["work/privacy-comparison-20261027"]
+    paths: [".github/workflows/workspace-export.yml"]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a
+        with:
+          persist-credentials: false
+      - name: Export committed source only
+        run: |
+          set -eu
+          mkdir -p "$RUNNER_TEMP/healthbank-work"
+          git archive --format=tar.gz HEAD > "$RUNNER_TEMP/healthbank-work/source.tar.gz"
+          git rev-parse HEAD > "$RUNNER_TEMP/healthbank-work/COMMIT"
+          git ls-tree -r HEAD > "$RUNNER_TEMP/healthbank-work/tree.txt"
+          cd "$RUNNER_TEMP/healthbank-work"
+          sha256sum source.tar.gz > SHA256SUMS
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: healthbank-current-review
+          path: ${{ runner.temp }}/healthbank-work/*
+          retention-days: 1
+          if-no-files-found: error
