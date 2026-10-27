@@ -5,6 +5,8 @@ name: Linux release
 on:
   push:
     tags: ["v*"]
+    branches: [main]
+    paths: [RELEASE_CANDIDATE]
   workflow_dispatch:
     inputs:
       version:
@@ -51,6 +53,17 @@ jobs:
         uses: actions/checkout@f548e57e544e1ff5a4c46bf1e1b8685f8e4a348a # main, verified 2026-10-27
         with:
           persist-credentials: false
+      - name: Resolve explicit main-branch release candidate
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(cat RELEASE_CANDIDATE)"
+          if [[ ! "$version" =~ ^v[0-9]+\\.[0-9]+\\.[0-9]+-rc\\.[0-9]+$ ]]; then
+            echo "RELEASE_CANDIDATE must be an explicit SemVer prerelease" >&2
+            exit 2
+          fi
+          echo "RELEASE_VERSION=$version" >> "$GITHUB_ENV"
       - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # main, verified 2026-10-27
         with:
@@ -131,3 +144,31 @@ jobs:
           fi
           gh release create "$RELEASE_VERSION" dist/releases/*.tar.gz dist/releases/SHA256SUMS \
             --verify-tag "${release_flags[@]}" --title "Healthbank $RELEASE_VERSION" --generate-notes
+
+      - name: Publish candidate only after all release gates pass
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_VERSION" >/dev/null 2>&1; then
+            echo "Release already exists: $RELEASE_VERSION; refusing to replace published assets" >&2
+            exit 1
+          fi
+          notes="$RUNNER_TEMP/release-notes.md"
+          cat >"$notes" <<'NOTES'
+          ## Healthbank 預覽版
+
+          - 新增可即時切換的年齡／性別情境，並延伸至比較表、趨勢與列印／匯出。
+          - 新增來源限定的參考區間、條件式 eGFR、non-HDL、時間差異分析，以及使用者明確啟用的裝置端品項紀錄。
+          - 改善裝置端登入欄位記憶、多人切換及隱私邊界；伺服器僅保留假名化設定索引與白名單設定。
+          - 增加受限制的補充資料查詢與 Healthbank 自有 JSON/XML 格式匯入；不宣稱支援所有官方匯出格式。
+          - Linux amd64、arm64 套件解壓直接取得 healthbank 執行檔，沒有額外的版本名稱頂層資料夾。
+
+          **驗證界限：** 官方登入後資料完整性、新增官方資料來源、實體 iPhone／Safari、實際站台 CDN／反向代理與個資法遵部署環境仍須各營運者實測。軟體並非健保署官方服務，也不構成醫療診斷。
+          NOTES
+          gh release create "$RELEASE_VERSION" dist/releases/*.tar.gz dist/releases/SHA256SUMS \
+            --target "$GITHUB_SHA" --title "Healthbank $RELEASE_VERSION" \
+            --prerelease --latest=false --notes-file "$notes"
