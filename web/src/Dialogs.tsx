@@ -402,7 +402,7 @@ export function ImportDialog({
             {file ? '重新選擇檔案' : '選擇檔案'}
             <input
               type="file"
-              accept=".html,.htm,.zip,text/html,application/zip"
+              accept=".html,.htm,.zip,.json,.xml,text/html,application/zip"
               onChange={(e) => acceptFile(e.target.files?.[0])}
               disabled={busy}
             />

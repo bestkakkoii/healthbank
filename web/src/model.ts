@@ -233,7 +233,8 @@ export function isExact(record: LabRecord): record is ExactRecord {
     record.numeric_value !== null &&
     Number.isFinite(record.numeric_value) &&
     /^[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?$/i.test(record.result.trim()) &&
-    !['range', 'inequality', 'categorical', 'missing', 'text'].includes(record.value_kind)
+    record.value_kind === 'numeric' &&
+    Number(record.result.trim()) === record.numeric_value
   );
 }
 
