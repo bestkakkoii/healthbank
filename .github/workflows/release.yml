@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
-      contents: write # Only the final tag-triggered step creates a draft release.
+      contents: write # Publishing candidate releases requires write access; checkout credentials are not persisted.
     env:
       CI: "true"
       GOTOOLCHAIN: local
@@ -59,7 +59,7 @@ jobs:
         run: |
           set -euo pipefail
           version="$(cat RELEASE_CANDIDATE)"
-          if [[ ! "$version" =~ ^v[0-9]+\\.[0-9]+\\.[0-9]+-rc\\.[0-9]+$ ]]; then
+          if [[ ! "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$ ]]; then
             echo "RELEASE_CANDIDATE must be an explicit SemVer prerelease" >&2
             exit 2
           fi
