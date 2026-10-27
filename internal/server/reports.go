@@ -99,13 +99,13 @@ func (a *App) currentResponse(s *session) reportResponse {
 	warnings := append([]string{}, s.warnings...)
 	highTG := map[string]bool{}
 	for _, r := range records {
-		if r.ItemID == "serum_triglycerides" && r.ExamDate != "" && r.Institution != "" && lab.DefinitelyAbove(r.Result, "400") {
+		if r.ItemID == "serum_triglycerides" && r.ExamDate != "" && r.Institution != "" && r.Unit == "mg/dL" && lab.DefinitelyAtLeast(r.Result, "400") {
 			highTG[r.ExamDate+"\x00"+r.Institution] = true
 		}
 	}
 	for _, r := range records {
 		if r.ItemID == "serum_ldl_cholesterol" && highTG[r.ExamDate+"\x00"+r.Institution] {
-			warnings = append(warnings, "同日三酸甘油脂超過400 mg/dL：請核對LDL是否為直接量測；常見Friedewald計算法不適用於此濃度。")
+			warnings = append(warnings, "同日同院有TG≥400 mg/dL：須核對是否同次採檢及LDL方法；Friedewald不適用，直接量測亦須核對脂血干擾。保留原院結果，不自動判成失真或正常；可對照同次non-HDL／已量測apoB。")
 			break
 		}
 	}

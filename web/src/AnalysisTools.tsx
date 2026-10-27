@@ -4,7 +4,7 @@ import { useState } from 'react';
 import type { LabRecord, Settings } from './api';
 import { useAnalysis } from './AnalysisContext';
 import { dateLabel, downloadText, finiteExtent, type MeasurementGroup } from './model';
-import { nonHdlCholesterol } from './analysis-summary';
+import { assessLipids } from './lipid-analysis';
 import { activeScenario, intervalLabel, referenceForRecord, recordScenarioStatus } from './clinical-comparison';
 import { TrendChart } from './TrendChart';
 import { Copyright } from './ui';
@@ -31,17 +31,24 @@ export function MultiIndicator({ groups, settings, onDetail }: {
 }
 export function LipidCalculation({ records }: { records: LabRecord[] }) {
   const [totalId, setTotalId] = useState(''), [hdlId, setHdlId] = useState(''), [confirmed, setConfirmed] = useState(false);
+  const [tgId, setTgId] = useState(''), [estimate, setEstimate] = useState(false);
+  const triglycerides = records.filter(record => record.order_code === '09004C');
   const totals = records.filter(record => record.order_code === '09001C');
   const hdls = records.filter(record => record.order_code === '09043C');
   const total = totals.find(record => record.id === totalId), hdl = hdls.find(record => record.id === hdlId);
-  const result = nonHdlCholesterol(total, hdl, confirmed);
+  const tg = triglycerides.find(record => record.id === tgId);
+  const result = assessLipids(total, hdl, tg, confirmed, estimate);
   const options = (rows: LabRecord[]) => rows.map(record => <option key={record.id} value={record.id}>{dateLabel(record.exam_date)} · {record.result} {record.unit} · {record.institution} · {record.id.slice(-6)}</option>);
-  return <details className="panel analysis-tools"><summary>non-HDL 輔助計算</summary><div className="scenario-grid">
+  return <details className="panel analysis-tools"><summary>血脂輔助分析（含高TG適用性）</summary><div className="scenario-grid">
     <label className="field">總膽固醇<select value={totalId} onChange={event => { setTotalId(event.target.value); setConfirmed(false); }}><option value="">選擇原始結果</option>{options(totals)}</select></label>
     <label className="field">HDL<select value={hdlId} onChange={event => { setHdlId(event.target.value); setConfirmed(false); }}><option value="">選擇原始結果</option>{options(hdls)}</select></label>
-  </div><label className="checkbox-label"><input type="checkbox" checked={confirmed} onChange={event => setConfirmed(event.target.checked)} />已核對為同次採檢</label>
-    <p role="status">{result.value === null ? '尚未計算' : `non-HDL-C：${result.value} ${total?.unit ?? ''}`}。{result.reason}</p>
-    <a href="https://eas-society.org/content/quantifying-atherogenic-lipoproteins-for-lipid-lowering-strategies-consensus-based-recommendations-from-eas-and-eflm/" target="_blank" rel="noreferrer">EAS／EFLM 依據</a>
+    <label className="field">TG（選填，用於核對LDL公式）<select value={tgId} onChange={event => { setTgId(event.target.value); setConfirmed(false); }}><option value="">不選TG，僅計算non-HDL</option>{options(triglycerides)}</select></label>
+  </div><label className="checkbox-label"><input type="checkbox" checked={confirmed} onChange={event => setConfirmed(event.target.checked)} />已核對所選項目為同次採檢</label>
+    <label className="checkbox-label"><input type="checkbox" checked={estimate} onChange={event => setEstimate(event.target.checked)} />另顯示Sampson/NIH研究輔助估算（不超出TG≤800 mg/dL）</label>
+    <p role="status">{result.nonHdl === null ? '尚未計算' : `non-HDL-C：${result.nonHdl} ${total?.unit ?? ''}`}。{result.message}</p>
+    {result.sampson !== null && <p>系統估算LDL-C：{result.sampson.toFixed(1)} mg/dL · Sampson/NIH 2020（非直接量測）</p>}
+    <p className="helper-text">原院LDL、TG及其他結果不會被此計算覆寫。非HDL亦不取代TG相關風險；不由數值診斷遺傳疾病。</p>
+    <a href="https://pubmed.ncbi.nlm.nih.gov/32101259/" target="_blank" rel="noreferrer">Sampson原始研究與適用範圍</a> · <a href="https://eas-society.org/content/quantifying-atherogenic-lipoproteins-for-lipid-lowering-strategies-consensus-based-recommendations-from-eas-and-eflm/" target="_blank" rel="noreferrer">EAS／EFLM 依據</a>
   </details>;
 }
 export function AnalysisExport({ records }: { records: LabRecord[] }) {
