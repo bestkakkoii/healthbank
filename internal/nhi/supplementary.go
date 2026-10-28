@@ -161,6 +161,12 @@ func (s *Session) supplementRequest(ctx context.Context, method, path string, pa
 		return nil, err
 	}
 	defer clear(body)
+	// A top-level null is not the observed list contract. Optional nested
+	// sections may be null, but an entire response must not silently erase a
+	// previously displayed list as though the official service returned [].
+	if bytes.Equal(bytes.TrimSpace(body), []byte("null")) {
+		return nil, s.annotateResponseError(changedError())
+	}
 	rows, err := supplementRows(body, root)
 	if err != nil {
 		s.invalidateOnAuthError(err)

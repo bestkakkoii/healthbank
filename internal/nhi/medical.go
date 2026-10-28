@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -32,7 +33,7 @@ type MedicineOrder struct {
 	Days     string `json:"days"`
 }
 
-var medicationFields = []fieldSpec{{"order_code", "藥品代碼", ""}, {"drug_name", "藥品名稱（原文）", ""}, {"order_qty", "藥品用量（原文，單位未確認）", ""}, {"order_drug_day", "給藥日數", "日"}}
+var medicationFields = []fieldSpec{{"order_code", "藥品代碼", ""}, {"drug_name", "藥品名稱（原文）", ""}, {"act", "藥品藥理分類（原文）", ""}, {"order_qty", "藥品用量（原文，單位未確認）", ""}, {"order_drug_day", "給藥日數", "日"}}
 var orderFields = []fieldSpec{{"order_code", "醫令代碼", ""}, {"cure_CNAME", "醫令名稱", ""}, {"cure_ENAME", "醫令英文名稱", ""}, {"order_qty", "醫囑總量（原文）", ""}}
 var medicalSpecs = map[string]medicalSpec{
 	"medicine": {"/api/ihke3000/ihke3306s01/page_load", "sp_IHKE3306S01_data", "/api/ihke3000/ihke3306s01/search", "/api/ihke3000/IHKE3306S02/page_load", "ihke3306S02_main_data", "用藥紀錄", []medicalSection{{"sp_IHKE3306S03_data_list", "medicine", "藥品醫囑", medicationFields}}},
@@ -48,9 +49,12 @@ var medicalSpecs = map[string]medicalSpec{
 func MedicalCategory(category string) bool { _, ok := medicalSpecs[category]; return ok }
 
 var medicalHeaderFields = []fieldSpec{
+	{"main_tit", "官方明細標題（原文）", ""},
 	{"icd9cm_CODE_CNAME", "疾病分類（非診斷確認）", ""}, {"op_CODE_CNAME", "手術／處置名稱（原文）", ""},
-	{"ori_TYPE_NAME", "資料來源（原文）", ""}, {"in_DATE", "入院日期（原文）", ""}, {"out_DATE", "出院日期（原文）", ""},
-	{"func_DATE", "就醫／用藥起日（依所選來源）", ""}, {"cure_E_DATE", "來源另列就醫日期（非給藥迄日）", ""},
+	{"ori_type_cname", "資料來源類型（原文）", ""}, {"ori_TYPE_NAME", "就醫／調劑類別（原文）", ""},
+	{"in_DATE", "入院日期（原文）", ""}, {"out_DATE", "出院日期（原文）", ""},
+	{"func_DATE", "就醫／調劑日期（原文，依來源類別）", ""}, {"cure_E_DATE", "來源另列就醫日期（非給藥迄日）", ""},
+	{"appl_S_DATE", "申報起日（原文，非入院日期）", ""}, {"appl_E_DATE", "申報迄日（原文，非出院日期）", ""},
 }
 
 // The key is only for linking rows already returned in this transient session.
@@ -68,9 +72,6 @@ func (s *Session) FetchMedical(ctx context.Context, category string, query Query
 	if !ok {
 		return report, failure("INVALID_INPUT", "不支援此醫療資料類別。")
 	}
-	if err := s.supplementReady(ctx); err != nil {
-		return report, err
-	}
 	var params url.Values
 	if spec.searchPath != "" {
 		resolved, _, err := resolveQuery(query, time.Now())
@@ -85,6 +86,9 @@ func (s *Session) FetchMedical(ctx context.Context, category string, query Query
 		report.Coverage = "已明確送出所選期間並讀取全部搜尋回應；無同期間獨立總數，不宣稱完整終身歷史。明細需另行取得。"
 	} else {
 		report.Coverage = "官方慢連箋清單未提供日期搜尋；僅呈現官方回傳範圍，不冒充全部歷史。明細需另行取得。"
+	}
+	if err := s.supplementReady(ctx); err != nil {
+		return report, err
 	}
 	rows, err := s.supplementRequest(ctx, http.MethodGet, spec.listPath, params, nil, spec.listRoot)
 	if err != nil {
@@ -106,7 +110,11 @@ func (s *Session) FetchMedical(ctx context.Context, category string, query Query
 		if e != nil {
 			return report, e
 		}
-		date, e := rowText(row, "func_DATE", "in_DATE")
+		dateField := "func_DATE"
+		if category == "hospital" {
+			dateField = "in_DATE"
+		}
+		date, e := rowText(row, dateField)
 		if e != nil {
 			return report, e
 		}
@@ -177,7 +185,23 @@ func (s *Session) FetchMedicalDetail(ctx context.Context, category, reference st
 		if e != nil {
 			return report, e
 		}
-		report.Entries = append(report.Entries, SupplementEntry{Key: medicalKey(ref.sourceType, ref.rowID, "header", rowIndex), Date: ref.date, EndDate: ref.endDate, Institution: ref.institution, Title: spec.title + "明細", Source: "官方" + spec.title, Kind: "encounter", Fields: fields})
+		source := "官方" + spec.title
+		// The public medicine/chronic detail view calls func_DATE the dispensing
+		// date only when type_name_isr is true. A missing or unrecognized flag
+		// does not establish dispensing, actual use, or the treatment start date.
+		var dispensed bool
+		if (category == "medicine" || category == "chronic") && json.Unmarshal(row["type_name_isr"], &dispensed) == nil && dispensed {
+			source += "／調劑"
+			for index := range fields {
+				if fields[index].Name == "就醫／調劑日期（原文，依來源類別）" {
+					fields[index].Name = "調劑日期（原文）"
+				}
+			}
+		}
+		if len(report.Entries) >= MaxReportRecords {
+			return report, failure("RESPONSE_TOO_LARGE", "明細數量過多，未回傳不完整資料。")
+		}
+		report.Entries = append(report.Entries, SupplementEntry{Key: medicalKey(ref.sourceType, ref.rowID, "header", rowIndex), Date: ref.date, EndDate: ref.endDate, Institution: ref.institution, Title: spec.title + "明細", Source: source, Kind: "encounter", Fields: fields})
 		for _, section := range spec.sections {
 			raw, exists := row[strings.ToLower(section.key)]
 			if !exists {
@@ -195,7 +219,7 @@ func (s *Session) FetchMedicalDetail(ctx context.Context, category, reference st
 				if len(fields) == 0 {
 					return report, changedError()
 				}
-				entry := SupplementEntry{Key: medicalKey(ref.sourceType, ref.rowID, section.key, index), Date: ref.date, Institution: ref.institution, Title: section.title, Source: "官方" + spec.title, Kind: section.kind, Fields: fields}
+				entry := SupplementEntry{Key: medicalKey(ref.sourceType, ref.rowID, section.key, index), Date: ref.date, Institution: ref.institution, Title: section.title, Source: source, Kind: section.kind, Fields: fields}
 				if category == "procedure" || category == "hospital" {
 					entry.Date, e = rowText(item, "exe_S_DATE")
 					if e != nil {
