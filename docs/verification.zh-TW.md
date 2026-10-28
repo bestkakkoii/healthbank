@@ -5,9 +5,9 @@
 本文件按批次記錄實際執行的驗證；舊版結果不是新變更的驗收證據。部署目標與支援範圍見 README，
 工具及依賴來源集中在 `DEPENDENCIES.md`、`dependencies.lock.json`。各批次明列環境、命令、略過與阻礙。
 
-**最新交付狀態：** [v1.0.3-rc.6 已正式發布](https://github.com/bestkakkoii/healthbank/releases/tag/v1.0.3-rc.6)。
-[主線 CI](https://github.com/bestkakkoii/healthbank/actions/runs/40530418660) 與
-[發行流程](https://github.com/bestkakkoii/healthbank/actions/runs/40530418720) 均已成功。
+**發行與驗證狀態：** 每版是否真正公開，請核對 [Releases](https://github.com/bestkakkoii/healthbank/releases)；
+各版本的完整編譯、MySQL、競態與發行結果，請核對對應提交的 [Actions](https://github.com/bestkakkoii/healthbank/actions)。
+rc.6 的 [CI](https://github.com/bestkakkoii/healthbank/actions/runs/40530418660) 與 [Release](https://github.com/bestkakkoii/healthbank/actions/runs/40530418720) 均成功；這不等於 rc.7 已通過或已發布。
 真正無法用合成資料取代的外部驗收詳見 [交付驗收清單](acceptance.zh-TW.md)；未連入使用者主機，不代表正式站點已更新。
 
 
