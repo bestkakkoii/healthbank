@@ -5,6 +5,7 @@ import type { LabRecord, Settings } from './api';
 import { useAnalysis } from './AnalysisContext';
 import { dateLabel, downloadText, finiteExtent, type MeasurementGroup } from './model';
 import { assessLipids } from './lipid-analysis';
+import { lipidSourceMatches } from './analysis-summary';
 import { activeScenario, intervalLabel, referenceForRecord, recordScenarioStatus } from './clinical-comparison';
 import { TrendChart } from './TrendChart';
 import { Copyright } from './ui';
@@ -32,22 +33,24 @@ export function MultiIndicator({ groups, settings, onDetail }: {
 export function LipidCalculation({ records }: { records: LabRecord[] }) {
   const [totalId, setTotalId] = useState(''), [hdlId, setHdlId] = useState(''), [confirmed, setConfirmed] = useState(false);
   const [tgId, setTgId] = useState(''), [estimate, setEstimate] = useState(false);
-  const triglycerides = records.filter(record => record.order_code === '09004C');
-  const totals = records.filter(record => record.order_code === '09001C');
-  const hdls = records.filter(record => record.order_code === '09043C');
+  const [typeIII, setTypeIII] = useState(false);
+  const triglycerides = records.filter(record => lipidSourceMatches(record, 'triglyceride'));
+  const totals = records.filter(record => lipidSourceMatches(record, 'total'));
+  const hdls = records.filter(record => lipidSourceMatches(record, 'hdl'));
   const total = totals.find(record => record.id === totalId), hdl = hdls.find(record => record.id === hdlId);
   const tg = triglycerides.find(record => record.id === tgId);
-  const result = assessLipids(total, hdl, tg, confirmed, estimate);
+  const result = assessLipids(total, hdl, tg, confirmed, estimate, typeIII);
   const options = (rows: LabRecord[]) => rows.map(record => <option key={record.id} value={record.id}>{dateLabel(record.exam_date)} · {record.result} {record.unit} · {record.institution} · {record.id.slice(-6)}</option>);
   return <details className="panel analysis-tools"><summary>血脂輔助分析（含高TG適用性）</summary><div className="scenario-grid">
     <label className="field">總膽固醇<select value={totalId} onChange={event => { setTotalId(event.target.value); setConfirmed(false); }}><option value="">選擇原始結果</option>{options(totals)}</select></label>
     <label className="field">HDL<select value={hdlId} onChange={event => { setHdlId(event.target.value); setConfirmed(false); }}><option value="">選擇原始結果</option>{options(hdls)}</select></label>
     <label className="field">TG（選填，用於核對LDL公式）<select value={tgId} onChange={event => { setTgId(event.target.value); setConfirmed(false); }}><option value="">不選TG，僅計算non-HDL</option>{options(triglycerides)}</select></label>
-  </div><label className="checkbox-label"><input type="checkbox" checked={confirmed} onChange={event => setConfirmed(event.target.checked)} />已核對所選項目為同次採檢</label>
-    <label className="checkbox-label"><input type="checkbox" checked={estimate} onChange={event => setEstimate(event.target.checked)} />另顯示Sampson/NIH研究輔助估算（不超出TG≤800 mg/dL）</label>
+  </div><label className="checkbox-label"><input type="checkbox" checked={confirmed} onChange={event => setConfirmed(event.target.checked)} />已核對所選項目為同次採檢，且檢體、單位與檢驗方法適合比較</label>
+    <label className="checkbox-label"><input type="checkbox" checked={typeIII} onChange={event => { setTypeIII(event.target.checked); setEstimate(false); }} />已知或疑似第三型高脂蛋白血症（Type III，停用LDL估算）</label>
+    <label className="checkbox-label"><input type="checkbox" checked={estimate} disabled={typeIII} onChange={event => setEstimate(event.target.checked)} />另顯示Sampson/NIH研究輔助估算（不超出TG≤800 mg/dL）</label>
     <p role="status">{result.nonHdl === null ? '尚未計算' : `non-HDL-C：${result.nonHdl} ${total?.unit ?? ''}`}。{result.message}</p>
     {result.sampson !== null && <p>系統估算LDL-C：{result.sampson.toFixed(1)} mg/dL · Sampson/NIH 2020（非直接量測）</p>}
-    <p className="helper-text">原院LDL、TG及其他結果不會被此計算覆寫。非HDL亦不取代TG相關風險；不由數值診斷遺傳疾病。</p>
+    <p className="helper-text">原院LDL、TG及其他結果不會被此計算覆寫。原始研究排除第三型高脂蛋白血症；未確認病型不代表公式已適用於個人，空腹狀態與檢驗方法仍須核對。非HDL亦不取代TG相關風險；不由數值診斷遺傳疾病。</p>
     <a href="https://pubmed.ncbi.nlm.nih.gov/32101259/" target="_blank" rel="noreferrer">Sampson原始研究與適用範圍</a> · <a href="https://eas-society.org/content/quantifying-atherogenic-lipoproteins-for-lipid-lowering-strategies-consensus-based-recommendations-from-eas-and-eflm/" target="_blank" rel="noreferrer">EAS／EFLM 依據</a>
   </details>;
 }

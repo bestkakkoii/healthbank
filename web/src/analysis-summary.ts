@@ -2,6 +2,18 @@
 import type { LabRecord } from './api';
 import { isExact } from './model.ts';
 
+const LIPID_SOURCES = {
+  total: { code: '09001C', name: 'Cholesterol' },
+  hdl: { code: '09043C', name: 'HDL-Cholesterol' },
+  triglyceride: { code: '09004C', name: 'Triglyceride' },
+} as const;
+
+// Keep these source identities aligned with the catalog; a code alone is insufficient.
+export function lipidSourceMatches(record: LabRecord, kind: keyof typeof LIPID_SOURCES): boolean {
+  const source = LIPID_SOURCES[kind];
+  return record.order_code.trim().toUpperCase() === source.code && record.item_name.trim() === source.name;
+}
+
 // Decimal subtraction is exact; percentage is explicitly an approximate display.
 function decimalParts(text: string): { integer: bigint; scale: number } | null {
   if (text.length > 128) return null;
@@ -22,6 +34,12 @@ export function exactDifference(current: string, previous: string): string | nul
   const digits = (difference < 0n ? -difference : difference).toString().padStart(scale + 1, '0');
   const number = scale ? `${digits.slice(0, -scale)}.${digits.slice(-scale)}`.replace(/\.?0+$/, '') : digits;
   return sign + (number || '0');
+}
+// Domain checks use the original decimal, before any binary floating-point conversion.
+export function compareExactDecimals(left: string, right: string): -1 | 0 | 1 | null {
+  const difference = exactDifference(left, right);
+  if (difference === null) return null;
+  return difference === '0' ? 0 : difference.startsWith('-') ? -1 : 1;
 }
 export function recordDifference(current: LabRecord | undefined, previous: LabRecord | undefined) {
   if (!current || !previous || !isExact(current) || !isExact(previous) || current.item_id !== previous.item_id || current.unit !== previous.unit || Number(current.result.trim()) !== current.numeric_value || Number(previous.result.trim()) !== previous.numeric_value) return null;
@@ -45,11 +63,16 @@ export function latestDistinctPair(records: LabRecord[]): readonly [LabRecord | 
 }
 export function nonHdlCholesterol(total: LabRecord | undefined, hdl: LabRecord | undefined, sameSampleConfirmed: boolean): { value: string | null; reason: string } {
   if (!sameSampleConfirmed) return { value: null, reason: '須確認兩項來自同次採檢；僅日期相同不足以證明。' };
-  if (!total || !hdl || !isExact(total) || !isExact(hdl) || total.order_code !== '09001C' || hdl.order_code !== '09043C' ||
+  if (!total || !hdl || !isExact(total) || !isExact(hdl) || !lipidSourceMatches(total, 'total') || !lipidSourceMatches(hdl, 'hdl') ||
       total.exam_date === '' || total.exam_date !== hdl.exam_date || !total.institution || total.institution !== hdl.institution || total.visit_date !== hdl.visit_date ||
-      total.unit !== hdl.unit || !['mg/dL', 'mmol/L'].includes(total.unit) || total.numeric_value < hdl.numeric_value || hdl.numeric_value < 0 ||
+      total.unit !== hdl.unit || !['mg/dL', 'mmol/L'].includes(total.unit) ||
       Number(total.result.trim()) !== total.numeric_value || Number(hdl.result.trim()) !== hdl.numeric_value) {
     return { value: null, reason: '需要同日期、院所、就醫日期與單位的精確總膽固醇及HDL；不能混合不同檢體或不等式。' };
   }
-  return { value: exactDifference(total.result, hdl.result)?.replace(/^\+/, '') ?? null, reason: '系統計算 non-HDL-C＝總膽固醇−HDL-C；不覆寫原院結果。' };
+  const difference = exactDifference(total.result, hdl.result);
+  const hdlSign = compareExactDecimals(hdl.result, '0');
+  if (difference === null || difference.startsWith('-') || hdlSign === null || hdlSign < 0) {
+    return { value: null, reason: '總膽固醇與HDL須為非負精確值，且總膽固醇不可小於HDL；原始小數不先四捨五入。' };
+  }
+  return { value: difference.replace(/^\+/, ''), reason: '系統計算 non-HDL-C＝總膽固醇−HDL-C；不覆寫原院結果。' };
 }

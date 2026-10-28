@@ -13,8 +13,11 @@ Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 依 [臺灣 2025 血脂共識](https://pmc.ncbi.nlm.nih.gov/articles/PMC11923786/) 與 [2026 ACC/AHA 血脂指引](https://doi.org/10.1016/j.jacc.2025.11.016)，TG 顯著升高時應保留 TG、原院 LDL、non-HDL-C、已實際測得的 apoB 等不同來源的值，不能以一個估算 LDL 取代原院結果。
 
 - TG ≥400 mg/dL 時不使用 Friedewald。已知的官方直接量測 LDL 保留為原院來源，測量方法未確認則不推測為直接法。
-- 在研究原始適用的 TG ≤800 mg/dL 範圍內，使用者明確勾選後才顯示標有公式與「系統估算」的 Sampson/NIH 研究值；超出、缺單位、缺確切值或未能確認同次檢驗時不計算。
+- 在研究原始適用的 TG ≤800 mg/dL 範圍內，使用者明確勾選後才顯示標有公式與「系統估算」的 Sampson/NIH 研究值；超出、缺單位、缺確切值或未能確認同次檢驗時不計算。TG 的 400／800 邊界以原始精確十進位字串比較，不先以浮點數四捨五入；公式數值是近似估算，顯示至一位小數，不覆寫原始結果。
+- [Sampson 原始研究（2020，doi:10.1001/jamacardio.2020.0013）](https://jamanetwork.com/journals/jamacardiology/fullarticle/2761953)排除第三型高脂蛋白血症（Type III）。頁面可標示「已知或疑似第三型」以停止 LDL 估算，保留 non-HDL 及原院紀錄；此選項只在本次頁面使用，不寫入同步設定。未勾選不代表已排除病型，也不代表已對個人驗證；空腹狀態、檢體與方法適用性仍須核對。
 - non-HDL-C = TC − HDL-C 僅於使用者核對相容單位、檢體與同次採檢後計算。跨次就醫與處方用藥**不能推導實際服用或療效**；遺傳性脂質疾病不會讓已失效的公式重新適用。
+- 血脂選取同時核對目錄來源名稱與醫令代碼（`Cholesterol`／`09001C`、`HDL-Cholesterol`／`09043C`、`Triglyceride`／`09004C`），不把同代碼的未知名稱自動當成相容檢驗。non-HDL 可用同為 mg/dL 或 mmol/L 的一組結果；Sampson 僅接受原式 mg/dL 係數所需的三項 mg/dL，不暗中換算。
+- non-HDL 的非負範圍同樣依原始小數檢查，TC 小於 HDL 時不輸出負值；Sampson 結果為負、非有限值或高於同次 non-HDL 時拒絕輸出，不裁切成 0。
 
 ## 一、先看這四層資訊
 
