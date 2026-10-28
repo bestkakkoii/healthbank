@@ -55,6 +55,8 @@ func MedicalCategory(category string) bool { _, ok := medicalSpecs[category]; re
 
 var medicalHeaderFields = []fieldSpec{
 	{"main_tit", "官方明細標題（原文）", ""},
+	{"hosp_ABBR", "來源醫事機構（原文）", ""},
+	{"ori_TYPE", "資料來源（ori_TYPE 原文）", ""},
 	{"func_SEQ_NO", "健保卡就醫序號（來源原文，非卡號）", ""},
 	{"cure_path", "來源牙位篩選內容（原文，未推定治療）", ""},
 	{"icd9cm_CODE_CNAME", "疾病分類（非診斷確認）", ""}, {"op_CODE_CNAME", "手術／處置名稱（原文）", ""},

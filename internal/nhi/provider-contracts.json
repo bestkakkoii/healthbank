@@ -1236,6 +1236,8 @@
               "end_date_field": "",
               "fields": [
                 "main_tit",
+                "hosp_ABBR",
+                "ori_TYPE",
                 "func_SEQ_NO",
                 "cure_path",
                 "icd9cm_CODE_CNAME",
@@ -1279,6 +1281,8 @@
                 "hosP_DATA_TYPE_NAME"
               ],
               "units": [
+                "",
+                "",
                 "",
                 "",
                 "",
@@ -1337,6 +1341,8 @@
               "end_date_field": "out_DATE",
               "fields": [
                 "main_tit",
+                "hosp_ABBR",
+                "ori_TYPE",
                 "func_SEQ_NO",
                 "cure_path",
                 "icd9cm_CODE_CNAME",
@@ -1380,6 +1386,8 @@
                 "hosP_DATA_TYPE_NAME"
               ],
               "units": [
+                "",
+                "",
                 "",
                 "",
                 "",
@@ -7147,6 +7155,8 @@
               "end_date_field": "",
               "fields": [
                 "main_tit",
+                "hosp_ABBR",
+                "ori_TYPE",
                 "func_SEQ_NO",
                 "cure_path",
                 "icd9cm_CODE_CNAME",
@@ -7189,6 +7199,8 @@
                 "show_pay_PRICE"
               ],
               "units": [
+                "",
+                "",
                 "",
                 "",
                 "",
@@ -7313,6 +7325,8 @@
               "end_date_field": "",
               "fields": [
                 "main_tit",
+                "hosp_ABBR",
+                "ori_TYPE",
                 "func_SEQ_NO",
                 "cure_path",
                 "icd9cm_CODE_CNAME",
@@ -7355,6 +7369,8 @@
                 "show_pay_PRICE"
               ],
               "units": [
+                "",
+                "",
                 "",
                 "",
                 "",
@@ -7456,6 +7472,8 @@
               "end_date_field": "",
               "fields": [
                 "main_tit",
+                "hosp_ABBR",
+                "ori_TYPE",
                 "func_SEQ_NO",
                 "cure_path",
                 "icd9cm_CODE_CNAME",
@@ -7498,6 +7516,8 @@
                 "show_pay_PRICE"
               ],
               "units": [
+                "",
+                "",
                 "",
                 "",
                 "",
