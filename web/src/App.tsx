@@ -738,7 +738,7 @@ export default function App() {
   );
 
   return (
-    <AnalysisProvider key={`${session.mode}:${session.csrf_token ?? ''}:${dateFrom}:${dateTo}`} initial={settings.analysis} persisted={persisted}
+    <AnalysisProvider key={`${session.mode}:${session.csrf_token ?? ''}`} initial={settings.analysis} persisted={persisted}
       onSave={analysis => commitSettings({ ...settings, analysis })}>
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
@@ -894,7 +894,7 @@ export default function App() {
                     disabled={controlsBusy}
                   >
                     <Icon name="refresh" size={18} />
-                    取得全部歷史
+                    取得全部歷史檢驗
                   </button>
                   <button
                     className="button secondary"
@@ -1755,7 +1755,7 @@ export default function App() {
 
 
           {view !== 'settings' && <><AnalysisExport records={view === 'trends' && trendGroup ? trendGroup.records : filteredGroups.flatMap(group => group.records)} /><PortableReportExport records={report.records} /></>}
-          <div hidden={view === 'settings'}><SupplementaryData key={`${session.mode}:${session.csrf_token ?? ''}:${dateFrom}:${dateTo}`} authenticated={persisted} from={dateFrom} to={dateTo} onSessionExpired={() => { void expireOfficialSession(); }} /></div>
+          <div hidden={view === 'settings'}><SupplementaryData key={`${session.mode}:${session.csrf_token ?? ''}`} authenticated={persisted} from="" to="" onSessionExpired={() => { void expireOfficialSession(); }} /></div>
           <div hidden={view !== 'trends' && view !== 'settings'}><PersonalRecords key={`${session.mode}:${session.profile_key || report.fetched_at}`} profileKey={session.profile_key ?? ''} /></div>
           <div className="print-only print-running-footer">
             <Copyright />
