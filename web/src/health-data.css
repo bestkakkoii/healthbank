@@ -36,3 +36,21 @@
   .health-data-actions, .health-data-options, .health-data-pagination { display: none; }
   .health-data-event dd { max-block-size: none; overflow: visible; }
 }
+
+/* RC10 workspace reading order, return focus, and progressive controls. */
+.health-data-management, .health-data-display-options { margin-block: .5rem; border-block: 1px solid var(--border); }
+.health-data-management > summary, .health-data-display-options > summary { min-block-size: 48px; padding: .5rem .2rem; cursor: pointer; }
+.health-data-management[open] { padding-block-end: .7rem; }
+.health-data-search { margin-block: .55rem; }
+.health-data-events > h3, .medicine-events > h4 { scroll-margin-block-start: 1rem; }
+.health-data-events > h3:focus-visible, .medicine-events > h4:focus-visible { outline-offset: 4px; }
+.health-data-date-feedback, .medicine-date-feedback { padding: .6rem; border-inline-start: .2rem solid var(--accent); background: var(--surface-soft); margin-block: .5rem; min-inline-size: 0; }
+.medicine-date-feedback { flex-basis: 100%; }
+.health-data-date-feedback .button, .medicine-date-feedback .button { margin-block-start: .4rem; margin-inline-start: 0; white-space: normal; }
+.health-data-event > summary > small { margin-block-end: 0; }
+.medicine-event-pagination { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-block: .6rem; }
+.medicine-chart-method { margin-block: .5rem; }
+@media (max-width: 480px) {
+  .health-data-management > summary, .health-data-display-options > summary { padding-inline: 0; }
+  .medicine-event-pagination > span { flex-basis: 100%; order: -1; }
+}

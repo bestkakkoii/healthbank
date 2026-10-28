@@ -102,9 +102,23 @@ export interface DataCategory {
   range_mode: 'date_search' | 'source';
   has_details?: boolean;
 }
+export type SourceDateRole = 'examination' | 'specimen_collection' | 'report' | 'encounter' | 'admission' | 'discharge' | 'claim_start' | 'claim_end' | 'prescription' | 'dispensing' | 'recorded' | 'uploaded' | 'valid_from' | 'valid_to' | 'period_start' | 'period_end' | 'unknown';
+export interface SupplementField {
+  name: string; value: string; unit?: string; code?: string;
+  role?: 'result' | 'unit' | 'reference' | 'method' | 'specimen' | 'date' | 'medication_code' | 'medication_name' | 'prescribed_days' | 'quantity';
+  unit_basis?: 'source' | 'public_contract';
+}
+export interface SourceDiagnostic {
+  code: 'section_missing' | 'section_optional_absent' | 'section_null' | 'section_empty' | 'known_result_missing';
+  severity: 'info' | 'warning'; section: string; count?: number; message: string;
+}
 export interface SupplementEntry {
   date: string; institution: string; title: string; source: string;
-  fields: { name: string; value: string; unit?: string }[];
+  fields: SupplementField[];
+  date_role?: SourceDateRole;
+  end_date_role?: SourceDateRole;
+  origin?: 'institutional' | 'self_entered' | 'device' | 'official_summary' | 'mixed' | 'unknown';
+  contract_id?: string;
   detail_id?: string;
   key?: string;
   kind?: string;
@@ -116,6 +130,8 @@ export interface SupplementEntry {
 export interface SupplementReport {
   category: string; entries: SupplementEntry[]; coverage: string; fetched_at: string;
   start_date?: string; end_date?: string; complete: boolean;
+  contract_revision?: string;
+  diagnostics?: SourceDiagnostic[];
 }
 export interface ReportResponse {
   // Live API generation proof only; never part of a portable medical document.

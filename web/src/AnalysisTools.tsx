@@ -1,6 +1,6 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
 import { portableReportJSON, portableReportXML } from './portable-report';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { LabRecord, Settings } from './api';
 import { useAnalysis } from './AnalysisContext';
 import { dateLabel, downloadText, finiteExtent, type MeasurementGroup } from './model';
@@ -9,6 +9,7 @@ import { lipidSourceMatches } from './analysis-summary';
 import { activeScenario, intervalLabel, referenceForRecord, recordScenarioStatus } from './clinical-comparison';
 import { TrendChart } from './TrendChart';
 import { Copyright } from './ui';
+import { laboratoryDateSummary } from './coverage-status';
 
 export function MultiIndicator({ groups, settings, onDetail }: {
   groups: MeasurementGroup[]; settings: Settings; onDetail: (record: LabRecord) => void;
@@ -56,6 +57,7 @@ export function LipidCalculation({ records }: { records: LabRecord[] }) {
 }
 export function AnalysisExport({ records }: { records: LabRecord[] }) {
   const analysis = useAnalysis();
+  const dateSummary = useMemo(() => laboratoryDateSummary(records), [records]);
   if (!analysis) return null;
   const { preferences, birthDate } = analysis;
   const csvCell = (value: string) => `"${value.replaceAll('"', '""')}"`;
@@ -72,13 +74,14 @@ export function AnalysisExport({ records }: { records: LabRecord[] }) {
     const safe = rows.map(row => row.map(value => csvCell(/^[\s]*[=+\-@\t\r]/.test(value) ? `'${value}` : value)).join(',')).join('\r\n');
     downloadText(`\uFEFF${safe}\r\n"© 2026 bestkakkoii llc. · 情境比較非病情預測"\r\n`, 'healthbank-情境比較.csv', 'text/csv;charset=utf-8');
   }
-  return <div className="analysis-export"><button className="button secondary" disabled={records.length === 0} onClick={exportAnalysis}>匯出目前資料的情境比較 CSV</button>
-    <span className="helper-text">保留原院結果與情境條件；檔案由使用者裝置保存。<Copyright /></span></div>;
+  return <div className="analysis-export"><button className="button secondary" disabled={records.length === 0} onClick={exportAnalysis}>匯出目前 {records.length} 筆的情境比較 CSV</button>
+    <span className="helper-text">範圍：{dateSummary}。依目前選擇保留原院結果與情境條件；檔案由您保管。<Copyright /></span></div>;
 }
 
 export function PortableReportExport({ records }: { records: LabRecord[] }) {
   const [error, setError] = useState('');
   const [textEditorMode, setTextEditorMode] = useState(false);
+  const dateSummary = useMemo(() => laboratoryDateSummary(records), [records]);
   function exportReport(format: 'json' | 'xml') {
     try {
       const content = format === 'json' ? portableReportJSON(records, textEditorMode) : portableReportXML(records);
@@ -86,5 +89,11 @@ export function PortableReportExport({ records }: { records: LabRecord[] }) {
       setError('');
     } catch (failure) { setError(failure instanceof Error ? failure.message : '匯出失敗；原始資料未變更。'); }
   }
-  return <div className="button-row no-print"><button className="button secondary" type="button" disabled={records.length === 0} onClick={() => { exportReport('json'); }}>匯出JSON（UTF-8）</button><button className="button secondary" type="button" disabled={records.length === 0} onClick={() => { exportReport('xml'); }}>匯出可攜XML</button><label className="checkbox-label small"><input type="checkbox" checked={textEditorMode} onChange={event => setTextEditorMode(event.target.checked)} />JSON加UTF-8識別碼（文字檢視器亂碼時使用）</label><small>僅保存至您下載的檔案，含健康資料；可由本站重新匯入，不代表官方完整歷史。</small>{error && <p role="alert">{error}</p>}</div>;
+  return <section className="portable-export no-print" aria-label="全部檢驗原始資料匯出">
+    <h3>全部檢驗原始資料</h3>
+    <p className="helper-text">包含全部 {records.length} 筆檢驗；{dateSummary}。不受目前項目、搜尋或年度篩選影響，請確認後再分享。</p>
+    <div className="button-row"><button className="button secondary" type="button" disabled={records.length === 0} onClick={() => { exportReport('json'); }}>匯出全部 {records.length} 筆檢驗 JSON（UTF-8）</button><button className="button secondary" type="button" disabled={records.length === 0} onClick={() => { exportReport('xml'); }}>匯出全部 {records.length} 筆檢驗 XML</button></div>
+    <details className="portable-export-options"><summary>文字編碼與檔案說明</summary><label className="checkbox-label small"><input type="checkbox" checked={textEditorMode} onChange={event => setTextEditorMode(event.target.checked)} />JSON 加 UTF-8 BOM（文字檢視器亂碼時使用）</label><p className="helper-text">檔案含健康資料，由您保管；可由本站重新匯入，不代表官方完整歷史。只匯出原始檢驗欄位，不把推算結果寫成原始量測。</p></details>
+    {error && <p role="alert">{error}</p>}
+  </section>;
 }
