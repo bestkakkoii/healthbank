@@ -1,4 +1,5 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
+
 // Package strictjson rejects ambiguous or lossy JSON before typed decoding.
 // Callers retain responsibility for byte limits, schema and field validation.
 package strictjson

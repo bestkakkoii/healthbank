@@ -1,4 +1,5 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
+
 package lab
 
 import (
@@ -207,7 +208,7 @@ func (c *Catalog) Normalize(raw []RawRecord, s *Settings) []Record {
 		d := c.match(r)
 		p := parseValue(r.Result)
 		lo, hi := parseReference(r.Reference)
-		rec := Record{ID: rowID(r, idx), ItemID: d.ID, ConfigurationKey: d.Key, ItemName: r.ItemName, DisplayName: d.Name, Category: category(d), ExamDate: NormalizeDate(r.CheckDate), VisitDate: NormalizeDate(r.VisitDate), OrderCode: r.OrderCode, OrderName: r.OrderName, Result: r.Result, Unit: r.Unit, ReferenceLow: lo, ReferenceHigh: hi, ReferenceText: r.Reference, Institution: r.Institution, Source: r.Source, ReferenceStatus: referenceStatus(p, lo, hi), NumericValue: numberFloat(p.exact), ValueKind: p.kind, RuleSource: "none", OfficialFlag: r.OfficialFlag}
+		rec := Record{ID: rowID(r, idx), ItemID: d.ID, ConfigurationKey: d.Key, ItemName: r.ItemName, DisplayName: d.Name, Category: category(d), ExamDate: NormalizeDate(r.CheckDate), VisitDate: NormalizeDate(r.VisitDate), RawCheckDate: r.CheckDate, RawVisitDate: r.VisitDate, OrderCode: r.OrderCode, OrderName: r.OrderName, Result: r.Result, Unit: r.Unit, ReferenceLow: lo, ReferenceHigh: hi, ReferenceText: r.Reference, Institution: r.Institution, Source: r.Source, ReferenceStatus: referenceStatus(p, lo, hi), NumericValue: numberFloat(p.exact), ValueKind: p.kind, RuleSource: "none", OfficialFlag: r.OfficialFlag}
 		if d.Kind == "metadata" {
 			rec.ValueKind = "metadata"
 			rec.NumericValue = nil

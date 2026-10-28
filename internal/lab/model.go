@@ -1,4 +1,5 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
+
 package lab
 
 import (
@@ -35,6 +36,8 @@ type Record struct {
 	Category         string   `json:"category"`
 	ExamDate         string   `json:"exam_date"`
 	VisitDate        string   `json:"visit_date"`
+	RawCheckDate     string   `json:"raw_check_date"`
+	RawVisitDate     string   `json:"raw_visit_date"`
 	OrderCode        string   `json:"order_code"`
 	OrderName        string   `json:"order_name"`
 	Result           string   `json:"result"`
@@ -67,7 +70,7 @@ type Override struct {
 	Enabled       bool    `json:"enabled"`
 }
 
-// AnalysisPreferences contains explicit comparison settings, never a birth date or history.
+// AnalysisScenario contains explicit comparison settings, never a birth date or history.
 type AnalysisScenario struct {
 	Age *int   `json:"age"`
 	Sex string `json:"sex"`

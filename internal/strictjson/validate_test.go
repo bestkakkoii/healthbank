@@ -2,7 +2,10 @@
 package strictjson
 
 import (
+	"bytes"
 	"encoding/json"
+	"encoding/json/jsontext"
+	"io"
 	"strings"
 	"testing"
 )
@@ -51,8 +54,19 @@ func FuzzValidationNeverAcceptsInvalidJSON(f *testing.F) {
 		if len(input) > 1<<16 {
 			t.Skip()
 		}
-		if Validate([]byte(input), Options{}) == nil && !json.Valid([]byte(input)) {
-			t.Fatal("validator accepted invalid JSON")
+		if Validate([]byte(input), Options{}) == nil {
+			if !json.Valid([]byte(input)) {
+				t.Fatal("validator accepted invalid JSON")
+			}
+			// The pinned standard library's separate strict lexer is an
+			// independent oracle for duplicate names and Unicode fidelity.
+			oracle := jsontext.NewDecoder(bytes.NewBufferString(input))
+			if _, err := oracle.ReadValue(); err != nil {
+				t.Fatalf("strict standard-library parser rejected accepted input: %v", err)
+			}
+			if _, err := oracle.ReadValue(); err != io.EOF {
+				t.Fatal("accepted trailing document")
+			}
 		}
 	})
 }

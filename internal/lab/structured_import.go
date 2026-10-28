@@ -1,4 +1,5 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
+
 package lab
 
 import (
@@ -39,7 +40,7 @@ type portableRow struct {
 }
 
 func (v portableRow) raw() RawRecord {
-	return RawRecord{CheckDate: v.CheckDate, OrderCode: v.OrderCode, OrderName: v.OrderName, ItemName: v.ItemName, Result: v.Result, Unit: v.Unit, Reference: v.Reference, Institution: v.Institution, VisitDate: v.VisitDate, Source: v.Source, OfficialFlag: v.OfficialFlag}
+	return RawRecord(v)
 }
 func validatePortable(rows []portableRow) ([]RawRecord, []string, error) {
 	if len(rows) > maxImportedRows {

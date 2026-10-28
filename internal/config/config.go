@@ -1,4 +1,6 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
+
+// Package config resolves deployment settings and manages instance identity keys.
 package config
 
 import (

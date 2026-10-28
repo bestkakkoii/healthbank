@@ -49,7 +49,7 @@ func ParseImport(filename string, data []byte) ([]RawRecord, []string, error) {
 	extension := strings.ToLower(path.Ext(filename))
 	if extension == ".json" || extension == ".xml" {
 		if len(data) > MaxImportBytes {
-			return nil, nil, errors.New("Healthbank 可攜 JSON／XML 檔案不可超過 32 MiB。")
+			return nil, nil, errors.New("本站 Healthbank 可攜 JSON／XML 檔案不可超過 32 MiB。")
 		}
 		if extension == ".json" {
 			return parsePortableJSON(data)

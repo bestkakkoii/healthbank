@@ -1,4 +1,6 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
+
+// Package lab preserves source observations and applies explicitly scoped laboratory rules.
 package lab
 
 import (
