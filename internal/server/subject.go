@@ -33,6 +33,7 @@ func (a *App) bindSubject(s *session, subject string) {
 	}
 	scope.references++
 	s.subject, s.scope = subject, scope
+	s.anonymous, s.reclaimable = false, false
 }
 
 // releaseSubject requires s.mu; scope membership is also protected by App.mu so

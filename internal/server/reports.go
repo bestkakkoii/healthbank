@@ -77,7 +77,16 @@ func (a *App) persistDiscovered(ctx context.Context, s *session) error {
 		if err != nil {
 			return err
 		}
-		changed := false
+		before, err := latest.Document()
+		if err != nil {
+			return err
+		}
+		a.catalog.ReconcileSettings(&latest)
+		reconciled, err := latest.Document()
+		if err != nil {
+			return err
+		}
+		changed := !bytes.Equal(before, reconciled)
 		for k, v := range discovered {
 			if _, exists := latest.Known[k]; !exists {
 				latest.Known[k] = v
@@ -181,7 +190,12 @@ func (a *App) fetchReports(w http.ResponseWriter, r *http.Request, s *session) {
 	if !a.requireCurrentSubject(w, r, s) {
 		return
 	}
-	s.setOfficialReport(report)
+	next := &session{}
+	next.setOfficialReport(report)
+	if !a.admitReport(w, r, s, next.raw) {
+		return
+	}
+	s.raw, s.officialQuery, s.fetched, s.complete, s.warnings = next.raw, next.officialQuery, next.fetched, next.complete, next.warnings
 	_ = a.catalog.Normalize(s.raw, &s.settings)
 	if err := a.persistDiscovered(r.Context(), s); err != nil {
 		if errors.Is(err, store.ErrInvalid) {
@@ -271,9 +285,13 @@ func (a *App) importReports(w http.ResponseWriter, r *http.Request, s *session) 
 	}
 	// An imported file has no verified ownership. Use an isolated temporary
 	// configuration instead of attaching it to the currently signed-in person.
-	a.clearSession(s)
+	if !a.admitReport(w, r, s, rows) {
+		return
+	}
+	a.clearSessionState(s)
 	s.mode = "import"
 	s.raw = rows
+	a.protectWorkspace(s)
 	s.fetched = time.Now().UTC().Format(time.RFC3339)
 	s.complete = false
 	s.warnings = warnings
@@ -305,7 +323,10 @@ func (a *App) catalogResponse(w http.ResponseWriter, r *http.Request, s *session
 			out.Items[i].High = newest.ReferenceHigh
 		}
 	}
-	a.json(w, 200, out)
+	a.json(w, 200, struct {
+		lab.CatalogResponse
+		Provenance lab.CatalogProvenance `json:"provenance"`
+	}{out, a.catalog.Provenance()})
 }
 func (a *App) saveSettings(w http.ResponseWriter, r *http.Request, s *session) {
 	unlock, err := a.lockSubject(r.Context(), s)

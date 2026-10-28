@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptrace"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 )
@@ -17,14 +18,20 @@ import (
 type Operation string
 
 const (
-	OperationUnknown        Operation = "unknown"
-	OperationLoginDocument  Operation = "login_document"
-	OperationCaptcha        Operation = "captcha"
-	OperationLogin          Operation = "login"
-	OperationReportMetadata Operation = "report_metadata"
-	OperationReportSearch   Operation = "report_search"
-	OperationTokenRefresh   Operation = "token_refresh"
-	OperationLogout         Operation = "logout"
+	OperationUnknown          Operation = "unknown"
+	OperationLoginDocument    Operation = "login_document"
+	OperationCaptcha          Operation = "captcha"
+	OperationLogin            Operation = "login"
+	OperationReportMetadata   Operation = "report_metadata"
+	OperationReportSearch     Operation = "report_search"
+	OperationTokenRefresh     Operation = "token_refresh"
+	OperationLogout           Operation = "logout"
+	OperationSourceList       Operation = "source_list"
+	OperationSourceDetail     Operation = "source_detail"
+	OperationSourceRead       Operation = "source_read"
+	OperationDocumentPrepare  Operation = "document_prepare"
+	OperationDocumentDownload Operation = "document_download"
+	OperationDocumentCleanup  Operation = "document_cleanup"
 )
 
 // Phase is the last observed request stage. It does not identify which remote
@@ -46,8 +53,9 @@ const (
 )
 
 // Diagnostics contains only bounded, allowlisted transport observations. The
-// elapsed time includes allowed redirects and saturates at 60 seconds. Requests
-// normally have a 35-second deadline; the cap also bounds scheduler delays.
+// elapsed time includes allowed redirects and saturates at 310 seconds, covering
+// the five-minute document transfer budget and bounded cleanup. Ordinary JSON
+// requests retain their shorter existing deadlines.
 //
 // TLS fields describe the acquired HTTP request connection, when observed, not
 // an intermediate HTTPS-proxy handshake. They establish neither the identity of
@@ -70,7 +78,9 @@ func (d *Diagnostics) Sanitized() *Diagnostics {
 	copy := *d
 	switch copy.Operation {
 	case OperationLoginDocument, OperationCaptcha, OperationLogin,
-		OperationReportMetadata, OperationReportSearch, OperationTokenRefresh, OperationLogout:
+		OperationReportMetadata, OperationReportSearch, OperationTokenRefresh, OperationLogout,
+		OperationSourceList, OperationSourceDetail, OperationSourceRead,
+		OperationDocumentPrepare, OperationDocumentDownload, OperationDocumentCleanup:
 	default:
 		copy.Operation = OperationUnknown
 	}
@@ -80,7 +90,7 @@ func (d *Diagnostics) Sanitized() *Diagnostics {
 	default:
 		copy.Phase = PhaseUnknown
 	}
-	copy.ElapsedMS = min(max(copy.ElapsedMS, 0), 60000)
+	copy.ElapsedMS = min(max(copy.ElapsedMS, 0), 310000)
 	switch copy.TLSVersion {
 	case "TLS1.2", "TLS1.3":
 	default:
@@ -116,9 +126,73 @@ func operationForPath(path string) Operation {
 		return OperationTokenRefresh
 	case logoutPath:
 		return OperationLogout
-	default:
-		return OperationUnknown
 	}
+	// These comparisons use fixed connector contracts only. Neither paths nor
+	// query values are copied into the diagnostic result. Some provider routes
+	// serve both lists and details and intentionally have the neutral read label.
+	lower := strings.ToLower(path)
+	switch lower {
+	case "/api/ihke3000/ihke3309s02/delpdf":
+		return OperationDocumentCleanup
+	case "/api/ihke3000/ihke3408s02/add", "/api/ihke3000/ihke3411s02/add":
+		return OperationDocumentPrepare
+	case "/api/ihke3000/ihke3309s02/getpdf", "/api/ihke3000/ihke3309s02/getxml",
+		"/api/ihke3000/ihke3408s03/page_load", "/api/ihke3000/ihke3411s03/page_load",
+		"/api/ihke3000/ihke3801s02/download", "/api/ihke3000/ihke3801s02/imgf_download",
+		"/api/ihke3000/ihke3801s02/app_download", "/api/ihke3000/ihke3801s02/app_imgf_download",
+		"/api/ihke3000/ihke3212s01/ihke3212_pdf":
+		return OperationDocumentDownload
+	case "/api/ihke3000/ihke3402s01/sp_ihke3402s01", "/api/ihke3000/ihke3408s01/page_load",
+		"/api/ihke3000/ihke3408s01/search", "/api/ihke3000/ihke3801s01/page_load":
+		return OperationSourceList
+	case "/api/ihke3000/ihke3403s05/ihke3403s05", "/api/ihke3000/ihke3408s02/page_load",
+		"/api/ihke3000/ihke3801s02/page_load", "/api/ihke3000/ihke3801s02/imgf_page_load",
+		"/api/ihke3000/ihke3212s02/page_load", "/api/ihke3000/ihke3504s02/sp_ihke3504s02",
+		"/api/ihke3000/ihke3505s02/sp_ihke3505s02", "/api/ihke3000/ihke3507s02/sp_ihke3507s02",
+		"/api/ihke3000/ihke3513s02/page_load", "/api/ihke3000/ihke3516s02/sp_ihke3516s02",
+		"/api/ihke3000/ihke3517s02/sp_ihke3517s02", "/api/ihke3000/ihke3407s02/get_point",
+		"/api/ihke3000/ihke3406s02/sp_ihke3406s02", "/api/ihke3000/ihke3721s01/sp_ihke3721s07",
+		"/api/ihke3000/ihke3207s02/sp_ihke3207s04", "/api/ihke3000/ihke3205s04/pageload",
+		"/api/ihke3000/ihke3205s02/sp_ihke3205s08", "/api/ihke3000/ihke3411s02/page_load",
+		"/api/ihke3000/ihke3205s02/page_load", "/api/ihke3000/ihke3207s05/page_load",
+		"/api/ihke3000/ihke3512s02/search", "/api/ihke3000/ihke3726s01/sp_ihke3726s07",
+		"/api/ihke3000/ihke3206s01/sp_ihke3206s08":
+		return OperationSourceDetail
+	}
+	for _, spec := range medicalSpecs {
+		if lower == strings.ToLower(spec.detailPath) {
+			return OperationSourceDetail
+		}
+		if lower == strings.ToLower(spec.listPath) || (spec.searchPath != "" && lower == strings.ToLower(spec.searchPath)) {
+			return OperationSourceList
+		}
+	}
+	for _, spec := range supplements {
+		if lower == "/api/ihke3000/"+spec.module+"/page_load" || (spec.search && lower == "/api/ihke3000/"+spec.module+"/search") {
+			return OperationSourceList
+		}
+	}
+	for _, spec := range providerSpecs {
+		for _, request := range spec.requests {
+			if lower == strings.ToLower(request.path) {
+				return OperationSourceRead
+			}
+		}
+	}
+	for _, spec := range officialExportSpecs {
+		switch lower {
+		case spec.path + "/page_load":
+			return OperationSourceList
+		case spec.path + "/add":
+			return OperationDocumentPrepare
+		}
+	}
+	if strings.HasPrefix(lower, "/ihke3000/") && strings.HasSuffix(lower, ".pdf") {
+		if _, err := officialPDFPath(path); err == nil {
+			return OperationDocumentDownload
+		}
+	}
+	return OperationUnknown
 }
 
 // A redirect gets a distinct attempt so late hooks from its predecessor cannot

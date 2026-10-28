@@ -18,6 +18,7 @@ import (
 	"github.com/bestkakkoii/healthbank/internal/config"
 	"github.com/bestkakkoii/healthbank/internal/server"
 	"github.com/bestkakkoii/healthbank/internal/store"
+	"golang.org/x/net/netutil"
 )
 
 var version = "dev"
@@ -123,7 +124,7 @@ func run(args []string) error {
 	stopped, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	failures := make(chan error, 1)
-	go func() { failures <- httpServer.Serve(listener) }()
+	go func() { failures <- httpServer.Serve(netutil.LimitListener(listener, app.ConnectionLimit())) }()
 	slog.Info("healthbank started", "version", version, "address", cfg.Addr, "database", cfg.Driver, "copyright", "2026 bestkakkoii llc.")
 	select {
 	case err := <-failures:
@@ -146,6 +147,13 @@ func prepareRuntimeIdentity(ctx context.Context, db *store.Store, secret []byte)
 	if errors.Is(err, store.ErrLegacyIdentityKey) {
 		slog.Warn("legacy settings key has no recorded verification; service remains available", "code", "identity_key_unverified")
 		return nil
+	}
+	if err != nil {
+		return err
+	}
+	origin, err := db.IdentityKeyOrigin(ctx)
+	if err == nil && origin == store.IdentityKeyLegacyUnverified {
+		slog.Warn("restored legacy key pairing remains unverified; service remains available", "code", "identity_key_unverified")
 	}
 	return err
 }

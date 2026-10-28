@@ -266,7 +266,7 @@ func TestDiagnosticsSanitizerBoundsUntrustedConstruction(t *testing.T) {
 		ProxySelected: true, TLSVersion: "SECRET_VERSION", TLSProtocol: "SECRET_PROTOCOL",
 	}
 	safe := untrusted.Sanitized()
-	if safe.Operation != OperationUnknown || safe.Phase != PhaseUnknown || safe.ElapsedMS != 60000 || !safe.ProxySelected || safe.TLSVersion != "" || safe.TLSProtocol != "" || untrusted.Operation != "SECRET_URL" {
+	if safe.Operation != OperationUnknown || safe.Phase != PhaseUnknown || safe.ElapsedMS != 310000 || !safe.ProxySelected || safe.TLSVersion != "" || safe.TLSProtocol != "" || untrusted.Operation != "SECRET_URL" {
 		t.Fatal("diagnostic sanitizer failed to bound values or changed its input")
 	}
 	negative := (&Diagnostics{Operation: OperationCaptcha, Phase: PhaseComplete, ElapsedMS: -1, TLSVersion: "TLS1.2", TLSProtocol: "SECRET_PROTOCOL"}).Sanitized()

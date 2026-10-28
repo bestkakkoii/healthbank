@@ -77,7 +77,7 @@ func (a *App) documents(w http.ResponseWriter, r *http.Request, s *session) {
 		if errors.As(err, &upstream) {
 			code = upstream.Code
 		}
-		slog.Warn("document transfer interrupted", "code", code)
+		slog.Warn("document transfer interrupted", "code", code, "request_id", w.Header().Get("X-Request-ID"), "stage", "response_body")
 		panic(http.ErrAbortHandler)
 	}
 	a.documentError(w, r, s, err)
