@@ -90,18 +90,22 @@ type Credentials struct {
 // Calls are serialized so a CAPTCHA cannot be replaced during its login.
 // The application must expire and Close sessions when no longer needed.
 type Session struct {
-	mu                 sync.Mutex
-	client             *http.Client
-	token              string
-	tokenObtainedAt    time.Time
-	challengeID        string
-	challengeExpiry    time.Time
-	bootstrapped       bool
-	closed             bool
-	lastDiagnostics    *Diagnostics
-	selfPaidReferences map[string]string
-	westernReferences  map[string]westernReference
-	medicalReferences  map[string]map[string]medicalReference
+	mu                     sync.Mutex
+	client                 *http.Client
+	token                  string
+	tokenObtainedAt        time.Time
+	challengeID            string
+	challengeExpiry        time.Time
+	bootstrapped           bool
+	closed                 bool
+	lastDiagnostics        *Diagnostics
+	selfPaidReferences     map[string]string
+	westernReferences      map[string]westernReference
+	medicalReferences      map[string]map[string]medicalReference
+	providerReferences     map[string]map[string]providerReference
+	imagingReferences      map[string]westernReference
+	officialFileReferences map[string]officialFileReference
+	documentReferences     map[string]documentReference
 }
 
 // New creates an isolated connector. It cannot target a caller-supplied URL.
@@ -359,9 +363,20 @@ func (s *Session) clearAuth() {
 	s.selfPaidReferences = nil
 	s.westernReferences = nil
 	s.medicalReferences = nil
+	s.providerReferences = nil
+	s.imagingReferences = nil
+	s.officialFileReferences = nil
+	for _, ref := range s.documentReferences {
+		clear(ref.payload)
+	}
+	s.documentReferences = nil
 }
 
 func (s *Session) request(ctx context.Context, method, path string, query url.Values, payload []byte, limit int64, authenticated bool) (result []byte, headers http.Header, requestErr error) {
+	return s.requestWithClient(ctx, s.client, method, path, query, payload, limit, authenticated)
+}
+
+func (s *Session) requestWithClient(ctx context.Context, client *http.Client, method, path string, query url.Values, payload []byte, limit int64, authenticated bool) (result []byte, headers http.Header, requestErr error) {
 	if authenticated && s.token == "" {
 		return nil, nil, sessionExpired()
 	}
@@ -404,7 +419,7 @@ func (s *Session) request(ctx context.Context, method, path string, query url.Va
 		// The official Vue interceptor sends the literal string when not signed in.
 		req.Header.Set("Authorization", "Bearer null")
 	}
-	response, err := s.client.Do(req)
+	response, err := client.Do(req)
 	if err != nil {
 		return nil, nil, networkFailure(err)
 	}

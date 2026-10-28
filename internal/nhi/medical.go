@@ -14,8 +14,8 @@ import (
 	"time"
 )
 
-// Medical contracts are read-only paths observed in the supplied/public SPA.
-// No notification, prescription mutation, PDF creation/deletion or arbitrary URL.
+// Medical record contracts are observed in the public SPA. Optional document
+// retrieval uses its separate, explicit temporary-artifact lifecycle.
 type medicalSpec struct {
 	listPath, listRoot, searchPath, detailPath, detailRoot, title string
 	sections                                                      []medicalSection
@@ -149,6 +149,7 @@ func (s *Session) FetchMedical(ctx context.Context, category string, query Query
 		s.medicalReferences = make(map[string]map[string]medicalReference)
 	}
 	s.medicalReferences[category] = refs
+	s.clearDocumentCategory(category)
 	report.FetchedAt = time.Now().UTC().Format(time.RFC3339Nano)
 	return report, nil
 }
@@ -176,6 +177,7 @@ func (s *Session) FetchMedicalDetail(ctx context.Context, category, reference st
 	if len(rows) == 0 {
 		return report, failure("UPSTREAM_CHANGED", "官方未回傳此筆明細；未將空回應當成成功。")
 	}
+	documents := make(map[string]documentReference)
 	for rowIndex, row := range rows {
 		returned, e := rowText(row, "rowid")
 		if e != nil || returned != ref.rowID {
@@ -201,7 +203,14 @@ func (s *Session) FetchMedicalDetail(ctx context.Context, category, reference st
 		if len(report.Entries) >= MaxReportRecords {
 			return report, failure("RESPONSE_TOO_LARGE", "明細數量過多，未回傳不完整資料。")
 		}
-		report.Entries = append(report.Entries, SupplementEntry{Key: medicalKey(ref.sourceType, ref.rowID, "header", rowIndex), Date: ref.date, EndDate: ref.endDate, Institution: ref.institution, Title: spec.title + "明細", Source: source, Kind: "encounter", Fields: fields})
+		header := SupplementEntry{Key: medicalKey(ref.sourceType, ref.rowID, "header", rowIndex), Date: ref.date, EndDate: ref.endDate, Institution: ref.institution, Title: spec.title + "明細", Source: source, Kind: "encounter", Fields: fields}
+		if category == "hospital" {
+			header.Attachments, e = hospitalDocuments(row, ref, reference, documents)
+			if e != nil {
+				return report, e
+			}
+		}
+		report.Entries = append(report.Entries, header)
 		for _, section := range spec.sections {
 			raw, exists := row[strings.ToLower(section.key)]
 			if !exists {
@@ -258,6 +267,9 @@ func (s *Session) FetchMedicalDetail(ctx context.Context, category, reference st
 				}
 			}
 		}
+	}
+	if err := s.replaceDocumentReferences(category, reference, documents); err != nil {
+		return report, err
 	}
 	report.FetchedAt = time.Now().UTC().Format(time.RFC3339Nano)
 	return report, nil

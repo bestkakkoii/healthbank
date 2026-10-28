@@ -2,73 +2,68 @@
 
 Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
-Implementation status reviewed: **2026-10-28**. Public-source research dates and immutable evidence remain recorded in the protocol and clinical-reference documents. This file distinguishes implemented rc.7 features, external live acceptance, and future source-dependent coverage. See [the real-environment acceptance checklist](acceptance.zh-TW.md).
-The goal is to help people understand longitudinal observations and prepare useful
-questions for their clinicians. The application does not establish diagnoses or
-recommend unsupervised treatment experiments.
+Implementation status reviewed: **2026-10-28**. This records the RC8 implementation;
+publication and full verification remain tied to the actual [Release](https://github.com/bestkakkoii/healthbank/releases)
+and its exact commit. See [real-environment acceptance](acceptance.zh-TW.md).
 
-## Current boundary
+## Product direction
 
-Healthbank compares laboratory results, displays trends and configurable reference
-rules, imports HTML/ZIP reports, and exports CSV, charts and browser print/PDF.
-Reports and official sessions remain transient. SQL contains validated settings and
-pseudonymous subject linkage, not medical observations. See the [README](../README.md),
-[clinical interpretation rules](clinical-reference.zh-TW.md) and
-[connector verification boundary](nhi_protocol.md) for implemented behaviour.
+The official service is an authenticated data provider. Healthbank supplies its own
+acquisition controls, source-aware medical timeline, search, laboratory comparison,
+medication context, original-document access and portable datasets. The objective
+is useful control over authorized records, not reproducing official pages or their
+administrative workflows.
 
-Additional category connectors and **Healthbank-format** JSON/XML imports are
-available since **v1.0.3-rc.6** from publicly observed SPA contracts
-and synthetic fixtures. They are **not authenticated-live verified**; third-party
-NHI JSON/XML/PDF formats, official SDK integration and account completeness are
-not implemented. Public documentation alone is not authentication evidence.
+The existing Go/React architecture, embedded frontend and settings-only SQLite/MySQL
+storage remain. Official health records, source document handles and credentials
+stay transient. No daily-entry requirement, teaching portal or automatic treatment
+recommendation is introduced.
 
-## Priorities
+## Six implemented work tracks
 
-Order: complete retrieval → correct normalization → comfortable comparison →
-evidence-bound analysis. Do not replace existing patient habits or grow a teaching
-portal, daily task system or automatic treatment recommender.
-
-| Priority | Outcome | Current boundary / acceptance gate |
+| Track | RC8 implementation | Remaining acceptance boundary |
 | --- | --- | --- |
-| P0 | Actual historical coverage | Verify requested periods, default filters, source selectors, pagination and independent counts against authorized live records. Synthetic protocol fixtures are not live completeness evidence. |
-| P0 | Private-device login convenience | Multi-user opt-in remembered ID/card fields; password-manager-native form; manual CAPTCHA. Offline component/storage tests exist; real browser managers and devices still require verification. |
-| P0 | Practical age/sex comparison | Two immediate scenarios with sourced intervals and guarded CKD-EPI; original values and flags immutable. Whole-table context bands and opt-in demographics setting sync are implemented in rc.6; source-bound interval coverage remains intentionally limited, not a universal age/sex catalogue. |
-| P1 | Time-series continuity and portable Unicode export | Corrected same-day duplicate breaking, time/date-index x-axis modes, display of multiple source values, UTF-8 JSON (optional BOM), original source preservation and regression cases. No unobserved measurement, interpolation, arbitrary causal or danger score. |
-| P1 | Additional official numeric results | Preventive/self-paid source fields are readable without automatic laboratory-series merging. Verify authenticated units, specimen, source overlap and completeness before extending normalization. |
-| P2 | Optional prescribing/encounter/report context | Listed medications, repeat prescriptions, Western/Chinese/dental encounters, surgeries and inpatient records have bounded source-bound read-only list/detail support, with synthetic contract tests. Per-drug prescription-days charts are present; neither records nor charts establish ingestion, dispensing, adherence, outcomes or live authenticated completeness. |
-| Optional | Personal products or medication notes | An optional device-local list with explicit save/export/import/delete and interval matching is implemented; no daily entry or medical notes in server settings. |
+| Reliable acquisition | Independent acquisition versus display ranges; maximum supported source ranges; all selected lists then recursive details; progress, bounded retry, cancel/resume and partial-failure preservation. | Real account retention, eligibility and actual source totals cannot be proved by synthetic fixtures. |
+| Useful source coverage | 38 additional provider categories join 14 existing categories and five original-file service entries; laboratory retrieval remains its own API and is included by the workspace's all-source action. | 57 entries are capability/service entries, not 57 independent medical datasets or a claim every account supports each one. |
+| Source-aware model | Raw text/precise values, distinct dates, institutional/self-entered provenance, exact duplicates and explicit parent-detail links. | Unknown units, methods, specimen relationships and source code systems remain unknown. |
+| Own reading and comparison UI | Unified medical/laboratory timeline, full-text/source/institution/date filters, paginated complete returned histories, coverage states and source-scoped prescription-days graphs. Existing age/sex, CKD-EPI and guarded lipid analysis remain. | Extra source values are not automatically merged into laboratory formula inputs without verified comparability. |
+| Complete portable data | healthbank.dataset.v1 carries all fetched lists/details, source ranges/states and explicitly retained attachments; UTF-8/BOM, SHA-256 and strict atomic import into an unverified session. Large originals remain explicit separate downloads. | Original official JSON/XML/PDF are downloadable artifacts, not assumed compatible with the Healthbank schema. |
+| Isolated connector maintenance | Fixed observed routes, opaque session/category handles, typed errors, bounds, no health persistence and public-source contract appendices. | Live official contract changes require source reinspection and authorized-account acceptance. |
 
-Scientific research supplies internal constants, formula coefficients, eligibility
-and invalid-calculation guards. It does not justify a knowledgebase or fabricated
-five-level categories. Clinical rules, exact versions and provenance are separate
-from UI presentation. No runtime or toolkit upgrade authorizes a new medical rule.
+Scientific research continues to supply named constants, coefficients, eligibility
+and limitations. This data expansion adds no new diagnostic thresholds, treatment
+recommendations or inferred medication adherence.
 
-## Official data coverage and remaining candidates
+## Implemented source coverage
 
-Unless stated otherwise, the following facts come from the freshly retrieved
-[official usage guide][guide]. Its immutable bundle evidence is recorded in
-[the protocol document](nhi_protocol.md#evidence). Windows describe the guide, not
-guaranteed retention or an application-enforced cutoff.
+Detailed routes, field meanings, date behavior and immutable public-bundle evidence
+are in [provider data](provider-data.md), [original documents](provider-documents.md)
+and [the existing login/laboratory protocol](nhi_protocol.md).
 
-| Dataset | Documented origin/window | Connector status |
-| --- | --- | --- |
-| Other laboratory results | Institutional uploads; generally recent three years, with the detailed guide ending coverage two days before login. | Existing connector; authenticated completeness unverified. |
-| Outpatient visits, medication and chronic prescriptions | Institutional claims/card uploads; generally recent three years. | Implemented bounded list/detail support for medication, chronic prescriptions and Western/Chinese/dental encounters; synthetic contracts verified, authenticated completeness unverified. The observed chronic-prescription route has no date-search endpoint. |
-| Hospitalization and procedures | Institutional claims/card uploads from ROC 105 (2016). | Implemented bounded list/detail support; admission/discharge dates remain distinct from claim dates. Authenticated completeness unverified. |
-| Imaging/pathology reports | Institutional uploads; generally recent three years. | Implemented report index only; no report text, original image or DICOM retrieval. Authenticated coverage unverified. |
-| Discharge summaries | Downloads announced by MOHW in [2015][discharge]. | Historical existence confirmed; current route/window unverified. |
-| Allergies | Institutional entries from ROC 104 (2015), plus separately entered personal records. | Candidate; provenance must remain distinct. |
-| Adult preventive examinations | Health Promotion Administration; reporting lag and manual-entry omissions are documented. | Implemented retrieval of the recent two examinations exposed by the observed page; original fields and units remain separate from normalized laboratory series. |
-| Cancer screening | HPA results from ROC 105 (2016). | Candidate; contract unverified. |
-| Vaccination | CDC-supplied records. | Candidate; contract unverified. |
-| Self-paid examinations | Personal or institutional entries; provenance depends on the supplied record. | Implemented list/detail retrieval; fields are not automatically merged into laboratory series. Authenticated coverage unverified. |
-| Physiological measurements, food/exercise | Personal entries; the mobile app also supports health-data upload. | Candidate; no general connector or browser-to-Apple-Health integration established. |
-| HTML/PDF/XML/JSON downloads | Official download service. | Validated HTML/ZIP and Healthbank's own versioned JSON/XML imports exist; arbitrary official JSON/XML/PDF schemas require validation. |
+| Data group | Implemented acquisition and interpretation boundary |
+| --- | --- |
+| Laboratory and examinations | Main full-period laboratory search, adult/self-paid examinations, source HbA1c/lipid views, bone-density text/images and source-specific checks. Preserve source identities; no automatic cross-method merge. |
+| Prescribing and materials | Medicines, chronic prescriptions, ordinary/electronic prescriptions, actual source-confirmed dispensing versus suggested refill windows, self-paid drugs and materials. No proof of ingestion or adherence. |
+| Encounters and reports | Western/Chinese/dental encounters, surgery and hospitalization, report text, available inpatient documents and original image/file access. Encounter, admission, discharge, claim and upload dates remain separate. |
+| Personal clinical sources | Allergies, official/self-entered vaccinations, COVID source results, card wish annotations, catastrophic certificates, cochlear records and care participation. Read-only status does not modify legal wishes or registration. |
+| Prevention and care | Colorectal/oral/breast/cervical/lung, HPV/HPSA screening; diabetes, early CKD, combined diabetes/CKD, metabolic syndrome, hepatitis and COPD tracking; family-doctor/health follow-up and home-care status. Eligibility and source windows remain explicit. |
+| Existing measurements | Physiology/body measurements and source-device series/day details, existing diet/exercise/menstrual records. Reading existing entries does not add daily input workflows or native mobile health integration. |
+| Original archives | Current job list/details, prepared HTML/XML/JSON/PDF/DICOM downloads, explicit source-offered generation requests and attachment download. Job history is not medical retention history. |
 
-An absent result means “not returned”, not “never performed”. The guide describes
-aggregated information rather than a formal medical record. Claims diagnoses must
-not silently become confirmed active conditions. The conservative laboratory query
-floor is not evidence that the official service holds lifetime records.
+Default maximum-range acquisition uses empty application dates. Supported searches
+resolve these to 1912-01-01 through Taiwan today; source-only routes return their
+own available arrays. Recent summaries and two/three-examination windows are not
+relabelled as lifetime data. An absent result means “not returned”, not “never
+performed”. Without an independent same-period count, completeness remains unknown.
+
+## Deliberately separate future decisions
+
+Official SDK admission/contract review, additional identity mechanisms, family
+delegation management, general parsing of unverified official file schemas and
+new clinical calculations are separate extensions. They are not prerequisites for
+this provider-backed workspace release. Administrative insurance operations,
+notifications/calendars, surveys, reward programs and official daily-entry screens
+are not copied to increase a feature-parity count.
 
 ## Interpretation and provenance
 

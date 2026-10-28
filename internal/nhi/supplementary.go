@@ -22,16 +22,18 @@ type SupplementField struct {
 	Unit  string `json:"unit,omitempty"`
 }
 type SupplementEntry struct {
-	Key         string            `json:"key,omitempty"`
-	Kind        string            `json:"kind,omitempty"`
-	EndDate     string            `json:"end_date,omitempty"`
-	Medicine    *MedicineOrder    `json:"medicine,omitempty"`
-	Date        string            `json:"date"`
-	Institution string            `json:"institution"`
-	Title       string            `json:"title"`
-	Source      string            `json:"source"`
-	Fields      []SupplementField `json:"fields"`
-	DetailID    string            `json:"detail_id,omitempty"`
+	Key             string            `json:"key,omitempty"`
+	Kind            string            `json:"kind,omitempty"`
+	EndDate         string            `json:"end_date,omitempty"`
+	Medicine        *MedicineOrder    `json:"medicine,omitempty"`
+	Date            string            `json:"date"`
+	Institution     string            `json:"institution"`
+	Title           string            `json:"title"`
+	Source          string            `json:"source"`
+	Fields          []SupplementField `json:"fields"`
+	DetailID        string            `json:"detail_id,omitempty"`
+	Attachments     []Attachment      `json:"attachments,omitempty"`
+	DocumentActions []DocumentAction  `json:"document_actions,omitempty"`
 }
 type SupplementReport struct {
 	Category  string            `json:"category"`
@@ -208,7 +210,7 @@ func (s *Session) FetchSupplement(ctx context.Context, category string, query Qu
 		report.Coverage = "自費健檢清單，可能含本人輸入及未完成資料；點開才讀取明細，不代表院所驗證或全部歷史。"
 		rows, err = s.supplementRequest(ctx, http.MethodPost, "/api/ihke3000/ihke3403s01/IHKE3403S01", nil, nil, "")
 	case "imaging":
-		report.Coverage = "影像／病理報告索引；沿用官方全部類型搜尋。尚未包含原始影像或報告全文，無獨立總數可核對。"
+		report.Coverage = "影像／病理報告清單；沿用官方全部類型搜尋，未提供日期查詢或獨立總數。報告全文及影像須另行取得，影像產製由使用者明確提出。"
 		params := url.Values{"s_type": {""}, "s_sort": {"A1"}}
 		_, err = s.supplementRequest(ctx, http.MethodGet, "/api/ihke3000/ihke3408s01/page_load", params, nil, "sp_IHKE3408S01_data")
 		if err == nil {
@@ -258,6 +260,7 @@ func (s *Session) FetchSupplement(ctx context.Context, category string, query Qu
 	}
 	references := map[string]string{}
 	westernRefs := map[string]westernReference{}
+	imagingRefs := map[string]westernReference{}
 	for _, row := range rows {
 		entry := SupplementEntry{Title: spec.title, Source: "官方回傳", Fields: []SupplementField{}}
 		entry.Date, err = rowText(row, "firsT_DIAG_DATE", "real_INSPECT_DATE", "funC_DATE")
@@ -299,7 +302,7 @@ func (s *Session) FetchSupplement(ctx context.Context, category string, query Qu
 		if entry.Date == "" && entry.Institution == "" && len(entry.Fields) == 0 {
 			return report, changedError()
 		}
-		if category == "western" {
+		if category == "western" || category == "imaging" {
 			rowID, idErr := rowText(row, "row_ID")
 			sourceType, typeErr := rowText(row, "ori_TYPE")
 			if idErr != nil || typeErr != nil {
@@ -311,7 +314,12 @@ func (s *Session) FetchSupplement(ctx context.Context, category string, query Qu
 					return report, failure("INITIALIZATION_FAILED", "無法建立明細識別。")
 				}
 				entry.DetailID = hex.EncodeToString(key)
-				westernRefs[entry.DetailID] = westernReference{rowID, sourceType, entry.Date, entry.Institution}
+				ref := westernReference{rowID, sourceType, entry.Date, entry.Institution}
+				if category == "imaging" {
+					imagingRefs[entry.DetailID] = ref
+				} else {
+					westernRefs[entry.DetailID] = ref
+				}
 			}
 		}
 		report.Entries = append(report.Entries, entry)
@@ -321,6 +329,10 @@ func (s *Session) FetchSupplement(ctx context.Context, category string, query Qu
 	}
 	if category == "western" {
 		s.westernReferences = westernRefs
+	}
+	if category == "imaging" {
+		s.imagingReferences = imagingRefs
+		s.clearDocumentCategory("imaging")
 	}
 	report.FetchedAt = time.Now().UTC().Format(time.RFC3339)
 	return report, nil

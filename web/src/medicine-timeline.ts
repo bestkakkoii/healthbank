@@ -29,6 +29,17 @@ export function medicalDate(value: string): string {
   const time = Date.parse(`${result}T00:00:00Z`);
   return Number.isFinite(time) && new Date(time).toISOString().slice(0, 10) === result ? result : '';
 }
+
+// Some official observations include a local time. Use its stated calendar
+// date only after validating the time; keep the original string in sourceDate.
+// Timezone-bearing input is not silently shifted or assigned Taiwan time.
+export function sourceEventDate(value: string): string {
+  const direct = medicalDate(value);
+  if (direct) return direct;
+  const parts = /^(\d{1,4}[-/]\d{1,2}[-/]\d{1,2})[ T](\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,9})?)?$/.exec(value.trim());
+  if (!parts || Number(parts[2]) > 23 || Number(parts[3]) > 59 || Number(parts[4] ?? '0') > 59) return '';
+  return medicalDate(parts[1] ?? '');
+}
 export function prescribedDays(raw: string): number | null {
   const text = raw.trim();
   if (!/^\d{1,3}$/.test(text)) return null;
@@ -36,22 +47,28 @@ export function prescribedDays(raw: string): number | null {
   return Number.isSafeInteger(days) && days >= 1 && days <= 365 ? days : null;
 }
 
-// Group by the exact official drug code when available; a name-only event is
-// grouped only when source identity is also the same. ACT category is NOT a drug.
+// Claim drug codes have a known shared namespace. Electronic-prescription codes
+// and institution-specific self-paid codes do not establish that equivalence.
+// ACT category is never a drug identity; raw source codes remain visible.
 export function medicineSeries(reports: SupplementReport[]): MedicineSeries[] {
   const series = new Map<string, MedicineSeries>();
   for (const [reportIndex, report] of reports.entries()) {
     for (const [entryIndex, entry] of report.entries.entries()) {
       const med = entry.medicine;
       if (!med || !med.name.trim() && !med.code.trim()) continue;
-      const code = med.code.trim().toUpperCase();
+      const code = med.code;
+      const category = report.category.replace(/_detail$/, '');
+      const namespace = category === 'e_prescriptions' ? category : category === 'self_paid_medicine'
+        ? JSON.stringify([category, entry.institution || `record:${entry.key || `${reportIndex}:${entryIndex}`}`]) : '';
+      const normalizedCode = namespace ? code : code.trim().toUpperCase();
       const name = med.name.trim() || code;
-      const key = code ? `code:${code}` : JSON.stringify(['name', name, entry.source]);
+      const key = code.trim() ? namespace ? JSON.stringify(['code', namespace, normalizedCode]) : `code:${normalizedCode}`
+        : JSON.stringify(['name', namespace, name, entry.source]);
       const group = series.get(key) ?? { key, code, name, events: [] };
       const id = `${reportIndex}:${entryIndex}:${entry.key ?? ''}`;
       group.events.push({
         id,
-        date: medicalDate(entry.date), sourceDate: entry.date,
+        date: sourceEventDate(entry.date), sourceDate: entry.date,
         code, name, quantity: med.quantity, days: med.days, validDays: prescribedDays(med.days),
         institution: entry.institution, source: entry.source,
       });

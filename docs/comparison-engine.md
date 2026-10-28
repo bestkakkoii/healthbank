@@ -4,6 +4,14 @@ Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
 ## Implemented boundary
 
+The rc.8 source workspace and portable archive do not expand formula eligibility.
+Additional source measurements and prescriptions retain their own provenance;
+matching dates or institutions never confirms one specimen or actual ingestion.
+Archive laboratory rows contain source fields only and are normalized again by
+the current engine. Historical acquisition metadata is preserved separately from
+the imported session's unverified identity and completeness. See
+[data-workspace.zh-TW.md](data-workspace.zh-TW.md) for that contract.
+
 `web/src/clinical-comparison.ts` is a pure browser-side engine. `ClinicalComparison.tsx`
 exposes two independent scenarios in Settings and Trends, even without observations.
 Calculations run in the browser and never replace original results, institutional

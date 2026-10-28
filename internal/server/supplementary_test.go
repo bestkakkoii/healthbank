@@ -14,7 +14,7 @@ func TestSupplementaryRequiresOfficialIdentityAndKnownDetailCategory(t *testing.
 	app, db, _ := testApp(t)
 	browser := &browserFixture{app: app}
 	browser.refresh(t)
-	for _, category := range []string{"medicine", "chronic", "western", "chinese", "dental", "procedure", "hospital", "self_paid"} {
+	for _, category := range []string{"medicine", "chronic", "western", "chinese", "dental", "procedure", "hospital", "self_paid", "imaging", "official_files", "official_export_html", "official_export_json", "official_export_xml", "official_export_pdf"} {
 		response := browser.request(http.MethodGet, "/api/supplementary?category="+category, nil, "", "")
 		if response.Code != http.StatusUnauthorized {
 			t.Fatal("anonymous session accessed official supplementary data")
@@ -35,7 +35,7 @@ func TestSupplementaryRequiresOfficialIdentityAndKnownDetailCategory(t *testing.
 	s.mu.Lock()
 	s.mode, s.subject, s.official = "official", "synthetic-subject", connector
 	s.mu.Unlock()
-	for _, category := range []string{"", "adult", "imaging", "recent_chronic", "unknown"} {
+	for _, category := range []string{"", "adult", "recent_chronic", "official_export_json", "unknown"} {
 		response := browser.request(http.MethodGet, "/api/supplementary?category="+category+"&detail="+strings.Repeat("a", 48), nil, "", "")
 		var envelope struct {
 			Error struct {

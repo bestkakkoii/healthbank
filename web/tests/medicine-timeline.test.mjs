@@ -1,7 +1,7 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { medicineSeries, medicalDate, prescribedDays, prescribedDayBuckets, prescribedDaySegments } from '../src/medicine-timeline.ts';
+import { medicineSeries, medicalDate, sourceEventDate, prescribedDays, prescribedDayBuckets, prescribedDaySegments } from '../src/medicine-timeline.ts';
 const report = entries => ({ category: 'medicine_detail', fetched_at: '2026-10-27', coverage: '', entries, complete: false });
 const row = (code, name, date, days, amount, source = '官方處方', key = '') => ({
   key, kind: 'medicine', date, institution: '合成院所', title: '藥品醫囑', source, fields: [],
@@ -66,4 +66,32 @@ test('name-only medicine records require identical names and source and preserve
   ])]);
   assert.equal(groups.length, 3);
   assert.equal(groups.reduce((total, group) => total + group.events.length, 0), 4);
+});
+
+test('electronic prescription and self-paid code namespaces cannot silently merge with NHI claim codes', () => {
+  const shared = row(' A001 ', '合成藥', '115/10/28', '28', '30');
+  const groups = medicineSeries([
+    report([shared]),
+    { ...report([row('A001', '合成藥', '115/10/29', '14', '20')]), category: 'western_detail' },
+    { ...report([shared]), category: 'e_prescriptions_detail' },
+    { ...report([{ ...shared, institution: '合成院所甲' }, { ...shared, institution: '合成院所乙' },
+      { ...shared, institution: '', key: 'source-1' }, { ...shared, institution: '', key: 'source-2' }]), category: 'self_paid_medicine_detail' },
+  ]);
+  assert.equal(groups.length, 6);
+  assert.equal(groups.filter(group => group.events.length === 2).length, 1);
+  assert.equal(groups.reduce((count, group) => count + group.events.length, 0), 7);
+  assert.ok(groups.flatMap(group => group.events).some(event => event.code === ' A001 '));
+  assert.equal(groups.find(group => group.key === 'code:A001').events.length, 2);
+});
+
+test('source event dates accept valid local timestamps without altering raw source times or timezone assumptions', () => {
+  assert.equal(sourceEventDate('2025-01-02 08:30'), '2025-01-02');
+  assert.equal(sourceEventDate('115/10/01 08:30'), '2026-10-01');
+  assert.equal(sourceEventDate('2025-01-02T08:30:59.123'), '2025-01-02');
+  for (const input of ['2025-02-30 08:30', '2025-01-02 24:00', '115/10/01 08:60', '2025-01-02 08:30:60',
+    '2025-01-02T08:30:00Z', '2025-01-02T08:30:00+08:00', '2025-01-02 08:30 extra']) assert.equal(sourceEventDate(input), '');
+  assert.equal(medicalDate('2025-01-02 08:30'), '');
+  const [group] = medicineSeries([report([row('SYNTHETIC', '合成', '115/10/01 08:30', '28', '30')])]);
+  assert.equal(group.events[0].date, '2026-10-01');
+  assert.equal(group.events[0].sourceDate, '115/10/01 08:30');
 });

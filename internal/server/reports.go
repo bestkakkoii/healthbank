@@ -167,14 +167,19 @@ func (a *App) currentReports(w http.ResponseWriter, r *http.Request, s *session)
 	a.json(w, 200, a.currentResponse(s))
 }
 func (a *App) importReports(w http.ResponseWriter, r *http.Request, s *session) {
-	const maxBytes = 12 << 20
-	r.Body = http.MaxBytesReader(w, r.Body, maxBytes+(64<<10))
+	const maxEnvelopeBytes = lab.MaxImportBytes + (64 << 10)
+	if r.ContentLength > maxEnvelopeBytes {
+		a.fail(w, r, http.StatusRequestEntityTooLarge, "upload_size", "上傳超過 32 MiB 檔案與 64 KiB 表單包裝的總上限。")
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, maxEnvelopeBytes)
 	reader, err := r.MultipartReader()
 	if err != nil {
 		a.fail(w, r, 400, "invalid_upload", "請選擇HTML、ZIP或本站可攜JSON／XML檔案。")
 		return
 	}
 	var data []byte
+	defer func() { clear(data) }()
 	var filename string
 	for {
 		part, err := reader.NextPart()
@@ -182,7 +187,12 @@ func (a *App) importReports(w http.ResponseWriter, r *http.Request, s *session) 
 			break
 		}
 		if err != nil {
-			a.fail(w, r, 400, "upload_read", "檔案讀取失敗或超過12 MiB。")
+			var tooLarge *http.MaxBytesError
+			if errors.As(err, &tooLarge) {
+				a.fail(w, r, http.StatusRequestEntityTooLarge, "upload_size", "上傳超過 32 MiB 檔案與 64 KiB 表單包裝的總上限。")
+			} else {
+				a.fail(w, r, 400, "upload_read", "檔案或表單包裝讀取失敗。")
+			}
 			return
 		}
 		if part.FormName() != "file" || filename != "" {
@@ -191,12 +201,28 @@ func (a *App) importReports(w http.ResponseWriter, r *http.Request, s *session) 
 			return
 		}
 		filename = part.FileName()
-		data, err = io.ReadAll(io.LimitReader(part, maxBytes+1))
+		data, err = io.ReadAll(io.LimitReader(part, lab.MaxImportBytes+1))
 		_ = part.Close()
-		if err != nil || len(data) > maxBytes {
-			a.fail(w, r, 413, "upload_size", "檔案須小於12 MiB。")
+		var tooLarge *http.MaxBytesError
+		if errors.As(err, &tooLarge) || len(data) > lab.MaxImportBytes {
+			a.fail(w, r, http.StatusRequestEntityTooLarge, "upload_size", "檔案不可超過 32 MiB；另存 HTML／ZIP 仍依較小的格式上限檢查。")
 			return
 		}
+		if err != nil {
+			a.fail(w, r, 400, "upload_read", "檔案讀取失敗。")
+			return
+		}
+	}
+	// A multipart closing boundary can precede an epilogue. Drain only through
+	// the bounded reader so chunked uploads cannot evade the envelope ceiling.
+	if _, err := io.Copy(io.Discard, r.Body); err != nil {
+		var tooLarge *http.MaxBytesError
+		if errors.As(err, &tooLarge) {
+			a.fail(w, r, http.StatusRequestEntityTooLarge, "upload_size", "上傳超過 32 MiB 檔案與 64 KiB 表單包裝的總上限。")
+		} else {
+			a.fail(w, r, 400, "upload_read", "檔案表單未完整讀取。")
+		}
+		return
 	}
 	if filename == "" || len(data) == 0 {
 		a.fail(w, r, 400, "empty_upload", "請選擇非空白的HTML、ZIP或本站可攜JSON／XML檔案。")

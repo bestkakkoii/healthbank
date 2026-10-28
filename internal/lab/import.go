@@ -15,13 +15,18 @@ import (
 	"golang.org/x/net/html"
 )
 
+// MaxImportBytes is the largest supported import: a Healthbank portable JSON or
+// XML report. HTTP callers should add only bounded multipart framing overhead.
+// Saved-page archives and expanded HTML retain their smaller independent caps.
+const MaxImportBytes = 32 << 20
+
 const (
-	maxImportBytes    = 12 << 20
-	maxExpandedHTML   = 6 << 20
-	maxArchiveEntries = 4096
-	maxHTMLToken      = 1 << 20
-	maxCellBytes      = 64 << 10
-	maxImportedRows   = 50000
+	maxSavedImportBytes = 12 << 20
+	maxExpandedHTML     = 6 << 20
+	maxArchiveEntries   = 4096
+	maxHTMLToken        = 1 << 20
+	maxCellBytes        = 64 << 10
+	maxImportedRows     = 50000
 )
 
 const savedPageWarning = "另存網頁只包含當時頁面已有的資料，可能僅目前分頁；不代表完整年度或全部歷史紀錄。"
@@ -31,8 +36,8 @@ var detailedHeaders = []string{
 	"單位", "參考值", "醫事機構", "就醫日期/入院日期", "資料來源",
 }
 
-// ParseImport reads one saved official report in memory. A browser's companion
-// resource ZIP is supported; its scripts, assets and patient banner are never
+// ParseImport reads one portable report or saved official page in memory. A
+// browser's companion resource ZIP is supported; its scripts, assets and patient banner are never
 // executed, extracted, interpreted as records or returned to the application.
 // Result/date text is retained for the normalizer. Repeated report rows remain
 // distinct observations; only alternate summary/detail representations of the
@@ -41,15 +46,18 @@ func ParseImport(filename string, data []byte) ([]RawRecord, []string, error) {
 	if len(data) == 0 {
 		return nil, nil, errors.New("匯入檔案是空的。")
 	}
-	if len(data) > maxImportBytes {
-		return nil, nil, errors.New("匯入檔案不可超過 12 MiB。")
-	}
 	extension := strings.ToLower(path.Ext(filename))
-	if extension == ".json" {
-		return parsePortableJSON(data)
-	}
-	if extension == ".xml" {
+	if extension == ".json" || extension == ".xml" {
+		if len(data) > MaxImportBytes {
+			return nil, nil, errors.New("Healthbank 可攜 JSON／XML 檔案不可超過 32 MiB。")
+		}
+		if extension == ".json" {
+			return parsePortableJSON(data)
+		}
 		return parsePortableXML(data)
+	}
+	if len(data) > maxSavedImportBytes {
+		return nil, nil, errors.New("另存 HTML／ZIP 匯入檔案不可超過 12 MiB；HTML 內容另限 6 MiB。")
 	}
 	if extension == ".zip" || bytes.HasPrefix(data, []byte{'P', 'K', 3, 4}) || bytes.HasPrefix(data, []byte{'P', 'K', 5, 6}) {
 		return parseArchive(data)

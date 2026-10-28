@@ -2,9 +2,77 @@
 package lab
 
 import (
+	"bytes"
+	"encoding/json"
 	"strings"
 	"testing"
 )
+
+func TestPortableImportSupportsHistoryAboveTwelveMiB(t *testing.T) {
+	// The former upload cap rejected valid complete-history exports even though
+	// every row and scalar remained well inside the parser's independent limits.
+	const count = 400
+	source := strings.Repeat("SYNTHETIC_SOURCE_", 2048)
+	row := portableRow{CheckDate: "115/01/02", ItemName: "合成項目", Result: ">400.000000000000000001", Source: source}
+	rows := make([]portableRow, count)
+	for i := range rows {
+		rows[i] = row
+	}
+	jsonData, err := json.Marshal(struct {
+		Schema  string        `json:"schema"`
+		Records []portableRow `json:"records"`
+	}{portableSchema, rows})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var xmlData strings.Builder
+	xmlData.WriteString(`<healthbank_report schema="healthbank.lab.v1">`)
+	for range count {
+		xmlData.WriteString(`<record><check_date>115/01/02</check_date><item_name>合成項目</item_name><result>&gt;400.000000000000000001</result><source>`)
+		xmlData.WriteString(source)
+		xmlData.WriteString(`</source></record>`)
+	}
+	xmlData.WriteString(`</healthbank_report>`)
+	for _, input := range []struct {
+		name string
+		data []byte
+	}{{"history.json", jsonData}, {"history.xml", []byte(xmlData.String())}} {
+		t.Run(input.name, func(t *testing.T) {
+			if len(input.data) <= 12<<20 || len(input.data) >= 32<<20 {
+				t.Fatal("fixture must exercise a valid portable file between the old and new bounds")
+			}
+			records, warnings, err := ParseImport(input.name, input.data)
+			if err != nil || len(records) != count || len(warnings) == 0 {
+				t.Fatalf("large portable history failed: %v; rows=%d", err, len(records))
+			}
+			if records[0] != row.raw() || records[count-1] != row.raw() {
+				t.Fatal("large import truncated, reformatted or deduplicated original rows")
+			}
+		})
+	}
+}
+
+func TestPortableImportThirtyTwoMiBBoundAndFieldLimits(t *testing.T) {
+	for _, ext := range []string{"json", "xml"} {
+		t.Run(ext+"_file", func(t *testing.T) {
+			if _, _, err := ParseImport("oversized."+ext, bytes.Repeat([]byte(" "), (32<<20)+1)); err == nil || !strings.Contains(err.Error(), "32 MiB") {
+				t.Fatal("portable import did not reject a file above 32 MiB before parsing")
+			}
+		})
+	}
+	for _, input := range []struct{ name, data string }{
+		{"field.json", `{"schema":"healthbank.lab.v1","records":[{"item_name":"synthetic","result":"` + strings.Repeat("x", (64<<10)+1) + `"}]}`},
+		{"field.xml", `<healthbank_report schema="healthbank.lab.v1"><record><item_name>synthetic</item_name><result>` + strings.Repeat("x", (64<<10)+1) + `</result></record></healthbank_report>`},
+		{"rows.json", `{"schema":"healthbank.lab.v1","records":[` + strings.TrimSuffix(strings.Repeat(`{"item_name":"synthetic"},`, 50001), ",") + `]}`},
+		{"rows.xml", `<healthbank_report schema="healthbank.lab.v1">` + strings.Repeat(`<record><item_name>synthetic</item_name></record>`, 50001) + `</healthbank_report>`},
+	} {
+		t.Run(input.name, func(t *testing.T) {
+			if records, _, err := ParseImport(input.name, []byte(input.data)); err == nil || len(records) != 0 {
+				t.Fatal("larger portable file allowance relaxed scalar or row limits")
+			}
+		})
+	}
+}
 
 func TestPortableReportsPreserveEveryOriginalRow(t *testing.T) {
 	row := `{"check_date":"115/10/26","item_name":"Synthetic test","result":">300","unit":"mg/L","reference":"[][30]","official_flag":"H"}`

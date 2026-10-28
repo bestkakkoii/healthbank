@@ -21,20 +21,32 @@ func (a *App) supplementary(w http.ResponseWriter, r *http.Request, s *session) 
 	var err error
 	category := r.URL.Query().Get("category")
 	if reference := r.URL.Query().Get("detail"); reference != "" {
-		if len(reference) != 48 {
+		if !validDocumentReference(reference) {
 			a.fail(w, r, 400, "invalid_detail", "請由目前所選類別清單開啟明細。")
 			return
 		}
 		if nhi.MedicalCategory(category) {
 			report, err = s.official.FetchMedicalDetail(ctx, category, reference)
+		} else if nhi.ProviderCategory(category) {
+			report, err = s.official.FetchProviderDetail(ctx, category, reference)
 		} else if category == "self_paid" {
 			report, err = s.official.FetchSelfPaidDetail(ctx, reference)
+		} else if category == "imaging" {
+			report, err = s.official.FetchImagingDetail(ctx, reference)
+		} else if category == "official_files" {
+			report, err = s.official.FetchOfficialFileDetail(ctx, reference)
 		} else {
 			a.fail(w, r, 400, "invalid_detail", "此資料類別未提供明細，請由原清單開啟。")
 			return
 		}
 	} else if nhi.MedicalCategory(category) {
 		report, err = s.official.FetchMedical(ctx, category, nhi.Query{StartDate: r.URL.Query().Get("from"), EndDate: r.URL.Query().Get("to")})
+	} else if nhi.ProviderCategory(category) {
+		report, err = s.official.FetchProvider(ctx, category, nhi.Query{StartDate: r.URL.Query().Get("from"), EndDate: r.URL.Query().Get("to")})
+	} else if category == "official_files" {
+		report, err = s.official.FetchOfficialFiles(ctx)
+	} else if format, ok := nhi.OfficialExportCategory(category); ok {
+		report, err = s.official.FetchOfficialExportOptions(ctx, format)
 	} else {
 		report, err = s.official.FetchSupplement(ctx, category, nhi.Query{StartDate: r.URL.Query().Get("from"), EndDate: r.URL.Query().Get("to")})
 	}

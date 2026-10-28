@@ -358,7 +358,30 @@ The tests exercise:
 - Four API metadata/logout cases and eleven count-diagnostic validation cases
   in `internal/server/report_metadata_test.go`.
 
-## Medical categories and detail references (rc.7)
+## Current provider-workspace contract (rc.8)
+
+The official service supplies authenticated source data. Healthbank's own source
+catalog, acquisition scheduler, timeline and portable dataset are documented in
+[data-workspace.zh-TW.md](data-workspace.zh-TW.md). The fixed routes and public
+bundle hashes for 38 additional categories are in [provider-data.md](provider-data.md);
+original report retrieval and explicit file preparation are in
+[provider-documents.md](provider-documents.md).
+
+The catalog has 57 source/service capabilities, not 57 independent medical
+datasets. Empty application dates request the supported maximum range; sources
+without a date-search contract retain the actual available source window. The
+workspace retrieves selected lists first, then all reachable nested details, with
+bounded sequential requests, cancellation, resume and explicit capacity failures.
+Source queries, date drafts and display filters are separate. No independent
+source total means completeness remains unverified.
+
+Original file preparation requires an explicit user operation and CSRF protection.
+Normal acquisition performs read-only list/detail requests. Original documents
+are streamed or handled within stated memory limits; arbitrary browser-supplied
+upstream URLs and server file spooling are not accepted. Public source inspection
+and synthetic fixtures do not establish live account eligibility or availability.
+
+## Medical categories and detail references (rc.7 source baseline)
 
 On 2026-10-28 (Asia/Taipei), credentialless retrieval of the current public
 application manifest and fourteen medical list/detail bundles confirmed the
@@ -390,8 +413,10 @@ and order entries count toward the response limit. An invalid top-level null,
 wrong returned row identity, unsupported detail category or oversized result fails
 explicitly rather than being reported as a complete empty history.
 
-The UI requests at most 24 detail records per explicit batch, sequentially, with
-cancellation. Partial successes remain visible on transient failures; HTTP 401
+The rc.7 UI requested at most 24 detail records per explicit batch. The rc.8
+workspace replaces that interaction with sequential full-detail acquisition,
+including nested references, within the documented explicit limits. Partial
+successes remain visible on transient failures; HTTP 401
 clears the cached medical data and invokes the application-wide session-expiry
 handler. Neither source-contract tests nor a completed batch prove account
 completeness. All automated medical fixtures are wholly synthetic.

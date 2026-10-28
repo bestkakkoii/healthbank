@@ -293,11 +293,11 @@ func detectAPIError(fields map[string]json.RawMessage) error {
 	if code == "9999" {
 		return sessionExpired()
 	}
-	return &Error{Code: "UPSTREAM_REJECTED", Message: "健保署未能提供檢驗資料，請重新登入後重試。", UpstreamCode: safeCode(code)}
+	return &Error{Code: "UPSTREAM_REJECTED", Message: "健保署未能提供此項資料，請重新登入後重試。", UpstreamCode: safeCode(code)}
 }
 
 func changedError() *Error {
-	return failure("UPSTREAM_CHANGED", "健保署檢驗資料格式與目前版本不符，請先使用官方另存網頁匯入。")
+	return failure("UPSTREAM_CHANGED", "健保署回傳的資料格式與目前版本不符，未使用不完整回應。請稍後重試或更新 Healthbank。")
 }
 
 func (s *Session) invalidateOnAuthError(err error) {

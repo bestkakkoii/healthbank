@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.0.3-rc.8 — 2026-10-28 (Asia/Taipei)
+
+- Treat the official service as an authenticated data provider, with Healthbank's own medical-data workspace, unified laboratory/source timeline, full-text and source/date/institution filters, and explicit data-coverage states.
+- Separate acquisition ranges from unsubmitted laboratory dates and display filters. Maximum-range retrieval acquires every selected list before all nested details, with progress, cancellation, resume, one bounded transient retry and preserved partial successes. Remove the old 24-detail batch ceiling.
+- Add 38 fixed-contract provider categories covering electronic prescriptions/refills, self-paid drugs/materials, allergies, vaccinations, screenings, care programs, family-doctor follow-up, physiology/body/device measurements and existing self-entered records. Retain source-specific windows and never claim lifetime completeness without independent totals.
+- Preserve precise source strings, duplicate rows, institutional versus self-entered provenance, separate date meanings and explicit parent/detail links. Do not merge unproven medication code systems or infer actual ingestion from prescribing/dispensing.
+- Add imaging/pathology report text, ready JPEG groups, inpatient PDF/source-rendered discharge content, source-available prescription documents, official original archives and DICOM download. Original-file transfers are bounded, fixed-origin and memory/stream only; no medical file spooling or SQL persistence.
+- Expose source-offered HTML/XML/JSON/PDF/JPEG/DICOM preparation as explicit CSRF-protected operations, separate from automatic retrieval. Consume preparation handles to prevent ambiguous automatic retries; preserve original archive bytes and do not store decryption passwords.
+- Add complete UTF-8/BOM healthbank.dataset.v1 export/import for all fetched lists, details, coverage and explicitly retained attachments, independent of display filters. Validate source relationships, structure, sizes, filenames and attachment SHA-256 before restoration; archive handles cannot authorize live requests. Preserve unacquired detail/attachment states.
+- Align portable laboratory export/import at 32 MiB while retaining the existing saved-page ZIP/HTML expansion bounds; validate the same limits before creating a dataset. Preserve large refill-field arrays and actual downloaded filenames/MIME types so exported archives can be restored without dropping source data.
+- Keep existing exact laboratory comparison, original flags, high-TG formula boundaries, 200% font support, native password-manager flow, settings-only HMAC persistence and opt-in device notes. Imported archives remain separate unverified sessions.
+- Update source-contract, application-API, privacy, roadmap, deployment-package and verification documentation. Both Linux archives retain flat root extraction, with no data directory, identity key, credentials or real reports.
+- Public source and synthetic tests do not certify real-account availability/completeness, actual source-file generation, physical iPhone/Safari or operator infrastructure retention. Official arbitrary JSON/XML/PDF parsing and SDK admission are not claimed as implemented.
+
 ## v1.0.3-rc.7 — 2026-10-28 (Asia/Taipei)
 
 - Fixed trend discontinuities when the first examination date has multiple source results; keep exact raw points, draw same-day ranges where appropriate, and allow a clearly labelled evenly-spaced examination-date view without treating it as true elapsed time.

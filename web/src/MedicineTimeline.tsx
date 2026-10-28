@@ -37,7 +37,7 @@ export function MedicineTimeline({ reports, onDate }: {
   const shownEvents = active.events.slice(Math.max(0, pageEnd - 100), pageEnd).toReversed();
   return <section className="medicine-timeline panel" aria-label="同藥品歷次處方比較">
     <h3>同藥品處方時間圖</h3>
-    <p className="helper-text">依官方藥品代碼聚合；無代碼時僅依相同原文名稱及來源比較。同日多值保留範圍，不取平均；缺少日數的日期不連線。虛線只比較相鄰日期已知的給藥日數，不推定實際服藥、用藥濃度、成分等價或處方中斷。</p>
+    <p className="helper-text">相容的健保申報藥品代碼放在同組；電子處方代碼另列，自費藥品依院所分開，未提供院所時保留個別來源。無代碼時僅依相同原文名稱及來源比較。同日多值保留範圍，不取平均；缺少日數的日期不連線。虛線只比較相鄰日期已知的給藥日數，不推定實際服藥、用藥濃度、成分等價或處方中斷。</p>
     <div className="scenario-controls">
       <label className="field">選擇藥品<select value={active.key} onChange={event => { setSelected(event.target.value); setPage(0); }}>
         {groups.map(group => <option key={group.key} value={group.key}>{group.name} · {group.code || '無官方代碼'} · {group.events.length}筆</option>)}

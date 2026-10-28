@@ -26,6 +26,9 @@ release_documents=(
   docs/privacy.zh-TW.md
   docs/acceptance.zh-TW.md
   docs/nhi_protocol.md
+  docs/provider-data.md
+  docs/provider-documents.md
+  docs/data-workspace.zh-TW.md
   docs/verification.zh-TW.md
   docs/quality-audit.zh-TW.md
   docs/roadmap.md

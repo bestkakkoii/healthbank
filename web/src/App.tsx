@@ -29,6 +29,9 @@ import { ClinicalComparison } from './ClinicalComparison';
 import { AnalysisExport, MultiIndicator, LipidCalculation, PortableReportExport } from './AnalysisTools';
 import { PersonalRecords } from './PersonalRecords';
 import { SupplementaryData, CoverageSummary } from './SupplementaryData';
+import { DatasetTools } from './DatasetTools';
+import type { ImportedDataset, LaboratoryMetadata } from './health-dataset';
+import { emptyHealthData, type HealthDataSnapshot, type DownloadedAttachment, type DataCategory } from './health-data';
 import { AnalysisProvider, AnalysisStamp } from './AnalysisContext';
 import { PrivacyNotice } from './PrivacyNotice';
 import {
@@ -47,7 +50,7 @@ import {
 } from './model';
 import { Alert, Copyright, Icon, Legend, LevelBadge, Loading, Modal, type IconName } from './ui';
 
-type View = 'overview' | 'comparison' | 'trends' | 'settings';
+type View = 'overview' | 'data' | 'comparison' | 'trends' | 'settings';
 const NAV: { id: View; label: string; short: string; icon: IconName; eyebrow: string }[] = [
   {
     id: 'overview',
@@ -55,6 +58,13 @@ const NAV: { id: View; label: string; short: string; icon: IconName; eyebrow: st
     short: '總覽',
     icon: 'overview',
     eyebrow: 'YOUR HEALTH, IN PERSPECTIVE',
+  },
+  {
+    id: 'data',
+    label: '醫療紀錄',
+    short: '紀錄',
+    icon: 'file',
+    eyebrow: 'YOUR RECORDS, YOUR PERSPECTIVE',
   },
   {
     id: 'comparison',
@@ -138,6 +148,18 @@ export default function App() {
   }));
   const [report, setReport] = useState<ReportResponse>(EMPTY_REPORT);
   const [catalog, setCatalog] = useState<CatalogResponse>(EMPTY_CATALOG);
+  const [dataCatalog, setDataCatalog] = useState<DataCategory[]>([]);
+  const [dataCatalogError, setDataCatalogError] = useState('');
+  const [dataCatalogLoading, setDataCatalogLoading] = useState(false);
+  const [dataSnapshot, setDataSnapshot] = useState<HealthDataSnapshot>(emptyHealthData);
+  const [dataAttachments, setDataAttachments] = useState<DownloadedAttachment[]>([]);
+  const dataAttachmentsRef = useRef<DownloadedAttachment[]>([]);
+  const [importedDataCatalog, setImportedDataCatalog] = useState<DataCategory[]>([]);
+  const [importedLaboratoryMetadata, setImportedLaboratoryMetadata] = useState<LaboratoryMetadata | null>(null);
+  const [datasetVersion, setDatasetVersion] = useState(0);
+  const datasetVersionRef = useRef(0);
+  const sessionIdentity = useRef('anonymous:');
+  const [dataBusy, setDataBusy] = useState(false);
   const [view, setView] = useState<View>('overview');
   const [booting, setBooting] = useState(true);
   const [busy, setBusy] = useState('');
@@ -167,7 +189,20 @@ export default function App() {
   const settings = session.settings;
   const persisted = session.authenticated && session.mode === 'official';
   const isDemo = session.mode === 'demo';
-  const controlsBusy = booting || settingsBusy || busy !== '';
+  const controlsBusy = booting || settingsBusy || dataBusy || busy !== '';
+  const workspaceCatalog = useMemo(() => {
+    const combined = new Map(dataCatalog.map(item => [item.id, item]));
+    for (const item of importedDataCatalog) if (!combined.has(item.id)) combined.set(item.id, item);
+    for (const id of Object.keys(dataSnapshot.reports)) {
+      if (!combined.has(id)) combined.set(id, { id, label: id, group: '資料包其他來源', range_mode: 'source' });
+    }
+    return [...combined.values()];
+  }, [dataCatalog, importedDataCatalog, dataSnapshot.reports]);
+  const archivedAttachments = useMemo(() => Object.fromEntries(dataAttachments.map(attachment =>
+    [`${attachment.category}:${attachment.id}`, { name: attachment.name, content_type: attachment.content_type, bytes: attachment.bytes }])), [dataAttachments]);
+  const datasetExportReport = importedLaboratoryMetadata
+    ? { ...report, ...importedLaboratoryMetadata, records: report.records }
+    : report;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -176,6 +211,7 @@ export default function App() {
         // Establish the session cookie before issuing other session-bearing requests.
         const fetched = await api.session(controller.signal);
         controller.signal.throwIfAborted();
+        sessionIdentity.current = `${fetched.mode}:${fetched.csrf_token ?? ''}`;
         setCsrfToken(fetched.csrf_token);
         setSession(
           fetched.mode !== 'official'
@@ -194,6 +230,7 @@ export default function App() {
           fetched.mode !== 'anonymous'
             ? api.currentReports(controller.signal)
             : Promise.resolve(EMPTY_REPORT),
+          api.dataCatalog(controller.signal),
         ]);
         controller.signal.throwIfAborted();
         if (results[0].status === 'fulfilled') setCatalog(results[0].value);
@@ -206,6 +243,8 @@ export default function App() {
             setDateTo(current.official_query.end_date);
           }
         } else setError(readableError(results[1].reason));
+        if (results[2].status === 'fulfilled') setDataCatalog(results[2].value.categories);
+        else setDataCatalogError(`醫療資料來源目錄無法載入。${readableError(results[2].reason)}`);
       } catch (error) {
         if (!controller.signal.aborted) setError(readableError(error));
       } finally {
@@ -394,9 +433,113 @@ export default function App() {
     navigate('trends');
   }
 
-  async function refreshSession(generation: number) {
+  function invalidateDatasetOperations() {
+    // Retire captured archive callbacks before any session-changing request can
+    // await. Keep successful data available if that request subsequently fails.
+    datasetVersionRef.current += 1;
+    setDatasetVersion(datasetVersionRef.current);
+  }
+
+  function clearMedicalDataset() {
+    invalidateDatasetOperations();
+    setDataSnapshot(emptyHealthData());
+    dataAttachmentsRef.current = [];
+    setDataAttachments([]);
+    setImportedDataCatalog([]);
+    setImportedLaboratoryMetadata(null);
+    setDataBusy(false);
+  }
+
+  function observeSessionIdentity(next: Session) {
+    const identity = `${next.mode}:${next.csrf_token ?? ''}`;
+    if (identity !== sessionIdentity.current) clearMedicalDataset();
+    sessionIdentity.current = identity;
+  }
+
+  function enterUnverifiedMode(mode: 'import' | 'demo') {
+    // A successful import/demo request has already ended official auth on the
+    // server. A failed follow-up session GET must not leave the UI claiming it.
+    sessionIdentity.current = `${mode}:`;
+    setCsrfToken();
+    setSession(current => ({ authenticated: false, mode, version: current.version,
+      settings: { ...defaultSettings(), theme: current.settings.theme, font_scale: current.settings.font_scale } }));
+  }
+
+  function openLogin() {
+    invalidateDatasetOperations();
+    setLoginOpen(true);
+  }
+
+  function openImport() {
+    invalidateDatasetOperations();
+    setImportOpen(true);
+  }
+
+  async function reloadDataCatalog() {
+    setDataCatalogLoading(true); setDataCatalogError('');
+    try { setDataCatalog((await api.dataCatalog()).categories); }
+    catch (failure) { setDataCatalogError(`醫療資料來源目錄無法載入。${readableError(failure)}`); }
+    finally { setDataCatalogLoading(false); }
+  }
+
+  function retainAttachment(attachment: DownloadedAttachment) {
+    if (datasetVersion !== datasetVersionRef.current) throw new Error('使用階段已變更，這份附件不會加入新的使用者資料。');
+    const others = dataAttachmentsRef.current.filter(value => value.category !== attachment.category || value.id !== attachment.id);
+    if (others.reduce((sum, value) => sum + value.bytes.byteLength, 0) + attachment.bytes.byteLength > 32 * 1024 * 1024)
+      throw new Error('資料包內的附件合計已達 32 MiB 上限；請使用「另存原始檔」下載這份附件。');
+    const next = [...others, { ...attachment, bytes: new Uint8Array(attachment.bytes) }];
+    dataAttachmentsRef.current = next;
+    setDataAttachments(next);
+  }
+
+  async function fetchLaboratoryForWorkspace(signal: AbortSignal) {
+    const generation = sessionGeneration.current;
+    const result = await api.reports('', '', signal);
+    signal.throwIfAborted();
+    if (generation !== sessionGeneration.current) throw new DOMException('使用階段已變更。', 'AbortError');
+    await receiveReports(result, generation);
+    signal.throwIfAborted();
+    if (generation !== sessionGeneration.current) throw new DOMException('使用階段已變更。', 'AbortError');
+    if (result.official_query) {
+      setDateFrom(result.official_query.start_date); setDateTo(result.official_query.end_date);
+    }
+  }
+
+  async function restoreDataset(dataset: ImportedDataset) {
+    if (datasetVersion !== datasetVersionRef.current || controlsBusy)
+      throw new Error('使用階段已變更或仍在處理資料，請重新選取資料包。');
+    const generation = ++sessionGeneration.current;
+    invalidateDatasetOperations();
+    setBusy('正在還原完整資料包…');
+    try {
+      const next = await api.importReports(new File([dataset.laboratoryJSON], 'healthbank-labs.json', { type: 'application/json' }));
+      if (generation !== sessionGeneration.current) return;
+      clearMedicalDataset();
+      enterUnverifiedMode('import');
+      setDetail(null); setBaseline(null); clearSessionCatalog();
+      await receiveReports(next, generation, 'import');
+      if (generation !== sessionGeneration.current) return;
+      // Keep the server's import-mode laboratory assessment. Historical query
+      // metadata belongs to the archive, never to current authentication proof.
+      // Session refresh may already have mounted an empty workspace while the
+      // catalog was loading. Install the archive and its new mount key together.
+      invalidateDatasetOperations();
+      setDataSnapshot(dataset.snapshot);
+      dataAttachmentsRef.current = dataset.attachments;
+      setDataAttachments(dataset.attachments);
+      setImportedDataCatalog(dataset.catalog);
+      setImportedLaboratoryMetadata(dataset.laboratoryMetadata);
+      setImportOpen(false); navigate('data');
+      setMessage('完整資料包已還原至獨立匯入模式；檔案來源及完整性描述未經本次官方連線驗證。');
+    } finally { if (generation === sessionGeneration.current) setBusy(''); }
+  }
+
+  async function refreshSession(generation: number, expectedMode?: 'import' | 'demo') {
     const next = await api.session();
     if (generation !== sessionGeneration.current) return;
+    if (expectedMode && next.mode !== expectedMode)
+      throw new Error('資料已取得，但新的使用階段狀態不符。請重新整理頁面後再繼續。');
+    observeSessionIdentity(next);
     setCsrfToken(next.csrf_token);
     setSession(
       next.mode === 'official'
@@ -413,14 +556,14 @@ export default function App() {
     return next;
   }
 
-  async function receiveReports(next: ReportResponse, generation: number) {
+  async function receiveReports(next: ReportResponse, generation: number, expectedMode?: 'import' | 'demo') {
     if (generation !== sessionGeneration.current) return;
     setReport(next);
     if (!next.official_query) clearReportRange();
     setAssessmentStale(false);
     setError('');
     resetFilters();
-    const results = await Promise.allSettled([refreshSession(generation), api.catalog()]);
+    const results = await Promise.allSettled([refreshSession(generation, expectedMode), api.catalog()]);
     if (generation !== sessionGeneration.current) return;
     if (results[0].status === 'rejected')
       setError(`資料已取得，但使用階段狀態無法更新。${readableError(results[0].reason)}`);
@@ -430,6 +573,8 @@ export default function App() {
 
   async function loggedIn(next: Session, notice = '') {
     sessionGeneration.current += 1;
+    clearMedicalDataset();
+    sessionIdentity.current = `${next.mode}:${next.csrf_token ?? ''}`;
     setSession(next);
     setCsrfToken(next.csrf_token);
     setReport(EMPTY_REPORT);
@@ -445,6 +590,8 @@ export default function App() {
 
   async function expireOfficialSession() {
     const generation = ++sessionGeneration.current;
+    clearMedicalDataset();
+    sessionIdentity.current = 'anonymous:';
     setBusy('正在清除已到期的使用階段…');
     setError('官方登入階段已結束，目前報告已清除。請重新連接健康存摺。');
     setReport(EMPTY_REPORT);
@@ -513,8 +660,12 @@ export default function App() {
 
   async function importFile(file: File) {
     const generation = ++sessionGeneration.current;
+    invalidateDatasetOperations();
     const next = await api.importReports(file);
-    await receiveReports(next, generation);
+    if (generation !== sessionGeneration.current) return;
+    clearMedicalDataset();
+    enterUnverifiedMode('import');
+    await receiveReports(next, generation, 'import');
     if (generation !== sessionGeneration.current) return;
     setImportOpen(false);
     navigate('overview');
@@ -523,10 +674,14 @@ export default function App() {
 
   async function openDemo() {
     const generation = ++sessionGeneration.current;
+    clearMedicalDataset();
     setBusy('正在載入合成示範資料…');
     setError('');
     try {
-      await receiveReports(await api.demo(), generation);
+      const next = await api.demo();
+      if (generation !== sessionGeneration.current) return;
+      enterUnverifiedMode('demo');
+      await receiveReports(next, generation, 'demo');
       if (generation !== sessionGeneration.current) return;
       navigate('overview');
     } catch (error) {
@@ -538,11 +693,14 @@ export default function App() {
 
   async function logout(deleteRemote = false) {
     const generation = ++sessionGeneration.current;
+    invalidateDatasetOperations();
     setBusy('正在結束使用階段…');
     setError('');
     try {
       const next = deleteRemote ? await api.deleteSettings(settings.revision) : await api.logout();
       if (generation !== sessionGeneration.current) return;
+      clearMedicalDataset();
+      sessionIdentity.current = `${next.mode}:${next.csrf_token ?? ''}`;
       setSession({
         ...next,
         settings: { ...next.settings, theme: settings.theme, font_scale: settings.font_scale },
@@ -582,7 +740,7 @@ export default function App() {
   }
 
   async function commitSettings(next: Settings, reassess = false) {
-    if (booting || busy !== '') throw new Error('資料正在更新，請稍候再修改設定。');
+    if (booting || dataBusy || busy !== '') throw new Error('資料正在更新，請稍候再修改設定。');
     if (settingsLock.current) throw new Error('上一個設定正在儲存，請稍候再操作。');
     const generation = sessionGeneration.current;
     settingsLock.current = true;
@@ -738,7 +896,7 @@ export default function App() {
   );
 
   return (
-    <AnalysisProvider key={`${session.mode}:${session.csrf_token ?? ''}:${dateFrom}:${dateTo}`} initial={settings.analysis} persisted={persisted}
+    <AnalysisProvider key={`${session.mode}:${session.csrf_token ?? ''}`} initial={settings.analysis} persisted={persisted}
       onSave={analysis => commitSettings({ ...settings, analysis })}>
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
@@ -782,7 +940,7 @@ export default function App() {
                       ? '檔案匯入模式'
                       : '尚未連接資料'}
               </b>
-              <span>{persisted ? '個人設定跨裝置同步' : '檢驗資料僅供本次瀏覽'}</span>
+              <span>{persisted ? '個人設定跨裝置同步' : '醫療資料僅供本次瀏覽'}</span>
             </div>
           </div>
           <div className="sidebar-meta">
@@ -852,6 +1010,8 @@ export default function App() {
               <p>
                 {view === 'overview'
                   ? '將每一次檢驗，放回完整的時間脈絡。'
+                  : view === 'data'
+                    ? '將各來源紀錄放在一起，依自己的方式查找、比較與保存。'
                   : view === 'comparison'
                     ? '保留每一筆原始結果，清楚比較年度與各次檢查。'
                     : view === 'trends'
@@ -860,7 +1020,7 @@ export default function App() {
               </p>
             </div>
             <div className="heading-actions">
-              {report.records.length > 0 && view !== 'settings' && (
+              {report.records.length > 0 && view !== 'settings' && view !== 'data' && (
                 <>
                   <button
                     className="button secondary"
@@ -886,7 +1046,7 @@ export default function App() {
                   </button>
                 </>
               )}
-              {persisted ? (
+              {persisted ? view !== 'data' ? (
                 <>
                   <button
                     className="button primary"
@@ -894,7 +1054,7 @@ export default function App() {
                     disabled={controlsBusy}
                   >
                     <Icon name="refresh" size={18} />
-                    取得全部歷史
+                    取得全部歷史檢驗
                   </button>
                   <button
                     className="button secondary"
@@ -906,10 +1066,10 @@ export default function App() {
                     指定期間
                   </button>
                 </>
-              ) : (
+              ) : null : (
                 <button
                   className="button primary"
-                  onClick={() => setLoginOpen(true)}
+                  onClick={openLogin}
                   disabled={controlsBusy}
                 >
                   <Icon name="login" size={18} />
@@ -920,8 +1080,8 @@ export default function App() {
           </div>
 
           {(view === 'comparison' || view === 'trends' || view === 'settings') && <details className="panel compact-disclosure"><summary>判讀條件</summary><ClinicalComparison records={report.records} /></details>}
-          <AnalysisStamp />
-          {view !== 'settings' && <CoverageSummary report={report} />}
+          {view !== 'data' && <AnalysisStamp />}
+          {view !== 'settings' && view !== 'data' && <CoverageSummary report={report} />}
           {rangeOpen && persisted && (
             <form
               id="report-date-range"
@@ -1017,7 +1177,7 @@ export default function App() {
               </button>
             </Alert>
           )}
-          {report.official_query && (
+          {view !== 'data' && report.official_query && (
             <Alert>
               <strong>本次取得 {report.records.length} 筆原始結果</strong>
               <br />
@@ -1036,14 +1196,14 @@ export default function App() {
               )}
             </Alert>
           )}
-          {report.warnings
+          {view !== 'data' && report.warnings
             .filter((warning) => !isDemo || !warning.startsWith('示範模式：'))
             .map((warning, index) => (
               <Alert tone="warning" key={`${warning}-${index}`}>
                 {warning}
               </Alert>
             ))}
-          {!report.complete && !report.official_query && report.records.length > 0 && (
+          {view !== 'data' && !report.complete && !report.official_query && report.records.length > 0 && (
             <Alert tone="warning">
               目前資料可能不完整。比較表僅呈現已取得的紀錄；缺少的日期不表示未曾檢驗。
             </Alert>
@@ -1052,7 +1212,7 @@ export default function App() {
             <div className="boot-screen">
               <Loading label="正在開啟健康工作站…" />
             </div>
-          ) : !report.records.length && view !== 'settings' ? (
+          ) : !report.records.length && view !== 'settings' && view !== 'data' ? (
             <section className="welcome-panel">
               <div className="welcome-copy">
                 <span className="section-kicker">一眼看懂，長期追蹤</span>
@@ -1067,7 +1227,7 @@ export default function App() {
                     className="button primary large-button"
                     onClick={() => {
                       if (persisted) void fetchReports('all_history');
-                      else setLoginOpen(true);
+                      else openLogin();
                     }}
                     disabled={controlsBusy}
                   >
@@ -1076,7 +1236,7 @@ export default function App() {
                   </button>
                   <button
                     className="button secondary large-button"
-                    onClick={() => setImportOpen(true)}
+                    onClick={openImport}
                     disabled={controlsBusy}
                   >
                     <Icon name="upload" />
@@ -1289,7 +1449,7 @@ export default function App() {
                       </div>
                       <button
                         className="button secondary full-width"
-                        onClick={() => setImportOpen(true)}
+                        onClick={openImport}
                         disabled={controlsBusy}
                       >
                         <Icon name="upload" size={18} />
@@ -1754,8 +1914,21 @@ export default function App() {
           )}
 
 
-          {view !== 'settings' && <><AnalysisExport records={view === 'trends' && trendGroup ? trendGroup.records : filteredGroups.flatMap(group => group.records)} /><PortableReportExport records={report.records} /></>}
-          <div hidden={view === 'settings'}><SupplementaryData key={`${session.mode}:${session.csrf_token ?? ''}:${dateFrom}:${dateTo}`} authenticated={persisted} from={dateFrom} to={dateTo} onSessionExpired={() => { void expireOfficialSession(); }} /></div>
+          {view !== 'settings' && view !== 'data' && <><AnalysisExport records={view === 'trends' && trendGroup ? trendGroup.records : filteredGroups.flatMap(group => group.records)} /><PortableReportExport records={report.records} /></>}
+          <div hidden={view !== 'data'}>
+            {dataCatalogError && <Alert tone="error">{dataCatalogError}<button className="button secondary" type="button" disabled={dataCatalogLoading} onClick={() => { void reloadDataCatalog(); }}>{dataCatalogLoading ? '重新取得中…' : '重新取得來源目錄'}</button></Alert>}
+            {!booting && <>
+              <DatasetTools key={`dataset:${datasetVersion}`} report={datasetExportReport} snapshot={dataSnapshot} attachments={dataAttachments} catalog={workspaceCatalog} disabled={controlsBusy} onImport={restoreDataset} />
+              <SupplementaryData key={`${session.mode}:${session.csrf_token ?? ''}:${datasetVersion}`}
+                authenticated={persisted} imported={session.mode === 'import'}
+                disabled={settingsBusy || busy !== '' || dataCatalog.length === 0}
+                catalog={workspaceCatalog} initialDataset={dataSnapshot} archivedAttachments={archivedAttachments} laboratory={report}
+                onDatasetChange={next => { if (datasetVersion === datasetVersionRef.current) setDataSnapshot(next); }}
+                onAttachmentDownloaded={retainAttachment} onFetchLaboratory={fetchLaboratoryForWorkspace}
+                onBusyChange={value => { if (datasetVersion === datasetVersionRef.current) setDataBusy(value); }}
+                onSessionExpired={() => { void expireOfficialSession(); }} />
+            </>}
+          </div>
           <div hidden={view !== 'trends' && view !== 'settings'}><PersonalRecords key={`${session.mode}:${session.profile_key || report.fetched_at}`} profileKey={session.profile_key ?? ''} /></div>
           <div className="print-only print-running-footer">
             <Copyright />
@@ -1763,7 +1936,7 @@ export default function App() {
           <footer className="page-footer">
             <div>
               <span>健康映覽</span>
-              <span>檢驗資料整理與長期追蹤</span>
+              <span>醫療資料整理與長期追蹤</span>
             </div>
             <Copyright />
             <span className="footer-note">顏色為整理提示，請結合完整病史與專業判斷。 · MIT License</span>

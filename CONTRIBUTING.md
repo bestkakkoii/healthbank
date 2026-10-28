@@ -42,6 +42,14 @@ Run `npm --prefix web audit --audit-level=low` and the pinned `govulncheck` when
 
 ## Data and diagnostics
 
+Provider changes must include the exact observed source route, fields, date
+semantics and capability limits in `docs/provider-data.md` or
+`docs/provider-documents.md`. Use synthetic fixtures for list/detail/session
+isolation and truncation failures. The portable dataset must round-trip every
+accepted source field and preserve missing details/attachments without claiming
+completeness; validate identical export/import bounds before emitting a file.
+Document application-facing changes in `docs/data-workspace.zh-TW.md`.
+
 Use only synthetic fixtures. Do not commit patient observations, report HTML, identifiers, credentials, official tokens/cookies, databases, or `identity.key`. Report errors with the operation, safe code, relevant stage, and outcome. Preserve the reason and result of recovered failures without logging private request/response bodies.
 
 Official image retrieval, synthetic protocol tests, authenticated login, and complete live historical retrieval are separate acceptance claims. Keep historical evidence in [docs/verification.zh-TW.md](docs/verification.zh-TW.md); do not reuse it as proof of a new build or erase earlier failures.
