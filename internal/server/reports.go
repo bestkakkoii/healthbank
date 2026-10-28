@@ -190,6 +190,13 @@ func (a *App) fetchReports(w http.ResponseWriter, r *http.Request, s *session) {
 		a.upstreamError(w, r, err)
 		return
 	}
+	a.publishOfficialReport(w, r, s, report)
+}
+
+// The caller holds the session lock. Settings discovery can wait behind another
+// session's mutation; recheck subject revocation after that asynchronous step
+// before publishing any retrieved medical content.
+func (a *App) publishOfficialReport(w http.ResponseWriter, r *http.Request, s *session, report nhi.Report) {
 	if !a.requireCurrentSubject(w, r, s) {
 		return
 	}
@@ -208,6 +215,9 @@ func (a *App) fetchReports(w http.ResponseWriter, r *http.Request, s *session) {
 		} else {
 			s.warnings = append(s.warnings, "檢驗資料已取得，但新項目設定未能同步；請稍後重新取得資料。")
 		}
+	}
+	if !a.requireCurrentSubject(w, r, s) {
+		return
 	}
 	a.json(w, 200, a.currentResponse(s))
 }
