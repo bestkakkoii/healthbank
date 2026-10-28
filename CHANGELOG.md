@@ -73,7 +73,9 @@ Publication, final gates and external acceptance boundaries are recorded separat
 
 Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
-## Unreleased — privacy and comparison work
+## Historical development notes before v1.0.3-rc.6
+
+These notes describe the intermediate implementation before rc.6. The released rc.6 entry and later versioned entries supersede these scope and persistence descriptions; this section is not an outstanding development checklist.
 
 - Opt-in device-local multi-user login fields, per-user/all-user forgetting, and safe storage diagnostics; passwords remain in the browser manager/open form only.
 - Read submitted form values so silent browser autofill is not lost; prevent stale identity/card pairing and keep credentials in the open form after a failed manual challenge.

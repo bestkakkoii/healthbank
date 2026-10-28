@@ -38,11 +38,27 @@ login route and to a newly generated public CAPTCHA URL each returned HTTP
 an environment/upstream availability limitation; it does not establish that
 the site is unavailable to all users.
 
-**No real credentials were supplied or submitted. An authenticated live login,
-account identity, report completeness and live logout have not been verified.**
-The implementation is verified against local synthetic protocol fixtures.
-The release must keep this distinction visible until a person completes a
-normal authorized sign-in on the deployed application.
+Those earlier build-environment checks used no real credentials. On 2026-10-28,
+the user completed an authorized sign-in in the official site's browser. Read-only
+inspection confirmed the official laboratory range controls, all displayed result
+pages, distinct date/source labels and several personal-data pages. A later resumed
+session also checked the medical overview, dental detail fields and language toggle,
+the medication list's expanded date range, and a subset of medication details.
+The medication default interval returned fewer rows than the explicit maximum-range
+query; its list and detail responses must remain separate acquisition steps. Source
+field wording and editorial English translations are separately attributed.
+No credentials,
+cookies, tokens or individual observations were transferred into this repository,
+synthetic fixtures or CI. The official browser session later returned to the sign-in
+screen during active reading, leaving additional medication details and remaining
+medical/examination pages unverified in that session. No timeout cause or exact
+official session lifetime was inferred from that observation.
+
+**Official-site browser inspection is not authenticated execution of Healthbank's
+Go connector.** The connector still requires its own authorized deployment acceptance
+for account identity, full-source retrieval and logout. Synthetic protocol fixtures,
+public-source review and live browser observations are separate evidence classes;
+none certifies complete lifetime history.
 
 ### REA-assisted source review
 
@@ -240,6 +256,12 @@ data; a broad normal filter cannot recover records the official account no
 longer provides. Wider-query server acceptance and actual personal history
 remain authenticated deployment verification items.
 
+The authorized official-browser inspection on 2026-10-28 accepted the application's
+1912-01-01 floor through the current Taiwan date in its visible filter and allowed
+reading every displayed result page. This confirms that UI path for the reviewed
+session only; it does not prove that all historical source records were returned,
+or authenticate the application's separate connector session.
+
 The complete search uses `s_type`, `s_date`, `e_date`, and `s_sort` only. Source
 is left empty to include A/B/C/D, and `A1` means newest inspection date first.
 There is no assay/category filter in the connector.
@@ -267,6 +289,14 @@ arrive between reads. An unavailable applicable total is `-1` internally and
 `null` in the application API, never fabricated from array length. Empty `[]`
 is valid only when it does not violate a known minimum; `null`, HTML,
 unrelated objects, malformed rows and changed schemas remain failures.
+
+RC11 also parses the initial row array strictly and verifies its multiset against
+the full search whenever the requested dates contain the complete default interval.
+Every original field value and duplicate occurrence must remain represented. Equal
+array lengths can otherwise hide a missing row replaced by another row. A mismatch
+is `INCOMPLETE_RESPONSE`, with a source-row inconsistency message and no misleading
+expected/received total pair. The application preserves the previous successful
+report; it does not merge, deduplicate or invent a reconciliation of two snapshots.
 
 Requests time out after 35 seconds each. JSON bodies are limited to 16 MiB,
 authentication responses to 64 KiB, and complete reports to 50,000 records.
@@ -307,12 +337,18 @@ happens in this package.
 | `hosP_ABBR` | `Institution` | Institution display name. |
 | `funC_DATE` | `VisitDate` | 就醫日期/入院日期; kept separate from inspection date. |
 | `orI_TYPE` | `Source` | Source category A/B/C/D. |
+| `orI_TYPE_NAME` | `SourceName` | Original full source label, retained separately from the source code. |
 | `assaY_UPLOAD_DATE` | `UploadDate` | Optional upload metadata; never used as inspection date. |
 | `assaY_MARK` | `OfficialFlag` | Original upstream flag; not a locally inferred risk grade. |
 
 Unknown extra fields are ignored. Empty item names are rejected to prevent
 silent schema changes from producing incorrect rows. Display code must render
 all strings as text, not as HTML.
+
+The application retains upload/source metadata through `lab.RawRecord`, normalized
+records, CSV, print and `healthbank.lab.v2` JSON/XML. Normalized `upload_date` never
+replaces examination/encounter dates; `raw_upload_date` preserves the original text.
+Version 1 remains strict and does not accept these newly introduced portable fields.
 
 ## Session lifetime
 
@@ -358,17 +394,18 @@ The tests exercise:
 - Four API metadata/logout cases and eleven count-diagnostic validation cases
   in `internal/server/report_metadata_test.go`.
 
-## Current provider-workspace contract (rc.8)
+## Current provider-workspace contract (RC11 candidate)
 
 The official service supplies authenticated source data. Healthbank's own source
 catalog, acquisition scheduler, timeline and portable dataset are documented in
 [data-workspace.zh-TW.md](data-workspace.zh-TW.md). The fixed routes and public
-bundle hashes for 38 additional categories are in [provider-data.md](provider-data.md);
+bundle hashes and the complete current public-source inventory are in [provider-data.md](provider-data.md) and [provider-source-inventory.json](provider-source-inventory.json);
 original report retrieval and explicit file preparation are in
 [provider-documents.md](provider-documents.md).
 
-The catalog has 57 source/service capabilities, not 57 independent medical
-datasets. Empty application dates request the supported maximum range; sources
+The catalog counts source/service capabilities, not independent medical datasets.
+The versioned registry and inventory record its current exact membership.
+Empty application dates request the supported maximum range; sources
 without a date-search contract retain the actual available source window. The
 workspace retrieves selected lists first, then all reachable nested details, with
 bounded sequential requests, cancellation, resume and explicit capacity failures.
@@ -376,7 +413,10 @@ Source queries, date drafts and display filters are separate. No independent
 source total means completeness remains unverified.
 
 Original file preparation requires an explicit user operation and CSRF protection.
-Normal acquisition performs read-only list/detail requests. Original documents
+Normal acquisition performs read-only list/detail requests. The explicit full
+acquisition workflow can include one-shot preparation, bounded source refresh and
+streaming ZIP preservation with per-file and whole-package hashes. Missing job
+correlation remains explicit. Original documents
 are streamed or handled within stated memory limits; arbitrary browser-supplied
 upstream URLs and server file spooling are not accepted. Public source inspection
 and synthetic fixtures do not establish live account eligibility or availability.

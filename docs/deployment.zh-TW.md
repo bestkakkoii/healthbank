@@ -52,7 +52,7 @@ SQLite首次啟動自動建立。MySQL需先建立專用空資料庫與最小必
 例如大型檢驗匯入預留 192 MiB，因此預設工作預算一次只允許一份大型匯入；Go 執行環境、GC、
 連線、作業系統與反向代理仍需額外容量。來源引用另有每個連接器 32 MiB 上限。
 超限回傳固定錯誤及 `Retry-After`，保留原有報告或來源引用，不交付截斷資料。
-長時間下載占用同階段操作時，另一操作可能得到 `session_busy`；可等下載結束後重試。
+長時間下載占用同階段操作時，另一操作可能得到 `session_busy`；可等下載結束後重試。完整取得 ZIP 的狀態／取消不等待傳輸鎖；登出、模式切換及裝置快取刷新會先取消舊 ZIP 傳輸。
 這不是分散式阻斷服務防護，也不取代主機實測。
 
 ## 反向代理與不留存邊界
@@ -65,13 +65,16 @@ SQLite首次啟動自動建立。MySQL需先建立專用空資料庫與最小必
 應用API另外回傳 `Cache-Control: no-store, private`、`Pragma: no-cache`及 `X-Accel-Buffering: no`。
 
 Healthbank 可攜檢驗 JSON／XML 單檔上限為 **32 MiB**，HTTP 額外允許 **64 KiB** 的 multipart 包裝。
-Nginx 片段對應設定 `client_max_body_size 32832k` 與 `client_body_buffer_size 33m`，請連同原本停用
-request/response buffering、暫存回應檔、快取及 `proxy_store` 的設定一起更新，避免代理先以舊的 13 MiB
-上限拒絕大型可攜報表。依[Nginx 請求本文緩衝規則](https://nginx.org/en/docs/http/ngx_http_core_module.html#client_body_buffer_size)，
+完整取得 ZIP 的計畫端點接受最大 **34 MiB** 本文，其中內嵌資料包最多 32 MiB，其餘為有界計畫及檔案描述。
+Nginx 片段對應最大入口設定 `client_max_body_size 34m` 與 `client_body_buffer_size 35m`；各 Go 端點仍執行自己的較小上限。
+請連同原本停用 request/response buffering、暫存回應檔、快取及 `proxy_store` 的設定一起更新，避免代理先以舊上限拒絕合法計畫。
+依[Nginx 請求本文緩衝規則](https://nginx.org/en/docs/http/ngx_http_core_module.html#client_body_buffer_size)，
 超過記憶體緩衝的本文可能寫入暫存檔；不能只提高請求上限而保留較小的緩衝設定。
 另存 HTML／ZIP 的單檔限制仍為 **12 MiB**，純 HTML 及 ZIP 內 HTML 展開總量仍限 **6 MiB**；
 筆數、欄位與解析結構限制也維持不變。完整資料包在瀏覽器還原後，只有其檢驗部分送至此匯入端點，
-不會把整個資料包或附件交給伺服器保存。
+不會把整個資料包或附件交給伺服器保存。完整取得 ZIP 則可將上述有界資料包暫存在伺服器記憶體並串流封裝，仍不落地。
+
+裝置健康快取保存在使用者瀏覽器的 IndexedDB，與伺服器設定庫分開；啟用、上限、身分隔離與清除見[裝置快取](device-health-cache.zh-TW.md)。更新服務時不要清除使用者瀏覽器資料；正式版本須保留已支援可攜格式的驗證與還原相容性。瀏覽器儲存失敗不應妨礙當次記憶體查詢。
 
 這不是對任何主機的零留存證明。還須稽核：CDN/WAF快取、請求本文記錄、除錯日誌、錯誤追蹤、
 swap、core dump、容器/VM快照及備份。保留不含憑證與醫療內容的必要診斷，不以吞錯或停用所有錯誤輸出取代保護。

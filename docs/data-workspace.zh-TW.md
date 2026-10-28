@@ -2,7 +2,7 @@
 
 Copyright © 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
-版本：RC10；契約核對日期：2026-10-28（臺灣時間）。以下是 **Healthbank 自有 API**，不是健保署正式開放 API。上游路徑與證據分別見[登入／檢驗協定](nhi_protocol.md)、[資料來源契約](provider-data.md)、[原始文件契約](provider-documents.md)。
+版本：RC11 候選實作；契約核對日期：2026-10-28（臺灣時間）。以下是 **Healthbank 自有 API**，不是健保署正式開放 API。上游路徑與證據分別見[登入／檢驗協定](nhi_protocol.md)、[資料來源契約](provider-data.md)、[原始文件契約](provider-documents.md)。
 
 ## 1. 工作流程
 
@@ -10,8 +10,8 @@ Copyright © 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 2. 「醫療資料」工作區讀取來源目錄。使用者可選來源，預設取得支援的最大範圍；檢驗資料可一併取得。
 3. 先逐一取得所有選取來源的清單，再逐筆取得清單內明細，並繼續處理明細內的下一層識別。請求按順序執行，不同來源的一筆錯誤不抹除其他成功結果。
 4. 搜尋、日期、院所及來源篩選只影響顯示。草稿日期不會自動查詢、清空已取得內容或重設分析條件。
-5. 原始附件由使用者明確下載；需要上游準備的檔案由獨立產製操作提出。一般資料拉取不會自動建立產製工作。
-6. 匯出全部已取得資料，或還原先前資料包。資料包與主動下載的原始檔由使用者自行保存。
+5. 「取得資料與明細」讀取來源；「完整取得並保存原始檔」接續處理附件。後者明示是否要求官方準備尚未產製的檔案，並在同一次使用者操作中執行；一般資料拉取不建立產製工作。
+6. 將本輪實際取得的結構化資料與原始檔串流保存為 ZIP；部分失敗、來源未知總數及未完成產製各自記錄。可另外匯出／還原版本化資料包。檔案由使用者保存在裝置，伺服器沒有背景持久工作佇列。
 
 「取得最大範圍」不等於已證明終身資料完整。來源沒有獨立總數，或相同期間總數與實際陣列長度不一致時，`complete` 保持 `false`；成人健檢、特定篩檢、近期摘要及官方產製歷史各有自己的可回傳範圍。
 
@@ -27,6 +27,8 @@ Copyright © 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 | POST | `/api/auth/logout` | 結束工作階段，清除記憶體報告及官方識別 |
 | GET | `/api/data/catalog` | 公開來源能力目錄；不查詢個人資料、不證明該帳號具有每個來源 |
 | GET | `/api/reports/current` | 讀取當次記憶體檢驗；不重新向官方查詢 |
+| POST | `/api/reports/cache` | 同一官方驗證身分的裝置檢驗快取送入記憶體重新判讀；不讀取上游、不切換為匯入模式 |
+| DELETE | `/api/reports/cache` | 清除快取來源的當次檢驗，或在明確刷新前清除全部當次檢驗；撤銷先前還原修訂 |
 | POST | `/api/reports/import` | 單一具檔名的 multipart `file`；驗證成功後切換至獨立匯入模式 |
 | POST | `/api/reports/demo` | 建立明示合成資料的示範模式 |
 | GET | `/api/reports?from=&to=` | 取得檢驗資料；空日期代表最大查詢範圍 |
@@ -34,14 +36,27 @@ Copyright © 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 | GET | `/api/supplementary?category=medicine&detail=<opaque-id>` | 取得該清單回傳的明細 |
 | GET | `/api/documents?category=imaging&id=<opaque-id>` | 下載該資料來源回傳的原始附件 |
 | POST | `/api/documents/prepare` | 明確提出官方檔案產製；JSON 為 `{ "category": "…", "id": "…" }` |
+| POST | `/api/acquisition/packages` | 建立本輪記憶體串流 ZIP 計畫；不立即下載原始檔 |
+| GET | `/api/acquisition/packages/download?id=<opaque-id>` | 單次使用的原生 ZIP 下載，不將完整 ZIP 放入瀏覽器 Blob |
+| GET | `/api/acquisition/packages/status?id=<opaque-id>` | 查詢逐檔與整包位元組／校驗結果；需精確工作階段標頭 |
+| GET | `/api/acquisition/packages/status?plan=<plan-id>&part=<index>` | 建立回應遺失時查回原計畫，不重播產製 |
+| DELETE | `/api/acquisition/packages?id=<opaque-id>` | 取消本站傳輸並釋放記憶體回條；不撤銷已提交官方的產製工作 |
 
 `detail`／文件／產製識別由伺服器建立，綁定目前官方使用階段、類別及來源父項目。瀏覽器不能指定上游 URL、官方 row ID 或其他人的識別。登出、登入逾時、成功重查對應清單後，舊識別失效。失敗重查保留原先仍有效的成功資料。
 
-產製成功回應 HTTP `202` 與 `{ "status": "requested", "message": "…" }`，只表示已提出要求，不表示檔案已完成。使用者稍後重新取得原始檔來源／明細，再依官方實際狀態下載。產製不自動重試；不明網路結果不應重複建立工作。
+產製成功回應 HTTP `202` 與 `status: requested`、安全訊息及 `refresh`。JPEG 的 `refresh` 綁定可證實的原父明細；官方整包／DICOM 只有回到 `official_files` 的指示，並標示 `correlation_unavailable`。官方沒有提供可核對工作 ID 時，不以時間、檔名或檔案數量猜測哪個新檔對應本次要求。完整取得流程每個刷新目標最多輪詢六次，可保留已完成進度後續取；不明產製送達結果不自動重送。
 
 檢驗回應包含 `session_token`，必須為目前或該成功切換操作建立的 64 位十六進位 CSRF 識別。前端在安裝檢驗、醫療資料包與後續設定／目錄前核對同一識別；同為 `import` 模式仍須精確相等。此值只供即時 API 核對，不寫入可攜醫療檔案或日誌。官方失效、`csrf_mismatch`、`session_changed`、`session_rotate` 或缺失的回應識別會清除舊醫療狀態；一般設定修訂衝突不因此清除資料。
 
 已送出的登入／登出／匯入若遇到回應遺失，無法單憑前端例外判斷伺服器是否已執行。前端只重新讀取 `/api/session`：識別未變則保留原資料，已變則清除舊資料並採用已確認連線，無法確認則清除本頁醫療資料；不自動重播操作或宣稱刪除成功。
+
+### 裝置快取 API
+
+`POST /api/reports/cache` 的 JSON 欄位為 `expected_profile_key`、`expected_report_revision`、`saved_at`、`source_fetched_at`、`source_complete`、選填 `source_query`，以及版本化檢驗 `document`。前兩者必須符合 `/api/session` 當次官方驗證身分與報告修訂；文件最大 32 MiB，包裝欄位另限 64 KiB。所有欄位嚴格驗證，重複或未知欄位、失效身分、較舊修訂或容量拒絕均不取代原資料。
+
+成功還原仍是 `official` 工作階段，但檢驗回應 `complete=false`，並以 `cache_provenance` 保留 `kind=device_cache`、`saved_at`、`restored_at`、`source_fetched_at`、`source_complete` 與選填 `source_query`。歷史來源完整性不是本次重新查驗結果。沒有重新向官方查詢；重新判讀資料只在伺服器記憶體。
+
+`DELETE /api/reports/cache` 接受 `expected_profile_key` 與 `scope`；`cache_only` 僅移除快取來源檢驗，保留較新的獨立官方讀取，`all_reports` 則清除全部當次檢驗。兩者都增加報告修訂以拒絕排隊中的舊還原。原始檔 ZIP 傳輸會在等待使用階段鎖之前取消，避免刷新受長下載阻塞。瀏覽器 IndexedDB 的刪除、同意與跨分頁版本保護由裝置端執行，不將整份資料包送入伺服器保存。
 
 常見 HTTP：`400` 輸入／識別不符、`401` 登入失效、`403 csrf_mismatch` 頁面連線過期、`409 session_changed` 連線已更換、`424` 上游依賴失敗、`429` 新階段／排隊限額、`503` 請求／容量暫不可用、`500` 本站錯誤。容量拒絕附 `Retry-After`；不得把伺服器拒絕誤當成零筆來源。二進位下載開始後若來源中斷，會中止傳輸，不在檔尾追加 JSON 或把截斷內容宣稱成功。
 
@@ -63,12 +78,16 @@ Copyright © 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 }
 ```
 
+來源分類另提供 `label_en`，並附 `field_terms` 與 `terminology_basis=healthbank_editorial_translation`。這些是依核對語意整理的介面名稱，不宣稱全部為健保署正式英文 API 用語；不改變原始欄位名稱、值、來源類別或判讀。
+
 | `range_mode` | 實際行為 |
 | --- | --- |
 | `date_search` | 空 `from`／`to` 解析為 `1912-01-01` 至臺灣當日；指定期間須同時提供有效起訖。部分來源先發現項目，再於各項明細查詢完整期間。 |
 | `source` | 使用官方已觀察的清單契約，讀取全部回應；不杜撰上游不存在的日期參數。範圍限制放在 `coverage`。 |
 
 民國 1 年只是查詢下限，不是官方保有紀錄的最早年度。畫面年度篩選、檢驗查詢草稿與資料工作區的拉取條件分開。
+
+`calendar_events` 是包含未來行程的例外：空日期查詢使用本站接受的 `1912-01-01` 至 `2200-12-31`，實際查詢起訖寫入回應。這是公開日期查詢的應用範圍，不是官方保留年限；明確指定的日期仍原樣使用。提醒日期、建議接種／續領期間不會變成已就醫、已接種或已領藥證明。
 
 ## 4. 原始紀錄模型
 
@@ -84,7 +103,9 @@ RC10 另提供 `contract_revision` 與有界 `diagnostics`。已知區塊缺失�
 顯示期間相交只適用明確配對的入院／出院、申報起訖、有效期或來源期間；
 不由給藥日數或同日紀錄推定日期區間。
 
-檢驗另保留 `raw_check_date`／`raw_visit_date` 原文與 `exam_date`／`visit_date` 正規化值。篩選使用可解析日期；明細、CSV 與可攜 JSON/XML 保留原始日期文字，無效或空白來源日期不被補成另一日期。
+檢驗另保留 `raw_check_date`／`raw_visit_date`／`raw_upload_date` 原文與 `exam_date`／`visit_date`／`upload_date` 正規化值，以及來源代碼 `source` 與原文全名 `source_name`。篩選使用可解析檢查日期；明細、CSV 與可攜 JSON/XML 保留原始日期文字，無效或空白來源日期不被補成另一日期。
+
+當檢驗查詢期間完整涵蓋初始頁的來源期間，後端除總筆數外還逐筆核對初始陣列的原始欄位及重複次數。相同總數但遺失或替換原始列時，回應 `INCOMPLETE_RESPONSE`；保留前一份成功報告，不把不同快照合併成一份虛構完整資料。來源沒有提供的歷史列仍無法由此證明存在。
 
 每筆包含原始日期、院所、標題、來源及具名欄位；可帶來源種類、不同迄日、已知藥品代碼／數量／給藥日數、下一層明細、附件與產製動作。欄位值維持字串，避免把精確小數、不等式、定性文字與未知日數改造成假精確值。
 
@@ -132,16 +153,57 @@ API 僅投影已確認語意的醫療欄位；不轉出上游身分、權杖、�
 | `exported_at` | 匯出時間 |
 | `producer` | Healthbank 版本、來源契約修訂、臨床目錄識別與目錄／證據雜湊；不是電子簽章或身分證明 |
 | `imported_from` | 重新輸出匯入資料時，保留上一份資料包的產生版本；單層描述，不遞迴儲存整個歷程 |
-| `laboratory` | `healthbank.lab.v1` 原始檢驗欄位及來源查詢／完整性資訊；不保存推算值或顏色判定 |
+| `laboratory` | `healthbank.lab.v2` 原始檢驗欄位、上傳日期／來源全名及來源查詢／完整性資訊；仍可還原嚴格 v1，不保存推算值或顏色判定 |
 | `catalog` | 當時來源名稱、分組、範圍能力 |
 | `data` | 全部已取得清單、明細、個別取得狀態、錯誤與查詢範圍 |
 | `attachments` | 使用者明確加入的附件原始位元組、名稱、MIME、大小與 SHA-256 |
 
 畫面只看某一年或搜尋某藥，不會縮小這份資料包。未取得明細及未加入附件保留缺漏狀態；僅有附件描述不等於已備份其內容。先前下載、後來來源重查而更換識別的檔案仍可保留於附件清單。
 
+v2 檢驗及來源報告可攜帶嚴格格式的 `cache_provenance`，讓匯出／再匯入保留裝置快取的歷史來源描述；不攜帶假名化個人索引、快取版本權限或即時官方識別。舊 v1 不接受這些新增欄位，也不被暗中升級成已驗證來源。
+
 單一來源清單／明細匯出與完整資料包共用相同安全投影。官方工作階段識別在匯出時轉成只供檔案內關聯的 `archive_N`；產製動作、登入資料、Cookie、JWT 及同步設定身分不會匯出。還原前拒絕重複 JSON 欄位、孤立的 UTF-16 跳脫代理碼、未知危險結構、失聯明細、不合理容量、無效 UTF-8、可重用官方識別及附件校驗不符。檔案先完整驗證，再進入獨立匯入工作階段；不把來源完整性文字當成本次官方認證結果。
 
 Healthbank 資料包、Healthbank 檢驗 JSON/XML 與官方產製的 JSON/XML/PDF 是不同格式。官方原始檔可下載保存；未取得可驗證的格式樣本與語意時，不猜測其欄位來建立通用匯入器。
+
+### 完整取得與串流 ZIP
+
+`POST /api/acquisition/packages` 接受下列結構。`dataset` 與 `external_dataset` 必須擇一，不能同時提供。
+
+```json
+{
+  "dataset": { "schema": "healthbank.dataset.v2", "…": "其餘已驗證資料包欄位" },
+  "files": [{ "category": "imaging", "id": "當次48位文件識別", "archive_id": "archive_1" }],
+  "acquisition": {
+    "scope": "all_available",
+    "started_at": "2026-10-28T00:00:00Z",
+    "finished_at": "2026-10-28T00:01:00Z",
+    "statuses": [{ "category": "imaging", "kind": "source", "state": "ready", "code": "source_total_unknown" }]
+  },
+  "plan": { "id": "32位小寫十六進位計畫識別", "index": 1, "total": 1, "files_total": 1 }
+}
+```
+
+上例省略資料包內容與真實隨機識別，不是可直接提交的測試資料。`scope=all_available` 表示本輪選擇全部能力來源，不保證官方終身資料完整；選定子集時為 `selected`。
+
+相同連線、`plan.id`、分包序號及完全相同請求內容會取得原回條；內容不同回應 `409 package_plan_conflict`。原生下載識別只能使用一次，重複下載為 `409 package_consumed`。失效識別回應不存在／未授權，不建立新 Cookie。
+
+| 項目 | 上限與語意 |
+| --- | --- |
+| 內含資料包 | 32 MiB；保留前端驗證後的 UTF-8 JSON 原位元組與結尾換行，不重算數字 |
+| 外部資料包 | 最大 128 MiB；以 `{name:"healthbank.dataset.v2.json",size,sha256}` 綁定另存的完整檔案，不切成缺少關聯的假資料包 |
+| 每包附件 | 最多 1,000 個識別；來源原始資料總量最多 8 GiB，每檔仍受 500 MiB／5 分鐘及格式驗證限制 |
+| 傳輸／回條生命 | 最多 30 分鐘；同一使用階段最多 16 份回條，明確確認保存後釋放 |
+| 分包計畫 | 最多 1,000 包／50,000 個附件識別；每包另有 SHA-256，集合索引保留全域附件識別與結果 |
+| 狀態 | 整包 `ready/streaming/completed/partial/failed/cancelled`；逐檔另可為 `queued/skipped` |
+
+ZIP 根目錄包含 `healthbank.dataset.v2.json`（外部模式則以清單綁定）、`README.txt`、`manifest.json`，原始檔置於 `originals/archive_N/`。`manifest.json` 使用 `healthbank.acquisition.package.v1`，保留資料包雜湊、取得範圍、逐檔成功／失敗原因、實際大小、SHA-256 及 `usable`。登入憑證、即時來源操作識別、Cookie、CSRF、上游 URL 與原始錯誤內容不寫入 ZIP。
+
+單檔來源失敗時，其他可取得檔案可繼續，產生有效但標示 `partial` 的 ZIP。連線中斷或 ZIP 未完成關閉時中止回應，不產生整包完成雜湊。狀態查詢與取消不等待正在串流的使用階段鎖；登出、重新登入及資料模式切換會取消舊傳輸。
+
+保存部分成功 ZIP 後，可只重試尚未保存成功的原始檔。重試使用新的傳輸計畫，維持完全相同的資料包位元組、雜湊與 `archive_id`；不重新產製官方檔案，每檔最多三次實際失敗。容量略過與真正失敗分別記錄。資料來源重新取得則建立新的資料包與計畫，不以舊計畫承載改變的快照。
+
+伺服器完成傳輸不等於使用者已將檔案保存到裝置。介面要求分別確認外部 JSON（若使用）與每份 ZIP 已保存，再輸出集合索引。索引保留 `saved_acknowledged` 與取得完整性兩種狀態；未選來源、失敗明細、來源未知總數、無法關聯的新產製工作不能被保存確認抹除。
 
 ### 兩份資料包比較
 
@@ -170,5 +232,7 @@ PDF 與印表機實際輸出格式受瀏覽器支援影響；合成 Chromium 證
 ## 7. 保存與驗收
 
 SQLite／MySQL 仍只保存白名單設定與 HMAC 假名化識別。工作區資料、文件與登入憑證不持久寫入伺服器；下載檔案由使用者管理。來源自身的暫存產製及代理／CDN／作業系統保存行為需另行核對。
+
+可另行同意將本人的已取得資料保存在此網站的 IndexedDB；之後同身分官方登入先還原快取，不因每次登入自動重抓全部歷史。刷新先清除該使用者舊快取與工作區，再抓取檢驗及全部來源清單／明細；檔案產製／下載維持明確操作。詳見[裝置健康資料快取](device-health-cache.zh-TW.md)。
 
 合成契約、資料模型、實際瀏覽器下載／還原與 CI 可獨立驗證。真實官方登入、個人帳號各來源回傳、歷史完整性、實體 iPhone Safari 及正式 VPS 依[實機驗收清單](acceptance.zh-TW.md)處理。
