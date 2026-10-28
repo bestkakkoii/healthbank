@@ -49,6 +49,44 @@ test('streaming package projection binds live attachment handles to the exact po
   await assert.rejects(exportDatasetPackage(lab, importedProjection, categories), /不屬於目前官方工作階段/);
 });
 
+test('catalog capacity includes declared, report and retained orphan attachment categories on both import and export', async () => {
+  const laboratory = { records: [], fetched_at: '', complete: false, warnings: [] };
+  const declared = Array.from({ length: 198 }, (_, index) => ({ id: `synthetic_${index}`, label: `Synthetic source ${index}`,
+    group: 'Synthetic', range_mode: 'source', has_details: false }));
+  const snapshot = { reports: { synthetic_report: source([row(), row()], 'synthetic_report') },
+    details: {}, states: {}, query: { from: '', to: '' } };
+  // Retained downloads may outlive the source list that originally linked them.
+  const files = [{ category: 'synthetic_orphan', id: attachmentRef, name: 'synthetic.txt', content_type: 'text/plain', bytes: encoded('Synthetic retained original') }];
+  const content = await exportDataset(laboratory, snapshot, files, declared);
+  const restored = await importDataset(encoded(content));
+  assert.equal(restored.catalog.length, 200);
+  assert.deepEqual(restored.catalog.slice(-2).map(item => item.id), ['synthetic_report', 'synthetic_orphan']);
+  assert.equal(restored.snapshot.reports.synthetic_report.entries.length, 2);
+  assert.deepEqual(restored.attachments[0].bytes, files[0].bytes);
+  const roundTrip = await importDataset(encoded(await exportDataset(laboratory, restored.snapshot, restored.attachments, restored.catalog)));
+  assert.equal(roundTrip.catalog.length, 200);
+  assert.deepEqual(roundTrip.snapshot.reports.synthetic_report.entries, restored.snapshot.reports.synthetic_report.entries);
+
+  const extra = { id: 'synthetic_extra', label: 'Synthetic extra', group: 'Synthetic', range_mode: 'source', has_details: false };
+  await assert.rejects(exportDataset(laboratory, snapshot, files, [...declared, extra]));
+  const original = JSON.parse(content);
+  for (const mutate of [
+    value => { value.catalog.push(extra); },
+    value => { value.data.reports.synthetic_extra = source([], 'synthetic_extra'); },
+    value => { value.attachments.push({ ...value.attachments[0], id: 'archive_99999', category: 'synthetic_extra' }); },
+  ]) {
+    const changed = structuredClone(original); mutate(changed);
+    await assert.rejects(importDataset(encoded(JSON.stringify(changed))));
+  }
+
+  // Existing v1 archives retain their in-bound fallback behavior and limit.
+  const legacy = structuredClone(original);
+  legacy.schema = 'healthbank.dataset.v1'; legacy.laboratory.schema = 'healthbank.lab.v1'; delete legacy.producer;
+  assert.equal((await importDataset(encoded(JSON.stringify(legacy)))).catalog.length, 200);
+  legacy.catalog.push(extra);
+  await assert.rejects(importDataset(encoded(JSON.stringify(legacy))));
+});
+
 test('standalone source exports preserve rows and local relationships without live document capabilities', () => {
   const original = source([row({ key: 'synthetic-source-key', detail_id: ref,
     attachments: [{ id: attachmentRef, name: '合成報告.txt', content_type: 'text/plain;charset=utf-8' }],

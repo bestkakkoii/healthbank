@@ -127,6 +127,13 @@ function catalogItems(value: unknown, modern = true): DataCategory[] {
       ...(v['has_details'] === undefined ? {} : { has_details: boolean(v['has_details']) }) };
   });
 }
+function assertCombinedCategoryLimit(catalog: DataCategory[], data: HealthDataSnapshot, files: readonly { category: string }[]): void {
+  // Import adds fallback labels for reports and retained files absent from the
+  // supplied catalog. Bound the resulting catalog on both paths, not just each
+  // independently valid input collection.
+  const ids = new Set([...catalog.map(item => item.id), ...Object.keys(data.reports), ...files.map(file => file.category)]);
+  if (ids.size > MAX_CATEGORIES) return invalid();
+}
 function officialQuery(value: unknown): OfficialReportQuery {
   const q = object(value, ['mode', 'start_date', 'end_date', 'reported_count']);
   const mode = q['mode'];
@@ -437,6 +444,7 @@ async function projectDataset(report: ReportResponse, data: HealthDataSnapshot, 
   // Validate the source-only projection before writing, preserving every row or
   // refusing the whole export. In particular, never truncate a large dataset.
   snapshot(document.data); catalogItems(document.catalog); metadata(document.laboratory);
+  assertCombinedCategoryLimit(document.catalog, document.data, attachments);
   const output = `${bom ? '\uFEFF' : ''}${JSON.stringify(document)}\n`;
   if (encoder.encode(output).length > MAX_DATASET_BYTES) throw new Error('資料包超過 128 MiB；請先另存大型附件，再分次整理來源。沒有輸出截斷的檔案。');
   const packageFiles: DatasetPackageFile[] = [];
@@ -514,6 +522,7 @@ export async function importDataset(bytes: Uint8Array): Promise<ImportedDataset>
     validateAttachment(decoded, contentType);
     files.push({ category, id, name, content_type: contentType, bytes: decoded });
   }
+  assertCombinedCategoryLimit(catalog, data, files);
   const known = new Set(catalog.map(category => category.id));
   for (const id of new Set([...Object.keys(data.reports), ...files.map(file => file.category)])) if (!known.has(id)) {
     catalog.push({ id, label: id, group: '資料包來源', range_mode: 'source', has_details: true });
