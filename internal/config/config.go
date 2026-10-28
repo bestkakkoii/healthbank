@@ -114,3 +114,11 @@ func Subject(secret []byte, verifiedID string) string {
 	_, _ = h.Write([]byte("healthbank:official-subject:v1\x00" + strings.ToUpper(strings.TrimSpace(verifiedID))))
 	return hex.EncodeToString(h.Sum(nil))
 }
+
+// KeyCheck identifies a random instance key without disclosing it or encoding a
+// person's identity. Its distinct domain prevents confusion with subject keys.
+func KeyCheck(secret []byte) string {
+	h := hmac.New(sha256.New, secret)
+	_, _ = h.Write([]byte("healthbank:instance-key-check:v1"))
+	return hex.EncodeToString(h.Sum(nil))
+}

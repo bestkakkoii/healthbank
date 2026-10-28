@@ -11,7 +11,7 @@ import (
 )
 
 func TestSnapshotExportHonorsItsRestoreCapacity(t *testing.T) {
-	snapshot := Snapshot{SchemaVersion: SchemaVersion, ExportedAt: "2026-10-28T00:00:00Z", Entries: []Entry{{SubjectKey: syntheticSubject, Document: Document{Revision: 7, UpdatedAt: "2026-10-28T00:00:00Z", Settings: json.RawMessage(`{"theme":"system"}`)}}}}
+	snapshot := Snapshot{SchemaVersion: LegacySchemaVersion, ExportedAt: "2026-10-28T00:00:00Z", Entries: []Entry{{SubjectKey: syntheticSubject, Document: Document{Revision: 7, UpdatedAt: "2026-10-28T00:00:00Z", Settings: json.RawMessage(`{"theme":"system"}`)}}}}
 	var exported bytes.Buffer
 	if err := EncodeSnapshot(&exported, snapshot); err != nil {
 		t.Fatal(err)
@@ -42,7 +42,7 @@ func TestSnapshotImportRejectsNonportableRevisionAndTimestamp(t *testing.T) {
 			} else {
 				entry.UpdatedAt = "2026-10-28T00:00:00." + strings.Repeat("1", 40) + "Z"
 			}
-			if err := db.Import(context.Background(), Snapshot{SchemaVersion: SchemaVersion, Entries: []Entry{entry}}); !errors.Is(err, ErrInvalid) {
+			if err := db.Import(context.Background(), Snapshot{SchemaVersion: LegacySchemaVersion, Entries: []Entry{entry}}); !errors.Is(err, ErrInvalid) {
 				t.Fatal("import accepted metadata that cannot cross the supported database/browser boundary")
 			}
 			if saved, err := db.Get(context.Background(), syntheticSubject); err != nil || saved.Revision != 0 {
@@ -52,7 +52,7 @@ func TestSnapshotImportRejectsNonportableRevisionAndTimestamp(t *testing.T) {
 	}
 	db, _ := openTestStore(t)
 	entry := Entry{SubjectKey: syntheticSubject, Document: Document{Revision: MaxRevision - 1, UpdatedAt: "2026-10-28T00:00:00.123456789+08:00", Settings: json.RawMessage(`{}`)}}
-	if err := db.Import(context.Background(), Snapshot{SchemaVersion: SchemaVersion, Entries: []Entry{entry}}); err != nil {
+	if err := db.Import(context.Background(), Snapshot{SchemaVersion: LegacySchemaVersion, Entries: []Entry{entry}}); err != nil {
 		t.Fatal("valid maximum-width timestamp and exact revision were rejected")
 	}
 	updated, err := db.Put(context.Background(), syntheticSubject, entry.Revision, json.RawMessage(`{}`))

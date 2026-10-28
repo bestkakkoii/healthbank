@@ -28,7 +28,9 @@ import (
 
 const (
 	// SchemaVersion identifies the database schema and portable export format.
-	SchemaVersion = 1
+	SchemaVersion = 2
+	// LegacySchemaVersion lacks a verifiable instance-key binding.
+	LegacySchemaVersion = 1
 	// MaxSettingsBytes bounds one family's per-person configuration document.
 	MaxSettingsBytes = 256 << 10
 	// Revisions cross the JSON/JavaScript API boundary as numbers. Values beyond
@@ -41,6 +43,8 @@ var (
 	ErrInvalid             = errors.New("invalid settings input")
 	ErrDestinationNotEmpty = errors.New("import destination already has settings")
 	ErrUnsupportedSchema   = errors.New("unsupported settings schema version")
+	ErrIdentityKeyMismatch = errors.New("identity.key does not match this settings database or backup")
+	ErrLegacyIdentityKey   = errors.New("legacy settings have no verifiable key binding; original identity.key pairing remains unverified")
 	subjectPattern         = regexp.MustCompile(`^[0-9a-f]{64}$`)
 )
 

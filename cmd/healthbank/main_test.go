@@ -28,6 +28,9 @@ func TestMaintenancePreservesIdentityAndPortableSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err := db.BindIdentityKey(context.Background(), config.KeyCheck(secret), false); err != nil {
+		t.Fatal(err)
+	}
 	settings := lab.DefaultSettings()
 	settings.Theme = "dark"
 	doc, err := settings.Document()
@@ -82,6 +85,10 @@ func TestMaintenancePreservesIdentityAndPortableSettings(t *testing.T) {
 }
 
 func TestSettingsTransferStoresOnlyCanonicalValidatedConfiguration(t *testing.T) {
+	secret, err := config.Secret(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
 	db, err := store.Open(context.Background(), store.Options{SQLitePath: filepath.Join(t.TempDir(), "settings.sqlite")})
 	if err != nil {
 		t.Fatal(err)
@@ -89,7 +96,7 @@ func TestSettingsTransferStoresOnlyCanonicalValidatedConfiguration(t *testing.T)
 	defer db.Close()
 	const subject = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 	const hidden = "SYNTHETIC_VALUE_MUST_NOT_PERSIST"
-	snapshot := store.Snapshot{SchemaVersion: store.SchemaVersion, ExportedAt: time.Now().UTC().Format(time.RFC3339), Entries: []store.Entry{{SubjectKey: subject, Document: store.Document{Revision: 7, UpdatedAt: time.Now().UTC().Format(time.RFC3339), Settings: json.RawMessage(`{"theme":"` + hidden + `","theme":"system","font_scale":1,"favorites":[],"overrides":{}}`)}}}}
+	snapshot := store.Snapshot{SchemaVersion: store.SchemaVersion, IdentityKeyCheck: config.KeyCheck(secret), IdentityKeyOrigin: store.IdentityKeyNew, ExportedAt: time.Now().UTC().Format(time.RFC3339), Entries: []store.Entry{{SubjectKey: subject, Document: store.Document{Revision: 7, UpdatedAt: time.Now().UTC().Format(time.RFC3339), Settings: json.RawMessage(`{"theme":"` + hidden + `","theme":"system","font_scale":1,"favorites":[],"overrides":{}}`)}}}}
 	path := filepath.Join(t.TempDir(), "synthetic-settings.json")
 	write := func() {
 		t.Helper()
@@ -106,7 +113,7 @@ func TestSettingsTransferStoresOnlyCanonicalValidatedConfiguration(t *testing.T)
 		}
 	}
 	write()
-	if err := transfer(db, "import", path); err == nil {
+	if err := transfer(db, secret, "import", path); err == nil {
 		t.Fatal("ambiguous raw configuration was persisted by CLI import")
 	}
 	if prior, err := db.Get(context.Background(), subject); err != nil || prior.Revision != 0 {
@@ -116,7 +123,7 @@ func TestSettingsTransferStoresOnlyCanonicalValidatedConfiguration(t *testing.T)
 	// so persisted content is exactly the schema-checked typed representation.
 	snapshot.Entries[0].Settings = json.RawMessage(`{ "theme": "system", "font_scale": 1, "favorites": [], "overrides": {} }`)
 	write()
-	if err := transfer(db, "import", path); err != nil {
+	if err := transfer(db, secret, "import", path); err != nil {
 		t.Fatal(err)
 	}
 	stored, err := db.Get(context.Background(), subject)

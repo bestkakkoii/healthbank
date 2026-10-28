@@ -164,7 +164,7 @@ func TestSnapshotRoundTripAndEmptyDestinationGuard(t *testing.T) {
 func TestImportValidationDoesNotPartiallyWrite(t *testing.T) {
 	s, _ := openTestStore(t)
 	snapshot := Snapshot{
-		SchemaVersion: SchemaVersion,
+		SchemaVersion: LegacySchemaVersion,
 		Entries: []Entry{
 			{SubjectKey: syntheticSubject, Document: Document{Revision: 1, Settings: json.RawMessage(`{}`), UpdatedAt: "2026-01-01T00:00:00Z"}},
 			{SubjectKey: otherSubject, Document: Document{Revision: 0, Settings: json.RawMessage(`{}`), UpdatedAt: "2026-01-01T00:00:00Z"}},
@@ -243,6 +243,15 @@ func TestMySQLIntegration(t *testing.T) {
 		t.Fatal("MySQL integration test requires an empty disposable settings database")
 	}
 	source, _ := openTestStore(t)
+	keyCheck := strings.Repeat("c", 64)
+	for _, instance := range []*Store{source, s} {
+		if err := instance.BindIdentityKey(ctx, keyCheck, false); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := s.VerifyIdentityKey(ctx, strings.Repeat("d", 64)); !errors.Is(err, ErrIdentityKeyMismatch) {
+		t.Fatal("MySQL accepted a mismatched identity key")
+	}
 	for _, raw := range []string{`{"theme":"system"}`, `{"theme":"light","font_scale":2,"favorites":[],"overrides":{}}`} {
 		current, err := source.Get(ctx, syntheticSubject)
 		if err != nil {
@@ -324,6 +333,9 @@ func TestMySQLIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 	target, _ := openTestStore(t)
+	if err := target.BindIdentityKey(ctx, keyCheck, false); err != nil {
+		t.Fatal(err)
+	}
 	if err := target.Import(ctx, decoded); err != nil {
 		t.Fatal(err)
 	}
