@@ -42,6 +42,10 @@ var previousDynamicKey = regexp.MustCompile(`^custom_[a-f0-9]{20}$`)
 func (c *Catalog) isolateAmbiguousUnitSettings(s *Settings) {
 	for id, item := range s.Known {
 		if previousDynamicKey.MatchString(id) {
+			// A portable KnownItem may share another configuration key. That
+			// target does not belong to this ambiguous old dynamic identity.
+			// Isolate only this ID; never disable an unrelated built-in limit.
+			item.Key = id
 			item.LegacyFor = unitReviewRequired
 			if !strings.HasSuffix(item.Name, "（舊版單位待確認）") && len(item.Name)+len("（舊版單位待確認）") <= 300 {
 				item.Name += "（舊版單位待確認）"

@@ -127,3 +127,31 @@ func TestIncompatibleObservedBuiltinUnitCannotCarryPersonalLimitsForward(t *test
 		t.Fatal("builtin isolation created duplicate retained limits")
 	}
 }
+
+func TestOldDynamicSharedKeyCannotDisableVerifiedBuiltinSettings(t *testing.T) {
+	catalog := gradingCatalog(t)
+	settings := DefaultSettings()
+	id := "custom_0123456789abcdefabcd"
+	settings.Known[id] = KnownItem{ID: id, Key: "serum_sodium", Name: "Synthetic legacy shared setting", Unit: "mmol/L", Category: "electrolytes"}
+	settings.Overrides["serum_sodium"] = Override{Enabled: true, ReferenceHigh: pointer("144")}
+	settings.Favorites = []string{"serum_sodium"}
+	if err := ValidateKnown(settings.Known); err != nil {
+		t.Fatalf("fixture must be a permitted portable shared-key definition: %v", err)
+	}
+	if err := ValidateSettings(settings, catalog.ConfigurableItems(settings.Known)); err != nil {
+		t.Fatalf("fixture must be a valid pre-migration settings document: %v", err)
+	}
+	catalog.ReconcileSettings(&settings)
+	if item := settings.Known[id]; item.Key != id || item.LegacyFor != unitReviewRequired {
+		t.Fatal("old shared-key metadata still owns a current verified configuration")
+	}
+	if override := settings.Overrides["serum_sodium"]; !override.Enabled || override.ReferenceHigh == nil || *override.ReferenceHigh != "144" {
+		t.Fatal("isolating a legacy identity disabled an unrelated verified limit")
+	}
+	if !reflect.DeepEqual(settings.Favorites, []string{"serum_sodium"}) {
+		t.Fatal("shared-key isolation changed existing favorites")
+	}
+	if err := ValidateSettings(settings, catalog.ConfigurableItems(settings.Known)); err != nil {
+		t.Fatalf("legacy marker prevents the verified built-in limit from being saved: %v", err)
+	}
+}

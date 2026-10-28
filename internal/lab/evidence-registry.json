@@ -1267,7 +1267,7 @@
     ],
     "prefix_case_preserved": true,
     "finite_spelling_aliases_only": true,
-    "migration": "Old custom_<20hex> limits are retained disabled under unit_review_required; incompatible observed built-in units retain separate disabled review entries. Correct built-in settings and favorites/appearance are preserved.",
+    "migration": "Old custom_<20hex> limits are retained disabled under unit_review_required; incompatible observed built-in units retain separate disabled review entries. Correct built-in settings and favorites/appearance are preserved. Shared-key legacy metadata is isolated under its own ID and cannot disable an unrelated verified configuration.",
     "regression_files": [
       "internal/lab/units_test.go",
       "web/tests/clinical-comparison.test.mjs"
@@ -1516,7 +1516,7 @@
   "implementation_files": {
     "internal/lab/grade.go": "f0d00addec6660e265d9edb7927c77222086694e4c862b6202690ee4d53fadc1",
     "internal/lab/value.go": "e701d3351f1bf424ce0241f275dc08bd49ace6d9a2f098b7ee96cfc997c29f3d",
-    "internal/lab/units.go": "10e0b2c7fddcd8b3fcb44ba2ec137e8f36734d9f01dc15785dd2b2daca945b7b",
+    "internal/lab/units.go": "132224ca004adc9b31b6d7816bce669377f872e447646247cf1f60032ddf3966",
     "web/src/clinical-comparison.ts": "5d8c88b9bbde9cac00df62b9b15d38f5b5ec160967d7ad151fdd1e6296d87381",
     "web/src/unit-normalization.ts": "8b5485b1703732b40be32584b1ea057b2d23af5ec8f4f551f75d5d3d9812f092",
     "web/src/lipid-analysis.ts": "6db0d8d47569119f22e3ffb73011c840c34268004d043065fcf131e1d0f2cd87",
