@@ -60,6 +60,7 @@ type App struct {
 	mu       sync.Mutex
 	sessions map[string]*session
 	subjects map[string]*subjectScope
+	packages map[string]*acquisitionPackage
 	store    *store.Store
 	catalog  *lab.Catalog
 	secret   []byte
@@ -105,6 +106,10 @@ func NewWithLimits(db *store.Store, secret []byte, version string, limits config
 	a.mux.HandleFunc("GET /api/supplementary", a.withSession(a.supplementary))
 	a.mux.HandleFunc("GET /api/documents", a.withSession(a.documents))
 	a.mux.HandleFunc("POST /api/documents/prepare", a.withSession(a.prepareDocument))
+	a.mux.HandleFunc("POST /api/acquisition/packages", a.withSession(a.createAcquisitionPackage))
+	a.mux.HandleFunc("GET /api/acquisition/packages/download", a.withSession(a.downloadAcquisitionPackage))
+	a.mux.HandleFunc("GET /api/acquisition/packages/status", a.acquisitionPackageStatus)
+	a.mux.HandleFunc("DELETE /api/acquisition/packages", a.cancelAcquisitionPackage)
 	a.mux.HandleFunc("GET /api/reports/current", a.withSession(a.currentReports))
 	a.mux.HandleFunc("POST /api/reports/import", a.withSession(a.importReports))
 	a.mux.HandleFunc("POST /api/reports/demo", a.withSession(a.demo))
@@ -154,6 +159,7 @@ func (a *App) cleanup() {
 		case <-a.stop:
 			return
 		case now := <-tick.C:
+			a.expireAcquisitionPackages(now)
 			var expired []*session
 			a.mu.Lock()
 			for id, s := range a.sessions {
@@ -194,6 +200,7 @@ func (a *App) clearSession(s *session) {
 // clearSessionState preserves a newly admitted replacement report reservation.
 // Callers must install that report immediately while holding the session lock.
 func (a *App) clearSessionState(s *session) {
+	a.clearAcquisitionPackages(s)
 	a.releaseSubject(s)
 	if s.official != nil {
 		s.official.Close()
@@ -228,6 +235,7 @@ func (a *App) setCookie(w http.ResponseWriter, r *http.Request, id string) {
 }
 func (a *App) withSession(next func(http.ResponseWriter, *http.Request, *session)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		a.cancelPackagesBeforeMutation(r)
 		select {
 		case a.requests <- struct{}{}:
 			defer func() { <-a.requests }()
@@ -261,7 +269,7 @@ func (a *App) withSession(next func(http.ResponseWriter, *http.Request, *session
 		// Native download links cannot send the generation header. They require
 		// an existing authenticated session and must never bootstrap a cookie
 		// that could overwrite another tab's newer session in a late response.
-		if s == nil && r.URL.Path == "/api/documents" {
+		if s == nil && (r.URL.Path == "/api/documents" || r.URL.Path == "/api/acquisition/packages/download") {
 			a.mu.Unlock()
 			a.fail(w, r, http.StatusUnauthorized, "login_required", "請先完成官方登入，再取得個人文件。")
 			return

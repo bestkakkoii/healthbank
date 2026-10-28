@@ -78,6 +78,7 @@ type resourceBudget struct {
 type sessionMemory struct {
 	budget              *resourceBudget
 	reports, references int64 // protected by budget.mu
+	packages            int64 // protected by budget.mu
 }
 
 func newResourceBudget(limits config.ResourceLimits) *resourceBudget {
@@ -132,7 +133,7 @@ func (m *sessionMemory) resize(references bool, previous, next int64) bool {
 		return false
 	}
 	difference := next - previous
-	if difference > 0 && (difference > b.limits.RetainedBytes-b.retained || difference > b.limits.SessionBytes-m.reports-m.references) {
+	if difference > 0 && (difference > b.limits.RetainedBytes-b.retained || difference > b.limits.SessionBytes-m.reports-m.references-m.packages) {
 		b.refusals++
 		return false
 	}
@@ -171,6 +172,10 @@ func (m *sessionMemory) releaseReports() {
 
 func (a *App) operationWorkingSet(r *http.Request, s *session) (int64, bool) {
 	switch r.URL.Path {
+	case "/api/acquisition/packages":
+		return 128 << 20, true
+	case "/api/acquisition/packages/download":
+		return 1 << 20, false // Each source transfer separately reserves its working set.
 	case "/api/reports/import":
 		return 192 << 20, true
 	case "/api/reports", "/api/supplementary":
