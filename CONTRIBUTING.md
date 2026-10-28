@@ -27,6 +27,7 @@ npm --prefix web run lint
 npm --prefix web run build
 npm --prefix web test
 node scripts/build-web.mjs --verify
+python3 -W error scripts/test_release.py
 .tools/go/bin/go test -count=1 ./...
 .tools/go/bin/go test -count=1 -race ./...
 .tools/go/bin/go vet ./...
@@ -59,7 +60,7 @@ GO="$PWD/.tools/go/bin/go" bash scripts/release.sh "$HEALTHBANK_RELEASE_TAG"
 
 Review both Linux architecture archives, the source archive, `SHA256SUMS`, licenses, and provenance. Source packaging uses an explicit allowlist and must exclude private data and build caches. Check that relative README images and shipped documentation remain usable inside the binary package.
 
-The scripts package locally. Git pushes, workflow execution, and publication are separate actions. The release workflow preserves an existing release and otherwise prepares a draft for a pushed version tag. Review the actual [Actions results](https://github.com/bestkakkoii/healthbank/actions) and release assets before claiming completion.
+The scripts package locally. Git pushes, workflow execution, and publication are separate actions. A pushed version tag preserves an existing release or prepares a draft. An explicitly changed RELEASE_CANDIDATE on main publishes that RC only after the release workflow's full checks, MySQL/race tests, build and checksum gates pass; it refuses to replace an existing release. Preserve the user's explicit publication authorization. Review the actual [Actions results](https://github.com/bestkakkoii/healthbank/actions) and downloadable release assets before claiming completion.
 
 ## Submitting a change
 

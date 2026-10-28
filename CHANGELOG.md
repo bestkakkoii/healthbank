@@ -4,10 +4,15 @@
 
 - Fixed trend discontinuities when the first examination date has multiple source results; keep exact raw points, draw same-day ranges where appropriate, and allow a clearly labelled evenly-spaced examination-date view without treating it as true elapsed time.
 - Improved JSON download interoperability using UTF-8 bytes/charset and optional UTF-8 BOM for editors; tested Chinese round-trip and versioned portable import.
+- Fixed the import dialog rejecting its advertised Healthbank JSON/XML formats; original-source Unicode survives actual browser download and server reimport.
 - Added strictly source-bound high-triglyceride handling: never apply Friedewald with TG ≥400 mg/dL, do not exceed the Sampson/NIH study range, keep the original laboratory LDL, and require explicit confirmation before eligible calculated values.
+- Evaluate lipid applicability and nonnegative domains using exact source decimals; reject known/suspected Type III for Sampson. Corrected the NCKU creatinine source-method label to the published enzymatic method without changing reference intervals or CKD-EPI coefficients.
 - Added read-only, session-scoped medical-category lists/details for medicines, chronic prescriptions, Western/Chinese/dental encounters, surgeries, and hospitalization. Drug-code prescription-duration plots preserve raw dates/counts and do not infer actual intake, adherence, treatment efficacy, or pharmacokinetic levels.
+- Retain pharmacology classification, confirmed dispensing labels and separate inpatient/claim dates; reject invalid or expired detail references and unsupported detail categories. Session expiry clears supplementary browser data with the existing application session handler.
+- Preserve same-day medication ranges and unknown-duration gaps, distinguish ROC/Gregorian dates, show full years, and make every source event reachable through pagination. Missing dates in ordinal chart mode do not create invalid SVG coordinates.
 - Preserved original reports in transient memory and settings-only HMAC-linked SQL persistence. New data endpoints never store longitudinal medical records in SQL; no user-health fixtures enter releases.
-- All application changes were committed in independent batches; temporary research, export, and patch workflows are excluded from the main branch. Linux deployment tarballs retain the flat root layout.
+- Updated only golang.org/x/net to verified official master v0.62.0, resolving GO-2026-6866 and GO-2026-6860; refreshed scans report no findings. Corrected existing compiler provenance without changing tool source revisions or unrelated dependencies.
+- All application changes were committed in independent batches; temporary research, export, and patch workflows are excluded from the main branch. Linux deployment tarballs retain the flat root layout and reject private/temporary staging inputs; source archives include RELEASE_CANDIDATE.
 - Official-account compatibility/completeness, real iPhone/Safari, and actual operator CDN/OS retention remain external acceptance requirements, not claimed as synthetic test successes.
 
 

@@ -6,15 +6,20 @@ Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
 `web/src/clinical-comparison.ts` is a pure browser-side engine. `ClinicalComparison.tsx`
 exposes two independent scenarios in Settings and Trends, even without observations.
-It never sends demographics or dates of birth, persists them, or replaces original
-results, institutional flags, personal thresholds or independent alerts.
+Calculations run in the browser and never replace original results, institutional
+flags, personal thresholds or independent alerts. Explicitly saving sends only the
+validated comparison mode and scenario age/sex settings to the settings API. A
+verified official subject permits SQL persistence under its pseudonymous key;
+other session modes retain these settings only in server session memory. Dates
+of birth and calculated medical results are not included in the settings payload.
 
 A manually entered age means **age at the selected examination**. An optional exact
 birth date calculates age separately for each selected examination. No birthday is
 inferred from a current age. Age 1–130 is a UI input guard, not a clinical validation
 range; infant day/month tables are intentionally not approximated by completed years.
 
-Only named NCKU blood-creatinine and ALP templates are currently implemented. Adult
+Nine named NCKU analytes are implemented: blood creatinine, ALP, BUN, calcium,
+uric acid, ALT, CK, phosphorus and serum albumin. Adult
 ranges without finer age partitions remain identical for older ages. Sex is the
 variable specified by the source, not inferred from names or identity numbers.
 Cross-institution method equivalence is unknown: these are named scenario comparisons,
@@ -48,9 +53,12 @@ Every original row, including same-date duplicates, remains individually selecta
 Nine strictly source-bound analytes are now implemented in `clinical-comparison.ts`:
 creatinine, ALP, BUN, calcium, uric acid, ALT, CK, phosphorus and serum albumin.
 The selected age and formula sex affect only applicable named scenario bounds.
-Source intervals that lack age splits remain unsplit; unknown method, specimen,
-sex or unit prevents an unjustified comparison. The original hospital flags are
-never overwritten. Scenario badges in the date-by-item table, reference bands
+Source intervals that lack age splits remain unsplit. Missing required age/sex
+information, incompatible units or an unrecognized item-name/code pairing prevents
+calculation. Template methods and specimens are displayed as source requirements;
+the application does not receive enough assay metadata to verify that an individual
+original result used the same method. The original hospital flags are never
+overwritten. Scenario badges in the date-by-item table, reference bands
 on trend charts and source-labelled CSV/print information use the same model.
 
 The analysis settings document may be explicitly saved alongside pseudonymous
@@ -60,7 +68,11 @@ server update until explicitly saved. This is deliberately different from a
 clinical statement of the patient's sex, age or disease risk.
 
 A separate guarded non-HDL calculation requires both compatible exact results
-and user confirmation of one collection. Multi-indicator charts use a common
+and user confirmation of one collection. Optional Sampson/NIH LDL estimates use
+exact TG eligibility boundaries and explicitly exclude known/suspected Type III;
+see [the source and formula limits](clinical-reference.zh-TW.md). The NCKU creatinine
+method label was rechecked against the primary page on 2026-10-28: Enzymatic method.
+Multi-indicator charts use a common
 date domain but maintain their own units and axes. No interpolation or
 between-visit causal interpretation is generated.
 
