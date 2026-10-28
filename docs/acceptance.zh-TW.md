@@ -6,8 +6,8 @@ Copyright © 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
 ## 已交付
 
-- [v1.0.3-rc.6](https://github.com/bestkakkoii/healthbank/releases/tag/v1.0.3-rc.6) 已發布，包含 Linux amd64、arm64、來源包與 SHA256SUMS。
-- [發行流程](https://github.com/bestkakkoii/healthbank/actions/runs/40530418720) 與 [主線 CI](https://github.com/bestkakkoii/healthbank/actions/runs/40530418660) 成功。
+- 以 [GitHub Releases](https://github.com/bestkakkoii/healthbank/releases) 公開、具有 SHA256SUMS 的預覽版為準；使用者應核對目前下載的實際版號與發行說明。
+- 以所選發行標籤對應的 [CI／Release Actions](https://github.com/bestkakkoii/healthbank/actions) 是否成功判定測試與建置狀態；舊版 CI 結果不會驗證新版。
 - Linux 部署包**沒有多一層版本目錄**，解壓後直接看到 `healthbank`；前端內嵌，不需要在部署機安裝建置依賴。
 - 不含使用者的 `data/`、登入憑證、報告或個人健康資料。設定庫僅有假名化索引與有限配置，並非完全匿名；部署者仍需管理主機與第三方服務日誌。
 

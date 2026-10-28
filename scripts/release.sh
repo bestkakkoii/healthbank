@@ -24,6 +24,7 @@ release_documents=(
   docs/clinical-reference.zh-TW.md
   docs/comparison-engine.md
   docs/privacy.zh-TW.md
+  docs/acceptance.zh-TW.md
   docs/nhi_protocol.md
   docs/verification.zh-TW.md
   docs/quality-audit.zh-TW.md
