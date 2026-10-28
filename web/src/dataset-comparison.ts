@@ -11,6 +11,15 @@ export interface DatasetDifference {
   before: number;
   after: number;
   content: string;
+  relationship?: DatasetRelationship;
+}
+interface RelationshipSummary { date: string; title: string; institution: string }
+interface DatasetRelationship {
+  status: 'resolved' | 'unresolved' | 'unlinked';
+  fingerprint?: string;
+  parents: RelationshipSummary[];
+  roots: RelationshipSummary[];
+  summary_truncated: boolean;
 }
 export interface DatasetComparison {
   beforeExportedAt: string;
@@ -42,8 +51,41 @@ async function fingerprint(bytes: Uint8Array) {
   return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
 const encoder = new TextEncoder();
-interface ParentEdge { parent: string; content: string }
-interface AttachmentParents { edges: Set<string>; reliable: boolean }
+const MAX_RELATIONSHIP_SUMMARIES = 4;
+const MAX_RELATIONSHIP_TEXT = 160;
+interface BoundedSummaries { items: Map<string, RelationshipSummary>; truncated: boolean }
+interface ParentEdge { parent: string; content: string; summary: BoundedSummaries }
+interface AttachmentParents { edges: Set<string>; reliable: boolean; parents: BoundedSummaries; roots: BoundedSummaries }
+
+function emptySummaries(): BoundedSummaries { return { items: new Map(), truncated: false }; }
+function sourceSummary(entry: SupplementEntry): BoundedSummaries {
+  let truncated = false;
+  const bounded = (value: string) => {
+    if (value.length <= MAX_RELATIONSHIP_TEXT) return value;
+    truncated = true;
+    // A truncated summary is not a source replacement. Do not create a lone
+    // surrogate when the display bound falls inside a supplementary character.
+    return `${value.slice(0, MAX_RELATIONSHIP_TEXT).replace(/[\uD800-\uDBFF]$/u, '')}…`;
+  };
+  const summary = { date: bounded(entry.date), title: bounded(entry.title), institution: bounded(entry.institution) };
+  return { items: new Map([[JSON.stringify(summary), summary]]), truncated };
+}
+function mergeSummaries(target: BoundedSummaries, source: BoundedSummaries) {
+  target.truncated ||= source.truncated;
+  for (const [key, summary] of source.items) {
+    target.items.set(key, summary);
+    if (target.items.size > MAX_RELATIONSHIP_SUMMARIES) {
+      const last = [...target.items.keys()].toSorted().at(-1);
+      if (last !== undefined) target.items.delete(last);
+      target.truncated = true;
+    }
+  }
+}
+function relationshipSummary(status: DatasetRelationship['status'], parents: BoundedSummaries, roots: BoundedSummaries, context?: string): DatasetRelationship {
+  const ordered = (summaries: BoundedSummaries) => [...summaries.items].toSorted(([a], [b]) => a.localeCompare(b)).map(([, value]) => value);
+  return { status, ...(context === undefined ? {} : { fingerprint: `sha256:${context}` }), parents: ordered(parents), roots: ordered(roots),
+    summary_truncated: parents.truncated || roots.truncated };
+}
 
 // Each table is identified by a hash of its incoming source rows and their
 // ancestry, not by an archive/live handle. Topological processing keeps a long
@@ -59,7 +101,7 @@ async function ancestryContexts(entries: SupplementEntry[], details: Record<stri
     const reference = entry.detail_id;
     if (!reference) return;
     const edges = incoming.get(reference) ?? [];
-    edges.push({ parent, content: canonical(entry) }); incoming.set(reference, edges);
+    edges.push({ parent, content: canonical(entry), summary: sourceSummary(entry) }); incoming.set(reference, edges);
     if (parent) {
       const previous = parents.get(reference) ?? new Set<string>(); previous.add(parent); parents.set(reference, previous);
       const next = children.get(parent) ?? new Set<string>(); next.add(reference); children.set(parent, next);
@@ -70,6 +112,17 @@ async function ancestryContexts(entries: SupplementEntry[], details: Record<stri
   const remaining = new Map([...incoming.keys()].map(reference => [reference, parents.get(reference)?.size ?? 0]));
   const pending = [...incoming.keys()].filter(reference => remaining.get(reference) === 0);
   const contexts = new Map<string, string>();
+  const rootSummaries = new Map<string, BoundedSummaries>();
+  const relationships = new Map<string, DatasetRelationship>();
+  const summarize = (reference: string) => {
+    const parents = emptySummaries(), roots = emptySummaries();
+    for (const edge of incoming.get(reference) ?? []) {
+      mergeSummaries(parents, edge.summary);
+      const parentRoots = edge.parent ? rootSummaries.get(edge.parent) : edge.summary;
+      if (parentRoots) mergeSummaries(roots, parentRoots);
+    }
+    return { parents, roots };
+  };
   for (let index = 0; index < pending.length;) {
     // Limit in-flight hashing even for a wide graph. A batch only contains
     // tables whose dependencies were completed by an earlier batch.
@@ -80,6 +133,9 @@ async function ancestryContexts(entries: SupplementEntry[], details: Record<stri
     }));
     for (const [reference, context] of values) {
       contexts.set(reference, context);
+      const { parents, roots } = summarize(reference);
+      rootSummaries.set(reference, roots);
+      relationships.set(reference, relationshipSummary('resolved', parents, roots, context));
       for (const child of children.get(reference) ?? []) {
         const count = (remaining.get(child) ?? 0) - 1; remaining.set(child, count);
         if (count === 0) pending.push(child);
@@ -89,7 +145,11 @@ async function ancestryContexts(entries: SupplementEntry[], details: Record<stri
   // A cycle and every descendant depending on it remain unresolved. Treating
   // a handle, traversal order or a truncated ancestry as identity would claim
   // equality that the source graph cannot establish.
-  return contexts;
+  for (const reference of incoming.keys()) if (!contexts.has(reference)) {
+    const { parents, roots } = summarize(reference);
+    relationships.set(reference, relationshipSummary('unresolved', parents, roots));
+  }
+  return { contexts, relationships, rootSummaries };
 }
 
 async function occurrences(dataset: ImportedDataset, side: 'before' | 'after'): Promise<{ rows: Map<string, Occurrence>; unreliableCategories: Set<string> }> {
@@ -111,27 +171,35 @@ async function occurrences(dataset: ImportedDataset, side: 'before' | 'after'): 
   for (const row of datasetLaboratoryRows(dataset)) add({ category: 'laboratory', kind: 'laboratory', title: row.item_name, date: row.check_date, content: JSON.stringify(row) });
   for (const [category, report] of Object.entries(dataset.snapshot.reports)) {
     const details = dataset.snapshot.details[category] ?? {};
-    const contexts = await ancestryContexts(report.entries, details, canonical);
-    const attach = (entry: SupplementEntry, context: string | undefined) => {
+    const { contexts, relationships, rootSummaries } = await ancestryContexts(report.entries, details, canonical);
+    const attach = (entry: SupplementEntry, parentReference = '') => {
+      if (!entry.attachments?.length) return;
+      const context = parentReference ? contexts.get(parentReference) : 'root';
+      const summary = sourceSummary(entry);
+      const roots = parentReference ? rootSummaries.get(parentReference) : summary;
       for (const file of entry.attachments ?? []) {
         const key = JSON.stringify([category, file.id]);
         if (!downloaded.has(key)) continue;
-        const parents = attachmentParents.get(key) ?? { edges: new Set<string>(), reliable: true };
+        const parents = attachmentParents.get(key) ?? { edges: new Set<string>(), reliable: true, parents: emptySummaries(), roots: emptySummaries() };
         if (context === undefined) parents.reliable = false;
         else parents.edges.add(JSON.stringify([context, canonical(entry)]));
+        mergeSummaries(parents.parents, summary);
+        if (roots) mergeSummaries(parents.roots, roots);
         attachmentParents.set(key, parents);
       }
     };
     for (const entry of report.entries) {
       add({ category, kind: 'list', title: entry.title, date: entry.date, content: canonical(entry) });
-      attach(entry, 'root');
+      attach(entry);
     }
     for (const [reference, detail] of Object.entries(details)) {
       const context = contexts.get(reference);
       if (context === undefined) unreliableCategories.add(category);
       for (const entry of detail.entries) {
-        add({ category, kind: 'detail', title: entry.title, date: entry.date, content: canonical(entry) }, context ?? `unresolved:${side}`);
-        attach(entry, context);
+        const relationship = relationships.get(reference);
+        add({ category, kind: 'detail', title: entry.title, date: entry.date, content: canonical(entry),
+          ...(relationship === undefined ? {} : { relationship }) }, context ?? `unresolved:${side}`);
+        attach(entry, reference);
       }
     }
   }
@@ -142,7 +210,9 @@ async function occurrences(dataset: ImportedDataset, side: 'before' | 'after'): 
     if (parents && !parents.reliable) {
       unreliableCategories.add(file.category); context = `unresolved:${side}`;
     } else if (parents) context = await fingerprint(encoder.encode(JSON.stringify([...parents.edges].toSorted())));
-    add({ category: file.category, kind: 'attachment', title: file.name, date: '', content }, context);
+    const relationship = parents ? relationshipSummary(parents.reliable ? 'resolved' : 'unresolved', parents.parents, parents.roots, parents.reliable ? context : undefined)
+      : relationshipSummary('unlinked', emptySummaries(), emptySummaries());
+    add({ category: file.category, kind: 'attachment', title: file.name, date: '', content, relationship }, context);
   }
   return { rows: map, unreliableCategories };
 }
@@ -203,6 +273,16 @@ export function datasetDifferenceFields(row: DatasetDifference): { name: string;
       for (const [index, label] of [[3, '欄位識別'], [4, '欄位用途'], [5, '單位依據']] as const)
         if (typeof field[index] === 'string' && field[index]) fields.push({ name: `${field[0]}：${label}`, value: field[index] });
     }
+  }
+  const relationship = row.relationship;
+  if (relationship) {
+    const status = { resolved: '已解析所屬來源關係', unresolved: '關係含循環或無法可靠對照，未判定為相同', unlinked: '資料包未提供此附件的所屬紀錄' };
+    fields.push({ name: '所屬來源關係', value: status[relationship.status] });
+    const summary = (value: RelationshipSummary) => `${value.date || '日期未提供'} · ${value.title || '標題未提供'} · ${value.institution || '院所未提供'}`;
+    relationship.parents.forEach((value, index) => fields.push({ name: `直接所屬紀錄 ${index + 1}`, value: summary(value) }));
+    relationship.roots.forEach((value, index) => fields.push({ name: `最上層來源紀錄 ${index + 1}`, value: summary(value) }));
+    if (relationship.fingerprint) fields.push({ name: '來源關係內容指紋（不是醫療事件識別碼）', value: relationship.fingerprint });
+    if (relationship.summary_truncated) fields.push({ name: '關係摘要顯示上限', value: '每組最多列出 4 筆，長文字另有截短；部分摘要已省略，完整原文仍保留於原資料包。內容指紋使用完整關係計算。' });
   }
   return fields;
 }

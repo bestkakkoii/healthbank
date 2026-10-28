@@ -76,6 +76,14 @@ test('equal attachment bytes moved between distinct source records remain visibl
   const result = await compareDatasets(before, after);
   assert.equal(result.addedOccurrences, 2); assert.equal(result.previousOnlyOccurrences, 2); assert.equal(result.unchangedOccurrences, 3);
   assert.equal(result.differences.length, 4); assert.ok(result.differences.every(row => row.kind === 'attachment'));
+  const firstFile = result.differences.filter(row => row.content === result.differences[0].content);
+  assert.equal(firstFile.length, 2);
+  assert.deepEqual(new Set(firstFile.map(row => row.relationship.parents[0].title)), new Set(['合成住院甲', '合成住院乙']));
+  assert.notEqual(firstFile[0].relationship.fingerprint, firstFile[1].relationship.fingerprint);
+  assert.ok(firstFile.every(row => datasetDifferenceFields(row).some(field => field.name === '直接所屬紀錄 1' && /合成住院[甲乙]/.test(field.value))));
+  const exportedDiff = JSON.stringify(result);
+  assert.ok(exportedDiff.includes('relationship') && exportedDiff.includes('sha256:'));
+  assert.ok(!exportedDiff.includes(a) && !exportedDiff.includes(b) && !/archive_\d+/.test(exportedDiff));
 });
 
 test('nested detail and attachment ancestry preserves distinct grandparents', async () => {
@@ -95,6 +103,10 @@ test('nested detail and attachment ancestry preserves distinct grandparents', as
   assert.equal(result.addedOccurrences, 3); assert.equal(result.previousOnlyOccurrences, 3); assert.equal(result.unchangedOccurrences, 5);
   assert.equal(result.differences.filter(row => row.kind === 'detail').length, 4);
   assert.equal(result.differences.filter(row => row.kind === 'attachment').length, 2);
+  const movedLeaf = result.differences.filter(row => row.kind === 'detail' && row.title === '合成明細甲');
+  assert.deepEqual(movedLeaf.map(row => row.relationship.parents[0].title), ['相同中間列', '相同中間列']);
+  assert.deepEqual(new Set(movedLeaf.map(row => row.relationship.roots[0].title)), new Set(['合成住院甲', '合成住院乙']));
+  assert.ok(movedLeaf.every(row => datasetDifferenceFields(row).some(field => field.name === '最上層來源紀錄 1' && /合成住院[甲乙]/.test(field.value))));
 });
 
 test('shared ancestry stays bounded and duplicate parent rows do not change child identity', { timeout: 5000 }, async () => {
@@ -130,6 +142,30 @@ test('cyclic ancestry terminates and never labels dependent details or attachmen
   assert.equal(result.unchangedOccurrences, 2); assert.equal(result.addedOccurrences, 3); assert.equal(result.previousOnlyOccurrences, 3);
   assert.equal(result.rangeWarnings.length, 1); assert.match(result.rangeWarnings[0], /循環.*未判定為相同/);
   assert.ok(result.differences.every(row => row.kind === 'detail' || row.kind === 'attachment'));
+  assert.ok(result.differences.every(row => row.relationship.status === 'unresolved' && row.relationship.fingerprint === undefined));
+  assert.ok(result.differences.every(row => datasetDifferenceFields(row).some(field => field.name === '所屬來源關係' && /未判定為相同/.test(field.value))));
+});
+
+test('relationship summaries cap readable text and parents without changing complete ancestry identity', async () => {
+  const reference = 'f'.repeat(48), snapshot = emptyHealthData();
+  snapshot.reports.hospital = source(Array.from({ length: 6 }, (_, index) => entry({ detail_id: reference,
+    title: index === 0 ? `000${'🧪'.repeat(200)}` : `合成上層${index}`, institution: `合成院所${index}` })));
+  snapshot.details.hospital = { [reference]: source([entry({ title: '合成末端', fields: [{ name: '原始結果', value: 'A' }] })]) };
+  const changed = structuredClone(snapshot); changed.details.hospital[reference].entries[0].fields[0].value = 'B';
+  const result = await compareDatasets(await dataset(snapshot), await dataset(changed));
+  assert.equal(result.differences.length, 2);
+  const relationships = result.differences.map(row => row.relationship);
+  assert.ok(relationships.every(value => value.status === 'resolved' && value.summary_truncated && value.parents.length === 4 && value.roots.length === 4));
+  assert.equal(relationships[0].fingerprint, relationships[1].fingerprint);
+  for (const value of relationships) for (const summary of [...value.parents, ...value.roots]) {
+    assert.ok(summary.title.length <= 161);
+    assert.ok(!/[\uD800-\uDFFF]/u.test(summary.title));
+  }
+  assert.ok(result.differences.every(row => datasetDifferenceFields(row).some(field => field.name === '關係摘要顯示上限' && /部分摘要已省略/.test(field.value))));
+  changed.reports.hospital.entries[5].institution = '另一個未列於摘要的合成院所';
+  const differentParent = await compareDatasets(await dataset(snapshot), await dataset(changed));
+  const leaf = differentParent.differences.filter(row => row.kind === 'detail');
+  assert.equal(leaf.length, 2); assert.notEqual(leaf[0].relationship.fingerprint, leaf[1].relationship.fingerprint);
 });
 
 test('snapshot comparison discloses different ranges and rule versions without manufacturing changed clinical events', async () => {
