@@ -21,6 +21,8 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 ORIGIN = "https://myhealthbank.nhi.gov.tw"
 ENTRY_PATH = "/IHKE3000/"
 MAX_PUBLIC_BYTES = 8 * 1024 * 1024
+MAX_LAZY_ASSETS = 512
+MAX_ENTRY_ASSETS = 32
 ASSET = re.compile(r"[A-Za-z0-9_~.-]+\.[a-f0-9]{8,64}\.js\Z")
 IDENTIFIER = re.compile(r"[a-z][a-z0-9_]{0,63}\Z")
 HASH = re.compile(r"[a-f0-9]{64}\Z")
@@ -49,7 +51,7 @@ def read_registry(path: Path) -> dict:
             or not isinstance(value.get("contract_revision"), str)):
         raise ContractCheckError("registry_identity_invalid")
     assets = value.get("assets")
-    if not isinstance(assets, list) or not 1 <= len(assets) <= 160:
+    if not isinstance(assets, list) or not 1 <= len(assets) <= MAX_LAZY_ASSETS:
         raise ContractCheckError("registry_assets_invalid")
     modules = set()
     for asset in [value.get("app_asset", {})] + assets:
@@ -62,6 +64,25 @@ def read_registry(path: Path) -> dict:
         if not isinstance(module, str) or module != asset["file"].rsplit(".", 2)[0] or module in modules:
             raise ContractCheckError("registry_module_invalid")
         modules.add(module)
+    entries = value.get("entry_assets")
+    if not isinstance(entries, list) or not 1 <= len(entries) <= MAX_ENTRY_ASSETS:
+        raise ContractCheckError("registry_entry_assets_invalid")
+    entry_paths = set()
+    for asset in entries:
+        path = asset.get("path", "")
+        if (not re.fullmatch(r"/IHKE3000/js/[A-Za-z0-9_~.-]+\.js", path)
+                or asset.get("file") != path.rsplit("/", 1)[1]
+                or not HASH.fullmatch(asset.get("sha256", "")) or path in entry_paths):
+            raise ContractCheckError("registry_entry_asset_invalid")
+        entry_paths.add(path)
+    if not any(asset["file"] == value["app_asset"]["file"] and asset["sha256"] == value["app_asset"]["sha256"] for asset in entries):
+        raise ContractCheckError("registry_entry_app_mismatch")
+    graph = value.get("public_graph", {})
+    if (not HASH.fullmatch(graph.get("entry_sha256", ""))
+            or graph.get("lazy_chunks") != len(assets)
+            or graph.get("entry_scripts") != len(entries)
+            or graph.get("unique_js_assets") != len({item["file"] for item in entries + assets})):
+        raise ContractCheckError("registry_public_graph_invalid")
     ids = set()
     contracts = value.get("contracts")
     if not isinstance(contracts, list) or not contracts or len(contracts) > 100:
@@ -113,21 +134,31 @@ class EntryScripts(HTMLParser):
         if tag != "script":
             return
         sources = [value for key, value in attrs if key == "src"]
-        if len(sources) != 1 or sources[0] is None:
+        if not sources:
             return
+        if len(sources) != 1 or sources[0] is None:
+            raise ContractCheckError("entry_script_source_unrecognized")
         parsed = urlsplit(urljoin(ORIGIN + ENTRY_PATH, sources[0]))
-        if (parsed.scheme == "https" and parsed.netloc == "myhealthbank.nhi.gov.tw"
-                and not parsed.query and not parsed.fragment
-                and re.fullmatch(r"/IHKE3000/js/app\.[a-f0-9]{8,64}\.js", parsed.path)):
-            self.paths.append(parsed.path)
+        if (parsed.scheme != "https" or parsed.netloc != "myhealthbank.nhi.gov.tw"
+                or parsed.query or parsed.fragment
+                or not re.fullmatch(r"/IHKE3000/js/[A-Za-z0-9_~.-]+\.js", parsed.path)):
+            raise ContractCheckError("entry_script_origin_or_path_changed")
+        if parsed.path in self.paths or len(self.paths) >= MAX_ENTRY_ASSETS:
+            raise ContractCheckError("entry_script_set_invalid")
+        self.paths.append(parsed.path)
+
+
+def current_entry_paths(html: bytes) -> list[str]:
+    parser = EntryScripts()
+    parser.feed(html.decode("utf-8", errors="strict"))
+    return parser.paths
 
 
 def current_app_path(html: bytes) -> str:
-    parser = EntryScripts()
-    parser.feed(html.decode("utf-8", errors="strict"))
-    if len(parser.paths) != 1:
+    paths = [path for path in current_entry_paths(html) if re.fullmatch(r"/IHKE3000/js/app\.[a-f0-9]{8,64}\.js", path)]
+    if len(paths) != 1:
         raise ContractCheckError("current_app_asset_unrecognized")
-    return parser.paths[0]
+    return paths[0]
 
 
 def javascript_string_map(source: str) -> dict[str, str]:
@@ -175,7 +206,9 @@ def current_asset_map(script: bytes) -> dict[str, str]:
 def online_check(registry: dict, fetch=fetch_public) -> dict:
     report = {"registry_id": registry["registry_id"], "contract_revision": registry["contract_revision"], "checked_at": datetime.now(timezone.utc).isoformat(), "scope": "credentialless public entry and current asset map; no account/API verification", "status": "unchanged", "assets": []}
     try:
-        path = current_app_path(fetch(ENTRY_PATH))
+        entry = fetch(ENTRY_PATH)
+        entry_paths = current_entry_paths(entry)
+        path = current_app_path(entry)
         script = fetch(path)
         actual_map = current_asset_map(script)
     except (OSError, ValueError) as error:
@@ -184,6 +217,22 @@ def online_check(registry: dict, fetch=fetch_public) -> dict:
     app = {"module": "app", "file": path.rsplit("/", 1)[1], "sha256": hashlib.sha256(script).hexdigest()}
     app["status"] = "unchanged" if app["file"] == registry["app_asset"]["file"] and app["sha256"] == registry["app_asset"]["sha256"] else "changed"
     report["app_asset"] = app
+    entry_digest = hashlib.sha256(entry).hexdigest()
+    report["entry_document"] = {"sha256": entry_digest, "status": "unchanged" if entry_digest == registry["public_graph"]["entry_sha256"] else "changed"}
+    expected_modules = {item["module"] for item in registry["assets"]}
+    report["lazy_module_set"] = {"added": sorted(set(actual_map) - expected_modules), "removed": sorted(expected_modules - set(actual_map))}
+    expected_entries = {item["path"]: item for item in registry["entry_assets"]}
+    report["entry_script_set"] = {"added": sorted(set(entry_paths) - set(expected_entries)), "removed": sorted(set(expected_entries) - set(entry_paths))}
+
+    def inspect_entry(asset):
+        if asset["path"] not in entry_paths:
+            return {"file": asset["file"], "status": "changed", "error_code": "entry_script_removed"}
+        try:
+            body = script if asset["path"] == path else fetch(asset["path"])
+            digest = hashlib.sha256(body).hexdigest()
+            return {"file": asset["file"], "sha256": digest, "status": "unchanged" if digest == asset["sha256"] else "changed"}
+        except (OSError, ValueError) as error:
+            return {"file": asset["file"], "status": "unavailable", "error_code": error.args[0] if isinstance(error, ContractCheckError) else "public_read_failed"}
 
     def inspect(asset):
         current = actual_map.get(asset["module"])
@@ -198,8 +247,11 @@ def online_check(registry: dict, fetch=fetch_public) -> dict:
             return dict(item, status="unavailable", error_code=error.args[0] if isinstance(error, ContractCheckError) else "public_read_failed")
 
     with ThreadPoolExecutor(max_workers=4) as executor:
+        report["entry_assets"] = list(executor.map(inspect_entry, registry["entry_assets"]))
         report["assets"] = list(executor.map(inspect, registry["assets"]))
-    statuses = [app["status"]] + [item["status"] for item in report["assets"]]
+    statuses = [app["status"], report["entry_document"]["status"]] + [item["status"] for item in report["entry_assets"] + report["assets"]]
+    if any(report[key][change] for key in ("lazy_module_set", "entry_script_set") for change in ("added", "removed")):
+        statuses.append("changed")
     report["status"] = "changed" if "changed" in statuses else "unavailable" if "unavailable" in statuses else "unchanged"
     return report
 

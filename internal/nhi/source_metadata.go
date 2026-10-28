@@ -11,7 +11,7 @@ import (
 
 // ProviderContractRevision identifies Healthbank's observed SPA projection, not
 // an official API version or evidence that a real account returned every section.
-const ProviderContractRevision = "nhi-spa.2026-10-28.2"
+const ProviderContractRevision = "nhi-spa.2026-10-28.3"
 const maxSourceDiagnostics = 128
 
 var sourceIdentifier = regexp.MustCompile(`^[a-z][a-z0-9_.-]{0,127}$`)
@@ -91,13 +91,15 @@ func sourceFieldRole(code string) string {
 		return "result"
 	case "unit_data", "c_unit_data", "dose_unit", "drug_num_unit", "drug_unit":
 		return "unit"
-	case "consult_value", "c_consult_value", "consult":
+	case "consult_value", "c_consult_value", "consult", "consult_value_lower", "consult_value_max", "consult_min_value", "consult_max_value":
 		return "reference"
 	case "assay_method":
 		return "method"
 	case "inspect_mode":
 		return "specimen"
-	case "real_inspect_date", "c_real_inspect_date", "assay_date", "assay_upload_date", "sample_date", "confirm_date", "recv_date", "blood_chk_date", "urine_chk_date", "chk_date", "c_lung_date", "c_cat_date", "c_mmrc_date", "create_date", "func_date", "in_date", "out_date", "appl_s_date", "appl_e_date", "exe_s_date", "exe_e_date", "cure_e_date", "case_date", "close_date", "c_case_date", "c_close_date", "health_date", "valid_s_date", "valid_e_date", "upload_d", "upload_d2", "inoculate_d", "eatdate", "sport_date", "sportdate_date", "sdate", "edate", "cdate", "txt_date", "next_chk_date", "all_sdate", "all_edate":
+	case "creal_inspect_date", "ereal_inspect_date", "c_sdate", "c_edate", "c_exe_s_date", "remark_sdate", "remark_edate", "blood_pressurep_date", "now_tw", "now_en":
+		return "date"
+	case "real_inspect_date", "c_real_inspect_date", "assay_date", "assay_upload_date", "sample_date", "confirm_date", "recv_date", "blood_chk_date", "urine_chk_date", "chk_date", "c_lung_date", "c_cat_date", "c_mmrc_date", "create_date", "func_date", "in_date", "out_date", "appl_s_date", "appl_e_date", "exe_s_date", "exe_e_date", "cure_e_date", "case_date", "close_date", "c_case_date", "c_close_date", "health_date", "valid_s_date", "valid_e_date", "upload_d", "upload_d2", "inoculate_d", "eatdate", "sport_date", "sportdate_date", "sdate", "edate", "cdate", "txt_date", "next_chk_date", "all_sdate", "all_edate", "crt_date", "purchase_date", "pay_date":
 		return "date"
 	}
 	return ""
@@ -172,14 +174,14 @@ func medicalEntryMetadata(entry *SupplementEntry, category, section string, disp
 
 func providerDateRole(category, field string, hasEnd bool) string {
 	switch strings.ToLower(field) {
-	case "real_inspect_date", "c_real_inspect_date", "assay_date":
+	case "real_inspect_date", "c_real_inspect_date", "assay_date", "creal_inspect_date", "ereal_inspect_date":
 		return "examination"
 	case "sample_date":
 		return "specimen_collection"
 	case "recv_date":
 		return "report"
 	case "func_date":
-		if strings.HasPrefix(category, "screen_") {
+		if strings.HasPrefix(category, "screen_") || category == "kinmen" {
 			return "examination"
 		}
 		return "encounter"
@@ -203,7 +205,7 @@ func providerDateRole(category, field string, hasEnd bool) string {
 		}
 	case "close_date", "c_close_date":
 		return "period_end"
-	case "health_date", "upload_d2", "inoculate_d", "eatdate", "sport_date", "sportdate_date", "create_date", "cdate":
+	case "health_date", "upload_d2", "inoculate_d", "eatdate", "sport_date", "sportdate_date", "create_date", "cdate", "crt_date", "purchase_date", "pay_date":
 		return "recorded"
 	case "":
 		return ""
@@ -239,9 +241,9 @@ func providerOrigin(category, section, kind string) string {
 		return "mixed"
 	case "body_measurements", "family_followup", "family_health_followup":
 		return "mixed"
-	case "e_prescriptions", "self_paid_medicine", "self_paid_material":
+	case "e_prescriptions", "self_paid_medicine", "self_paid_material", "recent_visits":
 		return "institutional"
-	case "organ_wishes", "catastrophic", "care_plans", "home_care", "family_doctor":
+	case "organ_wishes", "catastrophic", "care_plans", "home_care", "family_doctor", "source_disease_assessments", "source_diabetes_assessment", "annual_overview", "mask_collections", "rapid_test_collections", "family_doctor_consent_snapshot":
 		return "official_summary"
 	}
 	return "unknown"

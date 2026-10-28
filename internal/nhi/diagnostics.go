@@ -138,9 +138,10 @@ func operationForPath(path string) Operation {
 		return OperationDocumentPrepare
 	case "/api/ihke3000/ihke3309s02/getpdf", "/api/ihke3000/ihke3309s02/getxml",
 		"/api/ihke3000/ihke3408s03/page_load", "/api/ihke3000/ihke3411s03/page_load",
-		"/api/ihke3000/ihke3801s02/download", "/api/ihke3000/ihke3801s02/imgf_download",
+		"/api/ihke3000/ihke3801s02/download", "/api/ihke3000/ihke3801s01/download", "/api/ihke3000/ihke3801s02/imgf_download",
 		"/api/ihke3000/ihke3801s02/app_download", "/api/ihke3000/ihke3801s02/app_imgf_download",
-		"/api/ihke3000/ihke3212s01/ihke3212_pdf":
+		"/api/ihke3000/ihke3212s01/ihke3212_pdf", "/api/ihke3000/ihke3212s01/ihke3212_ics",
+		"/api/ihke3000/ihke3403s07/download", "/api/ihke3000/ihke3104s01/ihke3104s08":
 		return OperationDocumentDownload
 	case "/api/ihke3000/ihke3402s01/sp_ihke3402s01", "/api/ihke3000/ihke3408s01/page_load",
 		"/api/ihke3000/ihke3408s01/search", "/api/ihke3000/ihke3801s01/page_load":
@@ -156,7 +157,10 @@ func operationForPath(path string) Operation {
 		"/api/ihke3000/ihke3205s02/sp_ihke3205s08", "/api/ihke3000/ihke3411s02/page_load",
 		"/api/ihke3000/ihke3205s02/page_load", "/api/ihke3000/ihke3207s05/page_load",
 		"/api/ihke3000/ihke3512s02/search", "/api/ihke3000/ihke3726s01/sp_ihke3726s07",
-		"/api/ihke3000/ihke3206s01/sp_ihke3206s08":
+		"/api/ihke3000/ihke3206s01/sp_ihke3206s08", "/api/ihke3000/ihke3303s03/pageload",
+		"/api/ihke3000/ihke3303s04/pageload", "/api/ihke3000/ihke3303s05/pageload",
+		"/api/ihke3000/ihke3302s02/sp_ihke3302s02", "/api/ihke3000/ihke3302s03/sp_ihke3302s03",
+		"/api/ihke3000/ihke3208s01/sp_ihke3208s01", "/api/ihke3000/ihke3208s01/sp_ihke3208s03":
 		return OperationSourceDetail
 	}
 	for _, spec := range medicalSpecs {
@@ -177,6 +181,11 @@ func operationForPath(path string) Operation {
 			if lower == strings.ToLower(request.path) {
 				return OperationSourceRead
 			}
+		}
+	}
+	for _, spec := range providerCareCharts {
+		if lower == strings.ToLower(spec.path) {
+			return OperationSourceDetail
 		}
 	}
 	for _, spec := range officialExportSpecs {

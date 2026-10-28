@@ -438,6 +438,8 @@ func TestProviderObservedDetailPayloads(t *testing.T) {
 		t.Run(tc.category, func(t *testing.T) {
 			s := providerFixture(t, func(w http.ResponseWriter, r *http.Request) {
 				switch r.URL.Path {
+				case "/api/ihke3000/ihke3407s01/getyears":
+					respondJSON(t, w, map[string]any{"years": []any{}})
 				case tc.listPath:
 					respondJSON(t, w, map[string]any{tc.listRoot: []any{tc.listRow}})
 				case tc.detailPath:

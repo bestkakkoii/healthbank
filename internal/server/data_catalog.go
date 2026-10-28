@@ -22,10 +22,10 @@ func dataCategories() []nhi.ProviderCategoryInfo {
 		{ID: "adult", Label: "成人預防保健", Group: "檢查與報告", RangeMode: "source"},
 		{ID: "self_paid", Label: "自費健檢", Group: "檢查與報告", RangeMode: "source", HasDetails: true},
 		{ID: "imaging", Label: "影像與病理報告", Group: "檢查與報告", RangeMode: "source", HasDetails: true},
-		{ID: "recent_medicine", Label: "近期用藥摘要", Group: "官方近期摘要", RangeMode: "source"},
-		{ID: "recent_chronic", Label: "近期慢箋摘要", Group: "官方近期摘要", RangeMode: "source"},
-		{ID: "recent_procedure", Label: "近期手術摘要", Group: "官方近期摘要", RangeMode: "source"},
-		{ID: "recent_hospital", Label: "近期住院摘要", Group: "官方近期摘要", RangeMode: "source"},
+		{ID: "recent_medicine", Label: "近期用藥摘要", Group: "官方近期摘要", RangeMode: "source", HasDetails: true},
+		{ID: "recent_chronic", Label: "近期慢箋摘要", Group: "官方近期摘要", RangeMode: "source", HasDetails: true},
+		{ID: "recent_procedure", Label: "近期手術摘要", Group: "官方近期摘要", RangeMode: "source", HasDetails: true},
+		{ID: "recent_hospital", Label: "近期住院摘要", Group: "官方近期摘要", RangeMode: "source", HasDetails: true},
 	}
 	items = append(items, nhi.ProviderCategories()...)
 	items = append(items,
@@ -39,7 +39,5 @@ func dataCategories() []nhi.ProviderCategoryInfo {
 }
 
 func (a *App) dataCatalog(w http.ResponseWriter, _ *http.Request) {
-	a.json(w, http.StatusOK, struct {
-		Categories []nhi.ProviderCategoryInfo `json:"categories"`
-	}{Categories: dataCategories()})
+	a.json(w, http.StatusOK, dataCatalogWithTerminology())
 }

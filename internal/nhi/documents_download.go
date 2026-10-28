@@ -52,9 +52,9 @@ func (s *Session) DocumentWorkingSet(category, reference string) int64 {
 		return 1 << 20
 	}
 	switch ref.kind {
-	case "hospital_pdf":
+	case "hospital_pdf", "prescription_calendar", "notification_calendar":
 		return 64 << 20
-	case "hospital_markup":
+	case "hospital_markup", "self_paid_file", "official_bundle":
 		return 192 << 20
 	case "imaging_jpeg":
 		return 192 << 20
@@ -86,11 +86,42 @@ func (s *Session) DownloadDocument(ctx context.Context, category, reference stri
 		return s.downloadHospitalPDF(ctx, ref, consume)
 	case "imaging_jpeg":
 		return s.downloadJPEGs(ctx, ref, consume)
-	case "official_archive", "official_pdf", "dicom_archive", "prescription_pdf":
+	case "prescription_calendar", "notification_calendar":
+		return s.downloadSourceCalendar(ctx, ref, consume)
+	case "official_archive", "official_pdf", "dicom_archive", "prescription_pdf", "self_paid_file", "official_bundle":
 		return s.downloadOfficialArtifact(ctx, ref, consume)
 	default:
 		return failure("INVALID_INPUT", "此文件類型不支援下載。")
 	}
+}
+
+func (s *Session) downloadSourceCalendar(ctx context.Context, ref documentReference, consume func(DocumentInfo, io.Reader) error) error {
+	params := url.Values{"tid": {ref.rowID}, "rtimes": {ref.sequence}, "recipeType": {ref.sourceType}}
+	endpoint, filename := "/api/ihke3000/ihke3212s01/IHKE3212_ics", "healthbank-suggested-refill.ics"
+	if ref.kind == "notification_calendar" {
+		endpoint, filename = "/api/ihke3000/ihke3104s01/IHKE3104S08", "healthbank-source-reminder.ics"
+		params = url.Values{"SEQ_NO": {ref.sequence}}
+	}
+	body, _, err := s.request(ctx, http.MethodGet, endpoint, params, nil, maxBufferedDocument, true)
+	if err != nil {
+		return err
+	}
+	defer clear(body)
+	content := bytes.TrimSpace(bytes.TrimPrefix(body, []byte{0xef, 0xbb, 0xbf}))
+	if bytes.HasPrefix(content, []byte("{")) {
+		if len(content) > maxAuthBytes {
+			return failure("DOCUMENT_INVALID", "官方回傳過大的 JSON 狀態，未當成行事曆附件。")
+		}
+		_, err := documentObject(content)
+		if err != nil {
+			s.invalidateOnAuthError(err)
+			return err
+		}
+	}
+	if !utf8.Valid(body) || bytes.ContainsRune(body, 0) || !(bytes.HasPrefix(content, []byte("BEGIN:VCALENDAR\r\n")) || bytes.HasPrefix(content, []byte("BEGIN:VCALENDAR\n"))) || !bytes.HasSuffix(content, []byte("END:VCALENDAR")) {
+		return failure("DOCUMENT_INVALID", "官方回傳不是完整 UTF-8 行事曆，未將錯誤頁當成來源提醒。")
+	}
+	return consume(DocumentInfo{Name: filename, ContentType: "text/calendar;charset=utf-8", Size: int64(len(body))}, bytes.NewReader(body))
 }
 
 func (s *Session) downloadHospitalMarkup(ctx context.Context, ref documentReference, consume func(DocumentInfo, io.Reader) error) error {
@@ -273,6 +304,13 @@ func (s *Session) downloadOfficialArtifact(ctx context.Context, ref documentRefe
 		endpoint = "/api/ihke3000/ihke3212s01/IHKE3212_pdf"
 		params = url.Values{"tid": {ref.rowID}, "tid2": {ref.rowID}, "recipeType": {ref.sourceType}}
 		contentType, filename = "application/pdf", "healthbank-official-prescription.pdf"
+	} else if ref.kind == "self_paid_file" {
+		endpoint = "/api/ihke3000/ihke3403S07/download"
+		params = url.Values{"DATA02_SEQ": {ref.rowID}, "FILE_SEQ": {ref.sequence}}
+		contentType, filename = "application/octet-stream", "healthbank-self-paid-source.bin"
+	} else if ref.kind == "official_bundle" {
+		endpoint = "/api/ihke3000/ihke3801s01/download"
+		contentType, filename = "application/octet-stream", "healthbank-official-complete-source.bin"
 	}
 	// The official detail view chooses the app-download route when it returns
 	// a download ID. Keep that private selector bound to this opaque attachment;
@@ -323,7 +361,18 @@ func (s *Session) downloadOfficialArtifact(ctx context.Context, ref documentRefe
 	}
 	trace.setPhase(PhaseResponseBody)
 	mediaType, _, _ := mime.ParseMediaType(response.Header.Get("Content-Type"))
+	namedFormat := sourceTextAttachmentFormat(response, ref)
+	consumeText := func(reader io.Reader, filename string) error {
+		err := s.consumeSourceText(response, reader, filename, namedFormat, consume)
+		if err == nil {
+			trace.setPhase(PhaseComplete)
+		}
+		return err
+	}
 	if strings.Contains(mediaType, "json") {
+		if namedFormat == ".json" {
+			return consumeText(response.Body, strings.TrimSuffix(filename, ".bin")+".json")
+		}
 		// The source also reports an expired JWT as HTTP 200 JSON. Treat that
 		// exactly like the ordinary data endpoints rather than retaining an
 		// authenticated connector after an explicit expiry response.
@@ -341,16 +390,42 @@ func (s *Session) downloadOfficialArtifact(ctx context.Context, ref documentRefe
 		return failure("DOCUMENT_INVALID", "官方回傳錯誤頁或 JSON，未將其當成原始文件。")
 	}
 	if mediaType == "text/html" {
+		if namedFormat == ".html" || namedFormat == ".htm" {
+			return consumeText(response.Body, strings.TrimSuffix(filename, ".bin")+"-markup.txt")
+		}
 		return failure("DOCUMENT_INVALID", "官方回傳錯誤頁或 JSON，未將其當成原始文件。")
 	}
 	reader := bufio.NewReaderSize(response.Body, 32768)
 	prefix, err := reader.Peek(5)
-	if err != nil {
+	if err != nil && (err != io.EOF || len(prefix) == 0 || ref.kind != "self_paid_file" && ref.kind != "official_bundle") {
 		return failure("DOCUMENT_INVALID", "官方文件未完整提供可辨識的標頭。")
+	}
+	if ref.kind == "self_paid_file" || ref.kind == "official_bundle" {
+		baseName := strings.TrimSuffix(filename, ".bin")
+		typePrefix, _ := reader.Peek(8)
+		switch {
+		case bytes.HasPrefix(prefix, []byte("%PDF-")):
+			contentType, filename = "application/pdf", baseName+".pdf"
+		case bytes.HasPrefix(prefix, []byte{'P', 'K', 3, 4}) || bytes.HasPrefix(prefix, []byte{'P', 'K', 5, 6}):
+			contentType, filename = "application/zip", baseName+".zip"
+		case bytes.HasPrefix(prefix, []byte{0xff, 0xd8, 0xff}):
+			contentType, filename = "image/jpeg", baseName+".jpg"
+		case bytes.HasPrefix(typePrefix, []byte{0x89, 'P', 'N', 'G', 13, 10, 26, 10}):
+			contentType, filename = "image/png", baseName+".png"
+		default:
+			extension := ".txt"
+			if namedFormat == ".json" {
+				extension = ".json"
+			}
+			return consumeText(reader, baseName+extension)
+		}
 	}
 	valid := bytes.HasPrefix(prefix, []byte("%PDF-"))
 	if contentType == "application/zip" {
 		valid = bytes.HasPrefix(prefix, []byte{'P', 'K', 3, 4}) || bytes.HasPrefix(prefix, []byte{'P', 'K', 5, 6})
+	}
+	if (ref.kind == "self_paid_file" || ref.kind == "official_bundle") && (contentType == "image/jpeg" || contentType == "image/png") {
+		valid = true // The fixed self-paid route's actual image signature was inspected above.
 	}
 	if !valid {
 		return failure("DOCUMENT_INVALID", "官方文件格式與產製類型不符，未提供下載。")
@@ -364,6 +439,114 @@ func (s *Session) downloadOfficialArtifact(ctx context.Context, ref documentRefe
 	}
 	trace.setPhase(PhaseComplete)
 	return nil
+}
+
+// JSON/HTML status responses are not artifacts. The two routes offering
+// unspecified originals may, however, offer explicitly named text attachments.
+// The untrusted name is inspected only for this distinction: it is never used
+// as a path, returned filename or evidence of medical validity. Source markup
+// is delivered as inert .txt bytes, never rendered or executed by Healthbank.
+func sourceTextAttachmentFormat(response *http.Response, ref documentReference) string {
+	if ref.kind != "self_paid_file" && ref.kind != "official_bundle" {
+		return ""
+	}
+	disposition, parameters, err := mime.ParseMediaType(response.Header.Get("Content-Disposition"))
+	filename := parameters["filename"]
+	if err != nil || !strings.EqualFold(disposition, "attachment") || len(filename) == 0 || len(filename) > 4096 || !utf8.ValidString(filename) || strings.ContainsAny(filename, "/\\\x00\r\n") {
+		return ""
+	}
+	extension := strings.ToLower(path.Ext(filename))
+	switch extension {
+	case ".json", ".xml", ".html", ".htm", ".txt":
+		return extension
+	}
+	return ""
+}
+
+func (s *Session) consumeSourceText(response *http.Response, reader io.Reader, filename, namedFormat string, consume func(DocumentInfo, io.Reader) error) error {
+	if response.ContentLength > maxBufferedDocument {
+		return failure("RESPONSE_TOO_LARGE", "來源文字附件超過 32 MiB 驗證上限，未回傳不完整文件。")
+	}
+	body, err := io.ReadAll(io.LimitReader(reader, maxBufferedDocument+1))
+	defer clear(body)
+	if err != nil || response.ContentLength >= 0 && response.ContentLength != int64(len(body)) {
+		return failure("DOCUMENT_INCOMPLETE", "來源文字附件傳輸未完成。")
+	}
+	if len(body) > maxBufferedDocument {
+		return failure("RESPONSE_TOO_LARGE", "來源文字附件超過 32 MiB 驗證上限，未回傳不完整文件。")
+	}
+	trimmed := bytes.TrimSpace(bytes.TrimPrefix(body, []byte{0xef, 0xbb, 0xbf}))
+	if len(trimmed) == 0 || !utf8.Valid(body) || bytes.ContainsRune(body, 0) {
+		return failure("DOCUMENT_INVALID", "來源附件不是完整 UTF-8 文字，未提供下載。")
+	}
+	if namedFormat == ".json" {
+		if !json.Valid(trimmed) {
+			return failure("DOCUMENT_INVALID", "來源 JSON 附件格式不完整。")
+		}
+		if err := originalJSONArtifactError(trimmed); err != nil {
+			s.invalidateOnAuthError(err)
+			return err
+		}
+		// A raw source file has case-sensitive keys and may contain original
+		// report markup as string values. It is not a canonical provider row,
+		// and its bytes are delivered as inert text without interpreting them.
+		return consume(DocumentInfo{Name: filename, ContentType: "text/plain;charset=utf-8", Size: int64(len(body))}, bytes.NewReader(body))
+	}
+	if bytes.HasPrefix(trimmed, []byte("{")) {
+		if len(trimmed) > maxAuthBytes {
+			return failure("DOCUMENT_INVALID", "官方回傳過大的 JSON 狀態，未當成來源附件。")
+		}
+		if _, err := documentObject(trimmed); err != nil {
+			s.invalidateOnAuthError(err)
+			return err
+		}
+		return failure("DOCUMENT_INVALID", "官方回傳 JSON，未將狀態回應當成來源附件。")
+	}
+	if bytes.HasPrefix(trimmed, []byte("[")) {
+		return failure("DOCUMENT_INVALID", "來源 JSON 附件格式不完整或缺少明確檔案識別。")
+	}
+	prefix := strings.ToLower(string(trimmed[:min(len(trimmed), 512)]))
+	markup := strings.Contains(prefix, "<!doctype html") || strings.Contains(prefix, "<html") || strings.Contains(prefix, "<script") || strings.Contains(prefix, "<body") || strings.Contains(prefix, "<head")
+	if markup && namedFormat != ".html" && namedFormat != ".htm" && namedFormat != ".xml" {
+		return failure("DOCUMENT_INVALID", "來源附件不是可辨識的文件或 UTF-8 文字，未將錯誤頁當成附件。")
+	}
+	return consume(DocumentInfo{Name: filename, ContentType: "text/plain;charset=utf-8", Size: int64(len(body))}, bytes.NewReader(body))
+}
+
+// Inspect only the explicit top-level status key. Do not case-fold, project or
+// decode the original file's medical content into provider rows. Each repeated
+// spelling of error_code is inspected, so a later zero cannot conceal expiry.
+func originalJSONArtifactError(body []byte) error {
+	if len(body) == 0 || body[0] != '{' {
+		return nil
+	}
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	if _, err := decoder.Token(); err != nil {
+		return failure("DOCUMENT_INVALID", "來源 JSON 附件格式不完整。")
+	}
+	for decoder.More() {
+		key, err := decoder.Token()
+		if err != nil {
+			return failure("DOCUMENT_INVALID", "來源 JSON 附件格式不完整。")
+		}
+		name, ok := key.(string)
+		if !ok {
+			return failure("DOCUMENT_INVALID", "來源 JSON 附件格式不完整。")
+		}
+		var raw json.RawMessage
+		if decoder.Decode(&raw) != nil {
+			clear(raw)
+			return failure("DOCUMENT_INVALID", "來源 JSON 附件格式不完整。")
+		}
+		if strings.EqualFold(name, "error_code") {
+			err = detectAPIError(map[string]json.RawMessage{"error_code": raw})
+		}
+		clear(raw)
+		if err != nil {
+			return err
+		}
+	}
+	return nil // Full JSON syntax/trailing-content validation preceded this scan.
 }
 
 // documentReader never reports a successful EOF at the byte limit unless the

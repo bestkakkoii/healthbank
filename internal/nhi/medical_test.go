@@ -76,7 +76,7 @@ func TestMedicalCategoryListAndDetails(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			wantRows, wantSearches := 2, int32(1)
+			wantRows, wantSearches := 3, int32(1)
 			if tc.searchPath == "" {
 				wantRows, wantSearches = 1, 0
 				if list.StartDate != "" || list.EndDate != "" || !strings.Contains(list.Coverage, "未提供日期搜尋") {
@@ -88,8 +88,8 @@ func TestMedicalCategoryListAndDetails(t *testing.T) {
 			if len(list.Entries) != wantRows || listCalls.Load() != 1 || searchCalls.Load() != wantSearches || list.Complete {
 				t.Fatal("search rows lost, requests repeated, or completeness fabricated")
 			}
-			if wantRows == 2 && (list.Entries[0].DetailID == list.Entries[1].DetailID || list.Entries[0].Key == list.Entries[1].Key) {
-				t.Fatal("same-date source rows collapsed")
+			if wantRows == 3 && (list.Entries[1].DetailID == list.Entries[2].DetailID || list.Entries[1].Key == list.Entries[2].Key || list.Entries[0].ContractID == list.Entries[1].ContractID) {
+				t.Fatal("independent homepage/search responses or same-date source rows collapsed")
 			}
 			entry := list.Entries[0]
 			wantListDate := "115/10/01"
