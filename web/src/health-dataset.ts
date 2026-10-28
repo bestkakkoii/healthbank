@@ -153,7 +153,7 @@ function laboratoryRows(value: unknown): PortableRow[] {
 }
 function mime(value: unknown): string {
   const result = text(value, 100).toLowerCase().split(';')[0]?.trim() ?? '';
-  if (!['application/pdf', 'application/zip', 'application/octet-stream', 'application/dicom', 'text/plain', 'image/jpeg'].includes(result)) return invalid();
+  if (!['application/pdf', 'application/zip', 'application/octet-stream', 'application/dicom', 'text/plain', 'text/calendar', 'image/jpeg', 'image/png'].includes(result)) return invalid();
   return result;
 }
 function filename(value: unknown): string {
@@ -284,7 +284,8 @@ function validateAttachment(bytes: Uint8Array, contentType: string): void {
   if (contentType === 'application/pdf' && !starts(0x25, 0x50, 0x44, 0x46, 0x2d)) return invalid();
   if (contentType === 'application/zip' && !(starts(0x50, 0x4b, 3, 4) || starts(0x50, 0x4b, 5, 6))) return invalid();
   if (contentType === 'image/jpeg' && !starts(0xff, 0xd8, 0xff)) return invalid();
-  if (contentType === 'text/plain') {
+  if (contentType === 'image/png' && !starts(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return invalid();
+  if (contentType === 'text/plain' || contentType === 'text/calendar') {
     try { new TextDecoder('utf-8', { fatal: true }).decode(bytes); }
     catch { return invalid(); }
   }
@@ -337,8 +338,11 @@ export function supplementReportJSON(report: SupplementReport): string {
   return output;
 }
 
-export async function exportDataset(report: ReportResponse, data: HealthDataSnapshot, files: DownloadedAttachment[], categories: DataCategory[], bom = false,
-  producedBy: DatasetProducer = UNKNOWN_DATASET_PRODUCER, importedFrom?: DatasetProducer): Promise<string> {
+export interface DatasetPackageFile { category: string; id: string; archive_id: string }
+export interface DatasetPackageProjection { content: string; files: DatasetPackageFile[] }
+
+async function projectDataset(report: ReportResponse, data: HealthDataSnapshot, files: DownloadedAttachment[], categories: DataCategory[], bom = false,
+  producedBy: DatasetProducer = UNKNOWN_DATASET_PRODUCER, importedFrom?: DatasetProducer): Promise<DatasetPackageProjection> {
   if (files.length > 10_000) return invalid();
   const labRecords = laboratoryRows(portableRows(report.records));
   // This is the exact body sent to the laboratory importer on restore. Check
@@ -388,7 +392,30 @@ export async function exportDataset(report: ReportResponse, data: HealthDataSnap
   snapshot(document.data); catalogItems(document.catalog); metadata(document.laboratory);
   const output = `${bom ? '\uFEFF' : ''}${JSON.stringify(document)}\n`;
   if (encoder.encode(output).length > MAX_DATASET_BYTES) throw new Error('資料包超過 128 MiB；請先另存大型附件，再分次整理來源。沒有輸出截斷的檔案。');
-  return output;
+  const packageFiles: DatasetPackageFile[] = [];
+  for (const [key, archiveID] of handles) {
+    const parts: unknown = JSON.parse(key);
+    if (Array.isArray(parts) && parts.length === 3 && parts[1] === 'attachment' &&
+      typeof parts[0] === 'string' && typeof parts[2] === 'string') {
+      packageFiles.push({ category: parts[0], id: parts[2], archive_id: archiveID });
+    }
+  }
+  return { content: output, files: packageFiles };
+}
+
+export async function exportDataset(report: ReportResponse, data: HealthDataSnapshot, files: DownloadedAttachment[], categories: DataCategory[], bom = false,
+  producedBy: DatasetProducer = UNKNOWN_DATASET_PRODUCER, importedFrom?: DatasetProducer): Promise<string> {
+  return (await projectDataset(report, data, files, categories, bom, producedBy, importedFrom)).content;
+}
+
+// Live handles stay in the transient package request only. The downloadable
+// dataset uses the exact same local archive relationships as ordinary export.
+export async function exportDatasetPackage(report: ReportResponse, data: HealthDataSnapshot, categories: DataCategory[],
+  producedBy: DatasetProducer = UNKNOWN_DATASET_PRODUCER): Promise<DatasetPackageProjection> {
+  const projected = await projectDataset(report, data, [], categories, false, producedBy);
+  if (projected.files.some(file => !/^[a-f0-9]{48}$/.test(file.id)))
+    throw new Error('部分附件不屬於目前官方工作階段；請重新取得來源，或使用原本的資料包匯出。');
+  return projected;
 }
 
 export async function importDataset(bytes: Uint8Array): Promise<ImportedDataset> {

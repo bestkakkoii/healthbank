@@ -106,13 +106,16 @@ export async function runBrowserAcceptance({ binary, evidenceDir }) {
     assert.ok(ready, 'Compiled Go application did not become healthy.');
     browser = await chromium.launch({ headless: true, executablePath: browserExecutable, env: { ...process.env, FONTCONFIG_FILE: fontConfig } });
     assert.equal(browser.version(), toolchain.chromium.version);
-    const createContext = async () => {
+    const createContext = async ({ syntheticOrigin = baseURL } = {}) => {
+      const fixtureOrigin = new URL(syntheticOrigin);
+      assert.ok(fixtureOrigin.protocol === 'http:' && fixtureOrigin.hostname === '127.0.0.1' && fixtureOrigin.pathname === '/',
+        'A synthetic fixture may only use an isolated loopback origin.');
       const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'zh-TW', timezoneId: 'Asia/Taipei', serviceWorkers: 'block' });
       context.on('page', opened => opened.on('pageerror', () => { result.page_errors++; }));
       await context.route(/^https?:/, route => {
         const url = new URL(route.request().url());
-        if (url.origin !== baseURL || ['/api/auth/captcha', '/api/auth/login', '/api/reports', '/api/supplementary', '/api/documents', '/api/documents/prepare'].includes(url.pathname)) {
-          result.prohibited_requests.push(url.origin === baseURL ? url.pathname : 'external-origin');
+        if (url.origin !== syntheticOrigin || ['/api/auth/captcha', '/api/auth/login', '/api/reports', '/api/supplementary', '/api/documents', '/api/documents/prepare'].includes(url.pathname)) {
+          result.prohibited_requests.push(url.origin === syntheticOrigin ? url.pathname : 'external-origin');
           return route.abort();
         }
         return route.continue();
@@ -408,6 +411,9 @@ export async function runBrowserAcceptance({ binary, evidenceDir }) {
     phase = 'explicit synthetic batch-controller fixture';
     const { runBatchAcceptance } = await import('./batch-acceptance.mjs');
     record('isolated synthetic date-batch controller', await runBatchAcceptance({ createContext, baseURL, evidenceDir, fixture, importLaboratory, session }));
+    phase = 'explicit synthetic full-acquisition controller fixture';
+    const { runFullAcquisitionAcceptance } = await import('./full-acquisition-acceptance.mjs');
+    record('isolated synthetic full acquisition and original-file saving', await runFullAcquisitionAcceptance({ createContext, baseURL, evidenceDir, fixture, importLaboratory, session }));
     assert.equal(result.page_errors, 0, 'No unhandled browser errors are allowed.');
     assert.deepEqual(result.prohibited_requests, [], 'No official acquisition/login or external browser requests are allowed.');
     result.passed = true;

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 bestkakkoii llc.
 // SPDX-License-Identifier: MIT
 import type { AnalysisPreferences } from './clinical-comparison';
+import type { PackageReceipt, PackageRequest, PreparationResult } from './full-acquisition';
 
 export type Level = 1 | 2 | 3 | 4 | 5;
 export type Theme = 'light' | 'dark' | 'system';
@@ -370,6 +371,102 @@ async function fetchDataCatalog(signal?: AbortSignal): Promise<{ categories: Dat
   return { categories };
 }
 
+function invalidAcquisitionResponse(): never {
+  throw new ApiError('完整取得服務回傳的狀態格式不正確；未宣稱檔案已完成。', 'invalid_response', 200);
+}
+
+function acquisitionObject(value: unknown): Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return invalidAcquisitionResponse();
+  return value as Record<string, unknown>;
+}
+
+function acquisitionCount(value: unknown, maximum: number): number {
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0 || value > maximum) return invalidAcquisitionResponse();
+  return value;
+}
+
+const packageStates = ['ready', 'streaming', 'completed', 'partial', 'failed', 'cancelled'] as const;
+function packageIdentity(value: Record<string, unknown>) {
+  const id = value['id'], expires = value['expires_at'];
+  const state = packageStates.find(item => item === value['state']);
+  if (typeof id !== 'string' || !/^[a-f0-9]{48}$/.test(id) || !state || typeof expires !== 'string' ||
+    !Number.isFinite(Date.parse(expires))) return invalidAcquisitionResponse();
+  return { id, state, expires_at: expires };
+}
+
+async function prepareDocument(category: string, id: string, signal?: AbortSignal): Promise<PreparationResult> {
+  const value = acquisitionObject(await request<unknown>('/api/documents/prepare', {
+    method: 'POST', body: JSON.stringify({ category, id }), signal: signal ?? null,
+  }));
+  const refresh = acquisitionObject(value['refresh']);
+  const refreshCategory = refresh['category'], detail = refresh['detail'], correlation = refresh['correlation'];
+  if (value['status'] !== 'requested' || typeof value['message'] !== 'string' || value['message'].length > 4000 ||
+    typeof refreshCategory !== 'string' || !/^[a-z][a-z0-9_]{0,63}$/.test(refreshCategory) ||
+    detail !== undefined && (typeof detail !== 'string' || !/^[a-f0-9]{48}$/.test(detail)) ||
+    correlation !== 'same_record' && correlation !== 'unavailable' ||
+    correlation === 'same_record' && (refreshCategory !== category || detail === undefined) ||
+    correlation === 'unavailable' && (refreshCategory !== 'official_files' || detail !== undefined)) return invalidAcquisitionResponse();
+  return { status: 'requested', message: value['message'], refresh: { category: refreshCategory, correlation,
+    ...(typeof detail === 'string' ? { detail } : {}) } };
+}
+
+async function createAcquisitionPackage(input: PackageRequest, signal?: AbortSignal): Promise<PackageReceipt> {
+  const { dataset, ...metadata } = input;
+  if (Boolean(dataset) === Boolean(metadata.external_dataset)) throw new Error('原始檔包必須指定一份完整資料包或已保存的外部資料包。');
+  const serialized = JSON.stringify(metadata);
+  // dataset is produced by the strict v2 exporter. Insert its JSON object
+  // directly rather than allocating another fully escaped medical string.
+  const body = dataset ? `${serialized.slice(0, -1)},"dataset":${dataset.trim()}}` : serialized;
+  const value = acquisitionObject(await request<unknown>('/api/acquisition/packages', { method: 'POST', body, signal: signal ?? null }));
+  const receipt = acquisitionPackageReceipt(value);
+  assertPackageReferences(receipt, input.files);
+  return receipt;
+}
+
+async function acquisitionPackageStatus(identifier: { id: string } | { plan: string; part: number }, signal?: AbortSignal): Promise<PackageReceipt> {
+  const query = 'id' in identifier ? new URLSearchParams({ id: identifier.id })
+    : new URLSearchParams({ plan: identifier.plan, part: String(identifier.part) });
+  const value = acquisitionObject(await request<unknown>(`/api/acquisition/packages/status?${query}`, { signal: signal ?? null }));
+  const receipt = acquisitionPackageReceipt(value);
+  if ('id' in identifier && receipt.id !== identifier.id) return invalidAcquisitionResponse();
+  return receipt;
+}
+
+export function assertPackageReferences(receipt: PackageReceipt, files: readonly { archive_id: string }[]): void {
+  if (receipt.total !== files.length || receipt.files.some((file, index) => file.archive_id !== files[index]?.archive_id))
+    invalidAcquisitionResponse();
+}
+
+function acquisitionPackageReceipt(value: Record<string, unknown>): PackageReceipt {
+  const identity = packageIdentity(value);
+  const total = acquisitionCount(value['total'], 1000), completed = acquisitionCount(value['completed'], total), failed = acquisitionCount(value['failed'], total);
+  if (completed + failed > total || !Array.isArray(value['files']) || value['files'].length !== total) return invalidAcquisitionResponse();
+  const fileStates = ['queued', 'streaming', 'completed', 'failed', 'cancelled', 'skipped'] as const;
+  const seen = new Set<string>();
+  const files = (value['files'] as unknown[]).map(item => {
+    const file = acquisitionObject(item), archiveID = file['archive_id'], digest = file['sha256'], code = file['code'];
+    const state = fileStates.find(item => item === file['state']);
+    if (typeof archiveID !== 'string' || !/^archive_[1-9][0-9]{0,8}$/.test(archiveID) || seen.has(archiveID) || !state ||
+      digest !== undefined && (typeof digest !== 'string' || !/^[a-f0-9]{64}$/.test(digest)) ||
+      state === 'completed' && digest === undefined ||
+      code !== undefined && (typeof code !== 'string' || !/^[A-Za-z0-9_]{1,100}$/.test(code))) return invalidAcquisitionResponse();
+    seen.add(archiveID);
+    return { archive_id: archiveID, state, bytes: acquisitionCount(file['bytes'], 500 * 1024 * 1024),
+      ...(typeof digest === 'string' ? { sha256: digest } : {}), ...(typeof code === 'string' ? { code } : {}) };
+  });
+  const digest = value['package_sha256'];
+  if (digest !== undefined && (typeof digest !== 'string' || !/^[a-f0-9]{64}$/.test(digest))) return invalidAcquisitionResponse();
+  if (files.filter(file => file.state === 'completed').length !== completed || files.filter(file => file.state === 'failed').length !== failed ||
+    identity.state === 'completed' && completed !== total ||
+    (identity.state === 'completed' || identity.state === 'partial') && (digest === undefined || value['package_bytes'] === undefined) ||
+    digest !== undefined && identity.state !== 'completed' && identity.state !== 'partial') return invalidAcquisitionResponse();
+  const bytes = acquisitionCount(value['bytes'], 8 * 1024 * 1024 * 1024);
+  if (bytes !== files.reduce((sum, file) => sum + file.bytes, 0)) return invalidAcquisitionResponse();
+  return { ...identity, total, completed, failed, bytes, files,
+    ...(typeof digest === 'string' ? { package_sha256: digest } : {}),
+    ...(value['package_bytes'] === undefined ? {} : { package_bytes: acquisitionCount(value['package_bytes'], 9 * 1024 * 1024 * 1024) }) };
+}
+
 export const api = {
   dataCatalog: fetchDataCatalog,
   document: (category: string, id: string, signal: AbortSignal) =>
@@ -377,10 +474,11 @@ export const api = {
       credentials: 'same-origin', cache: 'no-store', signal,
       headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
     }),
-  prepareDocument: (category: string, id: string, signal?: AbortSignal) =>
-    request<{ status: 'requested'; message: string }>('/api/documents/prepare', {
-      method: 'POST', body: JSON.stringify({ category, id }), signal: signal ?? null,
-    }),
+  prepareDocument,
+  createAcquisitionPackage,
+  acquisitionPackageStatus,
+  cancelAcquisitionPackage: (id: string, signal?: AbortSignal) => request<{ status: 'cancelled' }>(
+    `/api/acquisition/packages?${new URLSearchParams({ id })}`, { method: 'DELETE', signal: signal ?? null }),
   supplementary: (category: string, from: string, to: string, detail: string, signal: AbortSignal) =>
     request<SupplementReport>(`/api/supplementary?${new URLSearchParams({ category, from, to, detail })}`, { signal }),
   privacy: (signal?: AbortSignal) => request<PrivacyInfo>('/api/privacy', signal ? { signal } : {}),

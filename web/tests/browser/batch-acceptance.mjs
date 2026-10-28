@@ -113,7 +113,7 @@ export async function runBatchAcceptance({ createContext, baseURL, evidenceDir, 
     await options.getByRole('button', { name: '清除來源選取', exact: true }).click();
     await selectCategory('chronic'); await selectCategory('dental');
     await options.getByRole('checkbox', { name: '一併取得全部檢驗結果', exact: true }).uncheck();
-    const normal = page.getByRole('button', { name: '取得所選來源的全部年度', exact: true });
+    const normal = page.getByRole('button', { name: '取得所選來源的全部年度清單與明細', exact: true });
     await normal.click();
     await page.getByRole('strong').filter({ hasText: 'SYNTHETIC_RETAINED_chronic' }).waitFor();
     await page.getByRole('strong').filter({ hasText: 'SYNTHETIC_RETAINED_dental' }).waitFor();
