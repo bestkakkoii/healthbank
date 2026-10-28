@@ -188,9 +188,6 @@ func ruleMatchesUnit(rule Rule, unit string) bool {
 	if unitKey(unit) == unitKey(rule.Unit) {
 		return true
 	}
-	if rule.Unit == "mL/min/1.73m2" && unitKey(unit) == "ml/min/1.73m^2" {
-		return true
-	}
 	for _, a := range rule.Aliases {
 		if unitKey(a) == unitKey(unit) {
 			return true
@@ -375,8 +372,10 @@ func ValidateSettings(s Settings, known map[string]KnownItem) error {
 		return fmt.Errorf("設定項目數量超出上限")
 	}
 	allowed := map[string]bool{}
+	unitReview := map[string]bool{}
 	for _, v := range known {
 		allowed[v.Key] = true
+		unitReview[v.Key] = unitReview[v.Key] || v.LegacyFor == unitReviewRequired
 	}
 	fav := map[string]bool{}
 	for _, id := range s.Favorites {
@@ -391,6 +390,9 @@ func ValidateSettings(s Settings, known map[string]KnownItem) error {
 	for key, o := range s.Overrides {
 		if !allowed[key] {
 			return fmt.Errorf("只能設定內建或已出現的檢驗項目")
+		}
+		if unitReview[key] && o.Enabled {
+			return fmt.Errorf("舊版單位待確認設定不能直接啟用；請核對原始單位後在目前項目重新設定")
 		}
 		for _, v := range []*string{o.ReferenceLow, o.ReferenceHigh} {
 			if v != nil {

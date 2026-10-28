@@ -80,6 +80,7 @@ type sourceDefinition struct {
 	EffectiveDate string `json:"effective_date"`
 }
 type Catalog struct {
+	ID      string                      `json:"catalog_id"`
 	Items   []Definition                `json:"items"`
 	Rules   map[string]Rule             `json:"rules"`
 	Sources map[string]sourceDefinition `json:"sources"`
@@ -91,11 +92,6 @@ func LoadCatalog() (*Catalog, error) {
 		return nil, fmt.Errorf("decode embedded catalog: %w", err)
 	}
 	return &c, nil
-}
-func unitKey(s string) string {
-	s = strings.TrimSpace(s)
-	r := strings.NewReplacer("μ", "u", "µ", "u", "²", "2", "³", "3", " ", "", "／", "/", "m²", "m2")
-	return strings.ToLower(r.Replace(s))
 }
 func (c *Catalog) match(r RawRecord) Definition {
 	for _, d := range c.Items {
@@ -110,7 +106,7 @@ func (c *Catalog) match(r RawRecord) Definition {
 		}
 		// eGFR is catalogued from a unit-less export. Explicit verified units may
 		// select the same analyte, but the grading engine still rejects absent units.
-		if d.ID == "egfr" && strings.EqualFold(r.ItemName, "eGFR") && r.OrderCode == d.Match.Code && (unitKey(r.Unit) == "ml/min/1.73m2" || unitKey(r.Unit) == "ml/min/1.73m^2") {
+		if d.ID == "egfr" && strings.EqualFold(r.ItemName, "eGFR") && r.OrderCode == d.Match.Code && unitKey(r.Unit) == "mL/min/1.73m2" {
 			return d
 		}
 	}
@@ -122,7 +118,7 @@ func matchesSource(r RawRecord, m match) bool {
 }
 func dynamicID(code, name, unit string) string {
 	sum := sha256.Sum256([]byte(code + "\x00" + name + "\x00" + unitKey(unit)))
-	return "custom_" + hex.EncodeToString(sum[:10])
+	return "custom_v2_" + hex.EncodeToString(sum[:10])
 }
 func category(d Definition) string {
 	id := d.ID
@@ -208,7 +204,9 @@ func (c *Catalog) ForSettings(s Settings) CatalogResponse {
 		}
 		seen[k.Key] = true
 		item := CatalogItem{ID: k.ID, Key: k.Key, Name: k.Name, Category: k.Category, Unit: k.Unit, Sources: []string{}, Aliases: []string{k.Name}, OrderCodes: []string{}, Alerts: []Rule{}, Description: "依本次檢驗的原院參考值顯示；個人設定只改變顯示基準。"}
-		if k.LegacyFor != "" {
+		if k.LegacyFor == unitReviewRequired {
+			item.Description = "舊版曾忽略單位大小寫，這份個人設定已停用並隔離保留，不套用新版紀錄。請核對原始單位後，在目前項目重新設定；數值及其他外觀偏好未被刪除。"
+		} else if k.LegacyFor != "" {
 			item.Description = "此舊版名稱曾有不同的個人規則，為避免覆蓋而獨立保留。新版結果使用對應的內建項目；還原此舊版設定後即可移除保留項目。"
 		}
 		for _, d := range c.Items {
@@ -277,6 +275,13 @@ func (c *Catalog) ConfigurableItems(known map[string]KnownItem) map[string]Known
 // verified source match. Conflicting personal edits remain explicitly labelled
 // instead of being discarded; resets can subsequently remove the conflict.
 func (c *Catalog) ReconcileSettings(s *Settings) {
+	if s.Known == nil {
+		s.Known = map[string]KnownItem{}
+	}
+	if s.Overrides == nil {
+		s.Overrides = map[string]Override{}
+	}
+	c.isolateAmbiguousUnitSettings(s)
 	for _, d := range c.Items {
 		if d.Kind != "measurement" || d.Key == "" {
 			continue
