@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.0.3-rc.11 — 2026-10-28 (Asia/Taipei)
+
+- Map the complete observed public source inventory, including all 78 supported source categories, into explicit list/detail, date-range, device-day, original-file and preparation contracts. Keep excluded identity administration, source mutations and presentation-only routes visible in the audit; a mapped route is not a claim of available lifetime records for every account.
+- Add a full-acquisition workflow with explicit maximum available range, bounded nested detail retrieval, partial-success and retry states, separate file-generation consent, streamed original-file ZIPs, immutable dataset/attachment bindings and SHA-256 receipts. Do not turn unknown generation correlation, capped responses or missing fields into completed acquisition.
+- Restore validated original-file ZIPs and date-batch collections without losing exact duplicates, raw precision, individual source ranges or file bytes. Reject mixed archives and bound the combined catalog, report and retained-attachment category union before import or export.
+- Add independently consented, per-user IndexedDB health caches. Reopening a verified user's saved workspace does not automatically fetch all history. Refresh removes the old payload before acquisition; per-user/all-user clearing and epoch/revision checks reject late reads and writes across tabs. Store validated UTF-8 bytes for WebKit compatibility while retaining legacy Blob reads. This does not promise physical erasure of browser/OS backups.
+- Make the mobile comparison date column sticky as requested. Preserve bilingual search and readable wrapping at 200% application text size, original units/flags, source names, raw check/visit/upload dates, independent detail providers and data origins.
+- Add sourced Chinese/English terminology for 80 built-in laboratory definitions, 128 exact-name glossary entries, 78 source-category labels and 42 field terms. Preserve source terminology separately from identified editorial English; broad billing codes do not identify an analyte, drug ingredient or diagnosis by themselves.
+- Carry each applied grading basis and its unverified applicability conditions through screen views, CSV, SVG and complete data-generated print reports. Bind CKD-EPI confirmation to the selected raw observation. Preserve all numerical formula coefficients and thresholds, original measured LDL, independent alerts and same-sampling/unit/method requirements; retain high-TG method warnings for verified unit aliases.
+- Reject ambiguous home-care availability, preserve repeated source parents and independent detail context, release retired login data, and recheck subject revocation before publishing fetched reports. Align Nginx's accepted body size and in-memory buffer with the application's 34 MiB acquisition-plan envelope.
+- Extend the actual compiled-application acceptance gate to checksum-pinned Linux Chromium, Firefox and WebKit. Test cache races, restoration, acquisition, bilingual mobile layouts, record-bound confirmation and qualified exports across engines; actual PDF generation/text/page inspection remains Chromium-specific.
+- Reconcile repository documentation, dependency/license provenance, per-file review evidence, release allowlists and downloadable package links. Linux executables remain at the archive root; server data, identity keys, credentials and real health records remain excluded.
+
+Publication, exact final gate results and real-account/physical-device limits are recorded in `docs/verification.zh-TW.md`. This entry alone does not certify that an artifact has been published or that all real-account pages were acquired.
+
 ## v1.0.3-rc.10 — 2026-10-28 (Asia/Taipei)
 
 - Generate standalone escaped print/PDF documents from the full acquired dataset, with explicit sharing scopes, raw-record or lossless date-matrix layouts, repeated headers and indexed interpretation notes. Excluded categories and global medical warnings cannot leak into selected shares. The product uses the browser print dialog and requires no server-side PDF runtime.

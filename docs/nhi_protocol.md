@@ -385,7 +385,8 @@ The tests exercise:
 - Accepted official success codes, bearer forwarding and token refresh.
 - An initial 50-record page followed by exactly 52 full-search records, with
   original order, no duplicated initial rows, exactly four search parameters
-  and a server-adjusted effective date propagated to the full query.
+  and explicit historical date bounds preserved despite a narrower source default.
+  The full search returns its array directly; no additional page parameter is invented.
 - Separate inspection/visit/upload dates and original qualitative value text.
 - Explicit incomplete-result, expired-session, bad-schema and HTTP failures.
 - No automatic replay of a failed manual CAPTCHA/login attempt.

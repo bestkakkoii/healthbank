@@ -1111,10 +1111,10 @@
       "role": "Local isolated MySQL test-server shared-library dependency; not linked into Healthbank."
     },
     "browser_acceptance": {
-      "checked_at": "2026-10-28T15:41:12+08:00",
-      "role": "Synthetic compiled-Go browser/PDF CI only; no production dependency or external scripts/fonts.",
+      "checked_at": "2026-10-28T19:57:17.357158+08:00",
+      "role": "Synthetic compiled-Go acquisition/cache/mobile/export acceptance on Linux Chromium, Firefox and WebKit; Chromium-only automated PDF generation. No production dependency or external scripts/fonts.",
       "toolchain_file": "web/tests/browser/toolchain.json",
-      "toolchain_sha256": "99c21385e8cac506538971e7c783769fbd17b0233c917f4c11876361fb946a4f",
+      "toolchain_sha256": "59ba3ed140b2c4fb65ac30c90602be41e8c31223ca1bc61f8ea91bf35a192099",
       "playwright_version": "1.64.1",
       "playwright_core_version": "1.64.1",
       "chromium_version": "156.0.8078.4",
@@ -1122,8 +1122,15 @@
       "chromium_archive_sha256": "c3e50596aef52c58f8fda3c6b3411c33d34c88b177b3ed1c2243359fd3b8ba20",
       "font_sha256": "dce08bd4fd91aa8aa76ed8fea4b694c2dfb8550f67871e326843212ddbeb88b4",
       "command": "node scripts/browser-acceptance.mjs --binary <compiled-amd64> --evidence <synthetic-output>",
-      "setup_verification": "Exact npm packages installed; pinned official Chromium archive and CJK font/license hashes verified; real Chromium launch and CJK glyph selection passed.",
-      "system_dependencies": "Ubuntu24.04 browser libraries and Poppler; actual Poppler versions recorded in acceptance evidence, not represented as fully locked system packages."
+      "setup_verification": "Exact npm packages and official browser manifest verified; pinned official Chromium/Firefox/WebKit archives and CJK font/license SHA-256 checked before extraction. Actual three-engine focused acceptance passed; Chromium CJK glyph selection checked. Linux WebKit is not physical iOS/macOS Safari.",
+      "system_dependencies": "Ubuntu24.04 browser libraries and Poppler; actual Poppler versions recorded in acceptance evidence, not represented as fully locked system packages.",
+      "browser_manifest_sha256": "2cfd419f71ac6475d81e1301fa86c34cf2a2a6bae2a0da4b5a2b18310216b6bf",
+      "firefox_version": "157.0",
+      "firefox_revision": "1555",
+      "firefox_archive_sha256": "564f74fa3c46cb83c6252145cf1569c95236c8c404d6a5a80cc736cf32265f0c",
+      "webkit_version": "27.2",
+      "webkit_revision": "2370",
+      "webkit_archive_sha256": "63b31a5d68d908d9aee2e445b88edc4c1e1d1eba488f5bd7e35668f91315b968"
     }
   },
   "verified_complete_at": "2026-10-27 09:34:53+08:00",

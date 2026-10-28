@@ -35,7 +35,7 @@ Healthbank 使用官方授權工作階段取得資料，以自己的資料工作
 `size` 只有可確認時才提供。`kind` 為 `prepare_jpeg`、`prepare_dicom` 或 `prepare_export`。
 一般取得清單、批次取得明細及單純匯出資料包不執行產製。使用者另行啟動「完整取得並保存原始檔」，且選擇要求官方準備檔案時，才在該流程中提交每個已取得動作一次。
 
-`refresh` 只提供來源可證實的關聯：JPEG 回到原父明細；DICOM／整包原始檔回到 `official_files`，並保留 `correlation_unavailable`。不把官方回傳的成功訊息當作工作識別，不用時間、檔名或新增數量猜測檔案歸屬。輪詢有界，模糊送達結果不自動重播。
+`refresh` 只提供來源可證實的關聯：JPEG 回到原父明細，API 的 `refresh.correlation` 為 `"same_record"`；DICOM／整包原始檔回到 `official_files`，此 API 欄位為 `"unavailable"`，前端取得狀態則保留 `correlation_unavailable`。不把官方回傳的成功訊息當作工作識別，不用時間、檔名或新增數量猜測檔案歸屬。輪詢有界，模糊送達結果不自動重播。
 
 ## 資料與上游流程
 

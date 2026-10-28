@@ -44,7 +44,7 @@ Copyright © 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
 `detail`／文件／產製識別由伺服器建立，綁定目前官方使用階段、類別及來源父項目。瀏覽器不能指定上游 URL、官方 row ID 或其他人的識別。登出、登入逾時、成功重查對應清單後，舊識別失效。失敗重查保留原先仍有效的成功資料。
 
-產製成功回應 HTTP `202` 與 `status: requested`、安全訊息及 `refresh`。JPEG 的 `refresh` 綁定可證實的原父明細；官方整包／DICOM 只有回到 `official_files` 的指示，並標示 `correlation_unavailable`。官方沒有提供可核對工作 ID 時，不以時間、檔名或檔案數量猜測哪個新檔對應本次要求。完整取得流程每個刷新目標最多輪詢六次，可保留已完成進度後續取；不明產製送達結果不自動重送。
+產製成功回應 HTTP `202` 與 `status: requested`、安全訊息及 `refresh`。JPEG 的 `refresh` 綁定可證實的原父明細，API 欄位為 `refresh.correlation: "same_record"`；官方整包／DICOM 只有回到 `official_files` 的指示，API 欄位為 `refresh.correlation: "unavailable"`，前端取得狀態則標示 `correlation_unavailable`。官方沒有提供可核對工作 ID 時，不以時間、檔名或檔案數量猜測哪個新檔對應本次要求。完整取得流程每個刷新目標最多輪詢六次，可保留已完成進度後續取；不明產製送達結果不自動重送。
 
 檢驗回應包含 `session_token`，必須為目前或該成功切換操作建立的 64 位十六進位 CSRF 識別。前端在安裝檢驗、醫療資料包與後續設定／目錄前核對同一識別；同為 `import` 模式仍須精確相等。此值只供即時 API 核對，不寫入可攜醫療檔案或日誌。官方失效、`csrf_mismatch`、`session_changed`、`session_rotate` 或缺失的回應識別會清除舊醫療狀態；一般設定修訂衝突不因此清除資料。
 
