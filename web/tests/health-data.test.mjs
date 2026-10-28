@@ -9,6 +9,21 @@ const entry = (title, date = '115/10/28', extra = {}) => ({ title, date, institu
 const report = (category, entries) => ({ category, entries, complete: false, fetched_at: '2026-10-28T00:00:00Z', coverage: '合成來源，總數未知' });
 const catalog = [{ id: 'medicine', label: '用藥', group: '測試', range_mode: 'date_search' }, { id: 'hospital', label: '住院', group: '測試', range_mode: 'date_search' }];
 const noFilter = { text: '', category: '', institution: '', from: '', to: '', includeUnknownDates: true };
+
+test('laboratory timeline separates normalized dates from unchanged raw source date strings', () => {
+  const base = { id: 'synthetic-date', exam_date: '2026-01-02', raw_check_date: '115/01/02 08:30', visit_date: '',
+    raw_visit_date: '來源未能解析的日期', item_name: '合成項目', display_name: '合成項目', result: '1.000', unit: '原單位',
+    institution: '合成院所', source: '合成來源', reference_text: '', reference_low: null, reference_high: null,
+    order_code: '', order_name: '' };
+  const [event] = laboratoryEvents({ records: [base], fetched_at: '2026-10-28T00:00:00Z' });
+  assert.equal(event.date, '2026-01-02');
+  assert.equal(event.entry.date, '115/01/02 08:30');
+  assert.ok(event.entry.fields.some(field => field.value === '來源未能解析的日期'));
+  assert.equal(filterHealthEvents([event], { ...noFilter, from: '2026-01-02', to: '2026-01-02' }).length, 1);
+  const [unknown] = laboratoryEvents({ records: [{ ...base, exam_date: '', raw_check_date: '採檢時間未明' }], fetched_at: '' });
+  assert.equal(unknown.date, '');
+  assert.equal(unknown.entry.date, '採檢時間未明');
+});
 const classifyFailure = error => ({ message: error.message, expired: error.message === 'expired', retryable: error.message === 'transient' });
 function options(extra = {}) {
   return { snapshot: emptyHealthData(), categories: ['medicine', 'hospital'], query: { from: '', to: '' }, mode: 'refresh', signal: new AbortController().signal,

@@ -114,3 +114,27 @@ func TestRetiredCookieWithKnownGenerationCannotReplaceCurrentCookie(t *testing.T
 		t.Fatal("rejecting a retired generation changed the active session")
 	}
 }
+
+func TestRetiredCookieNativeDocumentCannotReplaceCurrentCookie(t *testing.T) {
+	app, _, _ := testApp(t)
+	browser := &browserFixture{app: app}
+	browser.refresh(t)
+	retiredCookie := *browser.cookie
+	demo := decodeResponse[reportResponse](t, browser.jsonRequest(t, http.MethodPost, "/api/reports/demo", map[string]any{}), http.StatusOK)
+	current := browser.refresh(t)
+	// A native attachment link has no custom generation header. Its opaque
+	// reference prevents cross-user access, and its delayed rejection must also
+	// leave the shared browser's newer cookie intact.
+	request := httptest.NewRequest(http.MethodGet, "https://healthbank.test/api/documents?category=hospital&id="+strings.Repeat("a", 48), nil)
+	request.AddCookie(&retiredCookie)
+	response := httptest.NewRecorder()
+	app.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusUnauthorized || !strings.Contains(response.Body.String(), `"code":"login_required"`) || len(response.Header().Values("Set-Cookie")) != 0 {
+		t.Fatal("a delayed native document request can overwrite the current shared browser cookie")
+	}
+	view := browser.refresh(t)
+	got := decodeResponse[reportResponse](t, browser.request(http.MethodGet, "/api/reports/current", nil, "", ""), http.StatusOK)
+	if view.Mode != "demo" || view.CSRFToken != current.CSRFToken || got.SessionToken != current.CSRFToken || len(got.Records) != len(demo.Records) {
+		t.Fatal("rejecting a retired native document request changed the active session")
+	}
+}

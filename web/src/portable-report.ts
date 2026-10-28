@@ -8,10 +8,10 @@ export function assertPortableReportSize(source: string): void {
 // Original source fields only: grades, calculated values and identity data are
 // deliberately excluded. Import recalculates interpretation under current rules.
 export function portableRows(records: LabRecord[]) {
-  return records.map(record => ({ check_date: record.exam_date, order_code: record.order_code,
+  return records.map(record => ({ check_date: record.raw_check_date ?? record.exam_date, order_code: record.order_code,
     order_name: record.order_name, item_name: record.item_name, result: record.result,
     unit: record.unit, reference: record.reference_text, institution: record.institution,
-    visit_date: record.visit_date, source: record.source, official_flag: record.official_flag ?? '' }));
+    visit_date: record.raw_visit_date ?? record.visit_date, source: record.source, official_flag: record.official_flag ?? '' }));
 }
 export function portableReportJSON(records: LabRecord[], textEditorMode = false): string {
   // BOM is opt-in for downloaded files only, never an API JSON response.

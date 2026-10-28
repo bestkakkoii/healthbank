@@ -224,6 +224,14 @@ func (a *App) withSession(next func(http.ResponseWriter, *http.Request, *session
 			a.fail(w, r, http.StatusConflict, "session_changed", "連線已更換，請確認目前使用者後重新取得資料。")
 			return
 		}
+		// Native download links cannot send the generation header. They require
+		// an existing authenticated session and must never bootstrap a cookie
+		// that could overwrite another tab's newer session in a late response.
+		if s == nil && r.URL.Path == "/api/documents" {
+			a.mu.Unlock()
+			a.fail(w, r, http.StatusUnauthorized, "login_required", "請先完成官方登入，再取得個人文件。")
+			return
+		}
 		if s == nil {
 			if len(a.sessions) >= maxSessions {
 				a.mu.Unlock()

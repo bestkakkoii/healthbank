@@ -2,8 +2,8 @@
 import { useEffect, useRef, useState, type SubmitEvent, type DragEvent } from 'react';
 import {
   api,
+  isSessionInvalidation,
   readableError,
-  setCsrfToken,
   type CaptchaResponse,
   type CatalogResponse,
   type ItemOverride,
@@ -46,9 +46,13 @@ export function clearRememberedLogin(): void {
 export function LoginDialog({
   onClose,
   onLogin,
+  onSession,
+  onFailure,
 }: {
   onClose: () => void;
   onLogin: (session: Session, notice?: string) => Promise<void>;
+  onSession: (session: Session) => void;
+  onFailure: (failure: unknown) => Promise<void>;
 }) {
   const [initial] = useState(rememberedFields);
   const [users, setUsers] = useState(initial.users);
@@ -63,6 +67,12 @@ export function LoginDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(initial.warning);
   const captchaRequest = useRef<AbortController | null>(null);
+  const sessionObserver = useRef(onSession);
+  const failureObserver = useRef(onFailure);
+  useEffect(() => {
+    sessionObserver.current = onSession;
+    failureObserver.current = onFailure;
+  }, [onSession, onFailure]);
 
   function changeIdentity(next: string) {
     const normalized = normalizeIdentity(next);
@@ -91,15 +101,17 @@ export function LoginDialog({
     try {
       const current = await api.session(signal);
       signal.throwIfAborted();
-      setCsrfToken(current.csrf_token);
+      sessionObserver.current(current);
       const next = await api.captcha(signal);
       signal.throwIfAborted();
       setChallenge(next);
     } catch (error) {
-      if (!signal.aborted)
+      if (!signal.aborted) {
+        if (isSessionInvalidation(error)) await failureObserver.current(error);
         setError((previous) =>
           previous ? `${previous} ${readableError(error)}` : readableError(error),
         );
+      }
     } finally {
       if (!signal.aborted) setCaptchaBusy(false);
     }
@@ -158,6 +170,7 @@ export function LoginDialog({
       await onLogin(session, notice);
     } catch (error) {
       setError(readableError(error));
+      await onFailure(error);
       // Keep credentials only in this open form; retry remains a manual user action.
       await loadCaptcha();
     } finally {
@@ -480,11 +493,13 @@ export function DetailDialog({
       <dl className="detail-grid">
         <div>
           <dt>檢查日期</dt>
-          <dd>{dateLabel(record.exam_date)}</dd>
+          <dd>{dateLabel(record.exam_date)}{record.raw_check_date !== undefined && record.raw_check_date !== record.exam_date &&
+            <small>來源原文：{record.raw_check_date || '未提供'}</small>}</dd>
         </div>
         <div>
           <dt>就醫／入院日期</dt>
-          <dd>{dateLabel(record.visit_date)}</dd>
+          <dd>{dateLabel(record.visit_date)}{record.raw_visit_date !== undefined && record.raw_visit_date !== record.visit_date &&
+            <small>來源原文：{record.raw_visit_date || '未提供'}</small>}</dd>
         </div>
         <div>
           <dt>醫事機構</dt>
@@ -736,45 +751,9 @@ export function BaselineDialog({
         setError('基準值與區間邊界必須是數字，未設定的欄位請留白。');
         return;
       }
-      if (low !== '' && high !== '' && Number(low) > Number(high)) {
-        setError('基準下限不可大於上限。');
-        return;
-      }
-      if (
-        bands.some(
-          (band) =>
-            band.lower !== '' &&
-            band.upper !== '' &&
-            (Number(band.lower) > Number(band.upper) ||
-              (Number(band.lower) === Number(band.upper) &&
-                !(band.lower_inclusive && band.upper_inclusive))),
-        )
-      ) {
-        setError('有一個分級區間沒有可包含的數值，請檢查上下界與是否包含邊界。');
-        return;
-      }
-      for (const [i, a] of bands.entries()) {
-        for (const [j, b] of bands.entries()) {
-          if (j <= i) continue;
-          const aLow = a.lower === '' ? -Infinity : Number(a.lower),
-            aHigh = a.upper === '' ? Infinity : Number(a.upper);
-          const bLow = b.lower === '' ? -Infinity : Number(b.lower),
-            bHigh = b.upper === '' ? Infinity : Number(b.upper);
-          const start = Math.max(aLow, bLow),
-            end = Math.min(aHigh, bHigh);
-          const overlaps =
-            start < end ||
-            (start === end &&
-              (start !== aLow || a.lower_inclusive) &&
-              (start !== bLow || b.lower_inclusive) &&
-              (end !== aHigh || a.upper_inclusive) &&
-              (end !== bHigh || b.upper_inclusive));
-          if (overlaps) {
-            setError(`第 ${i + 1} 與第 ${j + 1} 個分級區間重疊，請調整後再儲存。`);
-            return;
-          }
-        }
-      }
+      // The settings API validates order, open/closed boundaries and overlap
+      // using exact decimals in every mode. Comparing rounded Number values
+      // here would reject distinct supported boundaries as equal or overlapping.
     }
     setBusy(true);
     try {

@@ -2,14 +2,15 @@
 // SPDX-License-Identifier: MIT
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
-  ApiError,
   api,
   defaultSettings,
+  isSessionInvalidation,
   readableError,
   setCsrfToken,
   type CatalogResponse,
   type ItemOverride,
   type LabRecord,
+  type LiveReportResponse,
   type ReportQueryMode,
   type ReportResponse,
   type Session,
@@ -92,6 +93,8 @@ const EMPTY_REPORT: ReportResponse = { records: [], fetched_at: '', complete: tr
 const EMPTY_CATALOG: CatalogResponse = { items: [], sources: [] };
 const APPEARANCE_KEY = 'bestkakkoi.healthbank.appearance';
 const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+const sessionKey = (value: Session) => `${value.mode}:${value.csrf_token ?? ''}`;
+const SESSION_CHANGED_MESSAGE = '使用階段已到期或更換，先前報告與醫療資料已清除。請確認目前使用者後重新取得資料。';
 
 function initialSettings(): Settings {
   const settings = defaultSettings();
@@ -233,6 +236,23 @@ export default function App() {
           api.dataCatalog(controller.signal),
         ]);
         controller.signal.throwIfAborted();
+        // Initial parallel reads may straddle expiry or another tab's login.
+        // Even an anonymous catalog can become session-derived during that gap.
+        const verified = await api.session(controller.signal);
+        controller.signal.throwIfAborted();
+        if (sessionKey(verified) !== sessionKey(fetched) ||
+          results[0].status === 'rejected' && isSessionInvalidation(results[0].reason) ||
+          results[1].status === 'rejected' && isSessionInvalidation(results[1].reason) ||
+          fetched.mode !== 'anonymous' && results[1].status === 'fulfilled' && results[1].value.session_token !== verified.csrf_token) {
+          sessionIdentity.current = sessionKey(verified);
+          setCsrfToken(verified.csrf_token);
+          setSession(verified.mode === 'official' ? verified : { ...verified,
+            settings: { ...verified.settings, theme: initialSettings().theme, font_scale: initialSettings().font_scale } });
+          setError(SESSION_CHANGED_MESSAGE);
+          if (results[2].status === 'fulfilled') setDataCatalog(results[2].value.categories);
+          else setDataCatalogError(`醫療資料來源目錄無法載入。${readableError(results[2].reason)}`);
+          return;
+        }
         if (results[0].status === 'fulfilled') setCatalog(results[0].value);
         else setError(`參考項目目錄暫時無法載入。${readableError(results[0].reason)}`);
         if (results[1].status === 'fulfilled') {
@@ -450,18 +470,44 @@ export default function App() {
     setDataBusy(false);
   }
 
-  function observeSessionIdentity(next: Session) {
-    const identity = `${next.mode}:${next.csrf_token ?? ''}`;
-    if (identity !== sessionIdentity.current) clearMedicalDataset();
-    sessionIdentity.current = identity;
+  function clearSessionRecords() {
+    clearMedicalDataset();
+    setReport(EMPTY_REPORT);
+    setDetail(null);
+    setBaseline(null);
+    clearSessionCatalog();
+    clearReportRange();
+    resetFilters();
+    setAssessmentStale(false);
   }
 
-  function enterUnverifiedMode(mode: 'import' | 'demo') {
+  function installSession(next: Session) {
+    sessionIdentity.current = sessionKey(next);
+    setCsrfToken(next.csrf_token);
+    setSession(next.mode === 'official' ? next : {
+      ...next,
+      settings: { ...next.settings, theme: initialSettings().theme, font_scale: initialSettings().font_scale },
+    });
+  }
+
+  function reconcileObservedSession(next: Session) {
+    // The login dialog refreshes CAPTCHA sessions too. It must not replace the
+    // shared request token while leaving this page's medical identity unchanged.
+    if (sessionKey(next) !== sessionIdentity.current) {
+      sessionGeneration.current += 1;
+      clearSessionRecords();
+      setBusy('');
+      setError(SESSION_CHANGED_MESSAGE);
+    }
+    installSession(next);
+  }
+
+  function enterUnverifiedMode(mode: 'import' | 'demo', token: string) {
     // A successful import/demo request has already ended official auth on the
     // server. A failed follow-up session GET must not leave the UI claiming it.
-    sessionIdentity.current = `${mode}:`;
-    setCsrfToken();
-    setSession(current => ({ authenticated: false, mode, version: current.version,
+    sessionIdentity.current = `${mode}:${token}`;
+    setCsrfToken(token);
+    setSession(current => ({ authenticated: false, mode, csrf_token: token, version: current.version,
       settings: { ...defaultSettings(), theme: current.settings.theme, font_scale: current.settings.font_scale } }));
   }
 
@@ -478,7 +524,10 @@ export default function App() {
   async function reloadDataCatalog() {
     setDataCatalogLoading(true); setDataCatalogError('');
     try { setDataCatalog((await api.dataCatalog()).categories); }
-    catch (failure) { setDataCatalogError(`醫療資料來源目錄無法載入。${readableError(failure)}`); }
+    catch (failure) {
+      if (isSessionInvalidation(failure)) await expireOfficialSession();
+      setDataCatalogError(`醫療資料來源目錄無法載入。${readableError(failure)}`);
+    }
     finally { setDataCatalogLoading(false); }
   }
 
@@ -497,7 +546,7 @@ export default function App() {
     const result = await api.reports('', '', signal);
     signal.throwIfAborted();
     if (generation !== sessionGeneration.current) throw new DOMException('使用階段已變更。', 'AbortError');
-    await receiveReports(result, generation);
+    await receiveReports(result, generation, undefined, signal);
     signal.throwIfAborted();
     if (generation !== sessionGeneration.current) throw new DOMException('使用階段已變更。', 'AbortError');
     if (result.official_query) {
@@ -514,9 +563,8 @@ export default function App() {
     try {
       const next = await api.importReports(new File([dataset.laboratoryJSON], 'healthbank-labs.json', { type: 'application/json' }));
       if (generation !== sessionGeneration.current) return;
-      clearMedicalDataset();
-      enterUnverifiedMode('import');
-      setDetail(null); setBaseline(null); clearSessionCatalog();
+      clearSessionRecords();
+      enterUnverifiedMode('import', next.session_token);
       await receiveReports(next, generation, 'import');
       if (generation !== sessionGeneration.current) return;
       // Keep the server's import-mode laboratory assessment. Historical query
@@ -531,42 +579,54 @@ export default function App() {
       setImportedLaboratoryMetadata(dataset.laboratoryMetadata);
       setImportOpen(false); navigate('data');
       setMessage('完整資料包已還原至獨立匯入模式；檔案來源及完整性描述未經本次官方連線驗證。');
+    } catch (failure) {
+      if (generation !== sessionGeneration.current) return;
+      await reconcileFailedSessionMutation(failure, generation);
+      throw failure;
     } finally { if (generation === sessionGeneration.current) setBusy(''); }
   }
 
-  async function refreshSession(generation: number, expectedMode?: 'import' | 'demo') {
-    const next = await api.session();
+  async function refreshSession(generation: number, expectedMode?: 'import' | 'demo', signal?: AbortSignal, expectedToken?: string) {
+    const next = await api.session(signal);
+    signal?.throwIfAborted();
     if (generation !== sessionGeneration.current) return;
-    if (expectedMode && next.mode !== expectedMode)
-      throw new Error('資料已取得，但新的使用階段狀態不符。請重新整理頁面後再繼續。');
-    observeSessionIdentity(next);
-    setCsrfToken(next.csrf_token);
-    setSession(
-      next.mode === 'official'
-        ? next
-        : {
-            ...next,
-            settings: {
-              ...next.settings,
-              theme: initialSettings().theme,
-              font_scale: initialSettings().font_scale,
-            },
-          },
-    );
+    const changed = (expectedMode ? next.mode !== expectedMode : sessionKey(next) !== sessionIdentity.current) ||
+      expectedToken !== undefined && next.csrf_token !== expectedToken;
+    if (changed) {
+      // A cookie can change in another tab while a successful read is in flight.
+      // Do not combine that response with a different person's session/settings.
+      sessionGeneration.current += 1;
+      clearSessionRecords();
+      installSession(next);
+      setBusy('');
+      setError(SESSION_CHANGED_MESSAGE);
+      return;
+    }
+    if (sessionKey(next) !== sessionIdentity.current) clearMedicalDataset();
+    installSession(next);
     return next;
   }
 
-  async function receiveReports(next: ReportResponse, generation: number, expectedMode?: 'import' | 'demo') {
+  async function receiveReports(next: LiveReportResponse, generation: number, expectedMode?: 'import' | 'demo', signal?: AbortSignal) {
+    signal?.throwIfAborted();
     if (generation !== sessionGeneration.current) return;
+    const results = await Promise.allSettled([refreshSession(generation, expectedMode, signal, next.session_token), api.catalog(signal)]);
+    signal?.throwIfAborted();
+    if (generation !== sessionGeneration.current) return;
+    if (results.some(result => result.status === 'rejected' && isSessionInvalidation(result.reason))) {
+      await expireOfficialSession(); return;
+    }
+    if (results[0].status === 'rejected') {
+      const message = `資料已取得，但使用階段狀態無法更新。${readableError(results[0].reason)}`;
+      // Successful explicit import/demo already establishes an isolated local
+      // mode. Ordinary reads must await matching-session proof before display.
+      if (!expectedMode) throw new Error(message);
+      setError(message);
+    } else setError('');
     setReport(next);
     if (!next.official_query) clearReportRange();
     setAssessmentStale(false);
-    setError('');
     resetFilters();
-    const results = await Promise.allSettled([refreshSession(generation, expectedMode), api.catalog()]);
-    if (generation !== sessionGeneration.current) return;
-    if (results[0].status === 'rejected')
-      setError(`資料已取得，但使用階段狀態無法更新。${readableError(results[0].reason)}`);
     if (results[1].status === 'fulfilled') setCatalog(results[1].value);
     else setError(`資料已取得，但參考項目目錄無法更新。${readableError(results[1].reason)}`);
   }
@@ -590,16 +650,11 @@ export default function App() {
 
   async function expireOfficialSession() {
     const generation = ++sessionGeneration.current;
-    clearMedicalDataset();
+    clearSessionRecords();
     sessionIdentity.current = 'anonymous:';
-    setBusy('正在清除已到期的使用階段…');
-    setError('官方登入階段已結束，目前報告已清除。請重新連接健康存摺。');
-    setReport(EMPTY_REPORT);
-    setDetail(null);
-    setBaseline(null);
-    clearSessionCatalog();
-    clearReportRange();
-    resetFilters();
+    setCsrfToken();
+    setBusy('正在確認新的使用階段…');
+    setError(SESSION_CHANGED_MESSAGE);
     setSession((current) => ({
       ...current,
       authenticated: false,
@@ -611,17 +666,27 @@ export default function App() {
       },
     }));
     try {
-      // An expired application cookie may have been replaced by the failed GET.
+      // Reconcile the browser's current session without logging out a different
+      // person who may have connected in another tab after this caller expired.
       const current = await api.session();
       if (generation !== sessionGeneration.current) return;
-      setCsrfToken(current.csrf_token);
-      const next = await api.logout();
-      if (generation !== sessionGeneration.current) return;
-      setCsrfToken(next.csrf_token);
+      installSession(current);
     } catch {
       /* Local report is already removed; the next login renews its session and CAPTCHA. */
     } finally {
       if (generation === sessionGeneration.current) setBusy('');
+    }
+  }
+
+  async function reconcileFailedSessionMutation(failure: unknown, generation: number) {
+    if (generation !== sessionGeneration.current) return;
+    if (isSessionInvalidation(failure)) { await expireOfficialSession(); return; }
+    try {
+      // A request may have committed even when its response was lost. Read the
+      // current generation without replaying login/import/logout/deletion.
+      await refreshSession(generation);
+    } catch {
+      if (generation === sessionGeneration.current) await expireOfficialSession();
     }
   }
 
@@ -650,7 +715,7 @@ export default function App() {
       setMessage(`已取得本次查詢回傳的 ${result.records.length} 筆檢驗結果。`);
     } catch (error) {
       if (generation !== sessionGeneration.current) return;
-      if (error instanceof ApiError && error.status === 401) {
+      if (isSessionInvalidation(error)) {
         await expireOfficialSession();
       } else setError(readableError(error));
     } finally {
@@ -661,15 +726,21 @@ export default function App() {
   async function importFile(file: File) {
     const generation = ++sessionGeneration.current;
     invalidateDatasetOperations();
-    const next = await api.importReports(file);
-    if (generation !== sessionGeneration.current) return;
-    clearMedicalDataset();
-    enterUnverifiedMode('import');
-    await receiveReports(next, generation, 'import');
-    if (generation !== sessionGeneration.current) return;
-    setImportOpen(false);
-    navigate('overview');
-    setMessage(`已整理 ${next.records.length} 筆檢驗紀錄。`);
+    try {
+      const next = await api.importReports(file);
+      if (generation !== sessionGeneration.current) return;
+      clearSessionRecords();
+      enterUnverifiedMode('import', next.session_token);
+      await receiveReports(next, generation, 'import');
+      if (generation !== sessionGeneration.current) return;
+      setImportOpen(false);
+      navigate('overview');
+      setMessage(`已整理 ${next.records.length} 筆檢驗紀錄。`);
+    } catch (failure) {
+      if (generation !== sessionGeneration.current) return;
+      await reconcileFailedSessionMutation(failure, generation);
+      throw failure;
+    }
   }
 
   async function openDemo() {
@@ -680,12 +751,16 @@ export default function App() {
     try {
       const next = await api.demo();
       if (generation !== sessionGeneration.current) return;
-      enterUnverifiedMode('demo');
+      clearSessionRecords();
+      enterUnverifiedMode('demo', next.session_token);
       await receiveReports(next, generation, 'demo');
       if (generation !== sessionGeneration.current) return;
       navigate('overview');
     } catch (error) {
-      if (generation === sessionGeneration.current) setError(readableError(error));
+      if (generation === sessionGeneration.current) {
+        await reconcileFailedSessionMutation(error, generation);
+        if (generation === sessionGeneration.current) setError(readableError(error));
+      }
     } finally {
       if (generation === sessionGeneration.current) setBusy('');
     }
@@ -715,7 +790,10 @@ export default function App() {
       navigate('overview');
       setMessage(deleteRemote ? '伺服器現行設定已刪除，本站所有裝置工作階段已失效；本機保存及營運者備份須另行管理。' : '已結束使用階段並清除目前報告。');
     } catch (error) {
-      if (generation === sessionGeneration.current) setError(readableError(error));
+      if (generation === sessionGeneration.current) {
+        await reconcileFailedSessionMutation(error, generation);
+        if (generation === sessionGeneration.current) setError(readableError(error));
+      }
     } finally {
       if (generation === sessionGeneration.current) setBusy('');
     }
@@ -753,6 +831,7 @@ export default function App() {
         setAssessmentStale(true);
         try {
           const current = await api.currentReports();
+          await refreshSession(generation, undefined, undefined, current.session_token);
           if (generation !== sessionGeneration.current) return false;
           setReport(current);
           setAssessmentStale(false);
@@ -762,6 +841,11 @@ export default function App() {
         }
       }
       return true;
+    } catch (failure) {
+      if (generation !== sessionGeneration.current) return false;
+      if (isSessionInvalidation(failure)) { await expireOfficialSession(); return false; }
+      if (failure instanceof Error && isSessionInvalidation(failure.cause)) { await expireOfficialSession(); return false; }
+      throw failure;
     } finally {
       settingsLock.current = false;
       setSettingsBusy(false);
@@ -815,11 +899,15 @@ export default function App() {
     setBusy('正在重新套用設定…');
     try {
       const result = await api.currentReports();
+      await refreshSession(generation, undefined, undefined, result.session_token);
       if (generation !== sessionGeneration.current) return;
       setReport(result);
       setAssessmentStale(false);
     } catch (error) {
-      if (generation === sessionGeneration.current) setError(readableError(error));
+      if (generation === sessionGeneration.current) {
+        if (isSessionInvalidation(error)) await expireOfficialSession();
+        else setError(readableError(error));
+      }
     } finally {
       if (generation === sessionGeneration.current) setBusy('');
     }
@@ -1958,7 +2046,9 @@ export default function App() {
           </button>
         ))}
       </nav>
-      {loginOpen && <LoginDialog onClose={() => setLoginOpen(false)} onLogin={loggedIn} />}
+      {loginOpen && <LoginDialog onClose={() => setLoginOpen(false)} onLogin={loggedIn}
+        onSession={reconcileObservedSession}
+        onFailure={failure => reconcileFailedSessionMutation(failure, sessionGeneration.current)} />}
       {importOpen && <ImportDialog onClose={() => setImportOpen(false)} onImport={importFile} />}
       {detail && (
         <DetailDialog

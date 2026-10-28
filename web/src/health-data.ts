@@ -159,7 +159,7 @@ export function laboratoryEvents(report: ReportResponse): HealthEvent[] {
     id: JSON.stringify(['laboratory', index, record.id]), category: 'laboratory', categoryLabel: '檢驗結果',
     date: sourceEventDate(record.exam_date), detailReference: '', parentReference: '', fetchedAt: report.fetched_at,
     entry: {
-      date: record.exam_date, institution: record.institution, title: record.display_name || record.item_name,
+      date: record.raw_check_date ?? record.exam_date, institution: record.institution, title: record.display_name || record.item_name,
       source: record.source,
       fields: [
         { name: '檢驗項目（原文）', value: record.item_name },
@@ -170,7 +170,9 @@ export function laboratoryEvents(report: ReportResponse): HealthEvent[] {
         { name: '原院旗標（原文）', value: record.official_flag ?? '' },
         { name: '醫令代碼', value: record.order_code },
         { name: '醫令名稱（原文）', value: record.order_name },
+        { name: '檢查日期（原文）', value: record.raw_check_date ?? record.exam_date },
         { name: '就醫日期（非採檢日期）', value: record.visit_date },
+        { name: '就醫日期（原文，非採檢日期）', value: record.raw_visit_date ?? record.visit_date },
       ].filter(field => field.value !== ''),
     },
   }));

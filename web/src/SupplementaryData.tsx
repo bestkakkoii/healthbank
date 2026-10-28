@@ -1,9 +1,10 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { api, ApiError, readableError, type SupplementReport, type ReportResponse } from './api';
+import { api, ApiError, isSessionInvalidation, readableError, type SupplementReport, type ReportResponse } from './api';
 import { useAnalysis } from './AnalysisContext';
 import { MedicineTimeline } from './MedicineTimeline';
-import { dateLabel, downloadText } from './model';
+import { dateLabel, downloadText, isObject } from './model';
+import { supplementReportJSON } from './health-dataset';
 import { acquireHealthData, type AcquisitionMode, type AcquisitionProgress } from './data-acquisition';
 import {
   DEFAULT_DATA_CATEGORIES, categoryCoverage, emptyHealthData, filterHealthEvents, healthEvents,
@@ -18,7 +19,7 @@ const INITIAL_FILTER: EventFilter = { text: '', category: '', institution: '', f
 function aborted(signal: AbortSignal): boolean { return signal.aborted; }
 
 function classifyFailure(failure: unknown) {
-  const expired = failure instanceof ApiError && failure.status === 401;
+  const expired = isSessionInvalidation(failure);
   const retryable = failure instanceof TypeError || failure instanceof ApiError && !expired &&
     (failure.status === 502 || failure.status === 503 || failure.status === 504 ||
       failure.status === 424 && (failure.upstreamStatus === 502 || failure.upstreamStatus === 503 || failure.upstreamStatus === 504 ||
@@ -164,8 +165,15 @@ export function SupplementaryData({ authenticated, onSessionExpired, initialData
     const current = new AbortController(); controller.current = current; markBusy(true); setError('');
     setMessage('正在讀取附件；完成後會下載並加入本次可攜資料。');
     try {
-      const response = await fetch(attachmentURL(event.category, attachment.id), { credentials: 'same-origin', cache: 'no-store', signal: current.signal });
+      const response = await api.document(event.category, attachment.id, current.signal);
       if (response.status === 401) { expire(); return; }
+      if (!response.ok && response.headers.get('content-type')?.includes('application/json')) {
+        const payload: unknown = await response.json();
+        if (isObject(payload) && isObject(payload['error']) && typeof payload['error']['code'] === 'string' &&
+          isSessionInvalidation(new ApiError('', payload['error']['code'], response.status))) {
+          expire(); return;
+        }
+      }
       if (!response.ok || !response.body) throw new Error(`附件未完成（HTTP ${response.status}），可稍後重試。`);
       const size = Number(response.headers.get('content-length'));
       if (size > MAX_EMBEDDED_ATTACHMENT) { await response.body.cancel(); throw new Error('此附件超過資料包的 32 MiB 單檔上限。請使用「另存原始檔」直接下載。'); }
@@ -206,7 +214,9 @@ export function SupplementaryData({ authenticated, onSessionExpired, initialData
   }
   function updateFilter(patch: Partial<EventFilter>) { setFilter(previous => ({ ...previous, ...patch })); setPage(0); }
   function exportSource(report: SupplementReport) {
-    downloadText(`${JSON.stringify(report, null, 2)}\n`, `healthbank-${report.category}.json`, 'application/json;charset=utf-8');
+    try {
+      downloadText(supplementReportJSON(report), `healthbank-${report.category}.json`, 'application/json;charset=utf-8');
+    } catch (failure) { setError(readableError(failure)); }
   }
 
   return <section className="panel analysis-tools supplementary health-data-workspace" aria-label="醫療資料工作區">

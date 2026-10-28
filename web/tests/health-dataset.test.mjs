@@ -1,7 +1,7 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { exportDataset, importDataset, DATASET_SCHEMA, MAX_ARCHIVE_ATTACHMENT_BYTES } from '../src/health-dataset.ts';
+import { exportDataset, importDataset, supplementReportJSON, DATASET_SCHEMA, MAX_ARCHIVE_ATTACHMENT_BYTES } from '../src/health-dataset.ts';
 import { MAX_PORTABLE_REPORT_BYTES, portableReportJSON, portableReportXML } from '../src/portable-report.ts';
 
 const encoded = value => new TextEncoder().encode(value);
@@ -18,7 +18,7 @@ function source(entries, category = 'medicine') {
   return { category, entries, coverage: '合成來源沒有獨立總數', fetched_at: '2026-10-28T00:00:00Z', complete: false };
 }
 function fixture() {
-  const lab = { records: [{ exam_date: '2026-01-02', visit_date: '2026-01-01', order_code: 'SYNTHETIC_CODE',
+  const lab = { session_token: 'e'.repeat(64), records: [{ exam_date: '2026-01-02', visit_date: '2026-01-01', order_code: 'SYNTHETIC_CODE',
     order_name: '合成檢查', item_name: '合成項目', result: '>50', unit: 'mg/dL', reference_text: '[0][20]', institution: '合成示範院所',
     source: 'SYNTHETIC_SOURCE', official_flag: '來源旗標', level: 5, interpretation: 'must not trust stored grades', numeric_value: 50 }],
   fetched_at: '2026-10-28T00:00:00Z', complete: false, warnings: ['合成完整性資訊'],
@@ -33,13 +33,31 @@ function fixture() {
   return { lab, snapshot, files };
 }
 
+test('standalone source exports preserve rows and local relationships without live document capabilities', () => {
+  const original = source([row({ key: 'synthetic-source-key', detail_id: ref,
+    attachments: [{ id: attachmentRef, name: '合成報告.txt', content_type: 'text/plain;charset=utf-8' }],
+    document_actions: [{ id: actionRef, kind: 'prepare_export', name: '合成產製' }] }), row({ detail_id: ref })]);
+  const before = structuredClone(original);
+  const output = supplementReportJSON(original);
+  for (const secret of [ref, attachmentRef, actionRef, 'document_actions', 'synthetic-source-key']) assert.ok(!output.includes(secret), secret);
+  const parsed = JSON.parse(output);
+  assert.equal(parsed.entries.length, 2);
+  assert.equal(parsed.entries[0].detail_id, parsed.entries[1].detail_id);
+  assert.notEqual(parsed.entries[0].detail_id, parsed.entries[0].attachments[0].id);
+  assert.match(parsed.entries[0].attachments[0].id, /^archive_\d+$/);
+  assert.equal(parsed.entries[0].fields[0].value, '400.00000000000000000001');
+  assert.equal(parsed.coverage, original.coverage);
+  assert.equal(parsed.complete, false);
+  assert.deepEqual(original, before);
+});
+
 test('complete dataset preserves duplicates, nested source relationships, exact fields and UTF-8 attachments', async () => {
   const { lab, snapshot, files } = fixture();
   const previous = structuredClone({ lab, snapshot, files });
   const exported = await exportDataset(lab, snapshot, files, categories, true);
   assert.ok(exported.startsWith('\ufeff'));
   assert.ok(exported.includes(DATASET_SCHEMA));
-  for (const secret of [ref, nestedRef, attachmentRef, actionRef, 'document_actions', 'numeric_value', 'interpretation']) assert.ok(!exported.includes(secret), secret);
+  for (const secret of [ref, nestedRef, attachmentRef, actionRef, lab.session_token, 'session_token', 'document_actions', 'numeric_value', 'interpretation']) assert.ok(!exported.includes(secret), secret);
   const result = await importDataset(encoded(exported));
   assert.equal(result.snapshot.reports.medicine.entries.length, 2);
   const first = result.snapshot.reports.medicine.entries[0];
