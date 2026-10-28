@@ -131,7 +131,9 @@ func (a *App) currentResponse(s *session) reportResponse {
 	warnings := append([]string{}, s.warnings...)
 	highTG := map[string]bool{}
 	for _, r := range records {
-		if r.ItemID == "serum_triglycerides" && r.ExamDate != "" && r.Institution != "" && r.Unit == "mg/dL" && lab.DefinitelyAtLeast(r.Result, "400") {
+		// This catalog identity already requires the verified mg/dL scale and
+		// its finite spelling aliases; keep the original unit text unchanged.
+		if r.ItemID == "serum_triglycerides" && r.ExamDate != "" && r.Institution != "" && lab.DefinitelyAtLeast(r.Result, "400") {
 			highTG[r.ExamDate+"\x00"+r.Institution] = true
 		}
 	}
