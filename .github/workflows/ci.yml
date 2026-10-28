@@ -22,6 +22,9 @@ jobs:
     env:
       CI: "true"
       GOTOOLCHAIN: local
+      GOENV: "off"
+      GOWORK: "off"
+      GOROOT: ""
       # Disposable CI-only credentials; no production or medical data is used.
       HEALTHBANK_TEST_MYSQL_DSN: healthbank_ci:healthbank-test-only@tcp(127.0.0.1:3306)/healthbank_test?parseTime=true
     services:
@@ -64,7 +67,9 @@ jobs:
       - name: Verify frontend data handling
         run: npm --prefix web test
       - name: Verify release layout and private-file exclusions
-        run: python3 -W error scripts/test_release.py
+        run: |
+          python3 -W error scripts/test_release.py
+          python3 -W error scripts/test_publish_release.py
       - name: Check npm dependency advisories
         run: npm --prefix web audit --audit-level=low
       - name: Verify Go formatting and module checksums
@@ -81,6 +86,8 @@ jobs:
         run: .tools/go/bin/go test -count=1 -race ./...
       - name: Run Go vet
         run: .tools/go/bin/go vet ./...
+      - name: Require all Staticcheck analyses to pass
+        run: .tools/bin/staticcheck -checks=all ./cmd/... ./internal/...
       - name: Check reachable Go dependency advisories
         # Development Go lacks a comparable standard-library semver; see DEPENDENCIES.md.
         run: .tools/bin/govulncheck ./...

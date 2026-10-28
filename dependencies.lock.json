@@ -98,6 +98,14 @@
       "repository": "https://github.com/actions/upload-artifact",
       "branch": "main",
       "commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9"
+    },
+    {
+      "name": "Staticcheck",
+      "repository": "https://github.com/dominikh/go-tools",
+      "tag": "2026.2.2",
+      "commit": "54455593555daf6bfcf3c480faaada7de3145357",
+      "version": "v0.8.2",
+      "module_sum": "h1:+jPbCzuYxYrcoOvCecYUFDj+XJQRmzIhJmlbpps21Zk="
     }
   ],
   "build_runtime": {
@@ -876,6 +884,42 @@
           "sum": "h1:ryxg4U63oaUYk7uOLTF37n43f4qgtGvqV4Ioit1BaEs="
         }
       ]
+    },
+    "staticcheck": {
+      "compiler_commit": "41cb39b794bfe81144930746ccf72440a0382adb",
+      "policy": "Unmodified official release source with its own upstream module graph; these modules are not linked into Healthbank.",
+      "modules": [
+        {
+          "module": "honnef.co/go/tools",
+          "version": "v0.8.2",
+          "sum": "h1:+jPbCzuYxYrcoOvCecYUFDj+XJQRmzIhJmlbpps21Zk="
+        },
+        {
+          "module": "github.com/BurntSushi/toml",
+          "version": "v1.4.1-0.20240526193622-a339e1f7089c",
+          "sum": "h1:pxW6RcqyfI9/kWtOwnv/G+AzdKuy2ZrqINhenH4HyNs="
+        },
+        {
+          "module": "golang.org/x/exp/typeparams",
+          "version": "v0.0.0-20231108232855-2478ac86f678",
+          "sum": "h1:1P7xPZEwZMoBoz0Yze5Nx2/4pxj6nw9ZqHWXqP0iRgQ="
+        },
+        {
+          "module": "golang.org/x/mod",
+          "version": "v0.41.0",
+          "sum": "h1:qJmnOUb4YB+FsEuM3HcWucdZASCPGhsX6uljO6pog0c="
+        },
+        {
+          "module": "golang.org/x/sync",
+          "version": "v0.23.0",
+          "sum": "h1:KameEIfc1IkluZyXWLn39Wd4tURc6GbCiISGiZm2bQk="
+        },
+        {
+          "module": "golang.org/x/tools",
+          "version": "v0.51.0",
+          "sum": "h1:k4Xc/1Om9jwkBJBo4NVLMSARBoWtK10mx+W5BnXCeAI="
+        }
+      ]
     }
   },
   "audit_limitations": [
@@ -1089,6 +1133,20 @@
       "module_checksums": "go mod verify: all modules verified",
       "advisory_scan": "govulncheck -show=verbose ./...: No vulnerabilities found; initial two imported-package findings are absent",
       "standard_library_limit": "The real development Go version remains unmodified; govulncheck cannot fully classify a development standard library using release semantic versions."
+    }
+  },
+  "static_analysis_refresh": {
+    "checked_at": "2026-10-28T12:38:37.908644+08:00",
+    "scope": "Build-only Staticcheck addition and exact runtime attribution corrections; no application dependency versions changed.",
+    "source": "https://github.com/dominikh/go-tools/releases/tag/2026.2.2",
+    "tag_object": "3c47765e1f7af3a3f42de6b00463490864f739d2",
+    "upstream_commit": "54455593555daf6bfcf3c480faaada7de3145357",
+    "command": "staticcheck -checks=all ./cmd/... ./internal/...",
+    "compatibility": "Compiled and successfully executed with the existing pinned development Go; upstream documented release support covers Go 1.27. The compiler version and analyzer dependency graph were not modified.",
+    "license_attribution_refresh": {
+      "path": "licenses/github.com__go-sql-driver__mysql/AUTHORS",
+      "source_module": "github.com/go-sql-driver/mysql@v1.10.2-0.20261027070611-c9e0863414a0",
+      "sha256": "174fced95cedb9fe086bfa6284d228a1a9a3ce009d32d6b4257d819075b951db"
     }
   }
 }

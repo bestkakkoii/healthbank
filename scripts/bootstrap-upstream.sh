@@ -8,6 +8,7 @@ go_revision="41cb39b794bfe81144930746ccf72440a0382adb"
 ts_revision="49e69830214c55a8cc361aa3c4e7412d0afd02fe"
 esbuild_revision="f6058f8364fe7ab91ca57a83e02577ed74c9cae4"
 govulncheck_revision="e672cbe8fbc8c76e28fcb6db0efd9ce354e0dac5"
+staticcheck_revision="54455593555daf6bfcf3c480faaada7de3145357"
 node_version="26.12.1"
 npm_version="12.2.1"
 mkdir -p "$task_tools/downloads" "$task_tools/bin" "$task_tools/build" "$task_tools/toolchains"
@@ -133,6 +134,15 @@ if ! tool_uses_pinned_go "$govulncheck_install"; then
   mv -- "$task_tools/build/govulncheck-bin/govulncheck" "$govulncheck_install"
 fi
 activate_toolchain "$govulncheck_install" "$task_tools/bin/govulncheck"
+staticcheck_build_key="$staticcheck_revision+go-$go_revision"
+staticcheck_install="$task_tools/toolchains/staticcheck-$staticcheck_build_key"
+if ! tool_uses_pinned_go "$staticcheck_install"; then
+  mkdir -p "$task_tools/build/staticcheck-bin"
+  GOBIN="$task_tools/build/staticcheck-bin" "$go_install/bin/go" install "honnef.co/go/tools/cmd/staticcheck@$staticcheck_revision"
+  tool_uses_pinned_go "$task_tools/build/staticcheck-bin/staticcheck"
+  mv -- "$task_tools/build/staticcheck-bin/staticcheck" "$staticcheck_install"
+fi
+activate_toolchain "$staticcheck_install" "$task_tools/bin/staticcheck"
 # Upstream npm archives are checked in and lockfile-verified.
 python3 - "$repo_root" <<'PYREACT'
 import hashlib,pathlib,sys
@@ -153,4 +163,5 @@ npm --version
 go version
 "$task_tools/bin/tsc" --version
 "$task_tools/bin/esbuild" --version
+"$task_tools/bin/staticcheck" -version
 printf '%s\n' 'Pinned tools are ready. Add .tools/bin and .tools/go/bin to PATH, then run npm --prefix web ci and npm --prefix web run build.'

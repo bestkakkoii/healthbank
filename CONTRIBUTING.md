@@ -31,6 +31,7 @@ python3 -W error scripts/test_release.py
 .tools/go/bin/go test -count=1 ./...
 .tools/go/bin/go test -count=1 -race ./...
 .tools/go/bin/go vet ./...
+.tools/bin/staticcheck -checks=all ./cmd/... ./internal/...
 .tools/go/bin/go mod verify
 ```
 
@@ -67,6 +68,8 @@ GO="$PWD/.tools/go/bin/go" bash scripts/release.sh "$HEALTHBANK_RELEASE_TAG"
 ```
 
 Review both Linux architecture archives, the source archive, `SHA256SUMS`, licenses, and provenance. Source packaging uses an explicit allowlist and must exclude private data and build caches. Check that relative README images and shipped documentation remain usable inside the binary package.
+
+Official packaging validates that all selected source inputs are tracked and unchanged, including ignored additions; rejects symlinks and special files; and requires the exact HEAD commit and timestamp. Checksums must cover exactly this version's amd64, arm64 and source archives. Publication resolves existing annotated or lightweight tags and refuses a different commit, incomplete asset set or ambiguous API lookup.
 
 The scripts package locally. Git pushes, workflow execution, and publication are separate actions. A pushed version tag preserves an existing release or prepares a draft. An explicitly changed RELEASE_CANDIDATE on main publishes that RC only after the release workflow's full checks, MySQL/race tests, build and checksum gates pass; it refuses to replace an existing release. Preserve the user's explicit publication authorization. Review the actual [Actions results](https://github.com/bestkakkoii/healthbank/actions) and downloadable release assets before claiming completion.
 
