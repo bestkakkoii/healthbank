@@ -39,6 +39,15 @@ SQLite首次啟動自動建立。MySQL需先建立專用空資料庫與最小必
 上限內的請求緩衝配置於記憶體。依可用RAM限制總並行請求；不能用無上限記憶體交換「不落地」。
 應用API另外回傳 `Cache-Control: no-store, private`、`Pragma: no-cache`及 `X-Accel-Buffering: no`。
 
+Healthbank 可攜檢驗 JSON／XML 單檔上限為 **32 MiB**，HTTP 額外允許 **64 KiB** 的 multipart 包裝。
+Nginx 片段對應設定 `client_max_body_size 32832k` 與 `client_body_buffer_size 33m`，請連同原本停用
+request/response buffering、暫存回應檔、快取及 `proxy_store` 的設定一起更新，避免代理先以舊的 13 MiB
+上限拒絕大型可攜報表。依[Nginx 請求本文緩衝規則](https://nginx.org/en/docs/http/ngx_http_core_module.html#client_body_buffer_size)，
+超過記憶體緩衝的本文可能寫入暫存檔；不能只提高請求上限而保留較小的緩衝設定。
+另存 HTML／ZIP 的單檔限制仍為 **12 MiB**，純 HTML 及 ZIP 內 HTML 展開總量仍限 **6 MiB**；
+筆數、欄位與解析結構限制也維持不變。完整資料包在瀏覽器還原後，只有其檢驗部分送至此匯入端點，
+不會把整個資料包或附件交給伺服器保存。
+
 這不是對任何主機的零留存證明。還須稽核：CDN/WAF快取、請求本文記錄、除錯日誌、錯誤追蹤、
 swap、core dump、容器/VM快照及備份。保留不含憑證與醫療內容的必要診斷，不以吞錯或停用所有錯誤輸出取代保護。
 無法控制的第三方保留行為須明示；登入與健康API不得被「快取所有內容」規則覆蓋。

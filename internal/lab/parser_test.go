@@ -6,6 +6,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
+	"io"
 	"strings"
 	"testing"
 )
@@ -112,7 +113,7 @@ func TestUnusableOrAmbiguousTablesAreRejected(t *testing.T) {
 }
 
 func TestImportResourceLimits(t *testing.T) {
-	if _, _, err := ParseImport("too-large.zip", make([]byte, maxImportBytes+1)); err == nil {
+	if _, _, err := ParseImport("too-large.zip", make([]byte, maxSavedImportBytes+1)); err == nil || !strings.Contains(err.Error(), "12 MiB") {
 		t.Fatal("compressed input size limit not enforced")
 	}
 	if _, _, err := ParseImport("too-large.html", bytes.Repeat([]byte(" "), maxExpandedHTML+1)); err == nil {
@@ -128,5 +129,38 @@ func TestImportResourceLimits(t *testing.T) {
 	}
 	if _, _, err := ParseImport("entries.zip", syntheticArchive(t, entries)); err == nil {
 		t.Fatal("archive entry count limit not enforced")
+	}
+}
+
+func TestSavedZIPImportKeepsTwelveMiBCompressedLimit(t *testing.T) {
+	// A real, otherwise usable archive with an uncompressed browser asset must
+	// still hit the saved-page limit, not inherit portable JSON/XML's 32 MiB cap.
+	var data bytes.Buffer
+	writer := zip.NewWriter(&data)
+	page, err := writer.Create("report.html")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := io.WriteString(page, syntheticTable(syntheticDetailRow)); err != nil {
+		t.Fatal(err)
+	}
+	asset, err := writer.CreateHeader(&zip.FileHeader{Name: "assets/unused.bin", Method: zip.Store})
+	if err != nil {
+		t.Fatal(err)
+	}
+	block := bytes.Repeat([]byte("s"), 1<<20)
+	for range 12 {
+		if _, err := asset.Write(block); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if data.Len() <= 12<<20 || data.Len() >= 32<<20 {
+		t.Fatal("archive fixture did not cross only the saved-page bound")
+	}
+	if records, _, err := ParseImport("browser.zip", data.Bytes()); err == nil || !strings.Contains(err.Error(), "12 MiB") || len(records) != 0 {
+		t.Fatal("saved ZIP received the larger portable-file allowance")
 	}
 }
