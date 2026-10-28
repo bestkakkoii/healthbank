@@ -350,8 +350,8 @@ export function ImportDialog({
   function acceptFile(candidate: File | undefined) {
     setError('');
     if (!candidate) return;
-    if (!/\.(html?|zip)$/i.test(candidate.name)) {
-      setError('請選擇官網另存的 HTML 網頁，或包含 HTML 的 ZIP 壓縮檔。');
+    if (!/\.(html?|zip|json|xml)$/i.test(candidate.name)) {
+      setError('請選擇官網另存的 HTML／ZIP，或本站匯出的 JSON／XML 檢驗資料。');
       return;
     }
     setFile(candidate);
@@ -377,7 +377,7 @@ export function ImportDialog({
   return (
     <Modal
       title="匯入已下載的檢驗資料"
-      subtitle="讀取健康存摺另存的網頁或 ZIP 壓縮檔"
+      subtitle="讀取官網另存的 HTML／ZIP，或本站匯出的 JSON／XML"
       onClose={onClose}
       busy={busy}
     >
@@ -396,13 +396,13 @@ export function ImportDialog({
           </div>
           <b>{file ? file.name : '選擇檔案，或拖曳到這裡'}</b>
           <span>
-            {file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : '支援 .html、.htm、.zip'}
+            {file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : '支援 .html、.htm、.zip，以及本站格式的 .json、.xml'}
           </span>
           <label className="button secondary file-button">
             {file ? '重新選擇檔案' : '選擇檔案'}
             <input
               type="file"
-              accept=".html,.htm,.zip,.json,.xml,text/html,application/zip"
+              accept=".html,.htm,.zip,.json,.xml,text/html,application/zip,application/json,application/xml,text/xml"
               onChange={(e) => acceptFile(e.target.files?.[0])}
               disabled={busy}
             />

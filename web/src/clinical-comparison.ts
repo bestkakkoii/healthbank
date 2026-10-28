@@ -27,7 +27,7 @@ export const CLINICAL_SOURCES = {
 } as const;
 interface AnalyteDefinition { name: string; code: string; aliases: readonly string[]; unit: string; method: string }
 export const COMPARISON_ANALYTES: Record<ComparisonAnalyte, AnalyteDefinition> = {
-  creatinine: { name: '血液肌酸酐', code: '09015C', aliases: ['creatinine', 'creatinine(健檢)', 'creatinine（健檢）', 'crea'], unit: 'mg/dL', method: 'Kinetic Jaffe method（以來源頁面與實際檢驗方法為準）' },
+  creatinine: { name: '血液肌酸酐', code: '09015C', aliases: ['creatinine', 'creatinine(健檢)', 'creatinine（健檢）', 'crea'], unit: 'mg/dL', method: 'Enzymatic method（以來源頁面與實際檢驗方法為準）' },
   alp: { name: '鹼性磷酸酶 ALP', code: '09027C', aliases: ['alp', 'alk-p', 'alkaline phosphatase', 'alkaline phosphatase(alp)'], unit: 'U/L', method: 'Enzymatic colorimetric IFCC reference method' },
   bun: { name: '血中尿素氮 BUN', code: '09002C', aliases: ['bun', 'blood urea nitrogen', 'urea nitrogen'], unit: 'mg/dL', method: 'Urease/GDH kinetic method' },
   calcium: { name: '血液總鈣', code: '09011C', aliases: ['calcium', 'calcium(ca)', 'calcium (ca)', 'ca'], unit: 'mg/dL', method: 'NM-BAPTA colorimetric method' },
