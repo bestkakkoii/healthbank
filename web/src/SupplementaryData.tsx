@@ -180,7 +180,9 @@ export function SupplementaryData({ authenticated, onSessionExpired, initialData
         setMessage('正在取得檢驗結果…');
         try { await onFetchLaboratory(current.signal); setLabFailed(false); }
         catch (failure) {
-          if (aborted(current.signal)) return;
+          if (aborted(current.signal) || controller.current !== current) return;
+          // A parent generation change can precede React's unmount cleanup.
+          if (failure instanceof DOMException && failure.name === 'AbortError') return;
           if (classifyFailure(failure).expired) { expire(); return; }
           setLabFailed(true); setError(`檢驗結果尚未更新：${readableError(failure)}。其他類別仍繼續取得。`);
         }

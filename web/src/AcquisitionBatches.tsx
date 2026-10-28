@@ -81,6 +81,9 @@ export function AcquisitionBatches({ catalog, selectedCategories, includeLaborat
           laboratoryRef.current = result; setLaboratory(result);
         } catch (failure) {
           if (current.signal.aborted || controller.current !== current) return;
+          // The parent can invalidate the generation before React runs this
+          // component's unmount cleanup and aborts its local controller.
+          if (failure instanceof DOMException && failure.name === 'AbortError') return;
           if (classifyFailure(failure).expired) { onSessionExpired(); return; }
           setError(`本批檢驗尚未取得：${readableError(failure)}`);
         }
