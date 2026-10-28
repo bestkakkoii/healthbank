@@ -15,7 +15,7 @@ export async function runTerminologyAcceptance({ createContext, baseURL, evidenc
     reference: '', institution: '合成檢驗機構', source: 'SYNTHETIC_SOURCE_CODE',
     source_name: '合成來源名稱', official_flag: '', ...extra,
   });
-  const nt = row('NT-ProBNP', '12193C', 'pg/mL', '123.000000000000001', { order_name: rawOrder, source_name: rawSource });
+  const nt = row('NT-ProBNP', '12193C', 'pg/mL', '123.000000000000001', { order_name: rawOrder, source_name: rawSource, official_flag: 'SYNTHETIC_FLAG_H' });
   const records = [row('A/C ratio', '06012C', 'mg/gCr', '<10.000000000000001'),
     row('ACR', '09016C', 'mg/g', '12.000000000000001'), nt, { ...nt },
     row('PO2', '09041B', 'mmHg', '33.000000000000001'),
@@ -58,6 +58,8 @@ export async function runTerminologyAcceptance({ createContext, baseURL, evidenc
     await detail.getByRole('heading', { name: 'N端B型利鈉肽前驅物', exact: true }).waitFor();
     const field = name => detail.getByText(name, { exact: true }).locator('..').locator('dd');
     assert.equal(await field('原始檢驗名稱').textContent(), 'NT-ProBNP');
+    assert.equal(await field('原始單位').textContent(), 'pg/mL');
+    assert.equal(await field('原院旗標原文').textContent(), 'SYNTHETIC_FLAG_H', 'Unknown source flag spellings remain inspectable without being interpreted as the special official 1 flag.');
     assert.equal(await field('檢驗檢查醫囑名稱').textContent(), rawOrder);
     assert.equal(await field('來源名稱').textContent(), rawSource);
     assert.equal(await field('資料來源').textContent(), 'SYNTHETIC_SOURCE_CODE');
@@ -74,6 +76,10 @@ export async function runTerminologyAcceptance({ createContext, baseURL, evidenc
     await headers.getByText('Manual slide review status', { exact: true }).waitFor();
     await headers.getByText('原名：是否人工閱片', { exact: true }).waitFor();
     assert.equal(await headers.count(), 1, 'An empty source-status row keeps its exact-name glossary without becoming a measurement.');
+    await screen.locator('button.result-cell').first().click();
+    assert.equal(await field('原始單位').textContent(), '無單位', 'Literal missing-unit source text must not disappear from the detail.');
+    assert.equal(await field('原院旗標原文').textContent(), '未提供');
+    await detail.getByRole('button', { name: '關閉視窗', exact: true }).click();
     await search.fill('Blood-gas oxygen partial pressure');
     await headers.getByRole('button', { name: '血氣氧分壓', exact: true }).waitFor();
     assert.ok(!(await headers.textContent()).includes('靜脈血氧分壓'), 'Generic source gas names do not assert venous collection.');
@@ -108,7 +114,7 @@ export async function runTerminologyAcceptance({ createContext, baseURL, evidenc
       layouts.push({ ...size, font_scale: 2, english_wrapped: true, detail_operable: true });
     }
     return { synthetic_only: true, official_login_tested: false, source_rows: records.length, acr_channels: 2,
-      duplicate_rows_retained: true, raw_item_order_result_source_and_dates_retained: true,
+      duplicate_rows_retained: true, raw_item_order_result_source_and_dates_retained: true, raw_unit_and_uninterpreted_flags_visible: true,
       attributed_and_literal_names_separate: true, english_and_order_name_search: true, layouts };
   } catch (failure) {
     if (!page.isClosed()) await page.screenshot({ path: path.join(evidenceDir, 'synthetic-terminology-failure.png') }).catch(() => {});

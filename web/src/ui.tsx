@@ -226,6 +226,7 @@ export function LevelBadge({ level, compact = false }: { level: Level | null; co
 export function Legend() {
   return (
     <div className="level-legend" role="group" aria-label="顏色分級說明">
+      <span className="grading-legend-scope">L1–L5 為顯示分級，適用條件依每筆分級依據；原院旗標另列。</span>
       {([1, 2, 3, 4, 5] as Level[]).map((level) => (
         <LevelBadge key={level} level={level} compact />
       ))}

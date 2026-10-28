@@ -39,6 +39,7 @@ import { inspectDeviceCache, sameDeviceCacheLease, verifiedCacheProfile, type De
 import { cachedSourceSnapshot } from './cache-provenance';
 import { acquireHealthData } from './data-acquisition';
 import { createTerminologyIndex, groupTerminology, groupTerminologySearchText, recordTerminology } from './terminology-display';
+import { GradingContextLabel, GradingContextNotes } from './GradingContextNotes';
 import type { CollectionRestoration } from './collection-restoration';
 import { PrintReport } from './PrintReport';
 import { NativePrintReport } from './NativePrintReport';
@@ -411,9 +412,10 @@ export default function App() {
         ),
       }
     : undefined;
-  const uniqueDates = [...new Set(report.records.map((record) => record.exam_date))]
+  const uniqueDates = [...new Set(report.records.map((record) => record.exam_date).filter(Boolean))]
     .sort()
     .reverse();
+  const unknownDateCount = report.records.filter(record => !record.exam_date).length;
   const latestRecords = groups.flatMap((group) => {
     const latest = group.records[0];
     return latest ? group.records.filter((record) => record.exam_date === latest.exam_date) : [];
@@ -1570,7 +1572,7 @@ export default function App() {
                         <Icon name="calendar" />
                       </div>
                       <strong className="date-stat">{dateLabel(uniqueDates[0] ?? '')}</strong>
-                      <p>共 {uniqueDates.length} 個檢查日期</p>
+                      <p>共 {uniqueDates.length} 個已知檢查日期{unknownDateCount ? `；另有 ${unknownDateCount} 筆日期未提供` : ''}</p>
                     </article>
                     <article className="summary-card">
                       <div className="summary-label">
@@ -1625,7 +1627,7 @@ export default function App() {
                       className="attention-panel"
                     >
                       {attentionRecords.length ? (
-                        <div className="attention-list">
+                        <><GradingContextNotes records={attentionRecords} /><div className="attention-list">
                           {attentionRecords.slice(0, 8).map((record) => (
                             <button
                               className="attention-row"
@@ -1638,6 +1640,7 @@ export default function App() {
                               <span className="attention-name">
                                 <b>{recordTerminology(record, terminology).name}</b>
                                 {recordTerminology(record, terminology).englishName && <span className="terminology-english" lang="en">{recordTerminology(record, terminology).englishName}</span>}
+                                <GradingContextLabel record={record} />
                                 <small>
                                   {dateLabel(record.exam_date)} ·{' '}
                                   {record.institution || categoryLabel(record.category)}
@@ -1651,7 +1654,7 @@ export default function App() {
                               <Icon name="chevron" size={18} />
                             </button>
                           ))}
-                        </div>
+                        </div></>
                       ) : (
                         <div className="quiet-empty">
                           <Icon name="check" size={30} />
@@ -1756,7 +1759,7 @@ export default function App() {
                                 <small>{group.unit}</small>
                               </span>
                               <span className="favorite-bottom">
-                                <LevelBadge level={latest.level} compact />
+                                <span><LevelBadge level={latest.level} compact /><GradingContextLabel record={latest} /></span>
                                 <small>
                                   {dateLabel(latest.exam_date)}
                                   {group.records.filter(
@@ -2111,6 +2114,11 @@ export default function App() {
                                       : '依各筆原院參考值'}
                             </b>
                             {rule.bands.length > 0 && <small>分類界限：{bounds.join('、')} {rule.unit || group.unit}</small>}
+                            {rule.scopeLabel && <small className="grading-context-label">{rule.scopeLabel}</small>}
+                            {(rule.conditions.length > 0 || rule.applicabilityNote) && <details className="grading-context-notes"><summary>預設規則適用條件</summary>
+                              {rule.applicabilityNote && <p>{rule.applicabilityNote}</p>}
+                              {rule.conditions.length > 0 && <ul>{rule.conditions.map((condition, index) => <li key={index}>{condition}</li>)}</ul>}
+                            </details>}
                             {!rule.bands.length && template && !template.automatic_fallback_allowed && (
                               <small>參考範本，須確認適用條件；不自動取代原院基準。</small>
                             )}
@@ -2191,7 +2199,7 @@ export default function App() {
               <SupplementaryData key={`${session.mode}:${session.csrf_token ?? ''}:${datasetVersion}`}
                 authenticated={persisted && !cacheWorkspace} imported={session.mode === 'import'} cached={cacheWorkspace}
                 sessionMode={session.mode}
-                disabled={settingsBusy || busy !== '' || dataCatalog.length === 0}
+                disabled={settingsBusy || deviceCache.busy || busy !== '' || dataCatalog.length === 0}
                 catalog={workspaceCatalog} fieldTerms={dataFieldTerms} initialDataset={dataSnapshot} archivedAttachments={archivedAttachments} laboratory={report}
                 onDatasetChange={next => { if (datasetVersion === datasetVersionRef.current) setDataSnapshot(next); }}
                 onAttachmentDownloaded={retainAttachment} onFetchLaboratory={fetchLaboratoryForWorkspace}

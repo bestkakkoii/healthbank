@@ -51,6 +51,13 @@ export interface Session {
   report_revision?: number;
 }
 
+export interface GradingContext {
+  kind: 'source_reference' | 'profile' | 'qualitative' | 'personal' | 'independent_alert';
+  rule_id: string;
+  label: string;
+  note: string;
+}
+
 export interface LabRecord {
   id: string;
   item_id: string;
@@ -81,6 +88,7 @@ export interface LabRecord {
   value_kind: string;
   rule_source: string;
   official_flag?: string;
+  grading_contexts?: GradingContext[];
 }
 
 export interface MedicineOrder {

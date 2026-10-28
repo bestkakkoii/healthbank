@@ -66,16 +66,19 @@ type ruleBand struct {
 	Category     string `json:"category"`
 }
 type Rule struct {
-	Kind         string     `json:"kind"`
-	Unit         string     `json:"unit"`
-	Aliases      []string   `json:"unit_aliases"`
-	Bands        []ruleBand `json:"bands"`
-	Sources      []string   `json:"sources"`
-	Meaning      string     `json:"meaning"`
-	Description  string     `json:"description,omitempty"`
-	NormalText   []string   `json:"normal_text_values,omitempty"`
-	PositiveText []string   `json:"positive_text_values,omitempty"`
-	ReviewText   []string   `json:"review_text_values,omitempty"`
+	Kind              string     `json:"kind"`
+	Unit              string     `json:"unit"`
+	Aliases           []string   `json:"unit_aliases"`
+	Bands             []ruleBand `json:"bands"`
+	Sources           []string   `json:"sources"`
+	Meaning           string     `json:"meaning"`
+	Description       string     `json:"description,omitempty"`
+	Conditions        []string   `json:"conditions,omitempty"`
+	ScopeLabel        string     `json:"scope_label,omitempty"`
+	ApplicabilityNote string     `json:"applicability_note,omitempty"`
+	NormalText        []string   `json:"normal_text_values,omitempty"`
+	PositiveText      []string   `json:"positive_text_values,omitempty"`
+	ReviewText        []string   `json:"review_text_values,omitempty"`
 }
 type sourceDefinition struct {
 	Title         string `json:"title"`

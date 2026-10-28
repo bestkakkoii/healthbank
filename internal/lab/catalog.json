@@ -84,13 +84,13 @@
     "unknown_policy": "Gray. No invented numeric cutoff or default-safe classification."
   },
   "settings_storage_contract": {
-    "database": "SQLite",
+    "database": "SQLite by default; optional MySQL. SQL stores whitelisted settings only, not health observations.",
     "identity_key": "HMAC-SHA-256(stable_server_secret, domain_separated_verified_official_subject)",
     "identity_requirement": "Generate only after successful official authentication; never trust an unverified submitted ID. Same verified subject and stable key map to same settings on phone/desktop.",
     "identity_caveat": "Pseudonymous linkage, not complete anonymity. Store key version; protect/back up the server secret outside the database.",
     "persist": [
       "pseudonymous_user_key",
-      "selected_profile_versions",
+      "analysis_scenario_preferences",
       "per_configuration_key_overrides",
       "display_preferences",
       "configuration_revision"
@@ -112,10 +112,10 @@
       "date_range_filter_values_when_sensitive"
     ],
     "browser_login_memory": "Earlier requested device-local login-field memory is separate from server configuration storage; it contains identity information and must be optional/clearable. If no browser PII retention is intended, disable it and rely on password-manager/user entry.",
-    "browser_report_storage": "No localStorage/IndexedDB/service-worker cache of report results; authenticated report responses use no-store.",
+    "browser_report_storage": "Medical data stays in memory by default. Explicit opt-in for the currently verified profile permits a bounded device-local IndexedDB cache with separate consent and clear controls. Report localStorage and service-worker caching remain prohibited; authenticated HTTP responses use no-store. Restored cached data is labelled as historical cache provenance, not a new official acquisition or current completeness proof.",
     "configuration_creation": "Expose all built-in measurement settings before import; add genuinely observed unknown measurements only, excluding missing/metadata. Deduplicate verified configuration keys and preserve separate source channels. Built-in definitions are not copied into each SQL document. Reset removes overrides; it does not freeze current defaults into personal settings.",
-    "concurrency": "Unique user_key+configuration_key; atomic transaction; version check on edits to prevent phone/desktop lost updates.",
-    "retention_consequence": "Old reports unavailable from the source cannot be reconstructed after session end when results are not persisted."
+    "concurrency": "One profile_settings row per pseudonymous subject_key stores whitelisted settings JSON, revision and updated_at. Writes and deletion use expected-revision comparison; individual configuration overrides are fields within that document, not separate SQL rows.",
+    "retention_consequence": "After session end, observations can be recovered only from a still-available official source or an explicitly retained user download/device cache. Neither local recovery nor an old source snapshot establishes current official completeness, and the server settings database cannot reconstruct observations."
   },
   "sources": {
     "provided_report_reference": {
@@ -410,7 +410,9 @@
       "sources": [
         "provided_report_reference"
       ],
-      "meaning": "Reference conformity/deviation only; not a calibrated clinical-danger scale. Unused levels are intentional."
+      "meaning": "Reference conformity/deviation only; not a calibrated clinical-danger scale. Unused levels are intentional.",
+      "scope_label": "原院參考",
+      "applicability_note": "依本筆原院參考上下限對照；本應用未獨立驗證其人口、檢體及方法適用性，區間內不等於排除疾病。"
     },
     "qualitative_reference": {
       "kind": "qualitative_reference",
@@ -446,7 +448,9 @@
         "Trace",
         "±",
         "+/-"
-      ]
+      ],
+      "scope_label": "定性結果範本（方法待核對）",
+      "applicability_note": "只標示已知陰性／陽性文字與半定量反應，方法及採檢條件未由程式確認；加號數量不代表疾病嚴重度，Trace／± 不直接指定異常級別。"
     },
     "unclassified": {
       "kind": "unclassified",
@@ -511,7 +515,9 @@
         "Adult profile. Verify fasting status for lower-level classification; large elevations still warrant attention when nonfasting."
       ],
       "meaning": "Source thresholds mapped into five application colors. L5 does not diagnose pancreatitis or mean every asymptomatic patient needs emergency admission.",
-      "description": "三酸甘油脂顯著升高需醫療評估；如合併腹痛或嘔吐應即時就醫。"
+      "description": "三酸甘油脂顯著升高需醫療評估；如合併腹痛或嘔吐應即時就醫。",
+      "scope_label": "成人空腹 TG 範本（條件未確認）",
+      "applicability_note": "此色為成人空腹三酸甘油脂分界的數值對照；本筆年齡與空腹狀態未確認，不代表個人已符合適用條件。顯著升高的獨立提醒仍保留，不由此診斷遺傳疾病或胰臟炎。"
     },
     "egfr_categories": {
       "kind": "numeric_bands",
@@ -571,9 +577,11 @@
         }
       ],
       "conditions": [
-        "Verify source unit and equation. Do not infer CKD chronicity from one value."
+        "Verify source unit, estimating equation and age applicability. G categories alone do not diagnose CKD; do not infer chronicity from one value."
       ],
-      "meaning": "Five colors encode six filtration categories; G3a/G3b retain separate labels. G1/G2 do not exclude kidney damage; assess albuminuria independently."
+      "meaning": "Five colors encode six filtration categories; G3a/G3b retain separate labels. G1/G2 do not exclude kidney damage; assess albuminuria independently.",
+      "scope_label": "KDIGO G 範本（條件未確認）",
+      "applicability_note": "依 KDIGO G 類別對照已提供單位的數值；本筆年齡、來源估算公式與慢性病程未確認。兒童須另依年齡與適用公式判讀；單筆結果不診斷慢性腎臟病，G1／G2 也不排除腎損傷。"
     },
     "acr_categories": {
       "kind": "numeric_bands",
@@ -611,14 +619,20 @@
           "category": "A3"
         }
       ],
-      "meaning": "KDIGO Table3 uses A2 30–300 and A3>300. Semi-quantitative >=300 spans A2/A3; do not replace it with the exact value300. Application L2/L5 intentionally unused."
+      "meaning": "KDIGO Table3 uses A2 30–300 and A3>300. Semi-quantitative >=300 spans A2/A3; do not replace it with the exact value300. Application L2/L5 intentionally unused.",
+      "scope_label": "KDIGO A 範本（條件未確認）",
+      "applicability_note": "依 KDIGO 白蛋白尿 A 類別對照原始比值，保留定量／半定量方法差異；本筆年齡、採檢條件與異常持續性未確認，不由一次結果診斷慢性腎臟病。",
+      "conditions": [
+        "Named albuminuria categories only; age, collection conditions, assay equivalence and persistence are not verified from an imported result."
+      ]
     },
     "pcr_categories": {
       "kind": "numeric_bands",
       "unit": "mg/g",
       "domain_min": "0",
       "sources": [
-        "kdigo_pcr_table"
+        "kdigo_pcr_table",
+        "kdigo_ckd"
       ],
       "bands": [
         {
@@ -646,7 +660,12 @@
           "category": "severely_increased_protein"
         }
       ],
-      "meaning": "Historical total-protein categories; not albumin A-stages and not a validated five-level risk scale."
+      "meaning": "Historical total-protein categories; not albumin A-stages and not a validated five-level risk scale.",
+      "scope_label": "成人 PCR 歷史範本（條件未確認）",
+      "applicability_note": "依 KDIGO 2012 歷史總蛋白比值分界作成人範本對照；本筆年齡與採檢條件未確認，兒童正常範圍不同。此分類不是白蛋白尿 A 分期，也不是個人風險程度。",
+      "conditions": [
+        "Historical adult total-protein profile; pediatric reference limits differ. Age and collection conditions are not inferred from comparison scenarios."
+      ]
     },
     "fasting_glucose_screening": {
       "kind": "numeric_bands",
@@ -687,7 +706,9 @@
         "Fasting confirmed; diagnostic labels apply to screening, not to reclassification of treated diabetes."
       ],
       "meaning": "High-glucose band is a diagnostic category, not a severity ceiling. Preserve separate critical alerts and symptoms; this profile does not diagnose or exclude DKA/HHS.",
-      "clinical_severity_is_graded": false
+      "clinical_severity_is_graded": false,
+      "scope_label": "空腹血糖篩檢範本（預設未啟用）",
+      "applicability_note": "須確認空腹與篩檢適用情境；不以一次結果確診，也不將已治療的糖尿病重新分類。"
     },
     "hba1c_screening": {
       "kind": "numeric_bands",
@@ -728,7 +749,9 @@
       ],
       "meaning": "Screening cutoffs are not individual treatment targets. No invented HbA1c L4/L5 cutoffs.",
       "requires_live_lower_reference": true,
-      "below_reference_policy": "low_flag_and_no_green"
+      "below_reference_policy": "low_flag_and_no_green",
+      "scope_label": "糖化血色素篩檢範本（預設未啟用）",
+      "applicability_note": "須核對檢測方法、紅血球壽命與篩檢適用情境；篩檢界值不是個人治療目標，也不重新分類已治療的糖尿病。"
     },
     "blood_glucose_low_alerts": {
       "kind": "numeric_bands",
@@ -757,7 +780,9 @@
         }
       ],
       "meaning": "Source hypoglycemia categories mapped to application alert colors; ADA level3 requires clinical assistance and cannot be inferred numerically.",
-      "description": "血糖低於70 mg/dL的警示與是否空腹無關；ADA臨床第3級須依是否需他人協助判定。"
+      "description": "血糖低於70 mg/dL的警示與是否空腹無關；ADA臨床第3級須依是否需他人協助判定。",
+      "scope_label": "ADA 低血糖數值提醒",
+      "applicability_note": "依 ADA 低血糖數值類別加上獨立提醒，不要求空腹；未據此判斷糖尿病病史或目前症狀。ADA 臨床第 3 級需他人協助等事件資訊，不能由數值推定。"
     },
     "vgh_alert_serum_potassium": {
       "kind": "numeric_bands",
@@ -792,7 +817,9 @@
         }
       ],
       "meaning": "Unconditioned Taipei VGH notification thresholds mapped to application alerts. No assertion of current emergency or originating laboratory critical flag.",
-      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。"
+      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。",
+      "scope_label": "臺北榮總通報門檻參考",
+      "applicability_note": "這是依臺北榮總公開通報政策加上的具名提醒；原院方法與個別臨床情境未由程式確認，並非原院危急值旗標或通用危險等級，歷史值不表示目前急症。"
     },
     "vgh_alert_serum_total_calcium": {
       "kind": "numeric_bands",
@@ -827,7 +854,9 @@
         }
       ],
       "meaning": "Unconditioned Taipei VGH notification thresholds mapped to application alerts. No assertion of current emergency or originating laboratory critical flag.",
-      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。"
+      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。",
+      "scope_label": "臺北榮總通報門檻參考",
+      "applicability_note": "這是依臺北榮總公開通報政策加上的具名提醒；原院方法與個別臨床情境未由程式確認，並非原院危急值旗標或通用危險等級，歷史值不表示目前急症。"
     },
     "vgh_alert_serum_sodium": {
       "kind": "numeric_bands",
@@ -854,7 +883,9 @@
         }
       ],
       "meaning": "Unconditioned Taipei VGH notification thresholds mapped to application alerts. No assertion of current emergency or originating laboratory critical flag.",
-      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。"
+      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。",
+      "scope_label": "臺北榮總通報門檻參考",
+      "applicability_note": "這是依臺北榮總公開通報政策加上的具名提醒；原院方法與個別臨床情境未由程式確認，並非原院危急值旗標或通用危險等級，歷史值不表示目前急症。"
     },
     "vgh_alert_serum_chloride": {
       "kind": "numeric_bands",
@@ -881,7 +912,9 @@
         }
       ],
       "meaning": "Unconditioned Taipei VGH notification thresholds mapped to application alerts. No assertion of current emergency or originating laboratory critical flag.",
-      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。"
+      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。",
+      "scope_label": "臺北榮總通報門檻參考",
+      "applicability_note": "這是依臺北榮總公開通報政策加上的具名提醒；原院方法與個別臨床情境未由程式確認，並非原院危急值旗標或通用危險等級，歷史值不表示目前急症。"
     },
     "vgh_alert_blood_hemoglobin": {
       "kind": "numeric_bands",
@@ -900,7 +933,9 @@
         }
       ],
       "meaning": "Unconditioned Taipei VGH notification thresholds mapped to application alerts. No assertion of current emergency or originating laboratory critical flag.",
-      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。"
+      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。",
+      "scope_label": "臺北榮總通報門檻參考",
+      "applicability_note": "這是依臺北榮總公開通報政策加上的具名提醒；原院方法與個別臨床情境未由程式確認，並非原院危急值旗標或通用危險等級，歷史值不表示目前急症。"
     },
     "vgh_alert_blood_hematocrit": {
       "kind": "numeric_bands",
@@ -927,7 +962,9 @@
         }
       ],
       "meaning": "Unconditioned Taipei VGH notification thresholds mapped to application alerts. No assertion of current emergency or originating laboratory critical flag.",
-      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。"
+      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。",
+      "scope_label": "臺北榮總通報門檻參考",
+      "applicability_note": "這是依臺北榮總公開通報政策加上的具名提醒；原院方法與個別臨床情境未由程式確認，並非原院危急值旗標或通用危險等級，歷史值不表示目前急症。"
     },
     "vgh_alert_blood_platelet_count": {
       "kind": "numeric_bands",
@@ -946,7 +983,9 @@
         }
       ],
       "meaning": "Unconditioned Taipei VGH notification thresholds mapped to application alerts. No assertion of current emergency or originating laboratory critical flag.",
-      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。"
+      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。",
+      "scope_label": "臺北榮總通報門檻參考",
+      "applicability_note": "這是依臺北榮總公開通報政策加上的具名提醒；原院方法與個別臨床情境未由程式確認，並非原院危急值旗標或通用危險等級，歷史值不表示目前急症。"
     },
     "vgh_alert_blood_wbc_count": {
       "kind": "numeric_bands",
@@ -973,7 +1012,9 @@
         }
       ],
       "meaning": "Unconditioned Taipei VGH notification thresholds mapped to application alerts. No assertion of current emergency or originating laboratory critical flag.",
-      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。"
+      "description": "達臺北榮總通報門檻參考，建議與醫療人員核對。這是本應用依該院公開通報政策加上的提醒，並非原院危急值旗標；歷史結果不代表目前正在發生急症。",
+      "scope_label": "臺北榮總通報門檻參考",
+      "applicability_note": "這是依臺北榮總公開通報政策加上的具名提醒；原院方法與個別臨床情境未由程式確認，並非原院危急值旗標或通用危險等級，歷史值不表示目前急症。"
     }
   },
   "optional_institutional_profiles": {

@@ -10,6 +10,7 @@ import { activeScenario, intervalLabel, referenceForRecord, recordScenarioStatus
 import { TrendChart } from './TrendChart';
 import { Copyright } from './ui';
 import { laboratoryDateSummary } from './coverage-status';
+import { gradingContextText } from './grading-context';
 
 export function MultiIndicator({ groups, settings, onDetail }: {
   groups: MeasurementGroup[]; settings: Settings; onDetail: (record: LabRecord) => void;
@@ -62,13 +63,14 @@ export function AnalysisExport({ records }: { records: LabRecord[] }) {
   const { preferences, birthDate } = analysis;
   const csvCell = (value: string) => `"${value.replaceAll('"', '""')}"`;
   function exportAnalysis() {
-    const rows = [['檢查日期', '項目', '原始結果', '單位', '原院參考', '原院旗標', '院所', '情境模式', '當次情境年齡', '性別條件', '具名範本', '情境判讀', '來源']];
+    const rows = [['檢查日期', '項目', '原始結果', '單位', '原院參考', '原院旗標', '院所', '情境模式', '當次情境年齡', '性別條件', '具名範本', '情境判讀', '來源', '原有顯示分級依據與適用限制', '上傳日期（來源原文）', '資料來源名稱（原文）']];
     for (const record of records) {
       const scenario = activeScenario(preferences, record.exam_date, birthDate);
       const interval = referenceForRecord(record, preferences, birthDate);
       rows.push([record.exam_date, record.display_name, record.result, record.unit, record.reference_text, record.official_flag ?? '', record.institution,
         preferences.mode, String(scenario?.age ?? ''), scenario?.sex ?? '', interval ? intervalLabel(interval) : '',
-        recordScenarioStatus(record, preferences, birthDate), interval?.source ?? '']);
+        recordScenarioStatus(record, preferences, birthDate), interval?.source ?? '', gradingContextText(record),
+        record.raw_upload_date ?? record.upload_date ?? '', record.source_name ?? '']);
     }
     // Formula-like text is escaped even inside quoted CSV fields.
     const safe = rows.map(row => row.map(value => csvCell(/^[\s]*[=+\-@\t\r]/.test(value) ? `'${value}` : value)).join(',')).join('\r\n');

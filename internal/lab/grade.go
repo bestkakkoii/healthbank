@@ -235,15 +235,18 @@ func (c *Catalog) Normalize(raw []RawRecord, s *Settings) []Record {
 		case "within":
 			rec.Level = pointer(1)
 			rec.RuleSource = "live_report"
+			setGradingContext(&rec, "source_reference", "report_reference", c.Rules["report_reference"])
 			rec.Interpretation = "位於本筆報告的原院參考區間。"
 		case "high", "low":
 			rec.Level = pointer(3)
 			rec.RuleSource = "live_report"
+			setGradingContext(&rec, "source_reference", "report_reference", c.Rules["report_reference"])
 			rec.Interpretation = "偏離本筆報告的原院參考區間；顏色不代表已校準的疾病嚴重度。"
 		}
 		rule := c.Rules[d.Rule]
 		if rule.Kind == "numeric_bands" {
 			if ruleMatchesUnit(rule, r.Unit) && numericKind(p) {
+				setGradingContext(&rec, "profile", d.Rule, rule)
 				if level, ok := classifyBands(p, sourceBands(rule)); ok {
 					rec.Level = level
 					rec.RuleSource = strings.Join(rule.Sources, ",")
@@ -267,14 +270,17 @@ func (c *Catalog) Normalize(raw []RawRecord, s *Settings) []Record {
 			token := strings.ToLower(strings.TrimSpace(r.Result))
 			switch {
 			case containsToken(rule.NormalText, token):
+				setGradingContext(&rec, "qualitative", d.Rule, rule)
 				rec.Level = pointer(1)
 				rec.RuleSource = "qualitative_reference"
 				rec.Interpretation = "符合此項目的預期定性結果；不代表其他檢查均正常。"
 			case containsToken(rule.PositiveText, token):
+				setGradingContext(&rec, "qualitative", d.Rule, rule)
 				rec.Level = pointer(3)
 				rec.RuleSource = "qualitative_reference"
 				rec.Interpretation = "定性／半定量異常標記；加號數量不直接對應危險級別。"
 			case containsToken(rule.ReviewText, token):
+				setGradingContext(&rec, "qualitative", d.Rule, rule)
 				rec.Level = nil
 				rec.RuleSource = "qualitative_reference"
 				rec.Interpretation = "微量／弱反應的意義依檢驗方法而異，部分方法列為可接受；須核對原院參考說明，未直接指定異常級別。"
@@ -287,6 +293,7 @@ func (c *Catalog) Normalize(raw []RawRecord, s *Settings) []Record {
 				// verified-unit thresholds to a later unit-less source result.
 				rec.Interpretation += " 個人設定尚未套用，須先確認此筆資料的量測單位。"
 			} else if len(o.Bands) > 0 {
+				setGradingContext(&rec, "personal", "personal", Rule{})
 				if v, matched := classifyBands(p, o.Bands); matched {
 					rec.Level = v
 					rec.RuleSource = "personal"
@@ -297,6 +304,7 @@ func (c *Catalog) Normalize(raw []RawRecord, s *Settings) []Record {
 					rec.Interpretation = "結果未完整落在單一個人設定區間；未指定單一分級。"
 				}
 			} else if o.ReferenceLow != nil || o.ReferenceHigh != nil {
+				setGradingContext(&rec, "personal", "personal", Rule{})
 				status := referenceStatus(p, o.ReferenceLow, o.ReferenceHigh)
 				switch status {
 				case "within":
@@ -319,6 +327,7 @@ func (c *Catalog) Normalize(raw []RawRecord, s *Settings) []Record {
 			}
 			bands := sourceBands(alertRule)
 			if alert, ok := guaranteedAlertFloor(p, bands); ok {
+				appendGradingContext(&rec, "independent_alert", alertID, alertRule)
 				if rec.Level == nil || *rec.Level < *alert {
 					rec.Level = alert
 				}

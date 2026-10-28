@@ -50,6 +50,30 @@ positive exact standardized blood creatinine and confirmation of stable renal
 function/formula suitability. The output is explicitly a derived scenario estimate,
 not a diagnosis, a dose recommendation, or a replacement for reported eGFR.
 Every original row, including same-date duplicates, remains individually selectable.
+Confirmation is bound to the selected observation's content-derived record ID.
+A same-session refresh that replaces the selected observation requires explicit
+confirmation again, even when the component remains open and selects a new row
+automatically. No confirmation is transferred merely because the analyte is the same.
+
+## Applied grading context
+
+Baseline colors now include computed `grading_contexts` identifying the actual
+source-reference, named-profile, qualitative, personal or independent-alert basis.
+These are qualifications of a numeric comparison, not proof that the individual
+meets the source population, assay or collection requirements. The catalog exposes
+the preserved `conditions` plus readable `scope_label` and `applicability_note`.
+Hypothetical age/sex settings and transient birth-date comparisons do not certify
+baseline-profile eligibility. Adult fasting TG and historical adult PCR profiles,
+KDIGO classifications and independently triggered alerts retain their explicit
+limits; no numerical bands or source abnormal flags are changed.
+
+A personal override replaces the unused base context; independent triggered alert
+contexts remain separately visible. Compact observed-value labels link the color to
+its basis, and corresponding section/detail notes provide the full qualification.
+CSV, SVG and print presentations retain the explanation. Raw portable laboratory
+documents contain source fields only and regenerate grading context on import.
+The exact sources and population limitations are documented in the
+[clinical reference](clinical-reference.zh-TW.md#分級依據與尚未確認的適用條件).
 
 ## Display terminology and original source fields
 

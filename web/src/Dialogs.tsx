@@ -28,6 +28,7 @@ import {
 } from './model';
 import { Alert, Icon, LevelBadge, Loading, Modal } from './ui';
 import { createTerminologyIndex, groupTerminology, recordTerminology, type TerminologyDisplay } from './terminology-display';
+import { recordGradingContexts } from './grading-context';
 
 import {
   forgetAllRememberedUsers, forgetRememberedUser, maskedIdentity,
@@ -192,7 +193,7 @@ export function LoginDialog({
         </span>
         <div>
           <b>衛生福利部中央健康保險署</b>
-          <span>健康存摺 · 其他檢驗資料</span>
+          <span>健康存摺 · 健康資料服務</span>
         </div>
         <a
           href="https://myhealthbank.nhi.gov.tw/IHKE3000/IHKE3099S01"
@@ -490,6 +491,7 @@ export function DetailDialog({
   const display = recordTerminology(record, terminology);
   const item = terminology.byKey.get(record.configuration_key) ?? terminology.byID.get(record.item_id);
   const sources = catalog.sources.filter((s) => item?.sources.includes(s.id));
+  const gradingContexts = recordGradingContexts(record);
   return (
     <Modal
       title={display.name}
@@ -508,6 +510,10 @@ export function DetailDialog({
         </div>
         <LevelBadge level={record.level} />
       </div>
+      {gradingContexts.length > 0 && <section className="detail-notes grading-context-details" aria-label="分級依據與適用限制">
+        <h3>分級依據與適用限制</h3>
+        {gradingContexts.map(context => <p key={context.key}><strong>{context.label}</strong>：{context.note}</p>)}
+      </section>}
       <div className="source-flag">
         <Icon name="info" />
         <b>{sourceFlag(record.reference_status)}</b>
@@ -525,6 +531,14 @@ export function DetailDialog({
         <div className="detail-wide">
           <dt>原始檢驗名稱</dt>
           <dd>{record.item_name || '未提供'}</dd>
+        </div>
+        <div>
+          <dt>原始單位</dt>
+          <dd>{record.unit || '未提供'}</dd>
+        </div>
+        <div>
+          <dt>原院旗標原文</dt>
+          <dd>{record.official_flag || '未提供'}</dd>
         </div>
         <div>
           <dt>檢查日期</dt>
@@ -600,7 +614,7 @@ export function DetailDialog({
         </section>
       )}
       <p className="helper-text">
-        顏色依目前適用規則與個人設定呈現。原始結果與原院標記始終保留；單一檢驗值不代表完整診斷。
+        顏色依列出的來源範本或個人設定呈現，未確認的適用條件另行標明。原始結果與原院標記始終保留；單一檢驗值不代表完整診斷。
       </p>
       <div className="dialog-actions">
         <button className="button secondary" onClick={onConfigure} disabled={!canConfigure}>
@@ -675,6 +689,9 @@ function DefaultRuleSummary({
       <summary>預設規則、獨立警示與參考來源</summary>
       <div>
         <p>{item.description}</p>
+        {rule.scopeLabel && <p><strong>{rule.scopeLabel}</strong></p>}
+        {rule.applicabilityNote && <p>{rule.applicabilityNote}</p>}
+        {rule.conditions.length > 0 && <details><summary>來源適用條件摘要</summary><ul>{rule.conditions.map(condition => <li key={condition}>{condition}</li>)}</ul></details>}
         {rule.description && rule.description !== item.description && <p>{rule.description}</p>}
         {rule.kind === 'reference_interval' && (
           <p>預設採各筆原院參考值：區間內顯示 L1，超出顯示 L3，資料不足顯示未判定。</p>
@@ -713,9 +730,12 @@ function DefaultRuleSummary({
         {alerts.length > 0 && (
           <section className="independent-alerts">
             <h3>獨立警示（個人設定不會降低）</h3>
-            <p>僅在檢體、單位與適用條件可確認時套用；歷史數值的警示不代表目前已發生急症。</p>
+            <p>先核對來源項目與單位，再比對具名門檻；人口、方法及採檢條件未經確認的部分會明列。歷史數值的警示不代表目前已發生急症。</p>
             {alerts.map((alert, index) => (
               <div key={index}>
+                {alert.scopeLabel && <p><strong>{alert.scopeLabel}</strong></p>}
+                {alert.applicabilityNote && <p>{alert.applicabilityNote}</p>}
+                {alert.conditions.length > 0 && <details><summary>來源適用條件摘要</summary><ul>{alert.conditions.map(condition => <li key={condition}>{condition}</li>)}</ul></details>}
                 {alert.description && <p>{alert.description}</p>}
                 <p>適用單位：{alert.unit || group.unit}</p>
                 <RuleBandsTable bands={alert.bands} />

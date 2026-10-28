@@ -13,6 +13,8 @@ import {
 } from './model';
 import { Copyright, Icon, LevelBadge } from './ui';
 import { groupTerminology, type TerminologyIndex } from './terminology-display';
+import { summarizeGradingContexts } from './grading-context';
+import { GradingContextLabel } from './GradingContextNotes';
 
 const PRINT_ITEM_COLUMNS = 4;
 
@@ -249,6 +251,7 @@ function ResultCell({
               <LevelBadge level={record.level} compact />
               {record.official_flag === '1' && <span className="official-flag-badge">原院異常</span>}
             </span>
+            <GradingContextLabel record={record} />
             <ScenarioBadge record={record} />
             {record.institution && <span className="cell-institution">{record.institution}</span>}
             {reference !== recentReference && (
@@ -301,6 +304,10 @@ export function ComparisonTable(props: ComparisonTableProps) {
     () => new Map(groups.map(group => [group.id, groupTerminology(group, terminology)])),
     [groups, terminology],
   );
+  const gradingByGroup = useMemo(
+    () => new Map(groups.map(group => [group.id, summarizeGradingContexts(group.records)])),
+    [groups],
+  );
   const printBatches = Array.from(
     { length: Math.ceil(groups.length / PRINT_ITEM_COLUMNS) },
     (_, index) => groups.slice(index * PRINT_ITEM_COLUMNS, (index + 1) * PRINT_ITEM_COLUMNS),
@@ -327,6 +334,7 @@ export function ComparisonTable(props: ComparisonTableProps) {
               const display = terminologyByGroup.get(group.id);
               const name = display?.name || group.name;
               const originalNames = display?.originalNames ?? [group.abbreviation];
+              const gradingContexts = gradingByGroup.get(group.id) ?? [];
               return (
                 <th
                   scope="col"
@@ -358,6 +366,10 @@ export function ComparisonTable(props: ComparisonTableProps) {
                       <div className="header-reference">
                         最近原院參考：{group.records[0] ? referenceLabel(group.records[0]) : '未提供'}
                       </div>
+                      {gradingContexts.length > 0 && <details className="grading-context-notes" open={!interactive}>
+                        <summary>分級依據與限制</summary>
+                        {gradingContexts.map(context => <p key={context.key}><strong>{context.label}</strong>：{context.note}</p>)}
+                      </details>}
                     </div>
                   </div>
                   {interactive && (

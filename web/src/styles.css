@@ -4330,6 +4330,13 @@
 .portable-export .button { white-space: normal; overflow-wrap: anywhere; max-inline-size: 100%; }
 .portable-export .helper-text { margin-block: .4rem; }
 .terminology-english { display: block; margin-top: .2rem; color: var(--ink-muted); font-size: .85em; font-weight: 400; line-height: 1.4; overflow-wrap: anywhere; text-transform: none; }
+.grading-context-label { display: block; margin-top: .25rem; color: var(--ink-muted); font-size: .8em; font-weight: 400; line-height: 1.5; overflow-wrap: anywhere; }
+.grading-context-notes { margin-block: .75rem; font-size: .9rem; line-height: 1.6; overflow-wrap: anywhere; }
+.grading-context-notes > summary { cursor: pointer; padding-block: .3rem; }
+.grading-context-notes ul { padding-left: 1.4rem; }
+.grading-context-notes li + li { margin-top: .65rem; }
+.grading-context-notes p { margin-block: .3rem; }
+.grading-legend-scope { flex-basis: 100%; color: var(--ink-muted); font-size: .85em; line-height: 1.5; overflow-wrap: anywhere; }
 .device-health-cache { min-inline-size: 0; }
 .device-health-cache p { overflow-wrap: anywhere; }
 .device-health-cache .button-row { flex-wrap: wrap; margin-block: .7rem; }

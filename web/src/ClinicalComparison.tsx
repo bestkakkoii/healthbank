@@ -32,7 +32,7 @@ export function ClinicalComparison({ records }: { records: LabRecord[] }) {
   const analysis = useAnalysis();
   const [saveMessage, setSaveMessage] = useState('');
   const [saving, setSaving] = useState(false);
-  const [confirmed, setConfirmed] = useState(false);
+  const [confirmedRecordID, setConfirmedRecordID] = useState<string | null>(null);
   const candidates = useMemo(() => records.filter(record => recordAnalyte(record) === analyte)
     .sort((left, right) => right.exam_date.localeCompare(left.exam_date) || left.id.localeCompare(right.id)), [records, analyte]);
   if (!analysis) return null;
@@ -48,6 +48,9 @@ export function ClinicalComparison({ records }: { records: LabRecord[] }) {
     finally { setSaving(false); }
   }
   const selected = candidates.find(record => record.id === selectedId) ?? candidates[0];
+  // A same-session refresh can replace the selected observation automatically.
+  // Record IDs bind every raw field, so consent never transfers to a new row.
+  const confirmed = selected !== undefined && confirmedRecordID === selected.id;
   const input = selected ? comparisonInput(selected, analyte) : null;
   const value = input?.value ?? null;
   const activePerson = birthDate
@@ -61,12 +64,12 @@ export function ClinicalComparison({ records }: { records: LabRecord[] }) {
       <label className="field">參考項目
         <select value={analyte} onChange={event => {
           const next = ANALYTE_KEYS.find(key => key === event.target.value);
-          if (next) setAnalyte(next); setSelectedId(''); setConfirmed(false);
+          if (next) setAnalyte(next); setSelectedId(''); setConfirmedRecordID(null);
         }}>{ANALYTE_KEYS.map(key => <option key={key} value={key}>{COMPARISON_ANALYTES[key].name}</option>)}</select>
       </label>
       <label className="field">原始檢驗紀錄
         <select value={selected?.id ?? ''} disabled={candidates.length === 0} onChange={event => {
-          setSelectedId(event.target.value); setConfirmed(false);
+          setSelectedId(event.target.value); setConfirmedRecordID(null);
         }}>{candidates.length === 0 ? <option value="">尚無結果，仍可比較內建區間</option> : candidates.map(record =>
           <option key={record.id} value={record.id}>{dateLabel(record.exam_date)} · {record.result} {record.unit} · {record.institution} · {record.id.slice(-6)}</option>)}</select>
       </label>
@@ -100,7 +103,7 @@ export function ClinicalComparison({ records }: { records: LabRecord[] }) {
       <ScenarioFields label="比較情境" value={comparison} onChange={setComparison} />
     </div>
     {analyte === 'creatinine' && <label className="checkbox-label scenario-confirmation"><input type="checkbox" checked={confirmed}
-      onChange={event => setConfirmed(event.target.checked)} />
+      onChange={event => setConfirmedRecordID(event.target.checked && selected ? selected.id : null)} />
       <span>另作 CKD-EPI 2021 情境估算：我已確認所選檢驗為 IDMS 標準化血液肌酸酐、腎功能穩定，且此成人公式適用。不用來自行調整藥量。</span>
     </label>}
     <div className="scenario-grid" aria-live="polite" aria-atomic="true">
