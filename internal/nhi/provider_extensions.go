@@ -100,6 +100,8 @@ func providerExtraDetailRequest(category string, ref providerReference) (provide
 			request.sections[0].source = "健康存摺／行動裝置運動資料來源"
 		}
 		return request, err
+	case "diet":
+		return providerDietDetailRequest(ref), nil
 	}
 	return providerRequest{}, failure("INVALID_INPUT", "此資料類別未提供明細。")
 }

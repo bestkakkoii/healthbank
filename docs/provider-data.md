@@ -112,7 +112,7 @@ a statement that every authenticated person is eligible for each service.
 | `family_doctor` | `ihke3720s01/SP_IHKE3720S01`, objects `sP_IHKE3720S01`, `sP_IHKE3720S02` | Existing plan status and care provider, no consent/enrollment mutation. |
 | `family_followup` | `ihke3721s01/SP_IHKE3721S01`, root `sP_IHKE3721S02` | Existing follow-up items with explicit period detail searches. |
 | `family_health_followup` | `ihke3726s01/SP_IHKE3726S01`, array `sP_IHKE3726S02` and object `bp_IHKE3726S02` | Health and blood-pressure follow-up items, with full-period detail search; suggested next-check dates remain metadata, not observed dates. |
-| `diet` | POST `ihke3206s01/IHKE3206S01`, root `dietRecordList` | Existing self-entered date, food text and source calorie estimate; not re-estimated. |
+| `diet` | POST `ihke3206s01/IHKE3206S01`, root `dietRecordList`; POST `SP_IHKE3206S08` per meal | Existing self-entered date, food text, source calorie estimate and selected-food details; not re-estimated. |
 | `exercise` | POST `ihke3207s02/page_load`, root `sportsRecordList` | Existing self-entered activity; duration/source intensity available in details. |
 | `device_activity` | POST `IHKEMASTER/SP_IHKE3099S05`, body `{ "c_parent_fun_code": "IHKE3207" }`, root `sp_IHKE3207S01` | Discovers only source-provided `IHKE3207S05?s=...` activity selectors, then reads period series and nested device-day records. |
 | `menstrual` | `ihke3208s01/SP_IHKE3208S06`, root `sP_IHKE3208S06` | Existing recorded periods; no cycle/fertility prediction or calendar mutation. |
@@ -203,6 +203,19 @@ prove that an absent source menu means the person has no device records.
 
 Exercise detail POST `ihke3207s02/SP_IHKE3207S04` sends only `c_rowid` and reads
 `oneRecordList`; no save/delete or calorie-calculation endpoints are invoked.
+
+The diet source's Vue loop passes its iteration key to the existing record read
+`ihke3206s01/SP_IHKE3206S08`. Accordingly, the bounded `dietRecordList` parser
+accepts arrays and keyed objects: array entries bind their numeric index, while
+object entries bind the exact string key. The `{ "DATA01_SEQ": ... }` read body
+preserves that number/string distinction. A similarly named property inside a
+row cannot replace the observed selector, and duplicate object keys are rejected.
+The response must report boolean `ResultStatus: true` and include
+`IsSelectFoodList`; source dates, hours, minutes and each selected `CODE` remain
+separate exact strings. The general `foodList` catalog is not evidence of actual
+intake and is not used to recalculate calories, nutrients or portions. None of the
+adjacent save, delete or date-edit operations is called.
+
 Osteoporosis detail `IHKE3411S02/page_load?crid=...&ctype=...` reads report fields
 and delegates any source-provided image preparation/download references to the
 document connector.

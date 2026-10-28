@@ -157,6 +157,7 @@ func buildProviderSpecs() map[string]providerSpec {
 	followupSpec.info.RangeMode = "date_search"
 	items["family_followup"] = followupSpec
 	diet := providerSectionSpec("dietRecordList", "既有飲食紀錄", "健康存摺／使用者自行記錄", "eatDate", []fieldSpec{{"eatDate", "記錄日期（原文）", ""}, {"foodName", "來源食物名稱", ""}, {"totalCal", "來源熱量估值（未重新計算）", ""}})
+	diet.keyed, diet.detail = true, true
 	add("diet", "既有飲食紀錄", "自行記錄來源", sourceCoverage+"只讀取已存在的自行紀錄，不要求打卡或新增官方資料。", providerRequest{path: "/api/ihke3000/ihke3206s01/IHKE3206S01", method: http.MethodPost, sections: []providerSection{diet}})
 	exercise := providerSectionSpec("sportsRecordList", "既有運動紀錄", "健康存摺／使用者自行記錄", "SPORT_DATE", []fieldSpec{{"SPORT_DATE", "記錄日期（原文）", ""}, {"CODE_NAME", "來源運動項目", ""}, {"TOT_CAL", "來源消耗熱量估值（未重新計算）", ""}})
 	exercise.detail = true

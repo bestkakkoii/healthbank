@@ -34,6 +34,7 @@ type providerSection struct {
 	root, title, source, date, end, institution, titleField string
 	fields                                                  []fieldSpec
 	object                                                  bool
+	keyed                                                   bool
 	detail                                                  bool
 }
 
@@ -41,7 +42,7 @@ type providerRequest struct {
 	path     string
 	method   string
 	params   url.Values
-	payload  map[string]string
+	payload  any
 	sections []providerSection
 }
 
@@ -86,6 +87,10 @@ func providerSectionRows(object wireRow, section providerSection) ([]wireRow, bo
 	}
 	if bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
 		return []wireRow{}, true, nil
+	}
+	if section.keyed {
+		rows, err := providerDietRows(raw)
+		return rows, true, err
 	}
 	if section.object {
 		row, err := providerObject(raw)
@@ -411,7 +416,10 @@ func providerMakeReference(category string, row wireRow, entry SupplementEntry, 
 	case "device_activity":
 		ref.rowID, err = providerDeviceSelector(row)
 	case "diet":
-		ref.rowID, err = rowText(row, "DATA01_SEQ")
+		ref.rowID, err = rowText(row, providerDietKey)
+		if raw := bytes.TrimSpace(row[providerDietKey]); len(raw) > 0 && raw[0] != '"' {
+			ref.kind = "array_index"
+		}
 	case "glucose":
 		ref.rowID = "09006C" // fixed HbA1c source selector in IHKE3406S01
 	case "osteoporosis":
@@ -581,11 +589,12 @@ func providerStageChildRefresh(current map[string]providerReference, parent stri
 
 func (s *Session) providerPhysiologyRaw(ctx context.Context, report *SupplementReport, category, parent string, ref providerReference, refs map[string]providerReference) error {
 	fields := []fieldSpec{{"code", "來源量測項目代碼", ""}, {"create_DATE", "量測日期（原文）", ""}, {"time", "時段（原文）", ""}, {"value", "來源量測值（原文）", ""}, {"unit_DATA", "單位（原文）", ""}, {"txt_DATE", "來源編輯時間（原文，非量測日期）", ""}, {"abnormal_Status", "來源旗標（原文）", ""}}
-	request := providerRequest{path: "/api/ihke3000/ihke3205s02/page_load", method: http.MethodPost, payload: map[string]string{"cCode": ref.rowID}, sections: []providerSection{providerSectionSpec("sP_IHKE3205S04", ref.title+"原始紀錄", "健康存摺／生理量測原始紀錄（可含自行記錄）", "create_DATE", fields)}}
+	payload := map[string]string{"cCode": ref.rowID}
+	request := providerRequest{path: "/api/ihke3000/ihke3205s02/page_load", method: http.MethodPost, payload: payload, sections: []providerSection{providerSectionSpec("sP_IHKE3205S04", ref.title+"原始紀錄", "健康存摺／生理量測原始紀錄（可含自行記錄）", "create_DATE", fields)}}
 	if category == "device_activity" {
 		request.path = "/api/ihke3000/ihke3207s05/page_load"
-		request.payload["cSDate"] = strings.ReplaceAll(ref.query.StartDate, "-", "")
-		request.payload["cEDate"] = strings.ReplaceAll(ref.query.EndDate, "-", "")
+		payload["cSDate"] = strings.ReplaceAll(ref.query.StartDate, "-", "")
+		payload["cEDate"] = strings.ReplaceAll(ref.query.EndDate, "-", "")
 		request.sections[0].source = "健康存摺／行動裝置運動原始紀錄"
 	}
 	object, err := s.providerRead(ctx, request)
@@ -646,6 +655,18 @@ func (s *Session) providerPhysiologyRaw(ctx context.Context, report *SupplementR
 func providerVerifyDetailIdentity(category string, object wireRow, ref providerReference) error {
 	var rows []wireRow
 	switch category {
+	case "diet":
+		var success bool
+		if raw, present := object["resultstatus"]; !present || json.Unmarshal(raw, &success) != nil {
+			return changedError()
+		}
+		if !success {
+			return failure("REQUEST_FAILED", "官方未提供此筆飲食明細，請重新取得來源清單後再試。")
+		}
+		if _, present := object["isselectfoodlist"]; !present {
+			return changedError()
+		}
+		return nil
 	case "e_prescriptions":
 		raw, ok := object["treatdata"]
 		if !ok || bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
