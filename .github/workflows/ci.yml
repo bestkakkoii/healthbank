@@ -63,6 +63,8 @@ jobs:
         run: npm --prefix web run build
       - name: Verify frontend data handling
         run: npm --prefix web test
+      - name: Verify release layout and private-file exclusions
+        run: python3 -W error scripts/test_release.py
       - name: Check npm dependency advisories
         run: npm --prefix web audit --audit-level=low
       - name: Verify Go formatting and module checksums

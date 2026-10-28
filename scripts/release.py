@@ -16,7 +16,7 @@ SOURCE_ROOT_FILES = {
     "go.mod", "go.sum", "LICENSE", "README.md", "README.zh-TW.md",
     "README_AI.md", "AGENTS.md", "package.json", "package-lock.json",
     "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md", "NOTICE",
-    "THIRD_PARTY_NOTICES.md", "DEPENDENCIES.md", "dependencies.lock.json",
+    "THIRD_PARTY_NOTICES.md", "DEPENDENCIES.md", "dependencies.lock.json", "RELEASE_CANDIDATE",
     "Makefile", ".gitignore", ".gitattributes", ".editorconfig",
     ".golangci.yml", ".golangci.yaml", ".goreleaser.yml", ".goreleaser.yaml",
 }
@@ -24,9 +24,18 @@ SOURCE_ROOT_DIRS = {"cmd", "internal", "web", "scripts", "docs", "deploy", ".git
 EXCLUDED_PARTS = {
     ".git", "node_modules", "dist", "data", "uploads", "upload", "reports",
     "coverage", "playwright-report", "test-results", ".cache", "__pycache__",
-    "private", "secrets", ".next", ".vite", ".tools",
+    "private", "secrets", ".next", ".vite", ".tools", ".repair",
 }
 EXCLUDED_SUFFIXES = {".sqlite", ".sqlite3", ".db", ".pem", ".key", ".p12", ".pfx", ".log", ".pyc"}
+
+
+def private_path(relative: Path) -> bool:
+    return (
+        any(part in EXCLUDED_PARTS for part in relative.parts)
+        or relative.name.startswith(".env")
+        or relative.suffix.lower() in EXCLUDED_SUFFIXES
+        or relative.name.endswith(("-wal", "-shm", "~", ".bak"))
+    )
 
 
 def source_allowed(path: Path, root: Path) -> bool:
@@ -35,13 +44,7 @@ def source_allowed(path: Path, root: Path) -> bool:
         return path.name in SOURCE_ROOT_FILES
     if relative.parts[0] not in SOURCE_ROOT_DIRS:
         return False
-    if any(part in EXCLUDED_PARTS for part in relative.parts):
-        return False
-    if path.name.startswith(".env") or path.suffix.lower() in EXCLUDED_SUFFIXES:
-        return False
-    if path.name.endswith(("-wal", "-shm", "~", ".bak")):
-        return False
-    return True
+    return not private_path(relative)
 
 
 def add_file(archive: tarfile.TarFile, file: Path, name: str, epoch: int) -> None:
@@ -71,6 +74,8 @@ def create_archive(kind: str, root: Path, destination: Path, epoch: int, prefix:
                 directories[:] = sorted(name for name in directories if name not in EXCLUDED_PARTS)
         for name in sorted(files):
             file = directory / name
+            if kind == "binary" and private_path(file.relative_to(root)):
+                raise ValueError(f"Private or temporary file in binary release input: {file.relative_to(root)}")
             if kind != "source" or source_allowed(file, root):
                 selected.append(file)
     if not selected:
