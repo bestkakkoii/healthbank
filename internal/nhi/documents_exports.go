@@ -1,4 +1,5 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
+
 package nhi
 
 import (
@@ -176,6 +177,9 @@ func (s *Session) FetchOfficialExportOptions(ctx context.Context, format string)
 				}
 			}
 		}
+	}
+	if err := validateSupplementReport(report); err != nil {
+		return report, err
 	}
 	if err := s.replaceDocumentReferences(category, "options", refs); err != nil {
 		return report, err

@@ -1,4 +1,5 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
+
 package nhi
 
 import (
@@ -166,6 +167,12 @@ func providerEntry(row wireRow, section providerSection, inherited providerRefer
 	if err != nil {
 		return entry, err
 	}
+	// Parent context is not evidence that this detail row contains source data.
+	// Check before inheritance so an empty or changed object cannot become a
+	// successful-looking observation merely by copying its parent's institution.
+	if entry.Date == "" && entry.Institution == "" && len(entry.Fields) == 0 {
+		return entry, changedError()
+	}
 	// Detail rows inherit their verified parent encounter context only when the
 	// source does not supply a separate date/institution. No measurement date is
 	// inferred: date-less numerical records keep their date empty.
@@ -174,9 +181,6 @@ func providerEntry(row wireRow, section providerSection, inherited providerRefer
 	}
 	if section.date == "@parent" {
 		entry.Date = inherited.date
-	}
-	if entry.Date == "" && entry.Institution == "" && len(entry.Fields) == 0 {
-		return entry, changedError()
 	}
 	return entry, nil
 }
@@ -329,9 +333,6 @@ func (s *Session) FetchProvider(ctx context.Context, category string, query Quer
 	if !ok {
 		return report, failure("INVALID_INPUT", "不支援此資料類別。")
 	}
-	if err := s.supplementReady(ctx); err != nil {
-		return report, err
-	}
 	report.Coverage = spec.coverage
 	resolved := query
 	if spec.info.RangeMode == "date_search" {
@@ -341,6 +342,9 @@ func (s *Session) FetchProvider(ctx context.Context, category string, query Quer
 			return report, err
 		}
 		report.StartDate, report.EndDate = resolved.StartDate, resolved.EndDate
+	}
+	if err := s.supplementReady(ctx); err != nil {
+		return report, err
 	}
 	refs := map[string]providerReference{}
 	for _, request := range spec.requests {
@@ -377,6 +381,9 @@ func (s *Session) FetchProvider(ctx context.Context, category string, query Quer
 		reference := hex.EncodeToString(key)
 		refs[reference] = providerReference{rowID: "10568", title: "血壓與心率", query: resolved}
 		report.Entries = append(report.Entries, SupplementEntry{Key: medicalKey(category, "10568", "source_index", 0), Kind: "source_index", Title: "血壓與心率資料索引", Source: "健康存摺／生理量測資料入口", Fields: []SupplementField{{Name: "資料索引", Value: "取得明細後才包含實際量測紀錄。"}}, DetailID: reference})
+	}
+	if err := validateSupplementReport(report); err != nil {
+		return report, err
 	}
 	if s.providerReferences == nil {
 		s.providerReferences = map[string]map[string]providerReference{}
@@ -548,6 +555,9 @@ func (s *Session) FetchProviderDetail(ctx context.Context, category, reference s
 			}
 		}
 	}
+	if err := validateSupplementReport(report); err != nil {
+		return report, err
+	}
 	if err := s.attachProviderDocuments(category, reference, ref, object, &report); err != nil {
 		return report, err
 	}
@@ -655,16 +665,29 @@ func (s *Session) providerPhysiologyRaw(ctx context.Context, report *SupplementR
 func providerVerifyDetailIdentity(category string, object wireRow, ref providerReference) error {
 	var rows []wireRow
 	switch category {
-	case "diet":
+	case "diet", "exercise":
 		var success bool
 		if raw, present := object["resultstatus"]; !present || json.Unmarshal(raw, &success) != nil {
 			return changedError()
 		}
 		if !success {
-			return failure("REQUEST_FAILED", "官方未提供此筆飲食明細，請重新取得來源清單後再試。")
+			return failure("REQUEST_FAILED", "官方未提供此筆自行記錄明細，請重新取得來源清單後再試。")
 		}
-		if _, present := object["isselectfoodlist"]; !present {
+		if category == "diet" {
+			if _, present := object["isselectfoodlist"]; !present {
+				return changedError()
+			}
+			return nil
+		}
+		rows, present, err := providerSectionRows(object, providerSection{root: "oneRecordList"})
+		if err != nil || !present || len(rows) == 0 {
 			return changedError()
+		}
+		for _, row := range rows {
+			id, err := rowText(row, "ROW_ID")
+			if err != nil || id != "" && id != ref.rowID {
+				return changedError()
+			}
 		}
 		return nil
 	case "e_prescriptions":

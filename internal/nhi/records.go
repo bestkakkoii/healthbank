@@ -219,12 +219,18 @@ func (v *wireText) UnmarshalJSON(raw []byte) error {
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return err
 		}
+		if len(value) > maxSourceTextBytes {
+			return errors.New("laboratory text exceeds the source field limit")
+		}
 		*v = wireText(value)
 		return nil
 	}
 	var number json.Number
 	if err := json.Unmarshal(raw, &number); err != nil {
 		return errors.New("expected a text or numeric laboratory field")
+	}
+	if len(number.String()) > maxSourceTextBytes {
+		return errors.New("laboratory number exceeds the source field limit")
 	}
 	*v = wireText(number.String())
 	return nil
@@ -257,7 +263,7 @@ func parseRecords(body []byte) ([]Record, error) {
 		return nil, changedError()
 	}
 	var upstream []wireRecord
-	if decodeJSON(trimmed, &upstream) != nil {
+	if decodeStructJSON(trimmed, &upstream) != nil {
 		return nil, changedError()
 	}
 	if len(upstream) > MaxReportRecords {
@@ -279,7 +285,17 @@ func parseRecords(body []byte) ([]Record, error) {
 }
 
 func detectAPIError(fields map[string]json.RawMessage) error {
-	value, present := fields["error_code"]
+	var value json.RawMessage
+	present := false
+	for name, candidate := range fields {
+		if !strings.EqualFold(name, "error_code") {
+			continue
+		}
+		if present {
+			return changedError()
+		}
+		value, present = candidate, true
+	}
 	if !present {
 		return nil
 	}

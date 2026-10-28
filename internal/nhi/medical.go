@@ -1,4 +1,5 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
+
 package nhi
 
 import (
@@ -145,6 +146,9 @@ func (s *Session) FetchMedical(ctx context.Context, category string, query Query
 		}
 		report.Entries = append(report.Entries, entry)
 	}
+	if err := validateSupplementReport(report); err != nil {
+		return report, err
+	}
 	if s.medicalReferences == nil {
 		s.medicalReferences = make(map[string]map[string]medicalReference)
 	}
@@ -267,6 +271,9 @@ func (s *Session) FetchMedicalDetail(ctx context.Context, category, reference st
 				}
 			}
 		}
+	}
+	if err := validateSupplementReport(report); err != nil {
+		return report, err
 	}
 	if err := s.replaceDocumentReferences(category, reference, documents); err != nil {
 		return report, err

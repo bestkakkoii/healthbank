@@ -450,7 +450,11 @@ func TestProviderObservedDetailPayloads(t *testing.T) {
 							t.Errorf("source parameter %s changed", key)
 						}
 					}
-					respondJSON(t, w, map[string]any{tc.detailRoot: []any{tc.detailRow, tc.detailRow}})
+					body := map[string]any{tc.detailRoot: []any{tc.detailRow, tc.detailRow}}
+					if tc.category == "exercise" {
+						body["ResultStatus"], body["SPORTDATE_DATE"], body["SPORTDATE_HOUR"], body["SPORTDATE_MINUTE"] = true, "2026-10-01", "08", "05"
+					}
+					respondJSON(t, w, body)
 				default:
 					t.Error("unexpected route")
 				}
@@ -463,7 +467,11 @@ func TestProviderObservedDetailPayloads(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(detail.Entries) != 2 || detail.Entries[0].Key == detail.Entries[1].Key || detail.Complete {
+			expectedEntries, firstItem := 2, 0
+			if tc.category == "exercise" {
+				expectedEntries, firstItem = 3, 1
+			}
+			if len(detail.Entries) != expectedEntries || detail.Entries[firstItem].Key == detail.Entries[firstItem+1].Key || detail.Complete {
 				t.Fatal("duplicate detail rows collapsed or completeness invented")
 			}
 			if tc.category == "body_measurements" || tc.category == "family_health_followup" {

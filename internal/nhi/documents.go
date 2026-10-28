@@ -1,4 +1,5 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
+
 package nhi
 
 import (
@@ -40,6 +41,7 @@ type DocumentRequestResult struct {
 
 type documentReference struct {
 	category, parent, kind, rowID, sourceType, sequence, format, date string
+	downloadID                                                        string
 	payload                                                           []byte
 }
 
@@ -201,6 +203,9 @@ func (s *Session) FetchImagingDetail(ctx context.Context, reference string) (Sup
 			entry.DocumentActions = append(entry.DocumentActions, DocumentAction{ID: id, Name: "請官方產製 DICOM 檔", Kind: actionRef.kind})
 		}
 		report.Entries = append(report.Entries, entry)
+	}
+	if err := validateSupplementReport(report); err != nil {
+		return report, err
 	}
 	if err := s.replaceDocumentReferences("imaging", reference, refs); err != nil {
 		return report, err
@@ -405,6 +410,9 @@ func (s *Session) FetchOfficialFiles(ctx context.Context) (SupplementReport, err
 		report.Entries = append(report.Entries, SupplementEntry{Key: medicalKey("official_files", sequence, "list", index), Kind: "document", Title: "官方產製 " + format,
 			Date: date, Source: "官方下載服務／提出日期", Fields: fields, DetailID: key})
 	}
+	if err := validateSupplementReport(report); err != nil {
+		return report, err
+	}
 	s.officialFileReferences = refs
 	s.clearDocumentCategory("official_files")
 	report.FetchedAt = time.Now().UTC().Format(time.RFC3339Nano)
@@ -476,22 +484,29 @@ func (s *Session) FetchOfficialFileDetail(ctx context.Context, reference string)
 	entry := SupplementEntry{Kind: "document", Date: ref.date, Title: "官方產製 " + ref.format, Source: "官方下載服務／提出日期", Fields: fields}
 	refs := make(map[string]documentReference)
 	if status == "1" {
+		downloadID, err := rowText(row, "did")
+		if err != nil || downloadID != "" && !usableDocumentID(downloadID) {
+			return report, changedError()
+		}
 		kind, contentType := "official_archive", "application/zip"
 		if ref.image {
 			kind = "dicom_archive"
 		} else if strings.EqualFold(ref.format, "PDF") {
 			kind, contentType = "official_pdf", "application/pdf"
 		}
-		attachment, err := addDocumentReference(refs, documentReference{category: "official_files", parent: reference, kind: kind, sequence: ref.sequence, format: ref.format, date: ref.date}, fmt.Sprintf("官方 %s 原始檔", ref.format), contentType)
+		attachment, err := addDocumentReference(refs, documentReference{category: "official_files", parent: reference, kind: kind, sequence: ref.sequence, format: ref.format, date: ref.date, downloadID: downloadID}, fmt.Sprintf("官方 %s 原始檔", ref.format), contentType)
 		if err != nil {
 			return report, err
 		}
 		entry.Attachments = []Attachment{attachment}
 	}
+	report.Entries = append(report.Entries, entry)
+	if err := validateSupplementReport(report); err != nil {
+		return report, err
+	}
 	if err := s.replaceDocumentReferences("official_files", reference, refs); err != nil {
 		return report, err
 	}
-	report.Entries = append(report.Entries, entry)
 	report.FetchedAt = time.Now().UTC().Format(time.RFC3339Nano)
 	return report, nil
 }

@@ -1,4 +1,5 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
+
 package nhi
 
 import (
@@ -109,7 +110,7 @@ func officialPDFPath(value string) (string, error) {
 	return u.EscapedPath(), nil
 }
 
-func (s *Session) downloadHospitalPDF(ctx context.Context, ref documentReference, consume func(DocumentInfo, io.Reader) error) error {
+func (s *Session) downloadHospitalPDF(ctx context.Context, ref documentReference, consume func(DocumentInfo, io.Reader) error) (resultErr error) {
 	params := url.Values{"crid": {ref.rowID}, "ctype": {ref.sourceType}}
 	body, _, err := s.request(ctx, http.MethodGet, "/api/ihke3000/IHKE3309S02/getpdf", params, nil, maxAuthBytes, true)
 	if err != nil {
@@ -120,9 +121,9 @@ func (s *Session) downloadHospitalPDF(ctx context.Context, ref documentReference
 	// after viewing. Cleanup is attempted once even when fetching the PDF fails;
 	// it only removes this generated temporary file, never the source report.
 	cleaned := false
-	cleanup := func() {
+	cleanup := func() error {
 		if cleaned {
-			return
+			return nil
 		}
 		cleaned = true
 		cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
@@ -133,11 +134,23 @@ func (s *Session) downloadHospitalPDF(ctx context.Context, ref documentReference
 			// A 200 JSON error can still report expired authentication. The public
 			// delpdf component ignores the body and provides no observed positive
 			// acknowledgment contract, so even HTTP success cannot prove deletion.
-			_, parseErr := documentObject(data)
-			s.invalidateOnAuthError(parseErr)
+			_, cleanupErr = documentObject(data)
+			s.invalidateOnAuthError(cleanupErr)
 		}
+		var upstream *Error
+		if errors.As(cleanupErr, &upstream) && upstream.Code == "SESSION_EXPIRED" {
+			return cleanupErr
+		}
+		return nil
 	}
-	defer cleanup()
+	defer func() {
+		// Known authentication expiry must reach the application even when the
+		// document itself failed. Other cleanup failures remain unconfirmed and
+		// must not replace the actual document error or discard a valid file.
+		if cleanupErr := cleanup(); cleanupErr != nil {
+			resultErr = cleanupErr
+		}
+	}()
 	row, err := documentObject(body)
 	if err != nil {
 		s.invalidateOnAuthError(err)
@@ -163,7 +176,9 @@ func (s *Session) downloadHospitalPDF(ctx context.Context, ref documentReference
 	if !bytes.HasPrefix(data, []byte("%PDF-")) {
 		return failure("DOCUMENT_INVALID", "官方回傳不是可辨識的 PDF，未將錯誤頁當成附件。")
 	}
-	cleanup()
+	if err := cleanup(); err != nil {
+		return err
+	}
 	warnings := []string{"official_temporary_cleanup_unconfirmed"}
 	return consume(DocumentInfo{Name: "healthbank-hospital-attachment.pdf", ContentType: "application/pdf", Size: int64(len(data)), Warnings: warnings}, bytes.NewReader(data))
 }
@@ -237,6 +252,16 @@ func (s *Session) downloadOfficialArtifact(ctx context.Context, ref documentRefe
 		params = url.Values{"tid": {ref.rowID}, "tid2": {ref.rowID}, "recipeType": {ref.sourceType}}
 		contentType, filename = "application/pdf", "healthbank-official-prescription.pdf"
 	}
+	// The official detail view chooses the app-download route when it returns
+	// a download ID. Keep that private selector bound to this opaque attachment;
+	// it is never accepted as an arbitrary browser parameter or exposed in JSON.
+	if ref.downloadID != "" {
+		endpoint = "/api/ihke3000/ihke3801s02/app_download"
+		if ref.kind == "dicom_archive" {
+			endpoint = "/api/ihke3000/ihke3801s02/app_imgF_download"
+		}
+		params = url.Values{"gid": {ref.downloadID}}
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, officialOrigin+endpoint+"?"+params.Encode(), nil)
 	if err != nil {
 		return failure("REQUEST_FAILED", "無法建立官方文件請求。")
@@ -274,11 +299,28 @@ func (s *Session) downloadOfficialArtifact(ctx context.Context, ref documentRefe
 	if response.ContentLength > MaxDocumentBytes {
 		return failure("RESPONSE_TOO_LARGE", "官方文件超過 500 MiB 單次下載上限。")
 	}
+	trace.setPhase(PhaseResponseBody)
 	mediaType, _, _ := mime.ParseMediaType(response.Header.Get("Content-Type"))
-	if mediaType == "text/html" || strings.Contains(mediaType, "json") {
+	if strings.Contains(mediaType, "json") {
+		// The source also reports an expired JWT as HTTP 200 JSON. Treat that
+		// exactly like the ordinary data endpoints rather than retaining an
+		// authenticated connector after an explicit expiry response.
+		body, err := io.ReadAll(io.LimitReader(response.Body, maxAuthBytes+1))
+		defer clear(body)
+		if err != nil {
+			return responseReadFailure(err, response.StatusCode)
+		}
+		if len(body) <= maxAuthBytes {
+			if _, err := documentObject(body); err != nil {
+				s.invalidateOnAuthError(err)
+				return err
+			}
+		}
 		return failure("DOCUMENT_INVALID", "官方回傳錯誤頁或 JSON，未將其當成原始文件。")
 	}
-	trace.setPhase(PhaseResponseBody)
+	if mediaType == "text/html" {
+		return failure("DOCUMENT_INVALID", "官方回傳錯誤頁或 JSON，未將其當成原始文件。")
+	}
 	reader := bufio.NewReaderSize(response.Body, 32768)
 	prefix, err := reader.Peek(5)
 	if err != nil {
