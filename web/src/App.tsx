@@ -32,6 +32,7 @@ import { PersonalRecords } from './PersonalRecords';
 import { SupplementaryData, CoverageSummary } from './SupplementaryData';
 import { DatasetTools } from './DatasetTools';
 import { PrintReport } from './PrintReport';
+import { NativePrintReport } from './NativePrintReport';
 import { laboratoryCoverageStatus, laboratoryDateSummary } from './coverage-status';
 import type { ImportedDataset, LaboratoryMetadata, DatasetProducer } from './health-dataset';
 import { emptyHealthData, type HealthDataSnapshot, type DownloadedAttachment, type DataCategory } from './health-data';
@@ -2080,6 +2081,7 @@ export default function App() {
                   navigate('trends');
                 }}
                 onSessionExpired={() => { void expireOfficialSession(); }} />
+              <NativePrintReport report={datasetExportReport} snapshot={dataSnapshot} categories={workspaceCatalog} mode={session.mode} version={session.version} reportOpen={printOpen} />
               <DatasetTools key={`dataset:${datasetVersion}`} report={datasetExportReport} snapshot={dataSnapshot} attachments={dataAttachments} catalog={workspaceCatalog}
                 producer={datasetProducer} importedFrom={importedDatasetProducer} disabled={controlsBusy} onImport={restoreDataset} />
             </>}

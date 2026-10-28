@@ -65,3 +65,34 @@ test('print completeness uses the same truthful mismatched-count model as the ap
   assert.match(data.laboratoryCoverage, /501/);
   assert.doesNotMatch(data.laboratoryCoverage, /已完成筆數核對/);
 });
+
+test('repeated interpretation text is indexed without merging measurements or distinct rules', () => {
+  const repeated = '合成判讀說明，必須完整保留而不每列重印。';
+  const records = [record(1, { interpretation: repeated, rule_source: 'synthetic_rule_a' }),
+    record(1, { interpretation: repeated, rule_source: 'synthetic_rule_a' }),
+    record(2, { interpretation: repeated, rule_source: 'synthetic_rule_b' })];
+  const html = renderPrintReport(createPrintReport(input({ report: { records, complete: false, warnings: [], fetched_at: '' } })));
+  assert.equal((html.match(/data-laboratory-row=/g) ?? []).length, 3);
+  assert.equal((html.match(/id="interpretation-/g) ?? []).length, 2);
+  assert.equal((html.match(/href="#interpretation-1"/g) ?? []).length, 2);
+  assert.equal((html.match(/href="#interpretation-2"/g) ?? []).length, 1);
+  assert.equal((html.match(/合成判讀說明/g) ?? []).length, 2);
+  assert.ok(html.includes('synthetic_rule_a') && html.includes('synthetic_rule_b'));
+});
+
+test('selected shares never expose excluded source counts or global clinical warnings', () => {
+  const source = input({ options: { ...DEFAULT_PRINT_OPTIONS, scope: 'selection', clinical: false },
+    categories: [{ id: 'medicine', label: '未分享的用藥類別', group: '合成', range_mode: 'source' }] });
+  source.report.warnings = ['未分享的全域醫療警告'];
+  source.snapshot.reports.medicine = { category: 'medicine', entries: [], coverage: '未分享的來源涵蓋說明', complete: false, fetched_at: '' };
+  source.snapshot.reports.medicine.diagnostics = [{ code: 'section_missing', severity: 'warning', section: 'nhi.medicine.root', message: '未分享的來源區塊缺失提醒' }];
+  const data = createPrintReport(source);
+  assert.deepEqual(data.coverage, []);
+  assert.deepEqual(data.warnings, []);
+  assert.match(data.laboratoryCoverage, /保留 1 筆/);
+  assert.doesNotMatch(renderPrintReport(data), /未分享的|501 筆/);
+  source.options = { ...DEFAULT_PRINT_OPTIONS, laboratory: false };
+  const fullClinical = createPrintReport(source);
+  assert.deepEqual(fullClinical.warnings, []);
+  assert.match(renderPrintReport(fullClinical), /未分享的來源區塊缺失提醒/);
+});
