@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.0.3-rc.10 — 2026-10-28 (Asia/Taipei)
+
+- Generate standalone escaped print/PDF documents from the full acquired dataset, with explicit sharing scopes, raw-record or lossless date-matrix layouts, repeated headers and indexed interpretation notes. Excluded categories and global medical warnings cannot leak into selected shares. The product uses the browser print dialog and requires no server-side PDF runtime.
+- Retain timeline filter/page/scroll/focus context, provide both pagination controls, explicit date-to-trend navigation and a single keyboard entry into dense charts. Show truthful import and source-count status and explicit export scope.
+- Export `healthbank.dataset.v2` with source semantic metadata, application/connector/catalog/evidence provenance; retain strict v1 import. Compare source-aware multisets locally, preserve duplicate counts and identify parent/attachment relationship differences without inferring official deletions or corrected-event identity.
+- Add explicit annual/monthly acquisition batches for date-search sources and selected labs. Preserve partial successes/resume, require saved-file acknowledgment before advancing, retain only current raw data plus prior summaries, and never mix failed next-period retrieval with previous-period labs.
+- Preserve source field codes, date roles, origin and contract identifiers; distinguish missing/null/empty known sections. Add a checked-in observed-contract registry and current-entry/chunk-map drift checker.
+- Preserve case-sensitive unit meaning, isolate ambiguous legacy dynamic settings without disabling unrelated shared keys, qualify comparison inputs and version clinical evidence. Keep source LDL and all existing formula applicability boundaries.
+- Isolate settings deletion by verified subject. Add schema-2 backup/key checks, explicit legacy restore/binding and retained unverified provenance; ordinary legacy upgrades remain available.
+- Bound anonymous/session/request/connection admission, heavy work and retained source references; cancel queued requests and preserve prior reports on rejection. Add direct-loopback readiness and fixed privacy-safe diagnostic operations.
+- Check the actual compiled application and extracted release executable with pinned test-only Chromium/CJK tools, actual downloads, cross-tab failure cases and rendered PDF verification. CI retains synthetic evidence only.
+
+Publication, final gates and external acceptance boundaries are recorded separately in `docs/verification.zh-TW.md`; this entry alone does not certify a published artifact.
+
 ## v1.0.3-rc.9 — 2026-10-28 (Asia/Taipei)
 
 - Independently audit the full login, acquisition, normalization, workspace, persistence and publication chain; retain the existing architecture and source-provider product boundary. Record reproduced defects, research, fuzz results and acceptance limits in `docs/deep-audit.zh-TW.md`.
