@@ -63,6 +63,8 @@ Go 結構型別邊界另拒絕 case-fold 別名；來源資料映射維持原本
 改為工作階段 Cookie，由伺服器執行滾動閒置期限，普通回應不重發舊 Cookie。
 瀏覽器可能還原工作階段 Cookie，因此關閉瀏覽器不是可靠的登出承諾。
 
+實際中文畫面另發現 200% 字級下的長提示框可能超出桌面視窗；頁面 scrollWidth 不一定反映固定定位元素的裁切。提示框現在以同一響應式側欄偏移計算位置與最大寬度，並允許長文字換行；驗收另外量測提示框四邊，涵蓋小高度橫向模式。
+
 證據：[工作階段綁定](https://github.com/bestkakkoii/healthbank/blob/v1.0.3-rc.9/internal/server/session_binding_test.go)、
 [生命週期](https://github.com/bestkakkoii/healthbank/blob/v1.0.3-rc.9/internal/server/session_lifetime_test.go)、
 [前端 API 綁定](https://github.com/bestkakkoii/healthbank/blob/v1.0.3-rc.9/web/tests/api-session-binding.test.mjs)，另以實際 App 注入延遲、
@@ -78,7 +80,7 @@ Go 結構型別邊界另拒絕 case-fold 別名；來源資料映射維持原本
 | 運動明細未確實處理失敗或識別不符，時間欄位不完整 | 驗證 `ResultStatus`、非空明細及提供時的 `ROW_ID`；分別保留日期、時、分、期間、類型及強度 |
 | 空／未知明細因繼承父項目日期／院所而看似成功 | 先確認已辨識的明細原文，再繼承父項目；不能用父資料補造明細 |
 | 官方檔案的 `did` 下載選擇被丟棄 | 綁定來源選擇，使用觀察到的 `app_download?gid`／`app_imgF_download?gid`；沒有該欄位才沿用原序號路徑 |
-| 二進位下載收到 HTTP 200 JSON 登入逾時，未傳遞失效 | 有界讀取錯誤本文、清除連接器識別並回報 `SESSION_EXPIRED`，不交付偽裝文件 |
+| 二進位下載收到 HTTP 200、JSON Content-Type 的登入逾時，未傳遞失效 | 有界讀取錯誤本文、清除連接器識別並回報 `SESSION_EXPIRED`，不交付偽裝文件 |
 | 住院 PDF 清理回應明示失效卻仍當成下載成功 | 清理恰嘗試一次；緩衝 PDF 交付前傳遞已知失效；一般清理失敗仍保留未確認警告或原下載錯誤 |
 | 分別合法的來源根陣列合併後超出輸出／可攜界限 | 最終投影的筆數、欄位及文字長度在替換識別前驗證；超限原子拒絕，不截斷後宣稱完整 |
 

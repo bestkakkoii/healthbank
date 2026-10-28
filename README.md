@@ -4,7 +4,7 @@
 
 **從健康存摺取得授權資料，以自己的方式整理醫療時間軸、比較歷年檢驗、查看處方與原始報告。**
 
-[下載與發行](https://github.com/bestkakkoii/healthbank/releases) · [部署](docs/deployment.zh-TW.md) · [資料處理](docs/privacy.zh-TW.md) · [驗證](docs/verification.zh-TW.md) · [實機驗收](docs/acceptance.zh-TW.md)
+[下載與發行](https://github.com/bestkakkoii/healthbank/releases) · [部署](docs/deployment.zh-TW.md) · [資料處理](docs/privacy.zh-TW.md) · [驗證](docs/verification.zh-TW.md) · [深度稽核](docs/deep-audit.zh-TW.md) · [實機驗收](docs/acceptance.zh-TW.md)
 
 獨立 MIT 開源專案，非健保署官方服務。Go 執行檔內嵌 React 前端；SQLite 預設、MySQL 選用。
 不要求特定主機面板、額外會員帳號或日常打卡。前端不載入外部腳本、字型或廣告分析服務。
@@ -34,6 +34,8 @@
 
 原始文件串流下載上限 500 MiB；需要先在記憶體驗證的 PDF／JPEG 組另有 32 MiB 限制。完整資料包上限 128 MiB，其中檢驗內容與明確加入的附件各上限 32 MiB，大型原始檔另存。資料包會標示尚未取得的明細與尚未加入的附件，不把部分資料稱為完整備份。操作及 API 見[資料工作區與可攜格式](docs/data-workspace.zh-TW.md)。
 
+資料匯入會拒絕重複 JSON 欄位與損壞的 Unicode；原始日期文字與正規化日期分別保留。多分頁切換、工作階段失效及匯入／登出回應中斷時，會核對目前身分，避免混用不同資料包或留下舊醫療內容。單一來源匯出與完整資料包都移除當次官方操作識別。
+
 ![年度比較；合成示範資料，非真實個人報告](docs/screenshots/history-comparison.jpg)
 
 ## 部署
@@ -46,7 +48,7 @@
 | --- | --- |
 | 主要目標 | Debian 13（trixie）x86_64；Linux amd64靜態執行檔 |
 | 其他架構 | Linux arm64交叉編譯；原生機器驗收另列 |
-| 瀏覽器 | 持續更新的Chrome、Edge、Firefox、Safari；需要JavaScript與短效工作階段Cookie |
+| 瀏覽器 | 持續更新的Chrome、Edge、Firefox、Safari；需要JavaScript與工作階段Cookie，伺服器另設30分鐘閒置期限 |
 | 行動裝置 | 以iOS Safari為重點；原生縮放、密碼自動填入、鍵盤與橫直向須實機驗收 |
 | 網路與作業系統 | 有效CA信任、正確時間、DNS及對外HTTPS；部署平台不限定面板 |
 | 開發 | 工具來源、版本、提交及相容性限制集中在鎖定檔與[依賴文件](DEPENDENCIES.md) |

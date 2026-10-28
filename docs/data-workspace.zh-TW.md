@@ -2,7 +2,7 @@
 
 Copyright © 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
-版本：RC8；契約核對日期：2026-10-28（臺灣時間）。以下是 **Healthbank 自有 API**，不是健保署正式開放 API。上游路徑與證據分別見[登入／檢驗協定](nhi_protocol.md)、[資料來源契約](provider-data.md)、[原始文件契約](provider-documents.md)。
+版本：RC9；契約核對日期：2026-10-28（臺灣時間）。以下是 **Healthbank 自有 API**，不是健保署正式開放 API。上游路徑與證據分別見[登入／檢驗協定](nhi_protocol.md)、[資料來源契約](provider-data.md)、[原始文件契約](provider-documents.md)。
 
 ## 1. 工作流程
 
@@ -13,11 +13,11 @@ Copyright © 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 5. 原始附件由使用者明確下載；需要上游準備的檔案由獨立產製操作提出。一般資料拉取不會自動建立產製工作。
 6. 匯出全部已取得資料，或還原先前資料包。資料包與主動下載的原始檔由使用者自行保存。
 
-「取得最大範圍」不等於已證明終身資料完整。來源沒有獨立總數時，`complete` 保持 `false`；成人健檢、特定篩檢、近期摘要及官方產製歷史各有自己的可回傳範圍。
+「取得最大範圍」不等於已證明終身資料完整。來源沒有獨立總數，或相同期間總數與實際陣列長度不一致時，`complete` 保持 `false`；成人健檢、特定篩檢、近期摘要及官方產製歷史各有自己的可回傳範圍。
 
 ## 2. 登入與查詢 API
 
-所有 API 回應均為 `Cache-Control: no-store, private`。JSON 使用 UTF-8；錯誤不回傳帳密、官方 Cookie、JWT 或醫療原文。非 GET／HEAD 操作需同源與 `X-CSRF-Token`。
+所有 API 回應均為 `Cache-Control: no-store, private`。JSON 使用 UTF-8；錯誤不回傳帳密、官方 Cookie、JWT 或醫療原文。非 GET／HEAD 操作需同源與 `X-CSRF-Token`。已取得本站工作階段的瀏覽器也將此標頭附於有狀態的 GET／HEAD，綁定本頁所屬連線，避免另一分頁更換共用 Cookie 後讀入不同資料。`/api/session` 不帶此綁定，專門用於初始建立與重新確認。原生附件連結無法攜帶自訂標頭，另由當次不透明文件識別綁定；有效連線不存在時直接回傳 401，不新設 Cookie。
 
 | 方法 | 路徑 | 用途 |
 | --- | --- | --- |
@@ -26,6 +26,9 @@ Copyright © 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 | POST | `/api/auth/login` | 提交 `identity_number`、`card_number`、`password`、`captcha`、`challenge_id` |
 | POST | `/api/auth/logout` | 結束工作階段，清除記憶體報告及官方識別 |
 | GET | `/api/data/catalog` | 公開來源能力目錄；不查詢個人資料、不證明該帳號具有每個來源 |
+| GET | `/api/reports/current` | 讀取當次記憶體檢驗；不重新向官方查詢 |
+| POST | `/api/reports/import` | 單一具檔名的 multipart `file`；驗證成功後切換至獨立匯入模式 |
+| POST | `/api/reports/demo` | 建立明示合成資料的示範模式 |
 | GET | `/api/reports?from=&to=` | 取得檢驗資料；空日期代表最大查詢範圍 |
 | GET | `/api/supplementary?category=medicine&from=&to=` | 取得指定來源清單 |
 | GET | `/api/supplementary?category=medicine&detail=<opaque-id>` | 取得該清單回傳的明細 |
@@ -36,7 +39,11 @@ Copyright © 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
 產製成功回應 HTTP `202` 與 `{ "status": "requested", "message": "…" }`，只表示已提出要求，不表示檔案已完成。使用者稍後重新取得原始檔來源／明細，再依官方實際狀態下載。產製不自動重試；不明網路結果不應重複建立工作。
 
-常見 HTTP：`400` 輸入／識別不符、`401` 登入失效、`424` 上游依賴失敗、`500` 本站錯誤。二進位下載開始後若來源中斷，會中止傳輸，不在檔尾追加 JSON 或把截斷內容宣稱成功。
+檢驗回應包含 `session_token`，必須為目前或該成功切換操作建立的 64 位十六進位 CSRF 識別。前端在安裝檢驗、醫療資料包與後續設定／目錄前核對同一識別；同為 `import` 模式仍須精確相等。此值只供即時 API 核對，不寫入可攜醫療檔案或日誌。官方失效、`csrf_mismatch`、`session_changed`、`session_rotate` 或缺失的回應識別會清除舊醫療狀態；一般設定修訂衝突不因此清除資料。
+
+已送出的登入／登出／匯入若遇到回應遺失，無法單憑前端例外判斷伺服器是否已執行。前端只重新讀取 `/api/session`：識別未變則保留原資料，已變則清除舊資料並採用已確認連線，無法確認則清除本頁醫療資料；不自動重播操作或宣稱刪除成功。
+
+常見 HTTP：`400` 輸入／識別不符、`401` 登入失效、`403 csrf_mismatch` 頁面連線過期、`409 session_changed` 連線已更換、`424` 上游依賴失敗、`500` 本站錯誤。二進位下載開始後若來源中斷，會中止傳輸，不在檔尾追加 JSON 或把截斷內容宣稱成功。
 
 ## 3. 來源目錄與範圍
 
@@ -67,6 +74,8 @@ Copyright © 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
 清單與明細共用 `SupplementReport`：`category`、`entries`、`coverage`、`fetched_at`、可用時的 `start_date`／`end_date`、`complete`。
 
+檢驗另保留 `raw_check_date`／`raw_visit_date` 原文與 `exam_date`／`visit_date` 正規化值。篩選使用可解析日期；明細、CSV 與可攜 JSON/XML 保留原始日期文字，無效或空白來源日期不被補成另一日期。
+
 每筆包含原始日期、院所、標題、來源及具名欄位；可帶來源種類、不同迄日、已知藥品代碼／數量／給藥日數、下一層明細、附件與產製動作。欄位值維持字串，避免把精確小數、不等式、定性文字與未知日數改造成假精確值。
 
 API 僅投影已確認語意的醫療欄位；不轉出上游身分、權杖、內部 URL 或任意未知 JSON。需要來源完整原始文件時使用官方原始檔下載。原始文件的所有未知欄位不會被聲稱已建模或完成臨床判讀。
@@ -96,7 +105,7 @@ API 僅投影已確認語意的醫療欄位；不轉出上游身分、權杖、�
 
 畫面只看某一年或搜尋某藥，不會縮小這份資料包。未取得明細及未加入附件保留缺漏狀態；僅有附件描述不等於已備份其內容。先前下載、後來來源重查而更換識別的檔案仍可保留於附件清單。
 
-官方工作階段識別在匯出時轉成只供檔案內關聯的 `archive_N`；產製動作、登入資料、Cookie、JWT 及同步設定身分不會匯出。還原前拒絕重複 JSON 欄位、未知危險結構、失聯明細、不合理容量、無效 UTF-8、可重用官方識別及附件校驗不符。檔案先完整驗證，再進入獨立匯入工作階段；不把來源完整性文字當成本次官方認證結果。
+單一來源清單／明細匯出與完整資料包共用相同安全投影。官方工作階段識別在匯出時轉成只供檔案內關聯的 `archive_N`；產製動作、登入資料、Cookie、JWT 及同步設定身分不會匯出。還原前拒絕重複 JSON 欄位、孤立的 UTF-16 跳脫代理碼、未知危險結構、失聯明細、不合理容量、無效 UTF-8、可重用官方識別及附件校驗不符。檔案先完整驗證，再進入獨立匯入工作階段；不把來源完整性文字當成本次官方認證結果。
 
 Healthbank 資料包、Healthbank 檢驗 JSON/XML 與官方產製的 JSON/XML/PDF 是不同格式。官方原始檔可下載保存；未取得可驗證的格式樣本與語意時，不猜測其欄位來建立通用匯入器。
 

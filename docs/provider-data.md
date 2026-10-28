@@ -202,7 +202,11 @@ The application does not access the phone's health database directly and cannot
 prove that an absent source menu means the person has no device records.
 
 Exercise detail POST `ihke3207s02/SP_IHKE3207S04` sends only `c_rowid` and reads
-`oneRecordList`; no save/delete or calorie-calculation endpoints are invoked.
+`oneRecordList`; boolean `ResultStatus: true` is required. Empty detail arrays
+and a provided nonempty `ROW_ID` that differs from the selected record are
+rejected; missing/empty row IDs do not independently prove identity. `SPORTDATE_DATE`, `SPORTDATE_HOUR`,
+`SPORTDATE_MINUTE`, duration, source code and intensity retain their separate
+source meanings. No save/delete or calorie-calculation endpoints are invoked.
 
 The diet source's Vue loop passes its iteration key to the existing record read
 `ihke3206s01/SP_IHKE3206S08`. Accordingly, the bounded `dietRecordList` parser
@@ -220,6 +224,13 @@ Osteoporosis detail `IHKE3411S02/page_load?crid=...&ctype=...` reads report fiel
 and delegates any source-provided image preparation/download references to the
 document connector.
 
+Screening projections retain source `lung_RADS`, breast `diagnosis_CODE`, HPV
+`hpv_diagnosis_code_rpt`, and source `assay_RESULT` text. COVID entries retain
+`inspect_MODE`, `assay_DISEA`, and `recv_DATE` alongside separate collection/report
+dates. These are source strings, not newly inferred diagnoses or formula inputs.
+A detail must contain recognized source evidence before parent date/institution
+context is inherited; an unknown or empty row cannot become a successful event.
+
 ## Preservation, privacy and verification
 
 Known clinical field strings retain exact decimal spellings, inequalities,
@@ -229,6 +240,17 @@ fields, raw personal IDs, JWTs, QR credentials, arbitrary URLs and unrelated men
 metadata are excluded. This is not a claim that the projected display is a
 byte-for-byte copy of the entire upstream response. Original user-requested
 official archives/documents are a separate download channel.
+
+All upstream JSON rejects duplicate keys, invalid UTF-8 and isolated escaped
+surrogates before decoding. Typed authentication/laboratory envelopes also reject
+case-fold aliases. Case-sensitive source data maps keep their key distinctions.
+Projected row/field/text limits are checked after combining all response roots
+and before replacing live references; overflow never silently truncates data.
+Explicit source expiry, including case variants of its error field and bounded
+HTTP 200 error bodies with a JSON Content-Type on document routes, clears the
+connector. A wrong-MIME non-document response is rejected as invalid content,
+without inferring authentication state. Invalid date
+inputs are rejected before any token-refresh request.
 
 Text remains text; source HTML is never executed. No third-party scripts, trackers,
 runtime schema services or new dependencies are added. Imports and downloaded
@@ -248,6 +270,11 @@ The public SPA files were retrieved as inert text at **2026-10-28T02:10:55Z**
 (10:10:55 Taiwan). No official script was executed and no credentials or medical
 records were supplied. Public component presence proves an observed shipped
 contract, not current menu eligibility or successful authenticated server behavior.
+RC9 independently re-fetched ten relevant bundles on the same date, including
+exercise detail, breast/lung/HPV/HPSA screening, COVID and original-file download
+components. Their listed hashes matched; the additional download component hashes
+are recorded in [provider-documents.md](provider-documents.md). This does not
+relabel the earlier all-bundle snapshot as a new live-account verification.
 Each file below is available under
 `https://myhealthbank.nhi.gov.tw/IHKE3000/js/`.
 

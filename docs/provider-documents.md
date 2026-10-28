@@ -48,8 +48,8 @@ Healthbank 使用官方授權工作階段取得資料，以自己的資料工作
 | `hospital` 病摘 | `IHKE3309S02/getxml?crid&ctype`，`file_name` | 官方 `showXML` 將該字串直接作為 HTML 顯示。Healthbank 保留原顯示內容並以 `.txt` 下載，不執行標記，也不稱為原始 XML。 |
 | `hospital` PDF | `IHKE3309S02/getpdf` → 官方回傳 PDF 位址 → `IHKE3309S02/delpdf` | 取得原 PDF 後要求清理此次上游暫存。只有相同官方來源、限定目錄內的 PDF 位址可讀取；不傳 JWT 給靜態 PDF，禁止重新導向。 |
 | `e_prescriptions` | `ihke3212s01/IHKE3212_pdf?tid&tid2&recipeType` | 兩個 `tid` 均來自已驗證清單的同一處方識別。此方法存在於公開元件，但目前元件畫面未呼叫該按鈕；真實帳號可用性另須驗收。 |
-| `official_files` | `ihke3801s01/page_load`；`ihke3801s02/page_load`；`download` | 既有原始檔產製工作及檔案，只有來源狀態 `1` 才建立下載識別。 |
-| `official_files` DICOM | `ihke3801s02/imgF_page_load`；`imgF_download?seq_no` | 下載官方準備的原始影像 ZIP；不在 Healthbank 伺服器解壓或進行診斷閱片。 |
+| `official_files` | `ihke3801s01/page_load`；`ihke3801s02/page_load`；`app_download?gid` 或 `download?seq_no` | 既有原始檔產製工作及檔案，只有來源狀態 `1` 才建立下載識別；有 `did` 時綁定來源 `gid` 路徑，否則使用原序號路徑。 |
+| `official_files` DICOM | `ihke3801s02/imgF_page_load`；`app_imgF_download?gid` 或 `imgF_download?seq_no` | 下載官方準備的原始影像 ZIP；不在 Healthbank 伺服器解壓或進行診斷閱片。 |
 | `official_export_html` | `ihke3802s01/page_load`；POST `add` 的 `row_id` | 每類選用官方提供的全部範圍；沒有全部選項時使用來源列出的各月份，保留可產製範圍供使用者檢視。 |
 | `official_export_xml` | `ihke3803s01/page_load`；POST `add` 的 `dat` | 精確保留官方提供的產製參數，不自行推測格式或年度選項。 |
 | `official_export_json` | `ihke3804s01/page_load`；POST `add` 的 `dat` | 同上；這是官方原始格式，不等同 Healthbank 自己的可攜資料包。 |
@@ -71,18 +71,21 @@ Healthbank 使用官方授權工作階段取得資料，以自己的資料工作
 | --- | --- |
 | 一般上游 JSON | 16 MiB；原清單及明細筆數界限仍適用。 |
 | JPEG／病摘來源 JSON | 48 MiB 的編碼回應上限。 |
-| PDF 與 JPEG 組的記憶體內容 | 32 MiB；JPEG 至多 500 張，每張尺寸及編碼須可辨識。超限會拒絕，不回傳部分影像組。 |
+| 單份緩衝 PDF 內容／JPEG 解碼後原始資料總量 | 32 MiB；JPEG 至多 500 張，每張尺寸及編碼須可辨識。超限會拒絕，不回傳部分影像組。 |
 | 官方原始 ZIP／PDF／DICOM | 串流上限 500 MiB、整次最多 5 分鐘；不以整份大型檔案占用記憶體。 |
 | 文件及產製識別 | 當次連線合計最多 50,000 個，列表更新及登入重設清除。 |
 | 原始檔產製參數 | 每次產製選項回應合計最多 1 MiB，僅留於工作階段記憶體，使用或失效時清除引用。 |
 
-下載檢查實際 PDF／ZIP／JPEG 標頭及回應是否完整；來源 HTML／JSON 錯誤頁不會冒充原始檔。
+上述為內容與傳輸上限，不是處理程序記憶體峰值上限；編碼 JSON、解碼字串、ZIP 中繼資料與緩衝仍會占用額外記憶體。
+
+下載檢查實際 PDF／ZIP／JPEG 標頭、可核對的傳輸長度與配置上限；JPEG 另驗證編碼與尺寸。來源 HTML／JSON 錯誤頁不會冒充原始檔，HTTP 200 且 Content-Type 為 JSON 的有界回應若明示官方逾時，同樣傳遞登入失效。錯誤 MIME 的非文件內容拒絕為文件格式錯誤，不因此推斷登入狀態。這些檢查不等於完整 PDF／ZIP 內部結構驗證；上游若以正常結束的傳輸回傳內部損壞內容，尤其沒有可核對長度或屬加密原始檔時，不能僅憑傳輸成功證明檔案語意正確。
 串流途中遇到取消、大小超限或內容截斷，會中止 HTTP 回應，不能把部分內容標為下載成功。
 PDF 的回傳位址額外拒絕跨來源、目錄穿越、編碼反斜線、控制字元及再次百分比解碼路徑。
 
 官方 PDF 需要建立其自己的暫存檔。程式會執行一次觀察到的 `delpdf` 清理請求；
 公開程式沒有提供可核對的正向清理回應契約，所以 HTTP 200 也不被宣稱為已證明刪除。
 PDF 下載以 `X-Healthbank-Document-Warning: official_temporary_cleanup_unconfirmed` 表示此限制。
+清理回應若明示登入失效，會在交付緩衝 PDF 前回報 `SESSION_EXPIRED`；失敗下載的延後清理也會傳遞此失效。一般清理故障保留原下載錯誤或未確認警告，不吞掉失效，也不虛報已刪除。
 應用的記憶體與不落地處理，不等於能保證官方系統、代理、主機交換空間或備份的行為。
 
 Healthbank 不寫入醫療文件、官方 Cookie／權杖、產製參數或下載歷史至 SQL、應用日誌或伺服器檔案。
@@ -124,3 +127,10 @@ Healthbank 不寫入醫療文件、官方 Cookie／權杖、產製參數或下�
 | [pdfviewer.html](https://myhealthbank.nhi.gov.tw/ihke3000/ViewPdf/pdfviewer.html) | `18a3e2c5b1aeb80effdb73839ae6c8ea396e161bc44c90282aedf2c5bf07a875` |
 | [pdf-viewer.js](https://myhealthbank.nhi.gov.tw/ihke3000/ViewPdf/viewer.js) | `cf6781805e4bdb91548366163361b4f618ef9b665f24d46f2510f9a7dc9e81ba` |
 | [IHKE3309S02.deb370e8.js](https://myhealthbank.nhi.gov.tw/IHKE3000/js/IHKE3309S02.deb370e8.js) | `f09984c1c3f46a0dc3eecf58163f95718295abd0af7d6fea74665b3df51047d0` |
+
+RC9 額外重新取得並核對的下載元件：
+
+| 官方來源 | SHA-256 |
+| --- | --- |
+| [IHKE3800download.87e94a32.js](https://myhealthbank.nhi.gov.tw/IHKE3000/js/IHKE3800download.87e94a32.js) | `7073bc1ab99b3b92c1351bc6b90944d38e3e209fe7d3b12345beedfad22bd7dd` |
+| [IHKE3800download_IMG.df47eafd.js](https://myhealthbank.nhi.gov.tw/IHKE3000/js/IHKE3800download_IMG.df47eafd.js) | `8fb68daedc85efb4736c9a093de6d29547586f307e89e8725653af4c4983a4ff` |

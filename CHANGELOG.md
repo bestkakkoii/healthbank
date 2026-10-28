@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.0.3-rc.9 — 2026-10-28 (Asia/Taipei)
+
+- Independently audit the full login, acquisition, normalization, workspace, persistence and publication chain; retain the existing architecture and source-provider product boundary. Record reproduced defects, research, fuzz results and acceptance limits in `docs/deep-audit.zh-TW.md`.
+- Reject ambiguous duplicate/case-alias JSON fields, invalid UTF-8 and isolated escaped surrogates before typed decoding. Require exact portable laboratory field names and string values; preserve valid Unicode and original source text.
+- Bind stateful browser reads and laboratory responses to the exact session generation, including consecutive imports in the same mode. Prevent delayed retired-cookie requests from overwriting a newer cookie; reconcile ambiguous login/logout/import failures without replaying mutations or retaining unverified old medical state.
+- Cover cancellation through follow-up identity/catalog reads, unify CAPTCHA identity observation, retire late device-note file callbacks after clear/logout/consent changes, and restrict React render diagnostics to safe fixed codes.
+- Keep long notifications within the available content viewport at 200% font size, including desktop sidebar and compact landscape layouts.
+- Preserve raw laboratory check/visit dates alongside normalized dates in details, CSV and portable JSON/XML. Rewrite live handles in standalone source exports as well as full datasets, and omit source actions and private selectors.
+- Preserve verified screening/COVID fields and distinct source dates, enforce exercise detail success/row identity, reject empty clinical details before inheriting parent metadata, and bind source-provided original-file download IDs to fixed observed routes.
+- Propagate official authentication expiry returned inside HTTP 200 document errors or PDF cleanup. Validate combined projection limits before replacing references; reject invalid ranges before any official token refresh. Keep unconfirmed temporary-file cleanup explicit.
+- Require an independent same-period source count to equal the returned record count before reporting completeness. Preserve conflicting counts and all returned observations with a warning.
+- Persist only canonical validated settings; validate discovered item bounds before SQL writes. Align settings snapshot output/input limits, JSON-safe revisions and portable timestamp capacity; reject ambiguous multipart imports atomically.
+- Preserve exact personal interval strings and defer ordering/overlap validation to the rational server engine. Recheck primary clinical sources, catalog consistency and independent high-precision CKD-EPI vectors without expanding formulas, thresholds or treatment guidance.
+- Add pinned Staticcheck with all analyses as a permanent CI/release gate, correct all first-party diagnostics without suppression, and refresh notices against the actual locked dependency sources.
+- Require clean, fully tracked release inputs matching HEAD, reject special files and symlinks, bind commit/timestamp/tag identities, and verify exactly the selected version's three archives and SHA256SUMS before publication. Both Linux deployment archives remain flat and exclude data, credentials, identity keys and real reports.
+- Real-account availability, physical iPhone/Safari, original-file internal validity and operator infrastructure remain separately stated acceptance boundaries; automated tests do not certify them.
+
 ## v1.0.3-rc.8 — 2026-10-28 (Asia/Taipei)
 
 - Treat the official service as an authenticated data provider, with Healthbank's own medical-data workspace, unified laboratory/source timeline, full-text and source/date/institution filters, and explicit data-coverage states.

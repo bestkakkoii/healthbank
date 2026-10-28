@@ -4,7 +4,12 @@ Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
 ## Implemented boundary
 
-The rc.8 source workspace and portable archive do not expand formula eligibility.
+The source workspace and portable archive do not expand formula eligibility.
+The RC9 audit rechecked the source constraints, catalog integrity and eight
+independently calculated high-precision CKD-EPI vectors; it enables no new formula
+or treatment rule. Personal interval inputs preserve their source decimals and
+use authoritative server rational validation instead of approximate browser
+ordering/overlap checks.
 Additional source measurements and prescriptions retain their own provenance;
 matching dates or institutions never confirms one specimen or actual ingestion.
 Archive laboratory rows contain source fields only and are normalized again by
@@ -45,7 +50,7 @@ function/formula suitability. The output is explicitly a derived scenario estima
 not a diagnosis, a dose recommendation, or a replacement for reported eGFR.
 Every original row, including same-date duplicates, remains individually selectable.
 
-## Verified sources (2026-10-27)
+## Verified sources (rechecked 2026-10-28)
 
 - [NCKU blood creatinine](https://web.hosp.ncku.edu.tw/pathology/Pathology/Page/72):
   Enzymatic method; completed-year partitions 1–2, 3–4, 5–6, 7–8, 9–10, 11–12,
@@ -55,6 +60,17 @@ Every original row, including same-date duplicates, remains individually selecta
   17–18 and ≥19; adult male 40–129 and female 35–104 U/L.
 - [NIDDK adult equations](https://www.niddk.nih.gov/research-funding/research-programs/kidney-clinical-research-epidemiology/laboratory/glomerular-filtration-rate-equations/adults):
   2021 CKD-EPI creatinine coefficients, age/sex conditions and /88.4 conversion.
+
+The other seven implemented NCKU tables were also re-read: [BUN](https://web.hosp.ncku.edu.tw/pathology/Pathology/Page/71),
+[calcium](https://web.hosp.ncku.edu.tw/pathology/Pathology/Page/87),
+[uric acid](https://web.hosp.ncku.edu.tw/pathology/Pathology/Page/74),
+[ALT](https://web.hosp.ncku.edu.tw/pathology/Pathology/Page/80),
+[CK](https://web.hosp.ncku.edu.tw/pathology/Pathology/Page/85),
+[phosphorus](https://web.hosp.ncku.edu.tw/pathology/Pathology/Page/88), and
+[serum albumin](https://web.hosp.ncku.edu.tw/pathology/Pathology/Page/104).
+The independent expected CKD-EPI values use 70-digit decimal arithmetic and cover
+both formula sex variables and both sides of the creatinine knot; numerical
+agreement does not establish an individual patient's clinical applicability.
 
 ## Implemented extension and remaining acceptance
 
