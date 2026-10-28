@@ -26,15 +26,21 @@ type Entry struct {
 // Snapshot is engine-independent. The application HMAC secret is intentionally
 // not included; preserve it separately when moving between database engines.
 type Snapshot struct {
-	SchemaVersion int     `json:"schema_version"`
-	ExportedAt    string  `json:"exported_at"`
-	Entries       []Entry `json:"entries"`
+	SchemaVersion     int     `json:"schema_version"`
+	IdentityKeyCheck  string  `json:"identity_key_check,omitempty"`
+	IdentityKeyOrigin string  `json:"identity_key_origin,omitempty"`
+	ExportedAt        string  `json:"exported_at"`
+	Entries           []Entry `json:"entries"`
 }
 
 // Export returns an ordered, consistent read of all configuration documents.
 // No login identity, password, card number, or medical result exists in this
 // database, so none can be exported by this method.
 func (s *Store) Export(ctx context.Context) (Snapshot, error) {
+	keyCheck, keyOrigin, err := s.identityKeyBinding(ctx)
+	if err != nil {
+		return Snapshot{}, err
+	}
 	rows, err := s.db.QueryContext(ctx,
 		`SELECT subject_key, revision, settings_json, updated_at FROM profile_settings ORDER BY subject_key`)
 	if err != nil {
@@ -42,9 +48,14 @@ func (s *Store) Export(ctx context.Context) (Snapshot, error) {
 	}
 	defer rows.Close()
 	snapshot := Snapshot{
-		SchemaVersion: SchemaVersion,
-		ExportedAt:    time.Now().UTC().Format(time.RFC3339Nano),
-		Entries:       []Entry{},
+		SchemaVersion:    LegacySchemaVersion,
+		IdentityKeyCheck: keyCheck,
+		ExportedAt:       time.Now().UTC().Format(time.RFC3339Nano),
+		Entries:          []Entry{},
+	}
+	if keyCheck != "" {
+		snapshot.SchemaVersion = SchemaVersion
+		snapshot.IdentityKeyOrigin = keyOrigin
 	}
 	for rows.Next() {
 		var entry Entry
@@ -69,8 +80,18 @@ func (s *Store) Export(ctx context.Context) (Snapshot, error) {
 // never merges into or replaces existing configurations. Stop the running web
 // service before an operator migration to avoid simultaneous writes.
 func (s *Store) Import(ctx context.Context, snapshot Snapshot) error {
-	if snapshot.SchemaVersion != SchemaVersion {
+	if snapshot.SchemaVersion != SchemaVersion && snapshot.SchemaVersion != LegacySchemaVersion {
 		return fmt.Errorf("%w: snapshot is %d, expected %d", ErrUnsupportedSchema, snapshot.SchemaVersion, SchemaVersion)
+	}
+	if snapshot.SchemaVersion == SchemaVersion {
+		if !validKeyOrigin(snapshot.IdentityKeyOrigin) {
+			return fmt.Errorf("%w: invalid snapshot key provenance", ErrInvalid)
+		}
+		if err := s.VerifyIdentityKey(ctx, snapshot.IdentityKeyCheck); err != nil {
+			return err
+		}
+	} else if snapshot.IdentityKeyCheck != "" || snapshot.IdentityKeyOrigin != "" {
+		return fmt.Errorf("%w: legacy snapshot cannot claim a verified key binding", ErrInvalid)
 	}
 	seen := make(map[string]struct{}, len(snapshot.Entries))
 	validated := make([]Entry, len(snapshot.Entries))
@@ -95,6 +116,13 @@ func (s *Store) Import(ctx context.Context, snapshot Snapshot) error {
 	}
 	if count != 0 {
 		return ErrDestinationNotEmpty
+	}
+	origin := snapshot.IdentityKeyOrigin
+	if snapshot.SchemaVersion == LegacySchemaVersion {
+		origin = IdentityKeyLegacyUnverified
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE instance_settings SET key_origin = ? WHERE instance_id = 1`, origin); err != nil {
+		return fmt.Errorf("preserve imported key provenance: %w", err)
 	}
 	for _, entry := range validated {
 		if _, err := tx.ExecContext(ctx,

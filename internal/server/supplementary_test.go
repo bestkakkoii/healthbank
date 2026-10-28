@@ -33,7 +33,8 @@ func TestSupplementaryRequiresOfficialIdentityAndKnownDetailCategory(t *testing.
 		t.Fatal(err)
 	}
 	s.mu.Lock()
-	s.mode, s.subject, s.official = "official", "synthetic-subject", connector
+	app.bindSubject(s, "synthetic-subject")
+	s.mode, s.official = "official", connector
 	s.mu.Unlock()
 	for _, category := range []string{"", "adult", "recent_chronic", "official_export_json", "unknown"} {
 		response := browser.request(http.MethodGet, "/api/supplementary?category="+category+"&detail="+strings.Repeat("a", 48), nil, "", "")

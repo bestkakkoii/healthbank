@@ -33,15 +33,20 @@ import (
 
 const cookieName = "healthbank_session"
 const sessionLifetime = 30 * time.Minute
-const maxSessions = 64
 
 var upstreamCodePattern = regexp.MustCompile(`^(?:[A-Z][0-9]{3}[A-Z]?|[0-9]{4})$`)
 
 type session struct {
 	mu                       sync.Mutex
 	touched                  time.Time // protected by App.mu
+	requestGate              chan struct{}
+	pending                  int  // protected by App.mu, includes the active request
+	anonymous                bool // protected by App.mu; no retained workspace/verified identity
+	reclaimable              bool // protected by App.mu; an untouched initial connection
+	memory                   *sessionMemory
 	csrf                     string
 	mode, subject, challenge string
+	scope                    *subjectScope // membership changes also hold App.mu
 	official                 *nhi.Session
 	settings                 lab.Settings
 	raw                      []lab.RawRecord
@@ -52,28 +57,44 @@ type session struct {
 	lastChallenge            time.Time
 }
 type App struct {
-	retentionGate sync.RWMutex // Settings deletion is rare and must invalidate all old-session writes.
-	mu            sync.Mutex
-	sessions      map[string]*session
-	store         *store.Store
-	catalog       *lab.Catalog
-	secret        []byte
-	version       string
-	mux           *http.ServeMux
-	stop          chan struct{}
-	done          chan struct{}
+	mu       sync.Mutex
+	sessions map[string]*session
+	subjects map[string]*subjectScope
+	store    *store.Store
+	catalog  *lab.Catalog
+	secret   []byte
+	version  string
+	mux      *http.ServeMux
+	stop     chan struct{}
+	done     chan struct{}
+	limits   config.ResourceLimits
+	budget   *resourceBudget
+	requests chan struct{}
 }
 
 func New(db *store.Store, secret []byte, version string) (*App, error) {
+	limits, err := config.LoadResourceLimits()
+	if err != nil {
+		return nil, err
+	}
+	return NewWithLimits(db, secret, version, limits)
+}
+
+// NewWithLimits validates and installs process-wide resource admission limits.
+func NewWithLimits(db *store.Store, secret []byte, version string, limits config.ResourceLimits) (*App, error) {
+	if err := limits.Validate(); err != nil {
+		return nil, err
+	}
 	c, err := lab.LoadCatalog()
 	if err != nil {
 		return nil, err
 	}
-	a := &App{sessions: map[string]*session{}, store: db, catalog: c, secret: secret, version: version, mux: http.NewServeMux(), stop: make(chan struct{}), done: make(chan struct{})}
+	a := &App{sessions: map[string]*session{}, subjects: map[string]*subjectScope{}, store: db, catalog: c, secret: secret, version: version, mux: http.NewServeMux(), stop: make(chan struct{}), done: make(chan struct{}), limits: limits, budget: newResourceBudget(limits), requests: make(chan struct{}, limits.Requests)}
 	a.mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
 		a.json(w, http.StatusOK, map[string]string{"status": "ok", "version": a.version})
 	})
 	a.mux.HandleFunc("GET /api/privacy", a.privacyInfo)
+	a.mux.HandleFunc("GET /api/ready", a.readiness)
 	a.mux.HandleFunc("GET /api/data/catalog", a.dataCatalog)
 	a.mux.HandleFunc("DELETE /api/settings", a.withSession(a.deleteSettings))
 	a.mux.HandleFunc("GET /api/session", a.withSession(a.getSession))
@@ -136,7 +157,7 @@ func (a *App) cleanup() {
 			var expired []*session
 			a.mu.Lock()
 			for id, s := range a.sessions {
-				if now.Sub(s.touched) > sessionLifetime {
+				if now.Sub(s.touched) > s.idleLifetime() {
 					delete(a.sessions, id)
 					expired = append(expired, s)
 				}
@@ -144,7 +165,7 @@ func (a *App) cleanup() {
 			a.mu.Unlock()
 			for _, s := range expired {
 				s.mu.Lock()
-				s.clear()
+				a.clearSession(s)
 				s.mu.Unlock()
 			}
 		}
@@ -159,11 +180,21 @@ func (a *App) Close() {
 	a.mu.Unlock()
 	for _, s := range sessions {
 		s.mu.Lock()
-		s.clear()
+		a.clearSession(s)
 		s.mu.Unlock()
 	}
 }
-func (s *session) clear() {
+func (a *App) clearSession(s *session) {
+	if s.memory != nil {
+		s.memory.releaseReports()
+	}
+	a.clearSessionState(s)
+}
+
+// clearSessionState preserves a newly admitted replacement report reservation.
+// Callers must install that report immediately while holding the session lock.
+func (a *App) clearSessionState(s *session) {
+	a.releaseSubject(s)
 	if s.official != nil {
 		s.official.Close()
 	}
@@ -177,6 +208,9 @@ func (s *session) clear() {
 	s.fetched = ""
 	s.complete = false
 	s.warnings = []string{}
+	a.mu.Lock()
+	s.anonymous, s.reclaimable = true, true
+	a.mu.Unlock()
 }
 func secureRequest(r *http.Request) bool {
 	if r.TLS != nil {
@@ -194,12 +228,12 @@ func (a *App) setCookie(w http.ResponseWriter, r *http.Request, id string) {
 }
 func (a *App) withSession(next func(http.ResponseWriter, *http.Request, *session)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodDelete && r.URL.Path == "/api/settings" {
-			a.retentionGate.Lock()
-			defer a.retentionGate.Unlock()
-		} else {
-			a.retentionGate.RLock()
-			defer a.retentionGate.RUnlock()
+		select {
+		case a.requests <- struct{}{}:
+			defer func() { <-a.requests }()
+		default:
+			a.resourceFailure(w, r, "request_capacity", "目前同時處理的請求已達上限，請稍後重試。")
+			return
 		}
 		a.mu.Lock()
 		var s *session
@@ -209,11 +243,11 @@ func (a *App) withSession(next func(http.ResponseWriter, *http.Request, *session
 			id = cookie.Value
 			s = a.sessions[id]
 		}
-		if s != nil && time.Since(s.touched) > sessionLifetime {
+		if s != nil && time.Since(s.touched) > s.idleLifetime() {
 			delete(a.sessions, id)
 			expired := s
 			s = nil
-			go func() { expired.mu.Lock(); expired.clear(); expired.mu.Unlock() }()
+			go func() { expired.mu.Lock(); a.clearSession(expired); expired.mu.Unlock() }()
 		}
 		// A request sent before rotation can arrive after its cookie generation
 		// has been retired. Creating a replacement here would let that delayed
@@ -233,7 +267,19 @@ func (a *App) withSession(next func(http.ResponseWriter, *http.Request, *session
 			return
 		}
 		if s == nil {
-			if len(a.sessions) >= maxSessions {
+			if !a.budget.admitCreation(time.Now()) {
+				a.mu.Unlock()
+				w.Header().Set("Retry-After", "1")
+				a.fail(w, r, http.StatusTooManyRequests, "session_creation_rate", "新連線建立較頻繁，請稍候再試；既有連線仍可使用。")
+				return
+			}
+			if !a.makeAnonymousRoom() {
+				a.mu.Unlock()
+				w.Header().Set("Retry-After", "1")
+				a.fail(w, r, http.StatusTooManyRequests, "anonymous_capacity", "等待登入的連線已達上限，請稍後重試。")
+				return
+			}
+			if len(a.sessions) >= a.limits.Sessions {
 				a.mu.Unlock()
 				a.fail(w, r, 503, "session_capacity", "目前連線較多，請稍後重試。")
 				return
@@ -251,14 +297,46 @@ func (a *App) withSession(next func(http.ResponseWriter, *http.Request, *session
 				a.fail(w, r, 503, "random_unavailable", "無法建立連線。")
 				return
 			}
-			s = &session{csrf: csrf, mode: "anonymous", settings: lab.DefaultSettings(), warnings: []string{}}
+			s = &session{csrf: csrf, mode: "anonymous", settings: lab.DefaultSettings(), warnings: []string{}, requestGate: make(chan struct{}, 1), anonymous: true, reclaimable: true, memory: &sessionMemory{budget: a.budget}}
 			a.sessions[id] = s
 			created = true
 		}
 		if created {
 			s.touched = time.Now()
 		}
+		if s.pending >= a.limits.SessionQueue+1 {
+			a.mu.Unlock()
+			w.Header().Set("Retry-After", "1")
+			a.fail(w, r, http.StatusTooManyRequests, "session_busy", "此連線正在處理其他工作，請稍後重試。")
+			return
+		}
+		s.pending++
 		a.mu.Unlock()
+		defer func() {
+			a.mu.Lock()
+			s.pending--
+			if s.anonymous && s.pending == 0 {
+				a.trimAnonymous(a.limits.AnonymousSessions)
+			}
+			a.mu.Unlock()
+		}()
+		queueTimer := time.NewTimer(sessionQueueWait)
+		defer queueTimer.Stop()
+		select {
+		case s.requestGate <- struct{}{}:
+			defer func() { <-s.requestGate }()
+		case <-r.Context().Done():
+			a.fail(w, r, http.StatusRequestTimeout, "request_canceled", "等待已取消；請確認目前連線後再操作。")
+			return
+		case <-queueTimer.C:
+			w.Header().Set("Retry-After", "1")
+			a.fail(w, r, http.StatusTooManyRequests, "session_busy", "此連線正在處理其他工作，請稍後重試。")
+			return
+		}
+		if r.Context().Err() != nil {
+			a.fail(w, r, http.StatusRequestTimeout, "request_canceled", "等待已取消；請確認目前連線後再操作。")
+			return
+		}
 		s.mu.Lock()
 		defer s.mu.Unlock()
 		// Login/logout/import can rotate a session while another request waits on
@@ -303,6 +381,23 @@ func (a *App) withSession(next func(http.ResponseWriter, *http.Request, *session
 				return
 			}
 		}
+		if !a.requireCurrentSubject(w, r, s) {
+			return
+		}
+		if s.scope != nil {
+			ctx, cancel := context.WithCancel(r.Context())
+			stop := context.AfterFunc(s.scope.ctx, cancel)
+			defer stop()
+			defer cancel()
+			r = r.WithContext(ctx)
+		}
+		bytes, heavy := a.operationWorkingSet(r, s)
+		release, admitted := a.budget.acquireWorking(bytes, heavy)
+		if !admitted {
+			a.resourceFailure(w, r, "resource_capacity", "目前資料處理容量已達上限，請稍後重試；先前資料保持不變。")
+			return
+		}
+		defer release()
 		next(w, r, s)
 	}
 }
@@ -316,6 +411,10 @@ func (a *App) rotate(w http.ResponseWriter, r *http.Request, s *session) error {
 		return err
 	}
 	a.mu.Lock()
+	if s.scope != nil && s.scope.ctx.Err() != nil {
+		a.mu.Unlock()
+		return errSubjectRevoked
+	}
 	for old, v := range a.sessions {
 		if v == s {
 			delete(a.sessions, old)
@@ -332,7 +431,7 @@ func (a *App) json(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 	if err := json.NewEncoder(w).Encode(v); err != nil {
-		slog.Debug("response write interrupted", "code", "response_write")
+		slog.Debug("response write interrupted", "code", "response_write", "request_id", w.Header().Get("X-Request-ID"), "stage", "response_body")
 	}
 }
 func (a *App) fail(w http.ResponseWriter, r *http.Request, status int, code, message string) {
@@ -372,6 +471,9 @@ func (a *App) upstreamError(w http.ResponseWriter, r *http.Request, err error) {
 			status = http.StatusUnauthorized
 		case "INITIALIZATION_FAILED", "REQUEST_FAILED":
 			status = http.StatusInternalServerError
+		case "RESOURCE_LIMIT":
+			status = http.StatusServiceUnavailable
+			w.Header().Set("Retry-After", "1")
 		case "NETWORK", "DNS_FAILED", "TIMEOUT", "TLS_CERTIFICATE", "TLS_FAILED",
 			"CONNECTION_REFUSED", "CONNECTION_RESET", "CONNECTION_FAILED", "REQUEST_CANCELED",
 			"UPSTREAM_REDIRECT_REJECTED", "RESPONSE_INTERRUPTED", "CAPTCHA_INVALID_IMAGE", "LOGIN_PAGE_INVALID",
@@ -438,6 +540,9 @@ func (a *App) sessionView(s *session) map[string]any {
 	return map[string]any{"authenticated": s.mode == "official", "mode": s.mode, "settings": s.settings, "version": a.version, "csrf_token": s.csrf, "profile_key": s.subject}
 }
 func (a *App) refreshSettings(ctx context.Context, s *session) error {
+	if s.scope != nil && s.scope.ctx.Err() != nil {
+		return errSubjectRevoked
+	}
 	if s.subject == "" {
 		a.catalog.ReconcileSettings(&s.settings)
 		return nil
@@ -445,6 +550,9 @@ func (a *App) refreshSettings(ctx context.Context, s *session) error {
 	doc, err := a.store.Get(ctx, s.subject)
 	if err != nil {
 		return err
+	}
+	if s.scope != nil && s.scope.ctx.Err() != nil {
+		return errSubjectRevoked
 	}
 	next, err := lab.DecodeSettings(doc.Settings, doc.Revision)
 	if err != nil {
@@ -456,6 +564,9 @@ func (a *App) refreshSettings(ctx context.Context, s *session) error {
 }
 func (a *App) getSession(w http.ResponseWriter, r *http.Request, s *session) {
 	if err := a.refreshSettings(r.Context(), s); err != nil {
+		if !a.requireCurrentSubject(w, r, s) {
+			return
+		}
 		a.fail(w, r, 500, "settings_read", "無法讀取個人設定。")
 		return
 	}
@@ -471,12 +582,23 @@ func (a *App) captcha(w http.ResponseWriter, r *http.Request, s *session) {
 		a.fail(w, r, 409, "already_authenticated", "目前已登入；如要換人，請先登出。")
 		return
 	}
+	a.mu.Lock()
+	s.reclaimable = false
+	a.mu.Unlock()
 	if s.official == nil {
 		var err error
 		s.official, err = nhi.New()
 		if err != nil {
 			a.fail(w, r, 503, "connector_init", "無法建立官方連線。")
 			return
+		}
+		if s.memory != nil {
+			if err := s.official.SetReferenceBudget(s.memory.referenceBudget); err != nil {
+				s.official.Close()
+				s.official = nil
+				a.resourceFailure(w, r, "connector_capacity", "無法保留官方連線，請稍後重試。")
+				return
+			}
 		}
 	}
 	s.challenge = ""
@@ -509,18 +631,18 @@ func (a *App) login(w http.ResponseWriter, r *http.Request, s *session) {
 		a.upstreamError(w, r, err)
 		return
 	}
-	s.subject = config.Subject(a.secret, in.Identity)
+	a.bindSubject(s, config.Subject(a.secret, in.Identity))
 	s.mode = "official"
 	s.raw = nil
 	s.fetched = ""
 	s.warnings = []string{}
 	if err := a.refreshSettings(r.Context(), s); err != nil {
-		s.clear()
+		a.clearSession(s)
 		a.fail(w, r, 500, "settings_read", "登入成功但個人設定無法讀取，請稍後重試。")
 		return
 	}
 	if err := a.rotate(w, r, s); err != nil {
-		s.clear()
+		a.clearSession(s)
 		a.fail(w, r, 500, "session_rotate", "無法建立登入連線。")
 		return
 	}
@@ -539,7 +661,7 @@ func (a *App) logout(w http.ResponseWriter, r *http.Request, s *session) {
 		}
 		cancel()
 	}
-	s.clear()
+	a.clearSession(s)
 	if err := a.rotate(w, r, s); err != nil {
 		a.fail(w, r, 500, "session_rotate", "無法更新連線。")
 		return

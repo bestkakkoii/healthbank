@@ -2,7 +2,7 @@
 
 Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
-Implementation status reviewed: **2026-10-28**. This records the RC9 audited implementation;
+Implementation status reviewed: **2026-10-28**. This records the RC10 delivery work;
 publication and full verification remain tied to the actual [Release](https://github.com/bestkakkoii/healthbank/releases)
 and its exact commit. See [real-environment acceptance](acceptance.zh-TW.md).
 
@@ -25,16 +25,35 @@ recommendation is introduced.
 | --- | --- | --- |
 | Reliable acquisition | Independent acquisition versus display ranges; maximum supported source ranges; all selected lists then recursive details; progress, bounded retry, cancel/resume and partial-failure preservation. | Real account retention, eligibility and actual source totals cannot be proved by synthetic fixtures. |
 | Useful source coverage | 38 additional provider categories join 14 existing categories and five original-file service entries; laboratory retrieval remains its own API and is included by the workspace's all-source action. | 57 entries are capability/service entries, not 57 independent medical datasets or a claim every account supports each one. |
-| Source-aware model | Raw text/precise values, distinct dates, institutional/self-entered provenance, exact duplicates and explicit parent-detail links. | Unknown units, methods, specimen relationships and source code systems remain unknown. |
+| Source-aware model | Raw text/precise values, explicit date roles and source-field codes, institutional/self-entered provenance, exact duplicates and explicit parent-detail links. Missing/null/empty known sections are distinct diagnostics. | Unknown units, methods, specimen relationships and source code systems remain unknown. |
 | Own reading and comparison UI | Unified medical/laboratory timeline, full-text/source/institution/date filters, paginated complete returned histories, coverage states and source-scoped prescription-days graphs. Existing age/sex, CKD-EPI and guarded lipid analysis remain. | Extra source values are not automatically merged into laboratory formula inputs without verified comparability. |
-| Complete portable data | healthbank.dataset.v1 carries all fetched lists/details, source ranges/states and explicitly retained attachments; UTF-8/BOM, SHA-256 and strict atomic import into an unverified session. Large originals remain explicit separate downloads. | Original official JSON/XML/PDF are downloadable artifacts, not assumed compatible with the Healthbank schema. |
-| Isolated connector maintenance | Fixed observed routes, opaque session/category handles, typed errors, bounds, no health persistence and public-source contract appendices. | Live official contract changes require source reinspection and authorized-account acceptance. |
+| Complete portable data | healthbank.dataset.v2 carries all fetched lists/details, source ranges/states, semantics, producer/evidence versions and retained attachments; strict v1 import remains. Local source-aware snapshot comparison preserves duplicate multiplicity and relationship context. Large originals remain explicit downloads. | Original official JSON/XML/PDF are downloadable artifacts, not assumed compatible with the Healthbank schema; archive metadata is not authenticity proof. |
+| Isolated connector maintenance | Fixed observed routes, opaque session/category handles, typed errors, bounded reference accounting and no health persistence. Checked-in contract registry follows the current entry bundle/chunk mapping; offline fixtures distinguish stale accessible assets from current ones. | Live official contract changes require source reinspection and authorized-account acceptance. |
 
 Scientific research continues to supply named constants, coefficients, eligibility
 and limitations. This data expansion adds no new diagnostic thresholds, treatment
 recommendations or inferred medication adherence.
 
 ## Deep-audit maintenance
+
+The RC10 delivery adds an actual-data print/PDF document, all-record and explicit
+sharing scopes, pagination and escaped source text. Repeated interpretation notes
+are indexed, never used to aggregate original measurements. The checked-in browser
+gate tests real compiled APIs, actual file downloads, full/selected/matrix PDFs,
+200% layouts, keyboard navigation, cross-tab generation changes and Chinese glyphs.
+The packaged amd64 executable must pass that gate before publication.
+
+Settings deletion is scoped to the verified subject. Schema-2 backups verify their
+identity-key pairing while preserving unverified legacy provenance and ordinary
+upgrade availability. Process/session/request/connection limits reject excess work
+without replacing old successful content. A direct-loopback readiness endpoint
+reports coarse operational state separately from public liveness.
+
+Clinical maintenance uses a finite case-sensitive unit map, isolation of old
+ambiguous keys, source-qualified comparison inputs and appropriate eGFR display
+precision. An embedded evidence registry records every built-in rule/template,
+source locus, eligibility/exclusion and relevant implementation hash. No new
+diagnostic formula, treatment rule or medication-use inference is enabled.
 
 The RC9 pass rechecked the existing architecture rather than restarting it. It
 repairs ambiguous/lossy JSON, raw-date export fidelity, cross-tab session binding,

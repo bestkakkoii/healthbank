@@ -30,6 +30,31 @@ Linux部署包不含版本名稱的外層目錄；解壓到選定目錄後，直
 SQLite首次啟動自動建立。MySQL需先建立專用空資料庫與最小必要權限帳號；遠端MySQL應配置TLS。
 服務只信任來自loopback代理的 `X-Forwarded-Proto`，不要任意將應用埠公開。
 
+### 容量設定
+
+預設總工作階段 64 個，其中新匿名階段額度 16 個；匿名建立採程序內每秒補一個的配額，不保存 IP 指紋。
+接受的連線最多 128 個；有狀態請求總量含排隊最多 32 個，同一階段一次執行一個、另容納 4 個等待者。
+排隊最多等待 5 秒且接受取消。來源／匯入／文件等重工作同時最多 2 個，另須通過工作用量預留。
+
+| 環境變數 | 預設 | 接受範圍 |
+| --- | ---: | --- |
+| `HEALTHBANK_MAX_SESSIONS` | 64 | 2–256 |
+| `HEALTHBANK_ANONYMOUS_SESSIONS` | 16 | 1–64，且小於總階段數 |
+| `HEALTHBANK_MAX_REQUESTS` | 32 | 1–1024 |
+| `HEALTHBANK_SESSION_QUEUE` | 4 | 0–16 |
+| `HEALTHBANK_HEAVY_REQUESTS` | 2 | 1–8，且不大於請求總量 |
+| `HEALTHBANK_MAX_CONNECTIONS` | 128 | 16–4096 |
+| `HEALTHBANK_WORKING_MEMORY_MIB` | 256 | 192–4096 |
+| `HEALTHBANK_RETAINED_MEMORY_MIB` | 256 | 16–4096 |
+| `HEALTHBANK_SESSION_MEMORY_MIB` | 64 | 至少 4，且不大於保留總預算 |
+
+這些是操作預留及保留內容的邏輯計數，不是程序 RSS 的硬性上限或最低實體記憶體保證。
+例如大型檢驗匯入預留 192 MiB，因此預設工作預算一次只允許一份大型匯入；Go 執行環境、GC、
+連線、作業系統與反向代理仍需額外容量。來源引用另有每個連接器 32 MiB 上限。
+超限回傳固定錯誤及 `Retry-After`，保留原有報告或來源引用，不交付截斷資料。
+長時間下載占用同階段操作時，另一操作可能得到 `session_busy`；可等下載結束後重試。
+這不是分散式阻斷服務防護，也不取代主機實測。
+
 ## 反向代理與不留存邊界
 
 [deploy/nginx.healthbank.conf](../deploy/nginx.healthbank.conf)是APP的location片段，不是全機配置。
@@ -77,6 +102,28 @@ swap、core dump、容器/VM快照及備份。保留不含憑證與醫療內容�
 
 確認新服務可讀取相同設定後，按維運保留政策處理匯出檔與舊備份。
 
+### 金鑰配對與舊版升級
+
+RC10 設定庫／設定快照使用 schema 2，新增用途分離的金鑰核對值與配對來源。
+核對值不是金鑰；匯出仍不含 `identity.key`。新版備份匯入目的庫前，必須先放回相配的原金鑰，
+不相配會拒絕，不能用舊格式選項繞過。
+
+```bash
+# 使用與服務相同的環境和資料目錄，先停止服務。
+./healthbank settings verify-key
+```
+
+新建空庫會記錄配對。既有舊庫若已有設定但沒有核對值，升級仍能服務，並回報固定
+`identity_key_unverified`；程式不會假稱能從舊庫證明目前金鑰正確。營運者確認目前檔案就是原金鑰、
+並保留舊備份後，可明確執行 `./healthbank settings bind-legacy-key` 記錄此確認。
+這個指令不是升級必做步驟，也不能把人工確認轉稱為獨立密碼學證明。
+
+只有 schema 1 舊備份沒有核對值時，才使用明確的
+`./healthbank settings import-legacy /secure-maintenance/settings.json`。
+匯入後保留 `legacy_unverified` 來源；新版匯出會核對本次使用金鑰，同時保留原始配對尚未證明的狀態。
+一般 `settings import` 不默默接受這種缺少核對值的舊備份。
+需降回不支援 schema 2 的程式時，應還原升級前一致的資料庫與金鑰備份，不能只替換舊執行檔。
+
 ## 診斷
 
 ```bash
@@ -86,6 +133,21 @@ swap、core dump、容器/VM快照及備份。保留不含憑證與醫療內容�
 只使用正式連接器讀登入頁與驗證碼，不提供帳密、不提交登入、不讀設定資料庫。
 圖片完整解碼成功不等於實際登入、完整歷史或其他主機也成功。
 診斷需使用與服務相同的帳號、DNS與代理環境，否則不能直接比較。
+
+`GET /api/health` 是公開的存活／版本查詢。`GET /api/ready` 僅供維運者直接連至本機 listener：
+
+```bash
+curl --fail http://127.0.0.1:8787/api/ready
+```
+
+readiness 檢查設定資料庫連通及資料表可讀，提供容量計數、Go 堆觀測與金鑰配對來源狀態；
+不讀出設定個人內容、不輸出金鑰／核對值／DSN，也不保證資料庫寫入或健保署可用。
+非 loopback、非本機 Host、帶來源或代理轉送標頭的請求會拒絕。
+隨附 Nginx 片段明確封鎖此端點；其他反向代理也應保持私有。
+資料庫檢查失敗時 readiness 回傳 503，存活端點仍可回應。
+
+登入、清單、明細、產製、下載與清理診斷使用固定操作代碼。
+傳輸中斷保留隨機請求識別與 `response_body` 階段，不印出上游本文或個人查詢內容。
 
 | 狀況 | 檢查 |
 | --- | --- |

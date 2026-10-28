@@ -1,6 +1,7 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
 import type { SupplementEntry, SupplementReport, DataCategory, ReportResponse } from './api';
 import { medicalDate, sourceEventDate } from './medicine-timeline.ts';
+import { sourceEventInterval } from './source-semantics.ts';
 
 export type { SupplementEntry, SupplementReport, DataCategory } from './api';
 export interface AcquisitionState {
@@ -185,7 +186,11 @@ export function filterHealthEvents(events: HealthEvent[], filter: EventFilter): 
     if (filter.institution && event.entry.institution !== filter.institution) return false;
     if (!event.date) {
       if (!filter.includeUnknownDates) return false;
-    } else if (filter.from && event.date < filter.from || filter.to && event.date > filter.to) return false;
+    } else {
+      const interval = sourceEventInterval(event.entry);
+      const end = interval.isInterval ? interval.end : event.date;
+      if (filter.from && end < filter.from || filter.to && event.date > filter.to) return false;
+    }
     if (words.length === 0) return true;
     const entry = event.entry;
     const text = [event.categoryLabel, entry.date, entry.end_date, entry.institution, entry.title, entry.source,

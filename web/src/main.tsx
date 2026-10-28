@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { COPYRIGHT_YEAR } from './model';
 import './styles.css';
+import './report-tools.css';
 
 class ApplicationBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   override state = { failed: false };

@@ -1,21 +1,32 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
-import type { ReportResponse, SupplementEntry, SupplementReport } from './api';
+import type { ReportResponse, SupplementEntry, SupplementReport, SupplementField, SourceDiagnostic } from './api';
 import type { AcquisitionState, DataCategory, DownloadedAttachment, HealthDataSnapshot } from './health-data';
 import { validAcquisitionQuery } from './health-data.ts';
 import { isObject } from './model.ts';
 import { parseStrictJSON } from './strict-json.ts';
 import { assertPortableReportSize, portableRows, PORTABLE_REPORT_SCHEMA } from './portable-report.ts';
+import { SOURCE_DATE_ROLES, SOURCE_FIELD_ROLES, SOURCE_ORIGINS, SOURCE_DIAGNOSTIC_CODES } from './source-semantics.ts';
 
-export const DATASET_SCHEMA = 'healthbank.dataset.v1';
+export const DATASET_SCHEMA = 'healthbank.dataset.v2';
+export const LEGACY_DATASET_SCHEMA = 'healthbank.dataset.v1';
+export interface DatasetProducer {
+  application: 'Healthbank'; version: string; connector_revision: string;
+  clinical_catalog_id: string; clinical_catalog_revision: string; clinical_evidence_revision: string;
+}
+export const UNKNOWN_DATASET_PRODUCER: DatasetProducer = { application: 'Healthbank', version: 'unknown', connector_revision: 'unknown',
+  clinical_catalog_id: 'unknown', clinical_catalog_revision: 'unknown', clinical_evidence_revision: 'unknown' };
 export const MAX_DATASET_BYTES = 128 * 1024 * 1024;
 export const MAX_ARCHIVE_ATTACHMENT_BYTES = 32 * 1024 * 1024;
 const MAX_ENTRIES = 250_000;
 const MAX_CATEGORIES = 200;
 const MAX_FIELD_BYTES = 65_536;
 const encoder = new TextEncoder();
-type PortableRow = ReturnType<typeof portableRows>[number];
+export type PortableRow = ReturnType<typeof portableRows>[number];
 export type LaboratoryMetadata = Pick<ReportResponse, 'fetched_at' | 'complete' | 'warnings' | 'official_query'>;
 export interface ImportedDataset {
+  exportedAt: string;
+  producer: DatasetProducer | null;
+  importedFrom: DatasetProducer | null;
   laboratoryJSON: string;
   laboratoryMetadata: LaboratoryMetadata;
   snapshot: HealthDataSnapshot;
@@ -34,6 +45,8 @@ interface StoredAttachment {
 interface DatasetDocument {
   schema: typeof DATASET_SCHEMA;
   exported_at: string;
+  producer: DatasetProducer;
+  imported_from?: DatasetProducer;
   laboratory: LaboratoryMetadata & { schema: typeof PORTABLE_REPORT_SCHEMA; records: PortableRow[] };
   catalog: DataCategory[];
   data: HealthDataSnapshot;
@@ -57,6 +70,30 @@ function list(value: unknown, max: number): unknown[] { if (!Array.isArray(value
 function integer(value: unknown, max: number): number {
   if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0 || value > max) return invalid();
   return value;
+}
+function choice<T extends string>(value: unknown, options: readonly T[]): T {
+  const matched = options.find(option => option === value);
+  if (matched === undefined) return invalid();
+  return matched;
+}
+function fixedID(value: unknown, field = false): string {
+  const result = text(value, field ? 64 : 128);
+  if (!(field ? /^[a-z][a-z0-9_]{0,63}$/ : /^[a-z][a-z0-9_.-]{0,127}$/).test(result)) return invalid();
+  return result;
+}
+function producer(value: unknown): DatasetProducer {
+  const v = object(value, ['application', 'version', 'connector_revision', 'clinical_catalog_id', 'clinical_catalog_revision', 'clinical_evidence_revision']);
+  if (v['application'] !== 'Healthbank') return invalid();
+  const revision = (value: unknown) => {
+    const result = text(value, 71);
+    if (result !== 'unknown' && !/^sha256:[a-f0-9]{64}$/.test(result)) return invalid();
+    return result;
+  };
+  const version = text(v['version'], 100);
+  if (!/^[A-Za-z0-9._+-]{1,100}$/.test(version)) return invalid();
+  return { application: 'Healthbank', version, connector_revision: fixedID(v['connector_revision']),
+    clinical_catalog_id: fixedID(v['clinical_catalog_id']), clinical_catalog_revision: revision(v['clinical_catalog_revision']),
+    clinical_evidence_revision: revision(v['clinical_evidence_revision']) };
 }
 function categoryID(value: unknown): string {
   const id = text(value, 100);
@@ -125,13 +162,30 @@ function filename(value: unknown): string {
   for (const character of name) if (character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127) return invalid();
   return name;
 }
-function entry(value: unknown): SupplementEntry {
-  const v = object(value, ['date', 'institution', 'title', 'source', 'fields', 'detail_id', 'key', 'kind', 'end_date', 'medicine', 'attachments']);
+function sourceField(value: unknown, modern: boolean): SupplementField {
+  const v = object(value, ['name', 'value', 'unit', ...(modern ? ['code', 'role', 'unit_basis'] : [])]);
+  return { name: text(v['name']), value: text(v['value']), ...(v['unit'] === undefined ? {} : { unit: text(v['unit']) }),
+    ...(v['code'] === undefined ? {} : { code: fixedID(v['code'], true) }),
+    ...(v['role'] === undefined ? {} : { role: choice(v['role'], SOURCE_FIELD_ROLES) }),
+    ...(v['unit_basis'] === undefined ? {} : { unit_basis: choice(v['unit_basis'], ['source', 'public_contract'] as const) }) };
+}
+function diagnostics(value: unknown): SourceDiagnostic[] {
+  return list(value, 128).map(item => {
+    const v = object(item, ['code', 'severity', 'section', 'count', 'message']);
+    return { code: choice(v['code'], SOURCE_DIAGNOSTIC_CODES), severity: choice(v['severity'], ['info', 'warning'] as const),
+      section: fixedID(v['section']), message: text(v['message'], 1000),
+      ...(v['count'] === undefined ? {} : { count: integer(v['count'], 50_000) }) };
+  });
+}
+function entry(value: unknown, modern: boolean): SupplementEntry {
+  const v = object(value, ['date', 'institution', 'title', 'source', 'fields', 'detail_id', 'key', 'kind', 'end_date', 'medicine', 'attachments',
+    ...(modern ? ['date_role', 'end_date_role', 'origin', 'contract_id'] : [])]);
   const result: SupplementEntry = { date: text(v['date']), institution: text(v['institution']), title: text(v['title']), source: text(v['source']),
-    fields: list(v['fields'], 50_000).map(item => {
-      const field = object(item, ['name', 'value', 'unit']);
-      return { name: text(field['name']), value: text(field['value']), ...(field['unit'] === undefined ? {} : { unit: text(field['unit']) }) };
-    }) };
+    fields: list(v['fields'], 50_000).map(item => sourceField(item, modern)) };
+  if (v['date_role'] !== undefined) result.date_role = choice(v['date_role'], SOURCE_DATE_ROLES);
+  if (v['end_date_role'] !== undefined) result.end_date_role = choice(v['end_date_role'], SOURCE_DATE_ROLES);
+  if (v['origin'] !== undefined) result.origin = choice(v['origin'], SOURCE_ORIGINS);
+  if (v['contract_id'] !== undefined) result.contract_id = fixedID(v['contract_id']);
   for (const key of ['key', 'kind', 'end_date'] as const) if (v[key] !== undefined) result[key] = text(v[key]);
   if (v['detail_id'] !== undefined) result.detail_id = reference(v['detail_id']);
   if (v['medicine'] !== undefined) {
@@ -145,18 +199,21 @@ function entry(value: unknown): SupplementEntry {
   });
   return result;
 }
-function snapshot(value: unknown): HealthDataSnapshot {
+function snapshot(value: unknown, modern = true): HealthDataSnapshot {
   const v = object(value, ['reports', 'details', 'states', 'query']);
   const reports = object(v['reports']), details = object(v['details']), states = object(v['states']);
   const ids = new Set([...Object.keys(reports), ...Object.keys(details), ...Object.keys(states)]);
   if (ids.size > MAX_CATEGORIES) return invalid();
   let entries = 0;
   function report(value: unknown): SupplementReport {
-    const r = object(value, ['category', 'entries', 'coverage', 'fetched_at', 'start_date', 'end_date', 'complete']);
+    const r = object(value, ['category', 'entries', 'coverage', 'fetched_at', 'start_date', 'end_date', 'complete',
+      ...(modern ? ['contract_revision', 'diagnostics'] : [])]);
     const rows = list(r['entries'], 50_000);
     entries += rows.length;
     if (entries > MAX_ENTRIES) return invalid();
-    return { category: text(r['category'], 150), entries: rows.map(entry), coverage: text(r['coverage']), fetched_at: text(r['fetched_at'], 100), complete: boolean(r['complete']),
+    return { category: text(r['category'], 150), entries: rows.map(row => entry(row, modern)), coverage: text(r['coverage']), fetched_at: text(r['fetched_at'], 100), complete: boolean(r['complete']),
+      ...(r['contract_revision'] === undefined ? {} : { contract_revision: fixedID(r['contract_revision']) }),
+      ...(r['diagnostics'] === undefined ? {} : { diagnostics: diagnostics(r['diagnostics']) }),
       ...(r['start_date'] === undefined ? {} : { start_date: text(r['start_date'], 100) }),
       ...(r['end_date'] === undefined ? {} : { end_date: text(r['end_date'], 100) }) };
   }
@@ -240,8 +297,14 @@ function portableSupplementReport(category: string, source: SupplementReport,
     category: source.category, coverage: source.coverage, fetched_at: source.fetched_at, complete: source.complete,
     ...(source.start_date === undefined ? {} : { start_date: source.start_date }),
     ...(source.end_date === undefined ? {} : { end_date: source.end_date }),
+    ...(source.contract_revision === undefined ? {} : { contract_revision: source.contract_revision }),
+    ...(source.diagnostics === undefined ? {} : { diagnostics: source.diagnostics.map(item => ({ ...item })) }),
     entries: source.entries.map(row => ({ date: row.date, institution: row.institution, title: row.title, source: row.source,
-      fields: row.fields.map(field => ({ name: field.name, value: field.value, ...(field.unit === undefined ? {} : { unit: field.unit }) })),
+      fields: row.fields.map(field => sourceField(field, true)),
+      ...(row.date_role === undefined ? {} : { date_role: row.date_role }),
+      ...(row.end_date_role === undefined ? {} : { end_date_role: row.end_date_role }),
+      ...(row.origin === undefined ? {} : { origin: row.origin }),
+      ...(row.contract_id === undefined ? {} : { contract_id: row.contract_id }),
       ...(row.kind === undefined ? {} : { kind: row.kind }), ...(row.end_date === undefined ? {} : { end_date: row.end_date }),
       ...(row.medicine === undefined ? {} : { medicine: { ...row.medicine } }),
       ...(row.detail_id ? { detail_id: local(category, 'detail', row.detail_id) } : {}),
@@ -274,7 +337,8 @@ export function supplementReportJSON(report: SupplementReport): string {
   return output;
 }
 
-export async function exportDataset(report: ReportResponse, data: HealthDataSnapshot, files: DownloadedAttachment[], categories: DataCategory[], bom = false): Promise<string> {
+export async function exportDataset(report: ReportResponse, data: HealthDataSnapshot, files: DownloadedAttachment[], categories: DataCategory[], bom = false,
+  producedBy: DatasetProducer = UNKNOWN_DATASET_PRODUCER, importedFrom?: DatasetProducer): Promise<string> {
   if (files.length > 10_000) return invalid();
   const labRecords = laboratoryRows(portableRows(report.records));
   // This is the exact body sent to the laboratory importer on restore. Check
@@ -315,7 +379,8 @@ export async function exportDataset(report: ReportResponse, data: HealthDataSnap
   }
   const reportMetadata: LaboratoryMetadata = { fetched_at: report.fetched_at, complete: report.complete,
     warnings: report.warnings, ...(report.official_query === undefined ? {} : { official_query: report.official_query }) };
-  const document: DatasetDocument = { schema: DATASET_SCHEMA, exported_at: new Date().toISOString(),
+  const document: DatasetDocument = { schema: DATASET_SCHEMA, exported_at: new Date().toISOString(), producer: producer(producedBy),
+    ...(importedFrom === undefined ? {} : { imported_from: producer(importedFrom) }),
     laboratory: { schema: PORTABLE_REPORT_SCHEMA, records: labRecords, ...reportMetadata },
     catalog: categories, data: sanitized, attachments };
   // Validate the source-only projection before writing, preserving every row or
@@ -331,15 +396,19 @@ export async function importDataset(bytes: Uint8Array): Promise<ImportedDataset>
   let source: string;
   try { source = new TextDecoder('utf-8', { fatal: true }).decode(bytes).replace(/^\uFEFF/, ''); }
   catch { throw new Error('資料包須為有效 UTF-8 JSON。'); }
-  const v = object(parseStrictJSON(source), ['schema', 'exported_at', 'laboratory', 'catalog', 'data', 'attachments']);
-  if (v['schema'] !== DATASET_SCHEMA) throw new Error('此檔案不是 Healthbank 完整資料包 healthbank.dataset.v1；檢驗 JSON/XML 請使用檢驗匯入。');
-  text(v['exported_at'], 100);
+  const raw = object(parseStrictJSON(source));
+  const modern = raw['schema'] === DATASET_SCHEMA;
+  if (!modern && raw['schema'] !== LEGACY_DATASET_SCHEMA) throw new Error('此檔案不是支援的 Healthbank 完整資料包 v1／v2；檢驗 JSON/XML 請使用檢驗匯入。');
+  const v = object(raw, ['schema', 'exported_at', 'laboratory', 'catalog', 'data', 'attachments', ...(modern ? ['producer', 'imported_from'] : [])]);
+  const exportedAt = text(v['exported_at'], 100);
+  const producedBy = modern ? producer(v['producer']) : null;
+  const importedFrom = modern && v['imported_from'] !== undefined ? producer(v['imported_from']) : null;
   const lab = object(v['laboratory']);
   if (lab['schema'] !== PORTABLE_REPORT_SCHEMA) return invalid();
   const laboratoryMetadata = metadata(lab);
   const laboratoryJSON = JSON.stringify({ schema: PORTABLE_REPORT_SCHEMA, records: laboratoryRows(lab['records']) });
   assertPortableReportSize(laboratoryJSON);
-  const data = snapshot(v['data']);
+  const data = snapshot(v['data'], modern);
   const catalog = catalogItems(v['catalog']);
   const files: DownloadedAttachment[] = [];
   const references = new Map<string, { category: string; name: string; content_type: string }>();
@@ -375,5 +444,9 @@ export async function importDataset(bytes: Uint8Array): Promise<ImportedDataset>
     catalog.push({ id, label: id, group: '資料包來源', range_mode: 'source', has_details: true });
     known.add(id);
   }
-  return { laboratoryJSON, laboratoryMetadata, snapshot: data, attachments: files, catalog };
+  return { laboratoryJSON, laboratoryMetadata, snapshot: data, attachments: files, catalog, exportedAt, producer: producedBy, importedFrom };
+}
+
+export function datasetLaboratoryRows(dataset: ImportedDataset): PortableRow[] {
+  return laboratoryRows(object(parseStrictJSON(dataset.laboratoryJSON), ['schema', 'records'])['records']);
 }

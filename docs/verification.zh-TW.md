@@ -7,9 +7,94 @@
 
 **發行與驗證狀態：** 每版是否真正公開，請核對 [Releases](https://github.com/bestkakkoii/healthbank/releases)；
 各版本的完整編譯、MySQL、競態與發行結果，請核對對應提交的 [Actions](https://github.com/bestkakkoii/healthbank/actions)。
-rc.7 已公開，主線／標籤提交為 `90736de309f6c5ba62ba2200b7e8f0e91c96c21d`；其 [PR CI](https://github.com/bestkakkoii/healthbank/actions/runs/40614282495)、[主線 CI](https://github.com/bestkakkoii/healthbank/actions/runs/40615480756) 及 [Release](https://github.com/bestkakkoii/healthbank/actions/runs/40615480661) 均成功，三個壓縮包與校驗碼已完成實際下載核對。rc.8 亦已公開，主線／標籤為 `479f4ce428859404af0d90a7a5e48ae0c567a21f`，[主線 CI](https://github.com/bestkakkoii/healthbank/actions/runs/40627113644) 與 [Release](https://github.com/bestkakkoii/healthbank/actions/runs/40627113675) 成功，公開時間為 2026-10-28T03:40:26Z。rc.9 必須另外通過其精確提交的 gates；下列本機通過紀錄不預先宣稱遠端 CI 或 Release 已完成。
+rc.7 已公開，主線／標籤提交為 `90736de309f6c5ba62ba2200b7e8f0e91c96c21d`；其 [PR CI](https://github.com/bestkakkoii/healthbank/actions/runs/40614282495)、[主線 CI](https://github.com/bestkakkoii/healthbank/actions/runs/40615480756) 及 [Release](https://github.com/bestkakkoii/healthbank/actions/runs/40615480661) 均成功，三個壓縮包與校驗碼已完成實際下載核對。rc.8 亦已公開，主線／標籤為 `479f4ce428859404af0d90a7a5e48ae0c567a21f`，[主線 CI](https://github.com/bestkakkoii/healthbank/actions/runs/40627113644) 與 [Release](https://github.com/bestkakkoii/healthbank/actions/runs/40627113675) 成功，公開時間為 2026-10-28T03:40:26Z。rc.9 已公開，主線／標籤為 `f9a7f33624579ea1a680eb8891a47081c50a48c2`；[PR CI](https://github.com/bestkakkoii/healthbank/actions/runs/40634984343)、[主線 CI](https://github.com/bestkakkoii/healthbank/actions/runs/40635944013) 與 [Release](https://github.com/bestkakkoii/healthbank/actions/runs/40635943907) 均成功。RC10 須以自己的精確提交與下載結果核對，不沿用 RC9 作為通過證據。
 真正無法用合成資料取代的外部驗收詳見 [交付驗收清單](acceptance.zh-TW.md)；未連入使用者主機，不代表正式站點已更新。
 
+
+## v1.0.3-rc.10 — 完整報表、來源語意與有界取得
+
+2026-10-28（臺灣時間），從已公開 RC9 的同一來源樹延續既有工作分支。
+本輪涵蓋實際資料生成的 PDF／列印、來源日期與欄位語意、v2 資料包／關聯差異、
+分段取得、單位／臨床證據、設定復原與刪除隔離、容量控管、來源契約漂移檢查及永久瀏覽器 gates。
+沒有重新建立專案；各功能與修正按獨立階段提交，完整提交序列見 [PR #5](https://github.com/bestkakkoii/healthbank/pull/5)。
+
+### 已執行的整合檢查
+
+| 檢查 | 實際結果與界限 |
+| --- | --- |
+| 前端模型全套 | 114 項通過，0 失敗／取消／略過；含原始值／日期、圖表、公式邊界、v1/v2、重複筆數、附件與多層關聯、分批與分享範圍。 |
+| 前端靜態 | 原有嚴格 TypeScript 與 typed ESLint 通過，0 錯誤／警告；沒有停用規則。後續已確認的取消競態另經相同嚴格檢查與瀏覽器回歸，最終 CI 再對確切提交重跑。 |
+| Go 完整測試 | `go test -count=1 -json -coverprofile=… ./...`：589 個測試／子測試通過事件，0 失敗；本機未設定隔離 DSN，MySQL 整合 1 項略過。事件數不是獨立函式數。 |
+| Go 完整 race | `go test -count=1 -race -json ./...`：589 個通過事件、0 失敗，同一 MySQL 項目略過；不將本機略過視為 MySQL 通過。 |
+| Go 靜態／模組 | gofmt 清單為空；go mod verify、go vet 通過；所有第一方套件 `staticcheck -checks=all` 輸出為空。 |
+| 覆蓋率觀測 | 該次完整 Go statement coverage 77.6%（4,290／5,527 statements）；不是安全分數或所有輸入已窮盡的證明。 |
+| 依賴公告 | 本輪即時 npm audit 0 vulnerabilities；govulncheck 回報 No vulnerabilities found。實際 development Go 標準庫仍缺可比較正式版本，保留掃描適用限制。 |
+| 發行／來源回歸 | Python warnings-as-errors：13 項封裝與私密檔排除、9 項發布／標籤防護、6 項公開契約檢查器測試通過；離線 registry 檢查通過。 |
+| 來源研究 | 2026-10-28T07:26:25Z 無憑證核對目前入口、app 資產及其映射的 87 個受監測 chunk，雜湊未漂移。38 個額外來源投影由 registry 與 Go 測試對照；未執行公開腳本、未登入或呼叫個人醫療 API。 |
+| 臨床證據 | 18 項內建規則、9 項具名範本、CKD-EPI／Sampson 的條件與獨立數值參照納入證據 registry；實作雜湊、單位大小寫及舊共用設定隔離回歸通過。沒有新增治療建議。 |
+
+本機 npm 最初繼承不受目前 npm 支援的 `npm_config_http_proxy` 環境選項；移除該呼叫的無效選項後，以相同 `--audit-level=low` 重跑，輸出為 0 vulnerabilities 且無該警告。未修改靜態分析或弱化公告門檻。
+
+### 容量與復原實測
+
+聚焦 race 回歸涵蓋匿名配額回收、取消後不執行的等待者、全域／階段容量、保留失敗的原子性、
+同一身分設定刪除、來源引用釋放及私有 readiness。SQLite 舊 schema 升級保留設定；
+schema-2 錯誤金鑰拒絕、舊配對未驗證仍可服務、明確 legacy 匯入與確認均有合成測試。
+
+`BenchmarkBoundedPortableImport` 使用釘選非 race Go、GOMAXPROCS=4、linux/amd64，
+在本次 AMD EPYC 9V74 主機處理 500 筆／30.86 MiB 合成檢驗，保留邏輯計數 31.07 MiB，
+耗時約 0.643 秒；相對已準備請求基線的抽樣峰值 Go heap 成長 173.8 MiB。
+5 ms 抽樣可能漏掉尖峰，總配置量不是峰值，亦非 RSS／所有輸入／任何 VPS 的保證。
+這個實測用於將大型匯入操作預留調為 192 MiB；預設 256 MiB 工作預算一次只允許一份大型匯入。
+工作與保留預算以外，仍須預留 Go／GC／連線、作業系統及代理容量。
+
+### 實際瀏覽器與 PDF
+
+工具與可重跑命令見 [瀏覽器驗收](browser-acceptance.md)。釘選 Playwright 1.64.1、
+Chromium 156.0.8078.4 及本機測試專用 Noto CJK；產品沒有新增瀏覽器或外部字型依賴。
+測試直接啟動實際 Go／內嵌 React，在獨立目錄使用明示合成資料，保留被測執行檔與前端雜湊。
+
+最終本機驗收執行結果為 10 組全數通過、0 未處理瀏覽器錯誤及 0 禁止的外部請求；
+隔離執行程序已停止，暫時 SQL／密鑰目錄已移除。驗收版 `v1.0.3-rc.10-qa` 的 SHA-256：
+
+| 證據 | SHA-256 |
+| --- | --- |
+| amd64 驗收執行檔 | `87cfc59d70d392f96c8369baf14042a402b3bba812f3c4c6673538f10a2c97ce` |
+| 內嵌 app.js | `3e2353601cbcdb854d68702c08dd8fe84840b5e71e44f5245fce625eeb51f41d` |
+| 內嵌 app.css | `d44758a7693b64afc94458412c1eddfc95cb701ce2ca7532eb0741b25d6ab88e` |
+| 完整驗收 summary.json | `2d13b49fe2a90286045a1f6400aabbba356c7bda87b936d195b5ad2e687ce5a2` |
+
+這些是本機驗收識別，**不是正式 RC10 壓縮包的 SHA-256**。正式執行檔包含乾淨提交的版本／建置識別，
+由 Release workflow 重建並對真正封裝後的 amd64 執行檔重跑同一套驗收。
+
+已驗證 500 筆檢驗、120 筆來源清單及 1 筆明細的實際還原與下載；五個主畫面以
+320／390／1280 px 直向與 844×390 橫向，共 20 組 200% 字級版面檢查。
+返回明細保留篩選／頁碼／焦點，500 點圖表採單一 Tab 入口與方向鍵，原始同日重複仍能逐筆開啟。
+JSON／BOM／XML／CSV／v2 下載核對實際內容；匯入模式不冒稱官方總數已核對。
+
+五種實際 PDF 路徑涵蓋專用完整逐筆表、完整日期對照、135 筆限定分享、
+畫面仍篩選 2016 年時的瀏覽器原生完整列印，以及已開啟限定分享對話框時的原生列印。
+核對完整筆數、來源標記、原始日期／值、中文字及著作權；限定分享不帶排除類別的計數或全域醫療警告。
+HTML 僅含跳脫原文、不含即時權杖；原生列印後暫時文件清除且原視圖／對話框保留。
+PDF 以閱讀順序抽字，避免長日期換行時被相鄰欄位插入；另實際檢視首／中／末頁，
+不以成功解析 HTML 當作 PDF 排版已驗收。
+
+專用合成來源控制器案例另驗證分批來源排除、明細完成、手動保存確認、第二批失敗／取消／接續，
+並以真正本機登出穿插延遲回應，確保舊批次或一般來源取得不會在新身分下繼續請求。
+這組有明示的 API 替身；一般匯入、下載、跨分頁與登出仍使用真實 Go API。
+它不代表已成功真人健保登入或真實官方查詢。
+
+### 發行判定與外部驗收
+
+CI／Release 使用隔離 MySQL 26.10.0，對最終提交完整重跑所有 gates，
+再編譯 Linux amd64／arm64、封裝平鋪執行包及來源包、產生精確 SHA256SUMS。
+Release gate 解壓真正 amd64 發行包後執行相同瀏覽器／PDF 驗收，才執行發布。
+此文件的本機數據不預先證明遠端成功；實際 [RC10 版本頁](https://github.com/bestkakkoii/healthbank/releases/tag/v1.0.3-rc.10)
+與確切標籤提交的 [Actions](https://github.com/bestkakkoii/healthbank/actions) 是公開結果的核對位置。
+
+真人 NHI 登入、帳號實際各類回傳與歷史留存、實體 iPhone／Safari／密碼管理員、
+實體印表機及正式 VPS／代理／CDN／swap／備份仍依 [實機清單](acceptance.zh-TW.md) 驗收。
+合成檢查沒有把這些標成通過，也不會無限阻止已完成獨立驗證的 RC 發布。
 
 ## v1.0.3-rc.9 — 全鏈深度稽核與資料完整性修正
 

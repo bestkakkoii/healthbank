@@ -150,6 +150,7 @@ func buildProviderSpecs() map[string]providerSpec {
 	familyStatus.object = true
 	familyProvider := providerSectionSpec("sP_IHKE3720S02", "家庭醫師收案院所", "健康存摺／家庭醫師計畫", "", []fieldSpec{{"hosp_ABBR", "收案院所", ""}, {"prsn_NAME", "家庭醫師姓名", ""}, {"tel", "院所聯絡電話", ""}})
 	familyProvider.object = true
+	familyProvider.optional = true // the observed nonmember branch has no provider
 	add("family_doctor", "家庭醫師計畫收案", "照護與追蹤", sourceCoverage+"只讀取既有收案狀態及院所，不變更加入或同意設定。", get("/api/ihke3000/ihke3720s01/SP_IHKE3720S01", familyStatus, familyProvider))
 	followup := providerSectionSpec("sP_IHKE3721S02", "家庭醫師追蹤項目", "健康存摺／家庭醫師追蹤來源", "", []fieldSpec{{"assay_NAME", "來源檢驗名稱", ""}, {"assay_ZH_NAME", "來源中文名稱", ""}, {"next_CHK_DATE", "來源建議下次檢查日期（非預約）", ""}, {"chk_memo", "來源追蹤註記", ""}})
 	followup.titleField, followup.detail = "assay_ZH_NAME", true

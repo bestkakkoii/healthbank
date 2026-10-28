@@ -316,8 +316,11 @@ func attachVerifiedFixture(t *testing.T, browser *browserFixture, syntheticID st
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.subject = config.Subject(app.secret, syntheticID)
+	app.bindSubject(s, config.Subject(app.secret, syntheticID))
 	s.mode = "official"
+	if !s.memory.replaceReports(rows) {
+		t.Fatal("synthetic fixture exceeded configured retention capacity")
+	}
 	s.raw = rows
 	_ = app.catalog.Normalize(rows, &s.settings)
 	if err := app.persistDiscovered(context.Background(), s); err != nil {

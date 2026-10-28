@@ -11,9 +11,7 @@ import (
 )
 
 func (a *App) demo(w http.ResponseWriter, r *http.Request, s *session) {
-	s.clear()
-	s.mode = "demo"
-	s.complete = true
+	var rows []lab.RawRecord
 	dates := []string{"2023-03-14", "2023-10-05", "2024-04-09", "2024-11-19", "2025-05-13", "2025-11-11", "2026-04-14", "2026-10-13"}
 	type item struct {
 		code, name, unit, reference string
@@ -33,12 +31,18 @@ func (a *App) demo(w http.ResponseWriter, r *http.Request, s *session) {
 	}
 	for _, it := range items {
 		for i, date := range dates {
-			s.raw = append(s.raw, lab.RawRecord{CheckDate: date, VisitDate: date, OrderCode: it.code, OrderName: "示範檢驗", ItemName: it.name, Result: it.values[i], Unit: it.unit, Reference: it.reference, Institution: "示範醫療機構", Source: "人工合成示範"})
+			rows = append(rows, lab.RawRecord{CheckDate: date, VisitDate: date, OrderCode: it.code, OrderName: "示範檢驗", ItemName: it.name, Result: it.values[i], Unit: it.unit, Reference: it.reference, Institution: "示範醫療機構", Source: "人工合成示範"})
 		}
 	}
 	// Deliberately demonstrate same-day repeats and non-exact values.
-	s.raw = append(s.raw, lab.RawRecord{CheckDate: dates[7], VisitDate: dates[7], OrderCode: "09022C", OrderName: "示範複檢", ItemName: "Potassium(K)", Result: "4.3", Unit: "mmol/L", Reference: "[3.5][5.1]", Institution: "示範醫療機構", Source: "人工合成示範"})
-	s.raw = append(s.raw, lab.RawRecord{CheckDate: dates[7], VisitDate: dates[7], OrderCode: "06012C", OrderName: "示範尿液檢驗", ItemName: "A/C ratio", Result: "大於等於300", Unit: "mg/gCr", Reference: "[無參考值][]", Institution: "示範醫療機構", Source: "人工合成示範"})
+	rows = append(rows, lab.RawRecord{CheckDate: dates[7], VisitDate: dates[7], OrderCode: "09022C", OrderName: "示範複檢", ItemName: "Potassium(K)", Result: "4.3", Unit: "mmol/L", Reference: "[3.5][5.1]", Institution: "示範醫療機構", Source: "人工合成示範"})
+	rows = append(rows, lab.RawRecord{CheckDate: dates[7], VisitDate: dates[7], OrderCode: "06012C", OrderName: "示範尿液檢驗", ItemName: "A/C ratio", Result: "大於等於300", Unit: "mg/gCr", Reference: "[無參考值][]", Institution: "示範醫療機構", Source: "人工合成示範"})
+	if !a.admitReport(w, r, s, rows) {
+		return
+	}
+	a.clearSessionState(s)
+	s.mode, s.raw, s.complete = "demo", rows, true
+	a.protectWorkspace(s)
 	s.fetched = time.Now().UTC().Format(time.RFC3339)
 	s.warnings = []string{fmt.Sprintf("示範模式：%d筆資料皆為人工合成，不是任何人的真實病歷；設定只保留在本次連線。", len(s.raw))}
 	if err := a.rotate(w, r, s); err != nil {

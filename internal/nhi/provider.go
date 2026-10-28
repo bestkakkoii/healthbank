@@ -27,6 +27,7 @@ type ProviderCategoryInfo struct {
 
 type providerReference struct {
 	rowID, sourceType, date, institution, title, unit, kind, originKey string
+	dateRole                                                           string
 	parentReference                                                    string
 	query                                                              Query
 }
@@ -37,6 +38,7 @@ type providerSection struct {
 	object                                                  bool
 	keyed                                                   bool
 	detail                                                  bool
+	optional                                                bool
 }
 
 type providerRequest struct {
@@ -233,6 +235,12 @@ func (s *Session) providerAppend(report *SupplementReport, object wireRow, reque
 			return err
 		}
 		seen = seen || present
+		if section.root != "" {
+			if err := sourceSectionDiagnostic(report, category, section.root, object[strings.ToLower(section.root)], present, section.optional, len(rows)); err != nil {
+				return err
+			}
+		}
+		missingResults := 0
 		for index, row := range rows {
 			if category == "device_activity" && refs != nil {
 				code, err := providerDeviceSelector(row)
@@ -253,6 +261,10 @@ func (s *Session) providerAppend(report *SupplementReport, object wireRow, reque
 			entry.Key = medicalKey(category, request.path+"\x00"+inherited.rowID+"\x00"+inherited.sourceType+"\x00"+inherited.originKey, section.root, index)
 			if refs != nil && (category == "family_followup" || category == "family_health_followup" || category == "body_measurements" || category == "device_activity" || category == "physiology" || category == "lipids") {
 				entry.Kind = "source_index"
+			}
+			providerEntryMetadata(&entry, category, section, inherited)
+			if entry.Kind != "source_index" && strings.ToLower(section.date) != "inoculate_d" && sourceResultMissing(category, section.fields, entry.Fields) {
+				missingResults++
 			}
 			if section.detail && refs != nil {
 				ref, err := providerMakeReference(category, row, entry, inherited.query)
@@ -283,6 +295,11 @@ func (s *Session) providerAppend(report *SupplementReport, object wireRow, reque
 			}
 			if len(report.Entries) > MaxReportRecords {
 				return failure("RESPONSE_TOO_LARGE", "此類別資料過多，未載入不完整清單。")
+			}
+		}
+		if missingResults > 0 {
+			if err := addSourceDiagnostic(report, "known_result_missing", sourceContractID(category, section.root), &missingResults); err != nil {
+				return err
 			}
 		}
 	}
@@ -318,7 +335,7 @@ func providerDispensingEvents(row wireRow, parent SupplementEntry) ([]Supplement
 		if err != nil {
 			return nil, err
 		}
-		events = append(events, SupplementEntry{Key: medicalKey("e_prescriptions", parent.Key, "dispensing", i), Kind: "dispensing", Date: date, Institution: institution, Title: "第" + number + "聯來源已領紀錄", Source: parent.Source + "／來源已領（非實際服用證明）", Fields: []SupplementField{{Name: "處方就醫日期（原文）", Value: parent.Date}, {Name: "來源已領藥日期（原文）", Value: date}, {Name: "資料關係", Value: "對應此電子處方箋；不以建議領藥區間推定已領。"}}})
+		events = append(events, SupplementEntry{Key: medicalKey("e_prescriptions", parent.Key, "dispensing", i), Kind: "dispensing", Date: date, DateRole: "dispensing", Origin: "institutional", ContractID: sourceContractID("e_prescriptions", "refilllist"), Institution: institution, Title: "第" + number + "聯來源已領紀錄", Source: parent.Source + "／來源已領（非實際服用證明）", Fields: []SupplementField{{Name: "處方就醫日期（原文）", Value: parent.Date, Code: "func_date", Role: "date"}, {Name: "來源已領藥日期（原文）", Value: date, Code: "rel_date_str", Role: "date"}, {Name: "資料關係", Value: "對應此電子處方箋；不以建議領藥區間推定已領。"}}})
 	}
 	return events, nil
 }
@@ -328,7 +345,7 @@ func providerDispensingEvents(row wireRow, parent SupplementEntry) ([]Supplement
 func (s *Session) FetchProvider(ctx context.Context, category string, query Query) (SupplementReport, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	report := SupplementReport{Category: category, Entries: []SupplementEntry{}, Complete: false}
+	report := SupplementReport{ContractRevision: ProviderContractRevision, Category: category, Entries: []SupplementEntry{}, Complete: false}
 	spec, ok := providerSpecs[category]
 	if !ok {
 		return report, failure("INVALID_INPUT", "不支援此資料類別。")
@@ -380,22 +397,24 @@ func (s *Session) FetchProvider(ctx context.Context, category string, query Quer
 		}
 		reference := hex.EncodeToString(key)
 		refs[reference] = providerReference{rowID: "10568", title: "血壓與心率", query: resolved}
-		report.Entries = append(report.Entries, SupplementEntry{Key: medicalKey(category, "10568", "source_index", 0), Kind: "source_index", Title: "血壓與心率資料索引", Source: "健康存摺／生理量測資料入口", Fields: []SupplementField{{Name: "資料索引", Value: "取得明細後才包含實際量測紀錄。"}}, DetailID: reference})
+		report.Entries = append(report.Entries, SupplementEntry{Key: medicalKey(category, "10568", "source_index", 0), Kind: "source_index", ContractID: sourceContractID(category, "source_index"), Origin: "mixed", Title: "血壓與心率資料索引", Source: "健康存摺／生理量測資料入口", Fields: []SupplementField{{Name: "資料索引", Value: "取得明細後才包含實際量測紀錄。"}}, DetailID: reference})
 	}
 	if err := validateSupplementReport(report); err != nil {
+		return report, err
+	}
+	if err := s.reserveCategoryReferences("provider/"+category, referenceMapSize(refs, providerReferenceSize), category); err != nil {
 		return report, err
 	}
 	if s.providerReferences == nil {
 		s.providerReferences = map[string]map[string]providerReference{}
 	}
 	s.providerReferences[category] = refs
-	s.clearDocumentCategory(category)
 	report.FetchedAt = time.Now().UTC().Format(time.RFC3339)
 	return report, nil
 }
 
 func providerMakeReference(category string, row wireRow, entry SupplementEntry, query Query) (providerReference, error) {
-	ref := providerReference{date: entry.Date, institution: entry.Institution, title: entry.Title, originKey: entry.Key, query: query}
+	ref := providerReference{date: entry.Date, dateRole: entry.DateRole, institution: entry.Institution, title: entry.Title, originKey: entry.Key, query: query}
 	var err error
 	switch category {
 	case "e_prescriptions":
@@ -465,7 +484,7 @@ func providerRefills(entry *SupplementEntry, row wireRow) error {
 		}
 		label := "第" + number + "聯"
 		if date != "" {
-			entry.Fields = append(entry.Fields, SupplementField{Name: label + "來源已領藥日期", Value: date})
+			entry.Fields = append(entry.Fields, SupplementField{Name: label + "來源已領藥日期", Value: date, Code: "rel_date_str", Role: "date"})
 			institution, err := rowText(item, "hosp_NAME")
 			if err != nil {
 				return err
@@ -489,7 +508,7 @@ func providerRefills(entry *SupplementEntry, row wireRow) error {
 func (s *Session) FetchProviderDetail(ctx context.Context, category, reference string) (SupplementReport, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	report := SupplementReport{Category: category + "_detail", Entries: []SupplementEntry{}, Complete: false}
+	report := SupplementReport{ContractRevision: ProviderContractRevision, Category: category + "_detail", Entries: []SupplementEntry{}, Complete: false}
 	if err := s.supplementReady(ctx); err != nil {
 		return report, err
 	}
@@ -538,15 +557,16 @@ func (s *Session) FetchProviderDetail(ctx context.Context, category, reference s
 			// Source dosage/frequency are kept in fields; only explicitly named
 			// duration/quantity fields feed the existing prescribed-days graph.
 			order := MedicineOrder{}
+			medicationFieldRoles(entry.Fields)
 			for _, field := range entry.Fields {
-				switch field.Name {
-				case "藥品代碼", "醫令代碼":
+				switch field.Role {
+				case "medication_code":
 					order.Code = field.Value
-				case "藥品名稱", "藥品成分":
+				case "medication_name":
 					order.Name = field.Value
-				case "給藥日數":
+				case "prescribed_days":
 					order.Days = field.Value
-				case "給藥總量":
+				case "quantity":
 					order.Quantity = field.Value
 				}
 			}
@@ -562,6 +582,9 @@ func (s *Session) FetchProviderDetail(ctx context.Context, category, reference s
 		return report, err
 	}
 	if refreshChildren {
+		if err := s.reserveReferenceGroups(map[string]int64{"provider/" + category: referenceMapSize(refs, providerReferenceSize)}); err != nil {
+			return report, err
+		}
 		s.providerReferences[category] = refs
 	}
 	report.FetchedAt = time.Now().UTC().Format(time.RFC3339)
@@ -616,6 +639,9 @@ func (s *Session) providerPhysiologyRaw(ctx context.Context, report *SupplementR
 			return err
 		}
 	} else {
+		if err := sourceSectionDiagnostic(report, category, "sP_IHKE3205S04", nil, false, true, 0); err != nil {
+			return err
+		}
 		_, metadata, err := providerSectionRows(object, providerSection{root: "sP_IHKE3205S03"})
 		if err != nil {
 			return err
@@ -625,8 +651,11 @@ func (s *Session) providerPhysiologyRaw(ctx context.Context, report *SupplementR
 		}
 	}
 	device := providerSectionSpec("devicelist", ref.title+"行動裝置日期索引", "健康存摺／行動裝置資料來源", "cdate", []fieldSpec{{"cdate", "來源日期（原文）", ""}, {"value", "來源摘要（原文）", ""}})
-	rows, _, err := providerSectionRows(object, device)
+	rows, present, err := providerSectionRows(object, device)
 	if err != nil {
+		return err
+	}
+	if err := sourceSectionDiagnostic(report, category, device.root, object["devicelist"], present, true, len(rows)); err != nil {
 		return err
 	}
 	for index, row := range rows {
@@ -635,6 +664,7 @@ func (s *Session) providerPhysiologyRaw(ctx context.Context, report *SupplementR
 			return err
 		}
 		entry.Kind = "source_index"
+		providerEntryMetadata(&entry, category, device, ref)
 		entry.Key = medicalKey(category, ref.rowID+"\x00"+ref.originKey, "device_day", index)
 		day, err := rowText(row, "edate")
 		if err != nil || len(day) > 128 {

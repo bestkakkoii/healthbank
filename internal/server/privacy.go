@@ -23,9 +23,8 @@ func (a *App) privacyInfo(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// withSession holds the exclusive retention gate for this route. Existing
-// requests finish before deletion; queued old-session writes cannot resurrect
-// the row. The application never holds App.mu while waiting for session.mu.
+// Only this verified subject's configuration mutations wait for deletion.
+// Revocation cancels/removes old sessions without blocking unrelated people.
 func (a *App) deleteSettings(w http.ResponseWriter, r *http.Request, current *session) {
 	if current.subject == "" || current.mode != "official" {
 		a.fail(w, r, 401, "login_required", "刪除同步設定需要先完成官方身分驗證。")
@@ -38,6 +37,12 @@ func (a *App) deleteSettings(w http.ResponseWriter, r *http.Request, current *se
 		a.fail(w, r, 400, "invalid_settings", "刪除要求格式不正確。")
 		return
 	}
+	unlock, err := a.lockSubject(r.Context(), current)
+	if err != nil {
+		a.subjectAdmissionError(w, r, current)
+		return
+	}
+	defer unlock()
 	if err := a.refreshSettings(r.Context(), current); err != nil {
 		a.fail(w, r, 500, "settings_read", "無法讀取設定以確認刪除範圍。")
 		return
@@ -57,27 +62,8 @@ func (a *App) deleteSettings(w http.ResponseWriter, r *http.Request, current *se
 			return
 		}
 	}
-	a.mu.Lock()
-	sessions := make(map[string]*session, len(a.sessions))
-	for id, candidate := range a.sessions {
-		if candidate != current {
-			sessions[id] = candidate
-		}
-	}
-	a.mu.Unlock()
-	for id, candidate := range sessions {
-		candidate.mu.Lock()
-		if candidate.subject == subject {
-			a.mu.Lock()
-			if a.sessions[id] == candidate {
-				delete(a.sessions, id)
-			}
-			a.mu.Unlock()
-			candidate.clear()
-		}
-		candidate.mu.Unlock()
-	}
-	current.clear()
+	a.revokeSubject(current)
+	a.clearSession(current)
 	if err := a.rotate(w, r, current); err != nil {
 		a.fail(w, r, 500, "session_rotate", "設定已刪除，但無法建立新的匿名使用階段；請重新載入。")
 		return

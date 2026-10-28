@@ -2,6 +2,55 @@
 
 Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
+## Browser acceptance tool addition: 2026-10-28
+
+The checked-in synthetic browser gate adds exactly two **test-only** npm packages:
+[`playwright` 1.64.1](https://registry.npmjs.org/playwright/1.64.1) and its exact
+upstream dependency [`playwright-core` 1.64.1](https://registry.npmjs.org/playwright-core/1.64.1).
+Both official package records identify source commit
+[`cfe490d941f992655948eee8fd4fd94e1c4234bf`](https://github.com/microsoft/playwright/tree/cfe490d941f992655948eee8fd4fd94e1c4234bf)
+and Apache-2.0 licensing. `web/package-lock.json` records their original registry
+integrities; neither package is imported into the embedded production frontend.
+
+The verified stable tag is 1.64.1. The newer daily prerelease
+**1.65.0-alpha-2026-10-28** is explicitly recorded in `web/dependency-audit.json`.
+This gate retains the current official stable and its tested browser revision as
+one reproducible baseline; it does not call the stable version the highest
+published version or use the project exact pin to conceal that alpha. Updating
+the pair requires renewing the browser, Chinese typography and PDF evidence.
+`playwright-core` cannot be independently upgraded because Playwright requires
+that package at exactly 1.64.1.
+
+[`web/tests/browser/toolchain.json`](web/tests/browser/toolchain.json) pins the
+release's Chromium Headless Shell **156.0.8078.4 / revision 1248**, its Google
+Chrome for Testing archive SHA-256, and Noto Sans CJK TC from immutable official
+commit `f8d157532fbfaeda587e826d4cd5b21a49186f7c`. The font and its SIL OFL 1.1
+license are separately hashed. Setup verifies every archive before installation;
+the runner checks the actual Chromium version and rendered Chinese font family.
+Only the reviewed font directory is used, so a runner's system CJK package cannot
+silently change the baseline. Node remains the already pinned 26.12.1. The
+Ubuntu 24.04 browser libraries and Poppler CLI are system test dependencies;
+their complete package graph is not claimed to be hermetically locked. Actual
+`pdftotext` and `pdfinfo` versions are recorded in each browser evidence summary.
+
+The current selected npm inventory has **147 installed instances / 143 unique
+names**: three application browser-runtime instances and 144 build/lint/test
+instances. All selected versions/integrities were reconciled offline against the
+lock. The two new packages received the targeted official-registry check; older
+registry comparisons remain the 2026-10-27 snapshot. The stale React/React DOM/
+Scheduler source labels and React DOM integrity in that inventory were also
+reconciled to the already selected `e9df86c…` runtime artifacts; no runtime package
+was upgraded by this maintenance step. This is not a new all-package latest-version
+or vulnerability audit. Historical advisory results below retain their dates.
+
+The harness starts the compiled Go executable with isolated synthetic state and
+records binary/embedded-asset hashes. CI gates the actual amd64 executable;
+Release gates the executable extracted from its final archive before publication.
+Browser packages, executables, fonts, caches, Poppler and temporary databases are
+neither shipped inside the deployment archives nor required on an end user's
+server. Setup, coverage and verification limits are documented in
+[`docs/browser-acceptance.md`](docs/browser-acceptance.md).
+
 ## Targeted security refresh: 2026-10-28
 
 The final RC7 live advisory scan found **GO-2026-6866** and **GO-2026-6860** in
@@ -99,7 +148,7 @@ The production compiler is native TypeScript 7.1. Its implementation does not pr
 
 The retained react-hooks canary comes from the earlier verified React source `fd51cb10dd154aee73e4e7948005c02968651c3d`; the runtime-only refresh selected `e9df86ca6991b779ee50bc744ad8bbdeefa9bae6` without changing this lint-only package. ESLint is packaged from the official main source. Transitive lint dependencies follow their declared compatible ranges; examples include ESLint's AJV 6 API and find-up 5 requirements, and the React Hooks compiler's Babel/Hermes requirements. Forcing an unrelated newest major can break the upstream consumer. The installed tools are typescript-eslint **8.72.2-alpha.1**, react-hooks **7.1.1-canary-fd51cb10-20261026**, and globals **17.13.0**.
 
-`web/dependency-audit.json` inventories **145 installed instances / 141 unique package names**: three browser-runtime instances and 142 build/lint/test-only instances. It records each incoming parent/range, latest stable tag, highest published version including prereleases, newest compatible version, and explicit blockers. At the audit snapshot, 82 instances were the highest published version, 55 the newest compatible version under actual upstream constraints, and eight verified source-HEAD/canary instances. There were zero missing required dependencies, zero selected versions violating an upstream range, and zero unaddressed newer-compatible candidates. Project exact pins are displayed but excluded from compatibility filtering so they cannot conceal an available upgrade. Linked declaration source directories and the application root are not double-counted.
+The original full-registry audit in `web/dependency-audit.json` covered **145 installed instances / 141 unique package names**: three browser-runtime instances and 142 build/lint/test-only instances. It records each incoming parent/range, latest stable tag, highest published version including prereleases, newest compatible version, and explicit blockers. At that audit snapshot, 82 instances were the highest published version, 55 the newest compatible version under actual upstream constraints, and eight verified source-HEAD/canary instances. There were zero missing required dependencies, zero selected versions violating an upstream range, and zero unaddressed newer-compatible candidates. Project exact pins are displayed but excluded from compatibility filtering so they cannot conceal an available upgrade. Linked declaration source directories and the application root are not double-counted. The later two-package browser addition and its explicit stable-versus-alpha choice are described above and separately dated in the inventory.
 
 The final npm audit returned **zero known vulnerabilities**. This is a database result at the audit time, not a certification that unknown vulnerabilities cannot exist.
 

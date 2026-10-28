@@ -29,7 +29,8 @@ func TestDocumentEndpointsRequireIdentityCSRFAndOpaqueReferences(t *testing.T) {
 	s := app.sessions[browser.cookie.Value]
 	app.mu.Unlock()
 	s.mu.Lock()
-	s.mode, s.subject, s.official = "official", "synthetic-subject", connector
+	app.bindSubject(s, "synthetic-subject")
+	s.mode, s.official = "official", connector
 	s.mu.Unlock()
 	response = browser.request(http.MethodPost, "/api/documents/prepare", strings.NewReader(`{"category":"imaging","id":"`+strings.Repeat("a", 48)+`"}`), "application/json", "")
 	if response.Code != http.StatusForbidden {

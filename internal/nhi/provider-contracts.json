@@ -1,0 +1,3362 @@
+{
+  "schema_version": 1,
+  "registry_id": "healthbank.nhi-public-contracts.v1",
+  "contract_revision": "nhi-spa.2026-10-28.2",
+  "copyright": "Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.",
+  "origin": "https://myhealthbank.nhi.gov.tw",
+  "entry_path": "/IHKE3000/",
+  "reviewed_snapshot": "2026-10-28 documented public bundles; no login or account data",
+  "boundary": "Hashes and source projection identify an observed public SPA contract. They do not prove supported API status, account eligibility, upstream historical completeness or live authentication.",
+  "app_asset": {
+    "file": "app.64b5ac08.js",
+    "sha256": "4bb9558b37a75f0e04532be86a4f39f968e77bdf96335e122c2c5df5dbf3d6b7"
+  },
+  "assets": [
+    {
+      "module": "IHKE3099S01",
+      "file": "IHKE3099S01.195e6838.js",
+      "sha256": "dea1f5e323cfb1ea1d4d033f34215b0ec12e3ee3cccef487abd7cb3854092ab1"
+    },
+    {
+      "module": "IHKE3202S01",
+      "file": "IHKE3202S01.6ccd65a9.js",
+      "sha256": "bfdf609da4001b4c6e93cc499effb1c6a65b8967c4ca6f4cd6349d27a3ed85f6"
+    },
+    {
+      "module": "IHKE3203S01",
+      "file": "IHKE3203S01.6f76972a.js",
+      "sha256": "bef9a07d592ce43dbd4892126f62d89bdc20a4ec594b92862d000765bfe7256b"
+    },
+    {
+      "module": "IHKE3204S01",
+      "file": "IHKE3204S01.a537a150.js",
+      "sha256": "1779a022ad2b3d31477867cfa7089606c36cba8f714ccca68b31eeadbccd1ce8"
+    },
+    {
+      "module": "IHKE3205S01",
+      "file": "IHKE3205S01.73832712.js",
+      "sha256": "66ec6f19e079b3a82f20d2eb5c233feee63ff3eb5eb618907c1b1adf6ffe54e1"
+    },
+    {
+      "module": "IHKE3205S02",
+      "file": "IHKE3205S02.4e3c4e04.js",
+      "sha256": "cfee70c0eee6f4baa5e1b6410255f73d6fcbc4b94010df57e7b20dabf8b4a7bb"
+    },
+    {
+      "module": "IHKE3205S04",
+      "file": "IHKE3205S04.d96d0d1a.js",
+      "sha256": "a595e6448c51a3411427e1aa89afe4b79c18bb56ab0d82f7a1eaade7aaa5aefc"
+    },
+    {
+      "module": "IHKE3206S01",
+      "file": "IHKE3206S01.a6fa8842.js",
+      "sha256": "e8665d846e7033b08dfbf267c197bc83de41827a2621c1376ea921c46c45c3ec"
+    },
+    {
+      "module": "IHKE3207S01",
+      "file": "IHKE3207S01.c7276474.js",
+      "sha256": "8a79b2261d56fe24300fe439bdb18900681b98ae429dc4f24b21ca584e2350f1"
+    },
+    {
+      "module": "IHKE3207S02",
+      "file": "IHKE3207S02.ecc284ce.js",
+      "sha256": "c96b75e1228929685b9bc1d60371fced981ef9c7bdc09ac84fb5e3b514d4604f"
+    },
+    {
+      "module": "IHKE3207S05",
+      "file": "IHKE3207S05.ca63f283.js",
+      "sha256": "a973ad371030507f7a33362bd603792ce95e485870f0db94641dbefce3ed640c"
+    },
+    {
+      "module": "IHKE3208S01",
+      "file": "IHKE3208S01.fdea6059.js",
+      "sha256": "456679d4d703f3a5674ef51d0329781da00d7ddc3d9bc4156cefec11421b2b44"
+    },
+    {
+      "module": "IHKE3209S01",
+      "file": "IHKE3209S01.b24d9c4d.js",
+      "sha256": "ce8bbf2c774a28a3296e6fa04889b54d43fcd3254df63f373f9ba519995f4232"
+    },
+    {
+      "module": "IHKE3211S01",
+      "file": "IHKE3211S01.2aa8a3a2.js",
+      "sha256": "82bfd1baa1959ca08b96ba331a2bf7565891a3142c9d713716f3f60d17fd82f6"
+    },
+    {
+      "module": "IHKE3212S01",
+      "file": "IHKE3212S01.647a1fc8.js",
+      "sha256": "4a31db2e715245c2db4152461bfd49148518be60ee3516d1e508059e5efb152d"
+    },
+    {
+      "module": "IHKE3212S02",
+      "file": "IHKE3212S02.6ed8b6f5.js",
+      "sha256": "7112f6aa027f4b9fb1ffa5cf27483007af503520c6a01087af189fb36746052b"
+    },
+    {
+      "module": "IHKE3213S01",
+      "file": "IHKE3213S01.4e42c419.js",
+      "sha256": "d3bd93f3e15afc4c4fd636979e89d86d243c0b85938b40aa345976d8af6adec3"
+    },
+    {
+      "module": "IHKE3220S01",
+      "file": "IHKE3220S01.4a9c35f1.js",
+      "sha256": "1b9d29e53170f30f4a7219b8893db140fbfacb72784096fc0cad46fd83940754"
+    },
+    {
+      "module": "IHKE3220S02",
+      "file": "IHKE3220S02.bd47083e.js",
+      "sha256": "8d54789c1b6be0009592294160ac8dd5cdb45fb52044f50cf4cd6d46ff3692af"
+    },
+    {
+      "module": "IHKE3221S01",
+      "file": "IHKE3221S01.4424f5d8.js",
+      "sha256": "db53b14104a43c4eab289216c80f69e89f98e2035c21891106019286a0252978"
+    },
+    {
+      "module": "IHKE3221S02",
+      "file": "IHKE3221S02.6d51f2f5.js",
+      "sha256": "9c34680bb080f4476dfa88894ccfca03af0b04b22320a675c67c4e5f3f1028fb"
+    },
+    {
+      "module": "IHKE3303S01",
+      "file": "IHKE3303S01.3d574db2.js",
+      "sha256": "7a0eac5049c1d347f3569611a305947c872f2cca89833358295f1d476eca4073"
+    },
+    {
+      "module": "IHKE3303S02",
+      "file": "IHKE3303S02.07d29ff4.js",
+      "sha256": "9e6bdb486644362840664f0d35fb4b921b107ef149b84bbc8ed3c80e365e1048"
+    },
+    {
+      "module": "IHKE3304S01",
+      "file": "IHKE3304S01.7582cdc3.js",
+      "sha256": "642a7e523f62431744563816a1d66bc5ec87f1de1f409e01550681991f38dfc0"
+    },
+    {
+      "module": "IHKE3304S02",
+      "file": "IHKE3304S02.4ead7523.js",
+      "sha256": "dea2113e9b55c9456103379c31a6eeedf3e16925bd575a397f6d018596a141c8"
+    },
+    {
+      "module": "IHKE3305S01",
+      "file": "IHKE3305S01.1508dc2e.js",
+      "sha256": "69d136daf309f60c86ad525cbdb487b0aa4a039497e43768a6a01d9b0d911689"
+    },
+    {
+      "module": "IHKE3305S02",
+      "file": "IHKE3305S02.ff9f2963.js",
+      "sha256": "cba59ffa627aa81c80f27ad3ba6ead5c23453bd75fbcd6ba7892fb83edbc8136"
+    },
+    {
+      "module": "IHKE3306S01",
+      "file": "IHKE3306S01.88c16693.js",
+      "sha256": "ef62d6a7f5ae6a62a97f31481c65bc6e7d94c187a4e33ef55ad481b9c38739ef"
+    },
+    {
+      "module": "IHKE3306S02",
+      "file": "IHKE3306S02.48917477.js",
+      "sha256": "f37ebe84b5b907320af934e8fe09b1f4bb4a0446a8ed7dfa8bfc979e2fc93efe"
+    },
+    {
+      "module": "IHKE3307S01",
+      "file": "IHKE3307S01.73c5913c.js",
+      "sha256": "1006181e144a523e0c05b76ecadce0d81d970e0e063762117d424ec384d5d4c4"
+    },
+    {
+      "module": "IHKE3307S02",
+      "file": "IHKE3307S02.d141e2ab.js",
+      "sha256": "16e5f7fa031c43deec5685a5b73b56bb169a636ae6f6ed115d86684e94162b1a"
+    },
+    {
+      "module": "IHKE3308S01",
+      "file": "IHKE3308S01.8e1f92e5.js",
+      "sha256": "9dea9913968f58c9d4fa192cf32227561fde71bceba843de23e6673d79b5043f"
+    },
+    {
+      "module": "IHKE3308S02",
+      "file": "IHKE3308S02.daccc485.js",
+      "sha256": "1e093fa6d4465dd71fa34502117e0c8e8ad5695bfa0822d0774eb80f38f1861e"
+    },
+    {
+      "module": "IHKE3309S01",
+      "file": "IHKE3309S01.f158f613.js",
+      "sha256": "e5e9a713ffd077c592075bb77032f43fa7fb03a68723b1dd9f4c58343cfeaabd"
+    },
+    {
+      "module": "IHKE3309S02",
+      "file": "IHKE3309S02.deb370e8.js",
+      "sha256": "f09984c1c3f46a0dc3eecf58163f95718295abd0af7d6fea74665b3df51047d0"
+    },
+    {
+      "module": "IHKE3404S02",
+      "file": "IHKE3404S02.6d465ff6.js",
+      "sha256": "77377e52854d885b890022c97b0eba7e433b49f60be10b4750d1f1b7b2d7b066"
+    },
+    {
+      "module": "IHKE3404S03",
+      "file": "IHKE3404S03.0f94c5cd.js",
+      "sha256": "37eb38534430418b36c4d36bb0e89993ff47f1f42bcd4274382ec299542fcae6"
+    },
+    {
+      "module": "IHKE3404S04",
+      "file": "IHKE3404S04.e067c757.js",
+      "sha256": "87073930634bae2bc3e9571c5c1474b8279ee072caa52cb051e69b7d949898ee"
+    },
+    {
+      "module": "IHKE3404S05",
+      "file": "IHKE3404S05.5af01eec.js",
+      "sha256": "25250f9f3411d5fc1d1dd0c738d9a8bfc4e64e2f547684e8f7b40d5367c5eac7"
+    },
+    {
+      "module": "IHKE3404S06",
+      "file": "IHKE3404S06.f883a2cf.js",
+      "sha256": "f77b532b6a4b5c06b9b4f39ebb23ab0d1bd58157ef36f3689bd16854fc7e93a4"
+    },
+    {
+      "module": "IHKE3404S07",
+      "file": "IHKE3404S07.9698d7e5.js",
+      "sha256": "bcda768fa85f98ab0473f46817b8835508cfdd6181a7fe834bd366cd86eca6f8"
+    },
+    {
+      "module": "IHKE3404S08",
+      "file": "IHKE3404S08.4f024a4c.js",
+      "sha256": "b58326da4aca51166225212ac6e52edbf71c46653d2e00d46d069986326b53ec"
+    },
+    {
+      "module": "IHKE3405S01",
+      "file": "IHKE3405S01.eaad4192.js",
+      "sha256": "d6a689116845bdd6e8c85c126483c874b44fdb199c3bae2ea8b0800c7b9b57eb"
+    },
+    {
+      "module": "IHKE3406S01",
+      "file": "IHKE3406S01.674eac69.js",
+      "sha256": "88a98e59bf1a8f58a1bed700056ba8644866c41d96188fd891288d7180f658a1"
+    },
+    {
+      "module": "IHKE3407S01",
+      "file": "IHKE3407S01.5f2d9f07.js",
+      "sha256": "7c81354d0a2a7df868324f64ca3e11cc0d971081b7c3afc4e1aa6c8871281f4c"
+    },
+    {
+      "module": "IHKE3407S02",
+      "file": "IHKE3407S02.17d29a96.js",
+      "sha256": "fd64060b81dd6154c43e02a54aad6611d3fda6b4a706725e52e34a3ef7b6dbe4"
+    },
+    {
+      "module": "IHKE3408S01",
+      "file": "IHKE3408S01.0daa885f.js",
+      "sha256": "aedb9fff65514ddde8d10e4020e64d81d8568169dc8f204736103da7d2946d3e"
+    },
+    {
+      "module": "IHKE3408S02",
+      "file": "IHKE3408S02.a93b9a4e.js",
+      "sha256": "c0ceac7a19b4e0c5107df11d7077d93deffbcc8f2d30a48e7673e8c5672128b5"
+    },
+    {
+      "module": "IHKE3408S03",
+      "file": "IHKE3408S03.7a152af9.js",
+      "sha256": "e7e085f99cf14893855dc113232a454a13205f7f058a287158e06cda9c46c69c"
+    },
+    {
+      "module": "IHKE3409S01",
+      "file": "IHKE3409S01.4adbbcd2.js",
+      "sha256": "a1ff2a8bd316ce59086df2a93c27e811f2f8df187f00726d2b95989c02619e90"
+    },
+    {
+      "module": "IHKE3410S01",
+      "file": "IHKE3410S01.96611c9c.js",
+      "sha256": "087caf08a72ce7cb85cb5aa4da0e161a657e7274c80dc1575cc2b476967b26d3"
+    },
+    {
+      "module": "IHKE3411S01",
+      "file": "IHKE3411S01.6e442f87.js",
+      "sha256": "6bd629d09576a155d100eba2950ff6501ee96b8d21821075e93b7426332072ce"
+    },
+    {
+      "module": "IHKE3411S02",
+      "file": "IHKE3411S02.cc4529c5.js",
+      "sha256": "d70a6a67b2ce1c2ab3ad0df6fc54d4e211c100a910207febfb02d09c7118861c"
+    },
+    {
+      "module": "IHKE3411S03",
+      "file": "IHKE3411S03.4e01b861.js",
+      "sha256": "7bdfa6d474b001f3d81c9c224361adc938ca5afcb538fce9cc85dd477f70068e"
+    },
+    {
+      "module": "IHKE3504S01",
+      "file": "IHKE3504S01.46f8fe96.js",
+      "sha256": "236c3a7668b9116e2ac7223b3831d6dae0ac5579d7533aeba915eb18a89a06e4"
+    },
+    {
+      "module": "IHKE3504S03",
+      "file": "IHKE3504S03.62771fcb.js",
+      "sha256": "5651b6ed181dfab95e3ebbc2b17b5e541eaa196303ebf469a3b47aad5198deff"
+    },
+    {
+      "module": "IHKE3505S01",
+      "file": "IHKE3505S01.6ea6a451.js",
+      "sha256": "b3e529271e0c1145f4daa079c8e303b35735ffe6511755c75aade8f41d1d2c77"
+    },
+    {
+      "module": "IHKE3505S03",
+      "file": "IHKE3505S03.cb77998a.js",
+      "sha256": "c00f66f7cb901881bb4a5031d3de74d269f12ebf32d175bf521c23b88a5f5699"
+    },
+    {
+      "module": "IHKE3507S01",
+      "file": "IHKE3507S01.23bdf7f0.js",
+      "sha256": "d1f369a25b49569ca35e76a7f8fa63d859285e28cbdaadf1627ac87bc9c47852"
+    },
+    {
+      "module": "IHKE3507S03",
+      "file": "IHKE3507S03.d3bab70e.js",
+      "sha256": "cc80dfa44d84c5c3b079e3cdf8f4cc26c8fcf3aba559bfb1473db2e28acb607d"
+    },
+    {
+      "module": "IHKE3512S01",
+      "file": "IHKE3512S01.936037f9.js",
+      "sha256": "9e2e474edf1472bb3872ca981b052b9c250aad16b084033db31d6b1a234804c8"
+    },
+    {
+      "module": "IHKE3512S02",
+      "file": "IHKE3512S02.37443700.js",
+      "sha256": "9abf8082227ec292547fb43ecf5eff17ae63e7f7bc3219fdc30fe7bb84ee4ee2"
+    },
+    {
+      "module": "IHKE3513S01",
+      "file": "IHKE3513S01.d8bc1c84.js",
+      "sha256": "8a009b95ed32d9d774eab55cb9b85dcabf72872bc71e1ebfe648d01b65c2c346"
+    },
+    {
+      "module": "IHKE3513S03",
+      "file": "IHKE3513S03.9998993b.js",
+      "sha256": "fc3e8c461efeb61525aea46921dd31aa34b6b06e65f712d4066b4217e8d4b87f"
+    },
+    {
+      "module": "IHKE3514S01",
+      "file": "IHKE3514S01.30153756.js",
+      "sha256": "54e500b8e7ceaf968db46f00e3f9f32e99fb90f130647999dc38d70710abb6cd"
+    },
+    {
+      "module": "IHKE3516S01",
+      "file": "IHKE3516S01.c7c30eaf.js",
+      "sha256": "3db512f861a860b5fe3ba4f0c6b2a1e50e49a136edb29ed5a5717d86215aaf1d"
+    },
+    {
+      "module": "IHKE3516S02",
+      "file": "IHKE3516S02.cb47bb20.js",
+      "sha256": "d36afba4af5c9d5e9646d8666bc2bfbca27e97dba151c69921873b044d6216f8"
+    },
+    {
+      "module": "IHKE3516S03",
+      "file": "IHKE3516S03.758f87ac.js",
+      "sha256": "935a1e64e9ef4c7354bb9087f0c44ea887deb9473479ed0dfcb3118e752c6bce"
+    },
+    {
+      "module": "IHKE3517S01",
+      "file": "IHKE3517S01.794f02ff.js",
+      "sha256": "bfd9ec45cba899fb1069085f891846f7b2727187a53ef5cb4573522e0277e7b7"
+    },
+    {
+      "module": "IHKE3517S02",
+      "file": "IHKE3517S02.362e4ca8.js",
+      "sha256": "91aa6f3d91199255aee49854a8c49b7769918b3a451824b06c9a6e5e1e6d08e9"
+    },
+    {
+      "module": "IHKE3517S03",
+      "file": "IHKE3517S03.da1169c3.js",
+      "sha256": "49672dc9293088ca6dcc0b9b6521307247e03ba279c373f2648608e5ebebd4fb"
+    },
+    {
+      "module": "IHKE3712S01",
+      "file": "IHKE3712S01.2e601c04.js",
+      "sha256": "a5bbe1cd15a204129fe5df627309c3fe9097ecc73c57944064628ab52eb10584"
+    },
+    {
+      "module": "IHKE3720S01",
+      "file": "IHKE3720S01.68eb7b6a.js",
+      "sha256": "f8c8e956bd0aae88e2a50d42fb94448fccd1ab10db9879c4e4727730cbe71a42"
+    },
+    {
+      "module": "IHKE3721S01",
+      "file": "IHKE3721S01.7d20d235.js",
+      "sha256": "6cdccca01c038eb59257cd237c2de1f2b67e135093e3af9ff6bf01986aa8a0ce"
+    },
+    {
+      "module": "IHKE3721S03",
+      "file": "IHKE3721S03.90898f2c.js",
+      "sha256": "ea3343bf60923a83987f302f6e11031f3857687e203fe9ff024e48d9d74b44c2"
+    },
+    {
+      "module": "IHKE3800download",
+      "file": "IHKE3800download.87e94a32.js",
+      "sha256": "7073bc1ab99b3b92c1351bc6b90944d38e3e209fe7d3b12345beedfad22bd7dd"
+    },
+    {
+      "module": "IHKE3800download_IMG",
+      "file": "IHKE3800download_IMG.df47eafd.js",
+      "sha256": "8fb68daedc85efb4736c9a093de6d29547586f307e89e8725653af4c4983a4ff"
+    },
+    {
+      "module": "IHKE3801S01",
+      "file": "IHKE3801S01.0332b698.js",
+      "sha256": "ed38d7325cf6f91c24a253254de8cad50696cbd7a60388d3072fea5eba39c7ab"
+    },
+    {
+      "module": "IHKE3801S02",
+      "file": "IHKE3801S02.5603c61d.js",
+      "sha256": "ca0f399f821487bfc8b049de8dc7e8e8183d0e185f82791b3ad48a6089eb0a49"
+    },
+    {
+      "module": "IHKE3802S01",
+      "file": "IHKE3802S01.a1e95a48.js",
+      "sha256": "77a6a2bce43b7427ea6c04bb2ad236c88b3489249a0f78d5535dbd4d24b9f8d8"
+    },
+    {
+      "module": "IHKE3803S01",
+      "file": "IHKE3803S01.61a663da.js",
+      "sha256": "5f5e55c72ff0638887b5ae1e51477456f770bc19d70ac466e5e962a2cfc7cdac"
+    },
+    {
+      "module": "IHKE3804S01",
+      "file": "IHKE3804S01.7191a746.js",
+      "sha256": "33754793788641305604f91eee9e28f9214c00285f4444fefcc6921b6e2864b4"
+    },
+    {
+      "module": "IHKE3805S01",
+      "file": "IHKE3805S01.5f157684.js",
+      "sha256": "d2695c2d381b90fe72db2def9ede091603079971b71825d4862f5e1203aa1ea8"
+    },
+    {
+      "module": "IHKE3807S01",
+      "file": "IHKE3807S01.f0ab8096.js",
+      "sha256": "ba073173be6a658d4652536db90a1fd895a450a6451ce2bb139ac5870b388b77"
+    },
+    {
+      "module": "master",
+      "file": "master.59cf95f2.js",
+      "sha256": "cbaee1317f8d6ac1264e52d7d32881a0f0ea08c68582e4de70838df342f6332c"
+    },
+    {
+      "module": "showPDF",
+      "file": "showPDF.19095ca4.js",
+      "sha256": "9f024e5218b5cb5ae40ec6c7f09c14de231bebe88075cf9eb96f93f94945379e"
+    },
+    {
+      "module": "showXML",
+      "file": "showXML.90ff2238.js",
+      "sha256": "c9a968efec8f6a3c10c7f00042c1f66f77eac9749bd3e911359d1ed15b182353"
+    }
+  ],
+  "contracts": [
+    {
+      "id": "allergies",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3202s01/SP_IHKE3202S01",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3202S01",
+              "shape": "array",
+              "date_field": "upload_D",
+              "end_date_field": "",
+              "fields": [
+                "drug_NAME",
+                "allerg_SEVERITY_LEVEL",
+                "sympton_NAME",
+                "allerg_SYMPTON_OTH",
+                "upload_FLAG",
+                "upload_D",
+                "upload_D2"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3202s01/SP_IHKE3202S04",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3202S04",
+              "shape": "array",
+              "date_field": "upload_D2",
+              "end_date_field": "",
+              "fields": [
+                "drug_NAME",
+                "allerg_SEVERITY_LEVEL",
+                "sympton_NAME",
+                "allerg_SYMPTON_OTH",
+                "upload_FLAG",
+                "upload_D",
+                "upload_D2"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3202S01.6ccd65a9.js"
+      ]
+    },
+    {
+      "id": "body_measurements",
+      "range_mode": "date_search",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/IHKE3512S01/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "maindata",
+              "shape": "array",
+              "date_field": "c_REAL_INSPECT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "c_CURE_CNAME",
+                "c_ASSAY_VALUE",
+                "c_UNIT_DATA",
+                "c_CONSULT_VALUE",
+                "c_ORI_TYPE_NAME",
+                "c_REAL_INSPECT_DATE",
+                "code"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/IHKE3512S02/search",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "maindata",
+              "shape": "array",
+              "date_field": "real_INSPECT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "order_CODE",
+                "order_NAME",
+                "assay_ITEM_NAME",
+                "assay_VALUE",
+                "unit_DATA",
+                "consult_VALUE",
+                "consult",
+                "ori_TYPE_NAME",
+                "ori_TYPE",
+                "source_FROM",
+                "assay_VALUE_1"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3512S01.936037f9.js",
+        "IHKE3512S02.37443700.js"
+      ]
+    },
+    {
+      "id": "care_plans",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/IHKE3213S01/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "myplan",
+              "shape": "array",
+              "date_field": "case_date",
+              "end_date_field": "close_date",
+              "fields": [
+                "mhbt_name",
+                "mhbt_memo",
+                "case_date",
+                "close_date"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3213S01.4e42c419.js"
+      ]
+    },
+    {
+      "id": "catastrophic",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3209s01/SP_IHKE3209S01",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3209S01",
+              "shape": "array",
+              "date_field": "valid_S_DATE",
+              "end_date_field": "valid_E_DATE",
+              "fields": [
+                "icd10cm_CNAME",
+                "valid_S_DATE",
+                "valid_E_DATE"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3209S01.b24d9c4d.js"
+      ]
+    },
+    {
+      "id": "ckd_care",
+      "range_mode": "source",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3505s01/SP_IHKE3505S01",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3505S01_Data",
+              "shape": "array",
+              "date_field": "case_DATE",
+              "end_date_field": "close_DATE",
+              "fields": [
+                "case_DATE",
+                "close_DATE"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/ihke3505s02/SP_IHKE3505S02",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "sP_IHKE3505S02_Data",
+              "shape": "array",
+              "date_field": "case_DATE",
+              "end_date_field": "",
+              "fields": [
+                "stage",
+                "case_DATE",
+                "base_SBP",
+                "base_EBP",
+                "egfr",
+                "upcr",
+                "serum_CREAT",
+                "blood_LDL",
+                "blood_HBA1C",
+                "uacr"
+              ],
+              "units": [
+                "",
+                "",
+                "mmHg",
+                "mmHg",
+                "mL/min/1.73m²",
+                "mg/g",
+                "mg/dL",
+                "mg/dL",
+                "%",
+                "mg/g"
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3505S01.6ea6a451.js",
+        "IHKE3505S03.cb77998a.js"
+      ]
+    },
+    {
+      "id": "cochlear",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3211s01/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "maindata01",
+              "shape": "array",
+              "date_field": "exe_S_DATE",
+              "end_date_field": "",
+              "fields": [
+                "met_C_NAME",
+                "exe_S_DATE",
+                "met_SPEC",
+                "ear_MARK"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "maindata02",
+              "shape": "array",
+              "date_field": "exe_S_DATE",
+              "end_date_field": "",
+              "fields": [
+                "met_C_NAME",
+                "exe_S_DATE",
+                "met_SPEC",
+                "ear_MARK"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "maindata03",
+              "shape": "array",
+              "date_field": "exe_S_DATE",
+              "end_date_field": "",
+              "fields": [
+                "met_C_NAME",
+                "exe_S_DATE",
+                "met_SPEC",
+                "ear_MARK"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3211S01.2aa8a3a2.js"
+      ]
+    },
+    {
+      "id": "copd_care",
+      "range_mode": "source",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/IHKE3513S01/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "main_Data",
+              "shape": "array",
+              "date_field": "case_DATE",
+              "end_date_field": "close_DATE",
+              "fields": [
+                "case_DATE",
+                "close_DATE"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/ihke3513s02/page_load",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "sp_IHKE3513S02_Data",
+              "shape": "array",
+              "date_field": "c_CASE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "c_STAGE",
+                "c_CASE_DATE",
+                "c_LUNG_DATE",
+                "c_FEV1_POST",
+                "c_FEV1_VAL_POST",
+                "c_FF_VAL_POST",
+                "c_CAT_DATE",
+                "c_CAT",
+                "c_MMRC_DATE",
+                "c_MMRC"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "%",
+                "",
+                "",
+                "分",
+                "",
+                "分"
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3513S01.d8bc1c84.js",
+        "IHKE3513S03.9998993b.js"
+      ]
+    },
+    {
+      "id": "covid",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/IHKE3410S01/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sp_IHKE3410S01",
+              "shape": "array",
+              "date_field": "real_INSPECT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "order_CODE",
+                "order_NAME",
+                "assay_ITEM_NAME",
+                "assay_VALUE",
+                "unit_DATA",
+                "consult_VALUE",
+                "consult",
+                "ori_TYPE_NAME",
+                "ori_TYPE",
+                "source_FROM",
+                "code_cname",
+                "inoculate_D",
+                "sample_DATE",
+                "confirm_DATE",
+                "recv_DATE",
+                "assay_DISEA",
+                "inspect_MODE",
+                "assay_METHOD",
+                "inspect_RESULT",
+                "lab_UNIT_NAME"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "sp_IHKE3410S02",
+              "shape": "array",
+              "date_field": "real_INSPECT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "order_CODE",
+                "order_NAME",
+                "assay_ITEM_NAME",
+                "assay_VALUE",
+                "unit_DATA",
+                "consult_VALUE",
+                "consult",
+                "ori_TYPE_NAME",
+                "ori_TYPE",
+                "source_FROM",
+                "code_cname",
+                "inoculate_D",
+                "sample_DATE",
+                "confirm_DATE",
+                "recv_DATE",
+                "assay_DISEA",
+                "inspect_MODE",
+                "assay_METHOD",
+                "inspect_RESULT",
+                "lab_UNIT_NAME"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "sp_IHKE3410S04",
+              "shape": "array",
+              "date_field": "real_INSPECT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "order_CODE",
+                "order_NAME",
+                "assay_ITEM_NAME",
+                "assay_VALUE",
+                "unit_DATA",
+                "consult_VALUE",
+                "consult",
+                "ori_TYPE_NAME",
+                "ori_TYPE",
+                "source_FROM",
+                "code_cname",
+                "inoculate_D",
+                "sample_DATE",
+                "confirm_DATE",
+                "recv_DATE",
+                "assay_DISEA",
+                "inspect_MODE",
+                "assay_METHOD",
+                "inspect_RESULT",
+                "lab_UNIT_NAME"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "sp_IHKE3410S05",
+              "shape": "array",
+              "date_field": "inoculate_D",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "order_CODE",
+                "order_NAME",
+                "assay_ITEM_NAME",
+                "assay_VALUE",
+                "unit_DATA",
+                "consult_VALUE",
+                "consult",
+                "ori_TYPE_NAME",
+                "ori_TYPE",
+                "source_FROM",
+                "code_cname",
+                "inoculate_D",
+                "sample_DATE",
+                "confirm_DATE",
+                "recv_DATE",
+                "assay_DISEA",
+                "inspect_MODE",
+                "assay_METHOD",
+                "inspect_RESULT",
+                "lab_UNIT_NAME"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "sp_IHKE3410S09",
+              "shape": "array",
+              "date_field": "sample_DATE",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "order_CODE",
+                "order_NAME",
+                "assay_ITEM_NAME",
+                "assay_VALUE",
+                "unit_DATA",
+                "consult_VALUE",
+                "consult",
+                "ori_TYPE_NAME",
+                "ori_TYPE",
+                "source_FROM",
+                "code_cname",
+                "inoculate_D",
+                "sample_DATE",
+                "confirm_DATE",
+                "recv_DATE",
+                "assay_DISEA",
+                "inspect_MODE",
+                "assay_METHOD",
+                "inspect_RESULT",
+                "lab_UNIT_NAME"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3410S01.96611c9c.js"
+      ]
+    },
+    {
+      "id": "device_activity",
+      "range_mode": "date_search",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/IHKEMASTER/SP_IHKE3099S05",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "sp_IHKE3207S01",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "fun_NAME"
+              ],
+              "units": [
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/ihke3205s02/SP_IHKE3205S08",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "sP_IHKE3205S09",
+              "shape": "array",
+              "date_field": "create_DATE",
+              "end_date_field": "",
+              "fields": [
+                "create_DATE",
+                "time",
+                "value1",
+                "value2",
+                "value3",
+                "value4",
+                "value5",
+                "value6",
+                "value7",
+                "value8",
+                "value9"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3205s02/SP_IHKE3205S08",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "sP_IHKE3205S09",
+              "shape": "array",
+              "date_field": "create_DATE",
+              "end_date_field": "",
+              "fields": [
+                "create_DATE",
+                "time",
+                "value1",
+                "value2",
+                "value3",
+                "value4",
+                "value5",
+                "value6",
+                "value7",
+                "value8",
+                "value9"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3205s04/pageload",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "devicelist",
+              "shape": "array",
+              "date_field": "cdate",
+              "end_date_field": "",
+              "fields": [
+                "cdate",
+                "value",
+                "code",
+                "unit_DATA"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3205S01.73832712.js",
+        "IHKE3205S02.4e3c4e04.js",
+        "IHKE3205S04.d96d0d1a.js"
+      ]
+    },
+    {
+      "id": "diabetes_care",
+      "range_mode": "source",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3504s01/SP_IHKE3504S01",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3504S01_Data",
+              "shape": "array",
+              "date_field": "case_DATE",
+              "end_date_field": "close_DATE",
+              "fields": [
+                "case_DATE",
+                "close_DATE"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/ihke3504s02/SP_IHKE3504S02",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "sP_IHKE3504S02_Data",
+              "shape": "array",
+              "date_field": "case_DATE",
+              "end_date_field": "",
+              "fields": [
+                "stage",
+                "case_DATE",
+                "blood_CHK_DATE",
+                "urine_CHK_DATE",
+                "base_SBP",
+                "base_EBP",
+                "blood_HBA1C",
+                "blood_LDL",
+                "blood_AC",
+                "blood_TG",
+                "blood_CREAT",
+                "blood_ALB",
+                "urine_MICRO"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "mmHg",
+                "mmHg",
+                "%",
+                "mg/dL",
+                "mg/dL",
+                "mg/dL",
+                "mg/dL",
+                "mL/min/1.73m²",
+                "mg/g"
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3504S01.46f8fe96.js",
+        "IHKE3504S03.62771fcb.js"
+      ]
+    },
+    {
+      "id": "diabetes_ckd_care",
+      "range_mode": "source",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3516s01/SP_IHKE3516S01",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3516S01_Data",
+              "shape": "array",
+              "date_field": "case_DATE",
+              "end_date_field": "close_DATE",
+              "fields": [
+                "case_DATE",
+                "close_DATE"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/ihke3516s02/SP_IHKE3516S02",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "sP_IHKE3516S02_Data",
+              "shape": "array",
+              "date_field": "case_DATE",
+              "end_date_field": "",
+              "fields": [
+                "stage",
+                "case_DATE",
+                "chk_DATE",
+                "base_SBP",
+                "base_EBP",
+                "blood_HBA1C",
+                "blood_GA",
+                "blood_LDL",
+                "blood_AC",
+                "blood_PC",
+                "serum_CREAT",
+                "egfr",
+                "uacr"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "mmHg",
+                "mmHg",
+                "%",
+                "mg/dL",
+                "mg/dL",
+                "mg/dL",
+                "mg/dL",
+                "mg/dL",
+                "mL/min/1.73m²",
+                "mg/g"
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3516S01.c7c30eaf.js",
+        "IHKE3516S02.cb47bb20.js",
+        "IHKE3516S03.758f87ac.js"
+      ]
+    },
+    {
+      "id": "diet",
+      "range_mode": "source",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3206s01/IHKE3206S01",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "dietRecordList",
+              "shape": "array_or_keyed_object",
+              "date_field": "eatDate",
+              "end_date_field": "",
+              "fields": [
+                "eatDate",
+                "foodName",
+                "totalCal"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/ihke3206s01/SP_IHKE3206S08",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "EATDATE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "EATDATE_DATE",
+                "EATDATE_HOUR",
+                "EATDATE_MINUTE"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "IsSelectFoodList",
+              "shape": "array",
+              "date_field": "@parent",
+              "end_date_field": "",
+              "fields": [
+                "CODE"
+              ],
+              "units": [
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3206S01.a6fa8842.js"
+      ]
+    },
+    {
+      "id": "e_prescriptions",
+      "range_mode": "source",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/IHKE3212S01/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "main_data",
+              "shape": "array",
+              "date_field": "func_DATE",
+              "end_date_field": "",
+              "fields": [
+                "recipe_TYPE_name",
+                "func_DATE",
+                "func_TYPE_NAME",
+                "icd_CODE",
+                "icd_CODE_CNAME",
+                "drug_CNT",
+                "part_MARK",
+                "chr_SeqNo"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "hist_list",
+              "shape": "array",
+              "date_field": "func_DATE",
+              "end_date_field": "",
+              "fields": [
+                "recipe_TYPE_name",
+                "func_DATE",
+                "func_TYPE_NAME",
+                "icd_CODE",
+                "icd_CODE_CNAME",
+                "drug_CNT",
+                "part_MARK",
+                "chr_SeqNo"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/IHKE3212S02/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "treatData",
+              "shape": "object",
+              "date_field": "func_DATE",
+              "end_date_field": "",
+              "fields": [
+                "recipe_TYPE_name",
+                "func_DATE",
+                "func_TYPE_NAME",
+                "icd_CODE",
+                "icd_CODE_CNAME",
+                "drug_CNT",
+                "part_MARK",
+                "chr_SeqNo"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "list",
+              "shape": "array",
+              "date_field": "@parent",
+              "end_date_field": "",
+              "fields": [
+                "drug_CODE",
+                "drug_NAME",
+                "generic_NAME",
+                "notreplace_DESC",
+                "user_TIME_NAME",
+                "drug_PATH_NAME",
+                "drug_DOSE_CODE",
+                "dose",
+                "dose_UNIT",
+                "drug_DAYS",
+                "drug_NUM",
+                "drug_NUM_UNIT"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "日",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3212S01.647a1fc8.js",
+        "IHKE3212S02.6ed8b6f5.js"
+      ]
+    },
+    {
+      "id": "exercise",
+      "range_mode": "source",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3207s02/page_load",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "sportsRecordList",
+              "shape": "array",
+              "date_field": "SPORT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "SPORT_DATE",
+                "CODE_NAME",
+                "TOT_CAL"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/ihke3207s02/SP_IHKE3207S04",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "SPORTDATE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "SPORTDATE_DATE",
+                "SPORTDATE_HOUR",
+                "SPORTDATE_MINUTE"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "oneRecordList",
+              "shape": "array",
+              "date_field": "@parent",
+              "end_date_field": "",
+              "fields": [
+                "CODE",
+                "CODE_LEVEL",
+                "TOT_HR",
+                "TOT_MIN"
+              ],
+              "units": [
+                "",
+                "",
+                "小時",
+                "分鐘"
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3207S01.c7276474.js",
+        "IHKE3207S02.ecc284ce.js",
+        "IHKE3207S05.ca63f283.js"
+      ]
+    },
+    {
+      "id": "family_doctor",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3720s01/SP_IHKE3720S01",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3720S01",
+              "shape": "object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "status",
+                "curr_YEAR"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "sP_IHKE3720S02",
+              "shape": "object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "hosp_ABBR",
+                "prsn_NAME",
+                "tel"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3720S01.68eb7b6a.js"
+      ]
+    },
+    {
+      "id": "family_followup",
+      "range_mode": "date_search",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3721s01/SP_IHKE3721S01",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3721S02",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "assay_NAME",
+                "assay_ZH_NAME",
+                "next_CHK_DATE",
+                "chk_memo"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/ihke3721s01/SP_IHKE3721S07",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "sP_IHKE3721S07_Data",
+              "shape": "array",
+              "date_field": "assay_DATE",
+              "end_date_field": "",
+              "fields": [
+                "assay_DATE",
+                "assay_NAME",
+                "assay_VALUE",
+                "assay_SOURCE_NAME",
+                "unit_DATA"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3721S01.7d20d235.js",
+        "IHKE3721S03.90898f2c.js"
+      ]
+    },
+    {
+      "id": "family_health_followup",
+      "range_mode": "date_search",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3726s01/SP_IHKE3726S01",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3726S02",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "assay_NAME",
+                "assay_ZH_NAME",
+                "next_CHK_DATE",
+                "chk_memo"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "bp_IHKE3726S02",
+              "shape": "object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "assay_NAME",
+                "assay_ZH_NAME",
+                "next_CHK_DATE",
+                "chk_memo"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/ihke3726s01/SP_IHKE3726S07",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "sP_IHKE3726S07_Data",
+              "shape": "array",
+              "date_field": "assay_DATE",
+              "end_date_field": "",
+              "fields": [
+                "assay_DATE",
+                "assay_NAME",
+                "assay_VALUE",
+                "assay_VALUE_1",
+                "c_ASSAY_VALUE",
+                "assay_SOURCE_NAME",
+                "unit_DATA"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3721S01.7d20d235.js",
+        "IHKE3721S03.90898f2c.js"
+      ]
+    },
+    {
+      "id": "glucose",
+      "range_mode": "date_search",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3406s01/SP_IHKE3406S01",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3406S01_Data",
+              "shape": "array",
+              "date_field": "real_INSPECT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "order_CODE",
+                "order_NAME",
+                "assay_ITEM_NAME",
+                "assay_VALUE",
+                "unit_DATA",
+                "consult_VALUE",
+                "consult",
+                "ori_TYPE_NAME",
+                "ori_TYPE",
+                "source_FROM"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/ihke3406s02/SP_IHKE3406S02",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "sP_IHKE3406S02_Data",
+              "shape": "array",
+              "date_field": "real_INSPECT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "order_CODE",
+                "order_NAME",
+                "assay_ITEM_NAME",
+                "assay_VALUE",
+                "unit_DATA",
+                "consult_VALUE",
+                "consult",
+                "ori_TYPE_NAME",
+                "ori_TYPE",
+                "source_FROM",
+                "assay_VALUE"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3406S01.674eac69.js"
+      ]
+    },
+    {
+      "id": "hepatitis_care",
+      "range_mode": "source",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3507s01/SP_IHKE3507S01",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3507S01_Data",
+              "shape": "array",
+              "date_field": "case_DATE",
+              "end_date_field": "close_DATE",
+              "fields": [
+                "case_DATE",
+                "close_DATE"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/ihke3507s02/SP_IHKE3507S02",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "sP_IHKE3507S02_Data",
+              "shape": "array",
+              "date_field": "case_DATE",
+              "end_date_field": "",
+              "fields": [
+                "stage",
+                "case_DATE",
+                "case_TYPE_NAME",
+                "hbsag_NAME",
+                "hbeag_NAME",
+                "antiHCV",
+                "got",
+                "gpt",
+                "au_SCAN_NAME"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3507S01.23bdf7f0.js",
+        "IHKE3507S03.d3bab70e.js"
+      ]
+    },
+    {
+      "id": "hepatitis_test",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3514s01/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "maindata",
+              "shape": "array",
+              "date_field": "real_INSPECT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "order_CODE",
+                "order_NAME",
+                "assay_ITEM_NAME",
+                "assay_VALUE",
+                "unit_DATA",
+                "consult_VALUE",
+                "consult",
+                "ori_TYPE_NAME",
+                "ori_TYPE",
+                "source_FROM"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3514S01.30153756.js"
+      ]
+    },
+    {
+      "id": "home_care",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/IHKE3712S01/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "c_CASE_DATE",
+              "end_date_field": "c_CLOSE_DATE",
+              "fields": [
+                "c_CASE_DATE",
+                "c_CLOSE_DATE",
+                "c_PHASE",
+                "c_MAIN_PRSN_HOSP_ABBR",
+                "c_NURSE_HOSP_ABBR",
+                "c_BRE_PRSN_HOSP_ABBR"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3712S01.2e601c04.js"
+      ]
+    },
+    {
+      "id": "kinmen",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3405s01/SP_IHKE3405S01",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3405S01_Data",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "order_CODE",
+                "order_NAME",
+                "assay_ITEM_NAME",
+                "assay_VALUE",
+                "unit_DATA",
+                "consult_VALUE",
+                "consult",
+                "ori_TYPE_NAME",
+                "ori_TYPE",
+                "source_FROM",
+                "order_CNAME",
+                "group_NAME"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3405S01.eaad4192.js"
+      ]
+    },
+    {
+      "id": "lipids",
+      "range_mode": "date_search",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3407s01/SP_IHKE3407S01",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "RecordList",
+              "shape": "array",
+              "date_field": "REAL_INSPECT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "order_CODE",
+                "order_NAME",
+                "assay_ITEM_NAME",
+                "assay_VALUE",
+                "unit_DATA",
+                "consult_VALUE",
+                "consult",
+                "ori_TYPE_NAME",
+                "ori_TYPE",
+                "source_FROM",
+                "CURE_CNAME",
+                "YN"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/ihke3407s02/get_point",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "sP_IHKE3406S02_Data",
+              "shape": "array",
+              "date_field": "real_INSPECT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "order_CODE",
+                "order_NAME",
+                "assay_ITEM_NAME",
+                "assay_VALUE",
+                "unit_DATA",
+                "consult_VALUE",
+                "consult",
+                "ori_TYPE_NAME",
+                "ori_TYPE",
+                "source_FROM",
+                "assay_VALUE"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3407S01.5f2d9f07.js",
+        "IHKE3407S02.17d29a96.js"
+      ]
+    },
+    {
+      "id": "menstrual",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3208s01/SP_IHKE3208S06",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3208S06",
+              "shape": "array",
+              "date_field": "sdate",
+              "end_date_field": "edate",
+              "fields": [
+                "sdate",
+                "edate",
+                "diffDay"
+              ],
+              "units": [
+                "",
+                "",
+                "日"
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3208S01.fdea6059.js"
+      ]
+    },
+    {
+      "id": "metabolic_care",
+      "range_mode": "source",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3517s01/SP_IHKE3517S01",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3517S01_Data",
+              "shape": "array",
+              "date_field": "case_DATE",
+              "end_date_field": "close_DATE",
+              "fields": [
+                "case_DATE",
+                "close_DATE"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/ihke3517s02/SP_IHKE3517S02",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "sP_IHKE3517S02_Data",
+              "shape": "array",
+              "date_field": "case_DATE",
+              "end_date_field": "",
+              "fields": [
+                "stage",
+                "case_DATE",
+                "chk_DATE",
+                "bmi",
+                "waist",
+                "base_SBP",
+                "base_EBP",
+                "blood_HBA1C",
+                "blood_HDL",
+                "blood_LDL",
+                "blood_AC",
+                "blood_TG",
+                "blood_CHOL_T"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "kg/m²",
+                "cm",
+                "mmHg",
+                "mmHg",
+                "%",
+                "mg/dL",
+                "mg/dL",
+                "mg/dL",
+                "mg/dL",
+                "mg/dL"
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3517S01.794f02ff.js",
+        "IHKE3517S02.362e4ca8.js",
+        "IHKE3517S03.da1169c3.js"
+      ]
+    },
+    {
+      "id": "organ_wishes",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3204s01/pageload",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "health_DATE",
+              "end_date_field": "",
+              "fields": [
+                "health_DATE",
+                "od_MARK_NAME"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3204S01.a537a150.js"
+      ]
+    },
+    {
+      "id": "osteoporosis",
+      "range_mode": "source",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3411s01/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sp_IHKE3411S01_data",
+              "shape": "array",
+              "date_field": "real_INSPECT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "order_CODE",
+                "order_NAME",
+                "assay_ITEM_NAME",
+                "assay_VALUE",
+                "unit_DATA",
+                "consult_VALUE",
+                "consult",
+                "ori_TYPE_NAME",
+                "ori_TYPE",
+                "source_FROM"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/IHKE3411S02/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "ihke3411S02_main_data",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "order_CODE",
+                "order_NAME",
+                "assay_ITEM_NAME",
+                "assay_VALUE",
+                "unit_DATA",
+                "consult_VALUE",
+                "consult",
+                "ori_TYPE_NAME",
+                "ori_TYPE",
+                "source_FROM",
+                "main_tit",
+                "check_val",
+                "desc"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3411S01.6e442f87.js",
+        "IHKE3411S02.cc4529c5.js",
+        "IHKE3411S03.4e01b861.js"
+      ]
+    },
+    {
+      "id": "physiology",
+      "range_mode": "date_search",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3205s01/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "maindata",
+              "shape": "array",
+              "date_field": "create_DATE",
+              "end_date_field": "",
+              "fields": [
+                "code",
+                "code_NAME",
+                "create_DATE",
+                "value",
+                "unit_DATA",
+                "abnormal_Status"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "maindata_10568",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "code",
+                "code_NAME",
+                "create_DATE",
+                "value",
+                "unit_DATA",
+                "abnormal_Status"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/ihke3205s02/SP_IHKE3205S08",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "sP_IHKE3205S09",
+              "shape": "array",
+              "date_field": "create_DATE",
+              "end_date_field": "",
+              "fields": [
+                "create_DATE",
+                "time",
+                "value1",
+                "value2",
+                "value3",
+                "value4",
+                "value5",
+                "value6",
+                "value7",
+                "value8",
+                "value9"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3205s02/SP_IHKE3205S08",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "sP_IHKE3205S09",
+              "shape": "array",
+              "date_field": "create_DATE",
+              "end_date_field": "",
+              "fields": [
+                "create_DATE",
+                "time",
+                "value1",
+                "value2",
+                "value3",
+                "value4",
+                "value5",
+                "value6",
+                "value7",
+                "value8",
+                "value9"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3205s04/pageload",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "devicelist",
+              "shape": "array",
+              "date_field": "cdate",
+              "end_date_field": "",
+              "fields": [
+                "cdate",
+                "value",
+                "code",
+                "unit_DATA"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3205S01.73832712.js",
+        "IHKE3205S02.4e3c4e04.js",
+        "IHKE3205S04.d96d0d1a.js"
+      ]
+    },
+    {
+      "id": "screen_breast",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3404s04/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3404S04_Data",
+              "shape": "array",
+              "date_field": "func_DATE",
+              "end_date_field": "",
+              "fields": [
+                "func_DATE",
+                "code_CNAME",
+                "code_ENAME",
+                "cytopathic_CODE",
+                "lung_RADS",
+                "diagnosis_CODE",
+                "hpv_diagnosis_code_rpt",
+                "assay_RESULT"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3404S02.6d465ff6.js",
+        "IHKE3404S03.0f94c5cd.js",
+        "IHKE3404S04.e067c757.js",
+        "IHKE3404S05.5af01eec.js",
+        "IHKE3404S06.f883a2cf.js",
+        "IHKE3404S07.9698d7e5.js",
+        "IHKE3404S08.4f024a4c.js"
+      ]
+    },
+    {
+      "id": "screen_cervical",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3404S05/SP_IHKE3404S05",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3404S05_Data",
+              "shape": "array",
+              "date_field": "func_DATE",
+              "end_date_field": "",
+              "fields": [
+                "func_DATE",
+                "code_CNAME",
+                "code_ENAME",
+                "cytopathic_CODE",
+                "lung_RADS",
+                "diagnosis_CODE",
+                "hpv_diagnosis_code_rpt",
+                "assay_RESULT"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3404S02.6d465ff6.js",
+        "IHKE3404S03.0f94c5cd.js",
+        "IHKE3404S04.e067c757.js",
+        "IHKE3404S05.5af01eec.js",
+        "IHKE3404S06.f883a2cf.js",
+        "IHKE3404S07.9698d7e5.js",
+        "IHKE3404S08.4f024a4c.js"
+      ]
+    },
+    {
+      "id": "screen_colorectal",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3404s02/SP_IHKE3404S02",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3404S02_Data",
+              "shape": "array",
+              "date_field": "func_DATE",
+              "end_date_field": "",
+              "fields": [
+                "func_DATE",
+                "code_CNAME",
+                "code_ENAME",
+                "cytopathic_CODE",
+                "lung_RADS",
+                "diagnosis_CODE",
+                "hpv_diagnosis_code_rpt",
+                "assay_RESULT"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3404S02.6d465ff6.js",
+        "IHKE3404S03.0f94c5cd.js",
+        "IHKE3404S04.e067c757.js",
+        "IHKE3404S05.5af01eec.js",
+        "IHKE3404S06.f883a2cf.js",
+        "IHKE3404S07.9698d7e5.js",
+        "IHKE3404S08.4f024a4c.js"
+      ]
+    },
+    {
+      "id": "screen_hpsa",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3404s08/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sp_IHKE3404S08_Data",
+              "shape": "array",
+              "date_field": "func_DATE",
+              "end_date_field": "",
+              "fields": [
+                "func_DATE",
+                "code_CNAME",
+                "code_ENAME",
+                "cytopathic_CODE",
+                "lung_RADS",
+                "diagnosis_CODE",
+                "hpv_diagnosis_code_rpt",
+                "assay_RESULT"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3404S02.6d465ff6.js",
+        "IHKE3404S03.0f94c5cd.js",
+        "IHKE3404S04.e067c757.js",
+        "IHKE3404S05.5af01eec.js",
+        "IHKE3404S06.f883a2cf.js",
+        "IHKE3404S07.9698d7e5.js",
+        "IHKE3404S08.4f024a4c.js"
+      ]
+    },
+    {
+      "id": "screen_hpv",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3404s07/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sp_IHKE3404S07_Data",
+              "shape": "array",
+              "date_field": "func_DATE",
+              "end_date_field": "",
+              "fields": [
+                "func_DATE",
+                "code_CNAME",
+                "code_ENAME",
+                "cytopathic_CODE",
+                "lung_RADS",
+                "diagnosis_CODE",
+                "hpv_diagnosis_code_rpt",
+                "assay_RESULT"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3404S02.6d465ff6.js",
+        "IHKE3404S03.0f94c5cd.js",
+        "IHKE3404S04.e067c757.js",
+        "IHKE3404S05.5af01eec.js",
+        "IHKE3404S06.f883a2cf.js",
+        "IHKE3404S07.9698d7e5.js",
+        "IHKE3404S08.4f024a4c.js"
+      ]
+    },
+    {
+      "id": "screen_lung",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3404s06/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sp_IHKE3404S06_Data",
+              "shape": "array",
+              "date_field": "func_DATE",
+              "end_date_field": "",
+              "fields": [
+                "func_DATE",
+                "code_CNAME",
+                "code_ENAME",
+                "cytopathic_CODE",
+                "lung_RADS",
+                "diagnosis_CODE",
+                "hpv_diagnosis_code_rpt",
+                "assay_RESULT"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3404S02.6d465ff6.js",
+        "IHKE3404S03.0f94c5cd.js",
+        "IHKE3404S04.e067c757.js",
+        "IHKE3404S05.5af01eec.js",
+        "IHKE3404S06.f883a2cf.js",
+        "IHKE3404S07.9698d7e5.js",
+        "IHKE3404S08.4f024a4c.js"
+      ]
+    },
+    {
+      "id": "screen_oral",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3404s03/SP_IHKE3404S03",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3404S03_Data",
+              "shape": "array",
+              "date_field": "func_DATE",
+              "end_date_field": "",
+              "fields": [
+                "func_DATE",
+                "code_CNAME",
+                "code_ENAME",
+                "cytopathic_CODE",
+                "lung_RADS",
+                "diagnosis_CODE",
+                "hpv_diagnosis_code_rpt",
+                "assay_RESULT"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3404S02.6d465ff6.js",
+        "IHKE3404S03.0f94c5cd.js",
+        "IHKE3404S04.e067c757.js",
+        "IHKE3404S05.5af01eec.js",
+        "IHKE3404S06.f883a2cf.js",
+        "IHKE3404S07.9698d7e5.js",
+        "IHKE3404S08.4f024a4c.js"
+      ]
+    },
+    {
+      "id": "self_paid_material",
+      "range_mode": "source",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/IHKE3221s01/getItem",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sp_IHKE3221S01_data",
+              "shape": "array",
+              "date_field": "real_INSPECT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "order_CODE",
+                "assay_ITEM_NAME",
+                "assay_VALUE",
+                "sh_ORDER_CNAME",
+                "sh_ORDER_ENAME"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/IHKE3221s01/getItem",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sp_IHKE3221S01_data",
+              "shape": "array",
+              "date_field": "real_INSPECT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "order_CODE",
+                "assay_ITEM_NAME",
+                "assay_VALUE",
+                "sh_ORDER_CNAME",
+                "sh_ORDER_ENAME"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3221S01.4424f5d8.js",
+        "IHKE3221S02.6d51f2f5.js"
+      ]
+    },
+    {
+      "id": "self_paid_medicine",
+      "range_mode": "source",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/IHKE3220s01/getItem",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sp_IHKE3220S01_data",
+              "shape": "array",
+              "date_field": "real_INSPECT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "order_CODE",
+                "assay_ITEM_NAME",
+                "assay_VALUE",
+                "sh_ORDER_CNAME",
+                "sh_ORDER_ENAME",
+                "drug_NUM",
+                "drug_FRE",
+                "drug_PATH",
+                "order_QTY",
+                "order_DRUG_DAY",
+                "drug_UNIT"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "日",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/IHKE3220s01/getItem",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sp_IHKE3220S01_data",
+              "shape": "array",
+              "date_field": "real_INSPECT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "order_CODE",
+                "assay_ITEM_NAME",
+                "assay_VALUE",
+                "sh_ORDER_CNAME",
+                "sh_ORDER_ENAME",
+                "drug_NUM",
+                "drug_FRE",
+                "drug_PATH",
+                "order_QTY",
+                "order_DRUG_DAY",
+                "drug_UNIT"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "日",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3220S01.4a9c35f1.js",
+        "IHKE3220S02.bd47083e.js"
+      ]
+    },
+    {
+      "id": "vaccinations",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3203s01/SP_IHKE3203S01",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3203S01",
+              "shape": "array",
+              "date_field": "inoculate_D",
+              "end_date_field": "",
+              "fields": [
+                "code_CNAME",
+                "inoculate_D",
+                "source"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3203s01/SP_IHKE3203S03",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3203S03",
+              "shape": "array",
+              "date_field": "inoculate_D",
+              "end_date_field": "",
+              "fields": [
+                "code_CNAME",
+                "inoculate_D",
+                "source"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3203S01.6f76972a.js"
+      ]
+    }
+  ],
+  "semantic_policy": {
+    "field_code": "Lowercase ASCII identity of an explicitly allowlisted source key; not a display label, row identifier or inferred value.",
+    "unit_basis": "public_contract marks a unit printed by the reviewed SPA; source marks a source-supplied unit column. Neither silently supplies a missing historical unit.",
+    "date_roles": "Emit only the fixed meanings defined in source_metadata.go; ambiguous source dates remain unknown. Explicit administrative periods never become disease or medication-use periods.",
+    "source_diagnostics": [
+      "section_missing",
+      "section_optional_absent",
+      "section_null",
+      "section_empty",
+      "known_result_missing"
+    ],
+    "source_registry_scope": "38 supplemental provider categories. The asset watch also covers reviewed login, laboratory, medical and document components; their focused Go fixtures remain the corresponding endpoint contract tests."
+  }
+}

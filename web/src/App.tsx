@@ -31,7 +31,10 @@ import { AnalysisExport, MultiIndicator, LipidCalculation, PortableReportExport 
 import { PersonalRecords } from './PersonalRecords';
 import { SupplementaryData, CoverageSummary } from './SupplementaryData';
 import { DatasetTools } from './DatasetTools';
-import type { ImportedDataset, LaboratoryMetadata } from './health-dataset';
+import { PrintReport } from './PrintReport';
+import { NativePrintReport } from './NativePrintReport';
+import { laboratoryCoverageStatus, laboratoryDateSummary } from './coverage-status';
+import type { ImportedDataset, LaboratoryMetadata, DatasetProducer } from './health-dataset';
 import { emptyHealthData, type HealthDataSnapshot, type DownloadedAttachment, type DataCategory } from './health-data';
 import { AnalysisProvider, AnalysisStamp } from './AnalysisContext';
 import { PrivacyNotice } from './PrivacyNotice';
@@ -95,6 +98,10 @@ const APPEARANCE_KEY = 'bestkakkoi.healthbank.appearance';
 const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
 const sessionKey = (value: Session) => `${value.mode}:${value.csrf_token ?? ''}`;
 const SESSION_CHANGED_MESSAGE = '使用階段已到期或更換，先前報告與醫療資料已清除。請確認目前使用者後重新取得資料。';
+function viewFromURL(): View {
+  const requested = new URL(window.location.href).searchParams.get('view');
+  return NAV.find(item => item.id === requested)?.id ?? 'overview';
+}
 
 function initialSettings(): Settings {
   const settings = defaultSettings();
@@ -159,11 +166,13 @@ export default function App() {
   const dataAttachmentsRef = useRef<DownloadedAttachment[]>([]);
   const [importedDataCatalog, setImportedDataCatalog] = useState<DataCategory[]>([]);
   const [importedLaboratoryMetadata, setImportedLaboratoryMetadata] = useState<LaboratoryMetadata | null>(null);
+  const [importedDatasetProducer, setImportedDatasetProducer] = useState<DatasetProducer | null>(null);
   const [datasetVersion, setDatasetVersion] = useState(0);
   const datasetVersionRef = useRef(0);
   const sessionIdentity = useRef('anonymous:');
   const [dataBusy, setDataBusy] = useState(false);
-  const [view, setView] = useState<View>('overview');
+  const [dataBatchActive, setDataBatchActive] = useState(false);
+  const [view, setView] = useState<View>(viewFromURL);
   const [booting, setBooting] = useState(true);
   const [busy, setBusy] = useState('');
   const [settingsBusy, setSettingsBusy] = useState(false);
@@ -174,6 +183,7 @@ export default function App() {
   const [assessmentStale, setAssessmentStale] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [printOpen, setPrintOpen] = useState(false);
   const [detail, setDetail] = useState<LabRecord | null>(null);
   const [baseline, setBaseline] = useState<MeasurementGroup | null>(null);
   const [restoreBaselinesOpen, setRestoreBaselinesOpen] = useState(false);
@@ -192,7 +202,7 @@ export default function App() {
   const settings = session.settings;
   const persisted = session.authenticated && session.mode === 'official';
   const isDemo = session.mode === 'demo';
-  const controlsBusy = booting || settingsBusy || dataBusy || busy !== '';
+  const controlsBusy = booting || settingsBusy || dataBusy || dataBatchActive || busy !== '';
   const workspaceCatalog = useMemo(() => {
     const combined = new Map(dataCatalog.map(item => [item.id, item]));
     for (const item of importedDataCatalog) if (!combined.has(item.id)) combined.set(item.id, item);
@@ -206,6 +216,33 @@ export default function App() {
   const datasetExportReport = importedLaboratoryMetadata
     ? { ...report, ...importedLaboratoryMetadata, records: report.records }
     : report;
+  const datasetProducer: DatasetProducer = {
+    application: 'Healthbank', version: session.version || 'unknown', connector_revision: 'nhi-spa.2026-10-28.2',
+    clinical_catalog_id: catalog.provenance?.catalog_id ?? 'unknown',
+    clinical_catalog_revision: catalog.provenance?.catalog_revision ?? 'unknown',
+    clinical_evidence_revision: catalog.provenance?.evidence_revision ?? 'unknown',
+  };
+
+  useEffect(() => {
+    const restoreView = () => {
+      setView(viewFromURL());
+      setRangeOpen(false);
+      window.requestAnimationFrame(() => mainHeading.current?.focus({ preventScroll: true }));
+    };
+    window.addEventListener('popstate', restoreView);
+    return () => window.removeEventListener('popstate', restoreView);
+  }, []);
+
+  useEffect(() => {
+    const preparePrint = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'p' && !controlsBusy &&
+        (report.records.length || Object.keys(dataSnapshot.reports).length)) {
+        event.preventDefault(); setPrintOpen(true);
+      }
+    };
+    window.addEventListener('keydown', preparePrint);
+    return () => window.removeEventListener('keydown', preparePrint);
+  }, [controlsBusy, report.records.length, dataSnapshot.reports]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -343,6 +380,9 @@ export default function App() {
       );
   }, [groups, category, year, onlyFavorites, onlyAbnormal, settings.favorites, query]);
   const selectedGroup = groups.find((group) => group.id === selectedGroupId) ?? groups[0];
+  const selectedExportRecords = useMemo(() => view === 'trends' && selectedGroup
+    ? selectedGroup.records.filter(record => year === 'all' || record.exam_date.startsWith(`${year}-`))
+    : filteredGroups.flatMap(group => group.records), [view, selectedGroup, year, filteredGroups]);
   const trendGroup = selectedGroup
     ? {
         ...selectedGroup,
@@ -434,6 +474,12 @@ export default function App() {
   if (!nav) throw new Error('Unknown application view.');
 
   function navigate(next: View) {
+    if (next !== view) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('view', next);
+      url.hash = '';
+      window.history.pushState(null, '', url);
+    }
     setView(next);
     setRangeOpen(false);
     window.scrollTo({ top: 0, behavior: 'auto' });
@@ -454,6 +500,8 @@ export default function App() {
   }
 
   function invalidateDatasetOperations() {
+    setPrintOpen(false);
+    setDataBatchActive(false);
     // Retire captured archive callbacks before any session-changing request can
     // await. Keep successful data available if that request subsequently fails.
     datasetVersionRef.current += 1;
@@ -461,12 +509,14 @@ export default function App() {
   }
 
   function clearMedicalDataset() {
+    setPrintOpen(false);
     invalidateDatasetOperations();
     setDataSnapshot(emptyHealthData());
     dataAttachmentsRef.current = [];
     setDataAttachments([]);
     setImportedDataCatalog([]);
     setImportedLaboratoryMetadata(null);
+    setImportedDatasetProducer(null);
     setDataBusy(false);
   }
 
@@ -541,9 +591,9 @@ export default function App() {
     setDataAttachments(next);
   }
 
-  async function fetchLaboratoryForWorkspace(signal: AbortSignal) {
+  async function fetchLaboratoryForWorkspace(signal: AbortSignal, query = { from: '', to: '' }): Promise<ReportResponse> {
     const generation = sessionGeneration.current;
-    const result = await api.reports('', '', signal);
+    const result = await api.reports(query.from, query.to, signal);
     signal.throwIfAborted();
     if (generation !== sessionGeneration.current) throw new DOMException('使用階段已變更。', 'AbortError');
     await receiveReports(result, generation, undefined, signal);
@@ -552,6 +602,7 @@ export default function App() {
     if (result.official_query) {
       setDateFrom(result.official_query.start_date); setDateTo(result.official_query.end_date);
     }
+    return result;
   }
 
   async function restoreDataset(dataset: ImportedDataset) {
@@ -577,6 +628,7 @@ export default function App() {
       setDataAttachments(dataset.attachments);
       setImportedDataCatalog(dataset.catalog);
       setImportedLaboratoryMetadata(dataset.laboratoryMetadata);
+      setImportedDatasetProducer(dataset.producer);
       setImportOpen(false); navigate('data');
       setMessage('完整資料包已還原至獨立匯入模式；檔案來源及完整性描述未經本次官方連線驗證。');
     } catch (failure) {
@@ -914,12 +966,8 @@ export default function App() {
   }
 
   function exportCsv() {
-    const records =
-      view === 'trends' && trendGroup
-        ? trendGroup.records
-        : filteredGroups.flatMap((group) => group.records);
     downloadText(
-      toCsv(records),
+      toCsv(selectedExportRecords),
       `檢驗比較${isDemo ? '-合成示範' : ''}-${today()}.csv`,
       'text/csv;charset=utf-8',
     );
@@ -1090,7 +1138,7 @@ export default function App() {
         <main id="main-content" className="main-content">
           <div className="page-heading">
             <div>
-              <span className="eyebrow">{nav.eyebrow}</span>
+              <span className="eyebrow workspace-eyebrow">健康映覽 · {session.mode === 'official' ? '官方授權資料' : session.mode === 'import' ? '匯入資料工作區' : session.mode === 'demo' ? '合成示範' : '醫療資料工作區'}</span>
               <h1 ref={mainHeading} tabIndex={-1}>
                 {nav.label}
                 <span className="title-dot">.</span>
@@ -1113,20 +1161,16 @@ export default function App() {
                   <button
                     className="button secondary"
                     onClick={exportCsv}
+                    title={`目前篩選 ${selectedExportRecords.length} 筆；${laboratoryDateSummary(selectedExportRecords)}`}
                     disabled={assessmentStale}
                   >
                     <Icon name="download" size={18} />
-                    <span>匯出 CSV</span>
+                    <span>匯出篩選的 {selectedExportRecords.length} 筆 CSV</span>
                   </button>
                   <button
                     className="button secondary print-button"
-                    aria-describedby={view === 'comparison' ? 'comparison-print-tip' : undefined}
-                    title={
-                      view === 'comparison'
-                        ? '列印時每段最多 4 個檢驗項目欄，自動分段換頁；可先篩選類別或關注項目。'
-                        : '開啟瀏覽器列印，可儲存為 PDF。'
-                    }
-                    onClick={() => window.print()}
+                    title="由全部已取得資料製作專用報表；可另選分享範圍與排版。"
+                    onClick={() => setPrintOpen(true)}
                     disabled={assessmentStale}
                   >
                     <Icon name="print" size={18} />
@@ -1134,6 +1178,10 @@ export default function App() {
                   </button>
                 </>
               )}
+              {view === 'data' && <>
+                <a className="button secondary" href="#dataset-tools">保存／還原資料包</a>
+                <button type="button" className="button secondary" onClick={() => setPrintOpen(true)} disabled={controlsBusy || (!report.records.length && !Object.keys(dataSnapshot.reports).length)}>製作列印／PDF 報表</button>
+              </>}
               {persisted ? view !== 'data' ? (
                 <>
                   <button
@@ -1169,7 +1217,7 @@ export default function App() {
 
           {(view === 'comparison' || view === 'trends' || view === 'settings') && <details className="panel compact-disclosure"><summary>判讀條件</summary><ClinicalComparison records={report.records} /></details>}
           {view !== 'data' && <AnalysisStamp />}
-          {view !== 'settings' && view !== 'data' && <CoverageSummary report={report} />}
+          {view !== 'settings' && view !== 'data' && <CoverageSummary report={report} mode={session.mode} />}
           {rangeOpen && persisted && (
             <form
               id="report-date-range"
@@ -1273,9 +1321,7 @@ export default function App() {
               <br />
               實際送出查詢範圍：{dateLabel(report.official_query.start_date)}～
               {dateLabel(report.official_query.end_date)}；
-              {report.official_query.reported_count === null
-                ? '官方未提供此範圍可獨立核對的總筆數。'
-                : `此範圍官方回報 ${report.official_query.reported_count} 筆，已完成筆數核對。`}
+              {laboratoryCoverageStatus(report, session.mode).summary}
               {report.official_query.mode === 'all_history' && (
                 <>
                   <br />
@@ -2006,15 +2052,38 @@ export default function App() {
           <div hidden={view !== 'data'}>
             {dataCatalogError && <Alert tone="error">{dataCatalogError}<button className="button secondary" type="button" disabled={dataCatalogLoading} onClick={() => { void reloadDataCatalog(); }}>{dataCatalogLoading ? '重新取得中…' : '重新取得來源目錄'}</button></Alert>}
             {!booting && <>
-              <DatasetTools key={`dataset:${datasetVersion}`} report={datasetExportReport} snapshot={dataSnapshot} attachments={dataAttachments} catalog={workspaceCatalog} disabled={controlsBusy} onImport={restoreDataset} />
               <SupplementaryData key={`${session.mode}:${session.csrf_token ?? ''}:${datasetVersion}`}
                 authenticated={persisted} imported={session.mode === 'import'}
+                sessionMode={session.mode}
                 disabled={settingsBusy || busy !== '' || dataCatalog.length === 0}
                 catalog={workspaceCatalog} initialDataset={dataSnapshot} archivedAttachments={archivedAttachments} laboratory={report}
                 onDatasetChange={next => { if (datasetVersion === datasetVersionRef.current) setDataSnapshot(next); }}
                 onAttachmentDownloaded={retainAttachment} onFetchLaboratory={fetchLaboratoryForWorkspace}
+                datasetProducer={datasetProducer}
+                onBatchActiveChange={value => { if (datasetVersion === datasetVersionRef.current) setDataBatchActive(value); }}
+                onBeginBatch={(categories, includeLaboratory) => {
+                  if (datasetVersion !== datasetVersionRef.current) return;
+                  const selected = new Set(categories);
+                  const nextAttachments = dataAttachmentsRef.current.filter(file => !selected.has(file.category));
+                  dataAttachmentsRef.current = nextAttachments; setDataAttachments(nextAttachments);
+                  if (includeLaboratory) {
+                    setReport({ records: [], fetched_at: '', complete: false, warnings: ['本批檢驗尚未取得；不沿用先前期間的結果。'] });
+                    clearReportRange();
+                  }
+                }}
                 onBusyChange={value => { if (datasetVersion === datasetVersionRef.current) setDataBusy(value); }}
+                onOpenTrends={date => {
+                  setYear('all');
+                  if (!selectedGroup?.records.some(record => record.exam_date === date)) {
+                    const matching = groups.find(group => group.records.some(record => record.exam_date === date));
+                    if (matching) setSelectedGroupId(matching.id);
+                  }
+                  navigate('trends');
+                }}
                 onSessionExpired={() => { void expireOfficialSession(); }} />
+              <NativePrintReport report={datasetExportReport} snapshot={dataSnapshot} categories={workspaceCatalog} mode={session.mode} version={session.version} reportOpen={printOpen} />
+              <DatasetTools key={`dataset:${datasetVersion}`} report={datasetExportReport} snapshot={dataSnapshot} attachments={dataAttachments} catalog={workspaceCatalog}
+                producer={datasetProducer} importedFrom={importedDatasetProducer} disabled={controlsBusy} onImport={restoreDataset} />
             </>}
           </div>
           <div hidden={view !== 'trends' && view !== 'settings'}><PersonalRecords key={`${session.mode}:${session.profile_key || report.fetched_at}`} profileKey={session.profile_key ?? ''} /></div>
@@ -2050,6 +2119,8 @@ export default function App() {
         onSession={reconcileObservedSession}
         onFailure={failure => reconcileFailedSessionMutation(failure, sessionGeneration.current)} />}
       {importOpen && <ImportDialog onClose={() => setImportOpen(false)} onImport={importFile} />}
+      {printOpen && <PrintReport key={`print:${session.mode}:${datasetVersion}`} report={datasetExportReport} snapshot={dataSnapshot} categories={workspaceCatalog}
+        selectedLaboratory={selectedExportRecords} mode={session.mode} version={session.version} onClose={() => setPrintOpen(false)} />}
       {detail && (
         <DetailDialog
           record={detail}

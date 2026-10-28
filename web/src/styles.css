@@ -4300,3 +4300,25 @@
 .medicine-events { display: grid; gap: .5rem; margin-top: .75rem; }
 .medicine-event-row { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; border-top: 1px solid var(--border); padding: .5rem 0; }
 .medicine-event-row .button { margin-inline-start: auto; }
+
+/* RC10 keyboard chart traversal and explicit portable-file scope. */
+.chart-access-tools, .chart-record-pagination { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-block: .7rem; min-inline-size: 0; }
+.chart-access-tools > *, .chart-record-pagination > * { min-inline-size: 0; max-inline-size: 100%; }
+.chart-access-tools .button, .chart-record-pagination .button { white-space: normal; overflow-wrap: anywhere; }
+.chart-access-tools summary { min-block-size: 48px; padding: .5rem; cursor: pointer; }
+.chart-access-tools details[open] { flex-basis: 100%; }
+.chart-records > h3 { scroll-margin-block-start: 1rem; }
+.chart-records > h3:focus-visible { outline-offset: 4px; }
+.dataset-tools { scroll-margin-block-start: 1rem; }
+.dataset-tools-count { display: block; font-weight: 400; font-size: .85em; color: var(--ink-muted); }
+.dataset-tools[open] > p { margin-block: .65rem; }
+.dataset-format-options, .portable-export-options { margin-block: .6rem; }
+.dataset-format-options > summary, .portable-export-options > summary { min-block-size: 48px; cursor: pointer; }
+.portable-export { border-block-start: 1px solid var(--border); margin-block: .8rem; padding-block: .8rem; min-inline-size: 0; }
+.portable-export .button-row { margin-block: .65rem; }
+.portable-export .button { white-space: normal; overflow-wrap: anywhere; max-inline-size: 100%; }
+.portable-export .helper-text { margin-block: .4rem; }
+@media (max-width: 480px) {
+  .chart-record-pagination > span { flex-basis: 100%; order: -1; }
+  .chart-access-tools > .button { inline-size: 100%; }
+}

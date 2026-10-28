@@ -41,6 +41,28 @@ type DocumentInfo struct {
 	Warnings    []string
 }
 
+// DocumentWorkingSet returns a conservative admission reservation for an opaque
+// reference. It does not fetch data, disclose the source route, or authorize a
+// transfer. DownloadDocument performs the full reference/authentication checks.
+func (s *Session) DocumentWorkingSet(category, reference string) int64 {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	ref, ok := s.documentReferences[reference]
+	if !ok || ref.category != category {
+		return 1 << 20
+	}
+	switch ref.kind {
+	case "hospital_pdf":
+		return 64 << 20
+	case "hospital_markup":
+		return 192 << 20
+	case "imaging_jpeg":
+		return 192 << 20
+	default:
+		return 1 << 20 // Original artifacts stream through bounded small buffers.
+	}
+}
+
 // DownloadDocument serializes one authenticated transfer, limits it, and never
 // writes health content to disk. consume must read synchronously and must not
 // retain the reader. Errors after consume has begun require aborting the HTTP

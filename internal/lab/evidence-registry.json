@@ -1,0 +1,1525 @@
+{
+  "schema_version": 1,
+  "registry_id": "healthbank.clinical-evidence.v1",
+  "copyright": "Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.",
+  "catalog_id": "healthbank_lab_defaults_tw",
+  "catalog_sha256": "8e0ec3c2a0753826ac0a9e02e1e25474ffee406bcc12e6a585114ea380dcb3d5",
+  "scope": "Reviewable links between implemented interpretation rules, applicability, source loci and synthetic regression vectors. This registry is not a clinical certification or evidence of live-account data.",
+  "maintenance": {
+    "rule_changes_require": [
+      "primary-source review with source edition and locator",
+      "population/specimen/unit/exclusion review",
+      "independent boundary vector review",
+      "implementation and regression update",
+      "new registry content hash"
+    ],
+    "network_checks_do_not_update_rules": true,
+    "prior_catalog_source_review": "2026-10-27 catalog, independently rechecked in the documented RC9 audit on 2026-10-28; see docs/deep-audit.zh-TW.md",
+    "new_unit_and_reporting_review": "2026-10-28"
+  },
+  "sources": {
+    "provided_report_reference": {
+      "type": "user_supplied_reference_template",
+      "title": "初始報告參考範本（不含個人結果；非通用基準）",
+      "verified_date": "2026-10-27",
+      "scope": "Use only as a named laboratory profile; live report reference wins."
+    },
+    "songshan_manual": {
+      "type": "official_hospital_manual",
+      "title": "三軍總醫院松山分院 生物參考區間與實驗室解釋手冊 SOP-AA06",
+      "url": "https://wwwv.tsgh.ndmutsgh.edu.tw/files/web/193/file_up/20101/12733/SOP-AA06%E7%94%9F%E7%89%A9%E5%8F%83%E8%80%83%E5%8D%80%E9%96%93%E5%8F%8A%E5%AF%A6%E9%A9%97%E5%AE%A4%E8%A7%A3%E9%87%8B%E6%89%8B%E5%86%8A1.1.pdf",
+      "version": "1.1",
+      "effective_date": "2022-10-24",
+      "verified_date": "2026-10-27",
+      "caveat": "Not a 2026 edition. Venous-pH upper bound 72.43 is a source typo and is excluded; manual sodium upper146 differs from supplied report145."
+    },
+    "kdigo_ckd": {
+      "type": "professional_guideline",
+      "title": "KDIGO 2024 CKD Guideline",
+      "url": "https://kdigo.org/wp-content/uploads/2024/03/KDIGO-2024-CKD-Guideline.pdf",
+      "edition": "2024",
+      "verified_date": "2026-10-27",
+      "locator": "Tables2–3; chronicity practice points; Figure48 referral criteria"
+    },
+    "kdigo_pcr_table": {
+      "type": "historical_professional_guideline_table",
+      "title": "KDIGO 2012 CKD Guideline, Table7",
+      "url": "https://kdigo.org/wp-content/uploads/2017/02/KDIGO_2012_CKD_GL.pdf",
+      "edition": "2012",
+      "verified_date": "2026-10-27",
+      "caveat": "PCR/ACR correspondences are approximate. Historical protein-to-creatinine ratio categories, not a newly issued 2026 standard."
+    },
+    "nhlbi_triglycerides": {
+      "type": "official_public_health",
+      "title": "NHLBI High Blood Triglycerides",
+      "url": "https://www.nhlbi.nih.gov/health/high-blood-triglycerides",
+      "verified_date": "2026-10-27"
+    },
+    "acc_hypertriglyceridemia": {
+      "type": "professional_society_consensus_summary",
+      "title": "ACC2021 Hypertriglyceridemia Consensus",
+      "url": "https://www.acc.org/latest-in-cardiology/ten-points-to-remember/2021/07/27/21/04/2021-acc-ecdp-hypertriglyceridemia",
+      "verified_date": "2026-10-27"
+    },
+    "acc_triglycerides_current": {
+      "type": "professional_society_current_clinical_education",
+      "title": "ACC Severe Hypertriglyceridemia: Acute Risk Stratification and Immediate Management",
+      "url": "https://www.acc.org/education-and-meetings/patient-case-quizzes/2026/06/09/16/23/severe-hypertriglyceridemia",
+      "verified_date": "2026-10-27"
+    },
+    "cdc_glycemia": {
+      "type": "official_public_health",
+      "title": "CDC Diabetes Testing",
+      "url": "https://www.cdc.gov/diabetes/diabetes-testing/",
+      "verified_date": "2026-10-27"
+    },
+    "ada_hypoglycemia": {
+      "type": "professional_guideline_search_verified",
+      "title": "ADA Standards of Care2026 Section6",
+      "url": "https://diabetesjournals.org/care/article/49/Supplement_1/S132/163927/6-Glycemic-Goals-Hypoglycemia-and-Hyperglycemic",
+      "edition": "2026",
+      "verified_date": "2026-10-27"
+    },
+    "vgh_notifications": {
+      "type": "institution_specific_notification_policy",
+      "title": "臺北榮總病理檢驗部異常值／危急值通報標準",
+      "url": "https://wd.vghtpe.gov.tw/path/Fpage.action?fid=7351&muid=5616",
+      "verified_date": "2026-10-27",
+      "scope": "Unconditioned thresholds only, explicitly named application alerts; not an originating-lab flag or Taiwan-wide calibrated severity scale."
+    },
+    "aarc_venous_gases": {
+      "type": "professional_guideline",
+      "title": "AARC Blood Gas Analysis and Hemoximetry",
+      "url": "https://www.aarc.org/wp-content/uploads/2025/03/davis-et-al-2013-aarc-clinical-practice-guideline-blood-gas-analysis-and-hemoximetry-2013.pdf",
+      "edition": "2013",
+      "verified_date": "2026-10-27",
+      "caveat": "URL upload year2025 is not the guideline publication year."
+    },
+    "tsgh_sglt2": {
+      "type": "official_hospital_patient_education",
+      "title": "三總 控血糖護心腎—SGLT2抑制劑",
+      "url": "https://enews.tsgh.ndmutsgh.edu.tw/edm/content_detail.aspx?eid=1892",
+      "verified_date": "2026-10-27"
+    },
+    "cych_urine_protein": {
+      "type": "primary_clinical_source",
+      "title": "嘉義基督教醫院：尿蛋白定性檢查（06003C）",
+      "url": "https://www.cych.org.tw/lab/6_%E9%A0%85%E7%9B%AE%E6%9F%A5%E8%A9%A2/find.asp?sh1=0104~",
+      "verified_date": "2026-10-27"
+    },
+    "cych_homocysteine": {
+      "type": "primary_clinical_source",
+      "title": "嘉義基督教醫院：同半胱胺酸，Atellica IM",
+      "url": "https://www.cych.org.tw/lab/6_%E9%A0%85%E7%9B%AE%E6%9F%A5%E8%A9%A2/find.asp?sh1=0796~",
+      "verified_date": "2026-10-27"
+    },
+    "edah_vitamin_b12": {
+      "type": "primary_clinical_source",
+      "title": "義大醫院：維生素 B12，CMIA 參考區間",
+      "url": "https://exdep.edah.org.tw/cp/index.php/zh-tw/2017-06-26-08-19-55/2017-06-28-09-06-14/756-vit-b12",
+      "verified_date": "2026-10-27"
+    },
+    "ucl_intact_pth": {
+      "type": "primary_clinical_source",
+      "title": "大安聯合醫事檢驗所：完整副甲狀腺素，Siemens Atellica IM",
+      "url": "https://www.ucl.com.tw/webshop/shop/ServiceQueryInfo.asp?GoodsID=D0104064&GoodstypeID=D0&MiddleID=D010",
+      "verified_date": "2026-10-27"
+    },
+    "vgh_ck_mb_activity": {
+      "type": "primary_clinical_source",
+      "title": "臺北榮總：CK-MB 活性檢驗參考值",
+      "url": "https://wd.vghtpe.gov.tw/path/files/file_D_Main_biochemistry_CK-MB.pdf",
+      "verified_date": "2026-10-27"
+    },
+    "ash_d_dimer": {
+      "type": "primary_clinical_source",
+      "title": "美國血液學會：D-dimer 檢測與 FEU／DDU 差異",
+      "url": "https://www.hematology.org/covid-19/covid-19-and-d-dimer",
+      "verified_date": "2026-10-27"
+    },
+    "kdigo_ckd_mbd": {
+      "type": "primary_clinical_source",
+      "title": "KDIGO 2017 CKD-MBD 指引更新",
+      "url": "https://kdigo.org/wp-content/uploads/2017/02/2017-KDIGO-CKD-MBD-GL-Update.pdf",
+      "edition": "2017",
+      "verified_date": "2026-10-27"
+    },
+    "nice_b12": {
+      "type": "primary_clinical_source",
+      "title": "NICE NG239：維生素 B12 缺乏評估",
+      "url": "https://www.nice.org.uk/guidance/ng239/chapter/recommendations",
+      "verified_date": "2026-10-27"
+    },
+    "ucum_2_2": {
+      "type": "primary_unit_specification",
+      "title": "The Unified Code for Units of Measure",
+      "url": "https://ucum.org/ucum",
+      "version": "2.2",
+      "effective_date": "2024-06-17",
+      "verified_date": "2026-10-28",
+      "locator": "Section 2.1, paragraph 3; Table 1 prefixes; discussion of liter in Section 4.3",
+      "scope": "Case-sensitive and case-insensitive representations are different contracts; l/L are liter aliases. Healthbank implements only a finite spelling map, not a general UCUM engine."
+    },
+    "niddk_ckd_epi_2021": {
+      "type": "primary_government_formula",
+      "title": "NIDDK eGFR Equations for Adults",
+      "url": "https://www.niddk.nih.gov/research-funding/research-programs/kidney-clinical-research-epidemiology/laboratory/glomerular-filtration-rate-equations/adults",
+      "edition": "2021 CKD-EPI eGFRcr",
+      "verified_date": "2026-10-28",
+      "locator": "2021 CKD-EPI Creatinine Equation; standardized IDMS creatinine; age >=18; coefficient table; conversion divide by 88.4"
+    },
+    "niddk_egfr_reporting": {
+      "type": "primary_government_reporting_guidance",
+      "title": "NIDDK Glomerular Filtration Rate Equations",
+      "url": "https://www.niddk.nih.gov/research-funding/research-programs/kidney-clinical-research-epidemiology/laboratory/glomerular-filtration-rate-equations",
+      "verified_date": "2026-10-28",
+      "locator": "Best Practices for Reporting eGFR: identify equation and round reported eGFR to a whole number",
+      "scope": "Only the application-derived eGFR display rounds; original observations and internal calculation precision are preserved."
+    },
+    "sampson_2020": {
+      "type": "original_research",
+      "title": "A New Equation for Calculation of Low-Density Lipoprotein Cholesterol in Patients With Normolipidemia and/or Hypertriglyceridemia",
+      "url": "https://jamanetwork.com/journals/jamacardiology/fullarticle/2761953",
+      "edition": "2020",
+      "verified_date": "2026-10-28",
+      "locator": "Equation 2; TG <=800 mg/dL validation range; Type III exclusion",
+      "doi": "10.1001/jamacardio.2020.0013"
+    },
+    "ncku_creatinine": {
+      "type": "named_primary_hospital_template",
+      "title": "NCKU named laboratory creatinine",
+      "url": "https://web.hosp.ncku.edu.tw/pathology/Pathology/Page/72",
+      "verified_date": "2026-10-28",
+      "review_basis": "RC9 documented independent primary-source review; not relabelled a new source publication",
+      "locator": "Reference interval and method sections"
+    },
+    "ncku_alp": {
+      "type": "named_primary_hospital_template",
+      "title": "NCKU named laboratory alp",
+      "url": "https://web.hosp.ncku.edu.tw/pathology/Pathology/Page/83",
+      "verified_date": "2026-10-28",
+      "review_basis": "RC9 documented independent primary-source review; not relabelled a new source publication",
+      "locator": "Reference interval and method sections"
+    },
+    "ncku_bun": {
+      "type": "named_primary_hospital_template",
+      "title": "NCKU named laboratory bun",
+      "url": "https://web.hosp.ncku.edu.tw/pathology/Pathology/Page/71",
+      "verified_date": "2026-10-28",
+      "review_basis": "RC9 documented independent primary-source review; not relabelled a new source publication",
+      "locator": "Reference interval and method sections"
+    },
+    "ncku_calcium": {
+      "type": "named_primary_hospital_template",
+      "title": "NCKU named laboratory calcium",
+      "url": "https://web.hosp.ncku.edu.tw/pathology/Pathology/Page/87",
+      "verified_date": "2026-10-28",
+      "review_basis": "RC9 documented independent primary-source review; not relabelled a new source publication",
+      "locator": "Reference interval and method sections"
+    },
+    "ncku_uric_acid": {
+      "type": "named_primary_hospital_template",
+      "title": "NCKU named laboratory uric_acid",
+      "url": "https://web.hosp.ncku.edu.tw/pathology/Pathology/Page/74",
+      "verified_date": "2026-10-28",
+      "review_basis": "RC9 documented independent primary-source review; not relabelled a new source publication",
+      "locator": "Reference interval and method sections"
+    },
+    "ncku_alt": {
+      "type": "named_primary_hospital_template",
+      "title": "NCKU named laboratory alt",
+      "url": "https://web.hosp.ncku.edu.tw/pathology/Pathology/Page/80",
+      "verified_date": "2026-10-28",
+      "review_basis": "RC9 documented independent primary-source review; not relabelled a new source publication",
+      "locator": "Reference interval and method sections"
+    },
+    "ncku_ck": {
+      "type": "named_primary_hospital_template",
+      "title": "NCKU named laboratory ck",
+      "url": "https://web.hosp.ncku.edu.tw/pathology/Pathology/Page/85",
+      "verified_date": "2026-10-28",
+      "review_basis": "RC9 documented independent primary-source review; not relabelled a new source publication",
+      "locator": "Reference interval and method sections"
+    },
+    "ncku_phosphorus": {
+      "type": "named_primary_hospital_template",
+      "title": "NCKU named laboratory phosphorus",
+      "url": "https://web.hosp.ncku.edu.tw/pathology/Pathology/Page/88",
+      "verified_date": "2026-10-28",
+      "review_basis": "RC9 documented independent primary-source review; not relabelled a new source publication",
+      "locator": "Reference interval and method sections"
+    },
+    "ncku_albumin": {
+      "type": "named_primary_hospital_template",
+      "title": "NCKU named laboratory albumin",
+      "url": "https://web.hosp.ncku.edu.tw/pathology/Pathology/Page/104",
+      "verified_date": "2026-10-28",
+      "review_basis": "RC9 documented independent primary-source review; not relabelled a new source publication",
+      "locator": "Reference interval and method sections"
+    }
+  },
+  "rules": [
+    {
+      "id": "report_reference",
+      "implementation": "internal/lab/grade.go",
+      "default_item_ids": [
+        "serum_alt",
+        "urine_albumin_semiquantitative",
+        "serum_albumin",
+        "serum_bun",
+        "blood_band_neutrophil_percentage",
+        "blood_basophil_percentage",
+        "serum_ck",
+        "serum_crp",
+        "serum_total_calcium",
+        "serum_chloride",
+        "serum_total_cholesterol",
+        "serum_creatinine",
+        "blood_eosinophil_percentage",
+        "urine_epithelial_cells",
+        "fasting_plasma_glucose",
+        "venous_bicarbonate",
+        "serum_hdl_cholesterol",
+        "blood_hemoglobin",
+        "blood_hba1c",
+        "blood_hematocrit",
+        "serum_ldl_cholesterol",
+        "blood_lymphocyte_percentage",
+        "blood_mch",
+        "blood_mchc",
+        "blood_mcv",
+        "urine_albumin_quantitative",
+        "blood_monocyte_percentage",
+        "plasma_nt_probnp",
+        "blood_neutrophil_percentage",
+        "venous_oxygen_saturation",
+        "venous_pco2",
+        "urine_ph",
+        "venous_po2",
+        "serum_phosphorus",
+        "blood_platelet_count",
+        "serum_potassium",
+        "urine_rbc_microscopy",
+        "blood_rbc_count",
+        "blood_rdw_cv",
+        "blood_segment_neutrophil_percentage",
+        "serum_sodium",
+        "urine_specific_gravity",
+        "serum_uric_acid",
+        "urine_wbc_microscopy",
+        "blood_wbc_count",
+        "venous_total_co2",
+        "plasma_hs_troponin_i",
+        "venous_ph",
+        "blood_ck_mb_activity",
+        "plasma_d_dimer_unspecified",
+        "blood_glucose_unspecified",
+        "capillary_postprandial_glucose",
+        "blood_total_homocysteine",
+        "blood_intact_pth",
+        "serum_total_vitamin_b12"
+      ],
+      "alert_item_ids": [],
+      "activation": "default_or_alert",
+      "population": [
+        "Use the original report specimen/method/population context; no demographics are inferred."
+      ],
+      "unit": "",
+      "verified_unit_aliases": [],
+      "exclusions": [
+        "Missing or unverified units cannot inherit numeric rule eligibility.",
+        "Colors encode this application display policy; no diagnosis, treatment recommendation or cross-analyte severity equivalence."
+      ],
+      "source_loci": [
+        {
+          "source_id": "provided_report_reference",
+          "locator": "Use only as a named laboratory profile; live report reference wins."
+        }
+      ],
+      "test_vectors": [],
+      "regression_files": [
+        "internal/lab/grade_test.go",
+        "internal/lab/catalog_integrity_test.go"
+      ]
+    },
+    {
+      "id": "qualitative_reference",
+      "implementation": "internal/lab/grade.go",
+      "default_item_ids": [
+        "urine_bacteria",
+        "urine_bilirubin",
+        "urine_casts",
+        "urine_crystals",
+        "urine_glucose_dipstick",
+        "urine_ketones",
+        "urine_leukocyte_esterase",
+        "urine_nitrite",
+        "urine_occult_blood",
+        "urine_protein_dipstick",
+        "urine_urobilinogen",
+        "urine_protein_qualitative"
+      ],
+      "alert_item_ids": [],
+      "activation": "default_or_alert",
+      "population": [
+        "Use the original report specimen/method/population context; no demographics are inferred."
+      ],
+      "unit": "",
+      "verified_unit_aliases": [],
+      "exclusions": [
+        "Missing or unverified units cannot inherit numeric rule eligibility.",
+        "Colors encode this application display policy; no diagnosis, treatment recommendation or cross-analyte severity equivalence."
+      ],
+      "source_loci": [
+        {
+          "source_id": "songshan_manual",
+          "locator": "Named rule in the referenced institutional source; see docs/clinical-reference.zh-TW.md"
+        }
+      ],
+      "test_vectors": [],
+      "regression_files": [
+        "internal/lab/grade_test.go",
+        "internal/lab/catalog_integrity_test.go"
+      ]
+    },
+    {
+      "id": "unclassified",
+      "implementation": "internal/lab/grade.go",
+      "default_item_ids": [
+        "blood_atypical_lymphocyte_percentage",
+        "venous_base_excess",
+        "venous_blood_gas_panel",
+        "urine_clarity",
+        "urine_color",
+        "spot_urine_creatinine",
+        "spot_urine_total_protein",
+        "manual_smear_status"
+      ],
+      "alert_item_ids": [],
+      "activation": "default_or_alert",
+      "population": [
+        "Use the original report specimen/method/population context; no demographics are inferred."
+      ],
+      "unit": "",
+      "verified_unit_aliases": [],
+      "exclusions": [
+        "No applicable interpretation is created. Missing is never zero or automatically normal."
+      ],
+      "source_loci": [],
+      "test_vectors": [],
+      "regression_files": [
+        "internal/lab/grade_test.go",
+        "internal/lab/catalog_integrity_test.go"
+      ]
+    },
+    {
+      "id": "adult_triglycerides",
+      "implementation": "internal/lab/grade.go",
+      "default_item_ids": [
+        "serum_triglycerides"
+      ],
+      "alert_item_ids": [
+        "serum_triglycerides"
+      ],
+      "activation": "default_or_alert",
+      "population": [
+        "Adult profile. Verify fasting status for lower-level classification; large elevations still warrant attention when nonfasting."
+      ],
+      "unit": "mg/dL",
+      "verified_unit_aliases": [],
+      "exclusions": [
+        "Missing or unverified units cannot inherit numeric rule eligibility.",
+        "Colors encode this application display policy; no diagnosis, treatment recommendation or cross-analyte severity equivalence.",
+        "Adult profile; fasting status is needed for lower-level clinical interpretation.",
+        "The source does not validate individualized genetic-disease coefficients."
+      ],
+      "source_loci": [
+        {
+          "source_id": "nhlbi_triglycerides",
+          "locator": "Named rule in the referenced institutional source; see docs/clinical-reference.zh-TW.md"
+        },
+        {
+          "source_id": "acc_hypertriglyceridemia",
+          "locator": "Named rule in the referenced institutional source; see docs/clinical-reference.zh-TW.md"
+        },
+        {
+          "source_id": "acc_triglycerides_current",
+          "locator": "Named rule in the referenced institutional source; see docs/clinical-reference.zh-TW.md"
+        }
+      ],
+      "test_vectors": [
+        {
+          "raw": "149.999999999999999999",
+          "expected_rule_level": 1
+        },
+        {
+          "raw": "150",
+          "expected_rule_level": 2
+        },
+        {
+          "raw": "499.999999999999999999",
+          "expected_rule_level": 3
+        },
+        {
+          "raw": "500",
+          "expected_rule_level": 4
+        },
+        {
+          "raw": "1000",
+          "expected_rule_level": 5
+        }
+      ],
+      "regression_files": [
+        "internal/lab/grade_test.go",
+        "internal/lab/catalog_integrity_test.go"
+      ]
+    },
+    {
+      "id": "egfr_categories",
+      "implementation": "internal/lab/grade.go",
+      "default_item_ids": [
+        "egfr"
+      ],
+      "alert_item_ids": [],
+      "activation": "default_or_alert",
+      "population": [
+        "Verify source unit and equation. Do not infer CKD chronicity from one value."
+      ],
+      "unit": "mL/min/1.73m2",
+      "verified_unit_aliases": [],
+      "exclusions": [
+        "Missing or unverified units cannot inherit numeric rule eligibility.",
+        "Colors encode this application display policy; no diagnosis, treatment recommendation or cross-analyte severity equivalence.",
+        "No CKD chronicity or original equation is inferred from one result.",
+        "No automatic eGFR unit is assigned to a unitless source."
+      ],
+      "source_loci": [
+        {
+          "source_id": "kdigo_ckd",
+          "locator": "Tables2–3; chronicity practice points; Figure48 referral criteria"
+        }
+      ],
+      "test_vectors": [
+        {
+          "raw": "14.999999999999999999",
+          "expected_rule_level": 5
+        },
+        {
+          "raw": "15",
+          "expected_rule_level": 4
+        },
+        {
+          "raw": "30",
+          "expected_rule_level": 3
+        },
+        {
+          "raw": "45",
+          "expected_rule_level": 3
+        },
+        {
+          "raw": "60",
+          "expected_rule_level": 2
+        },
+        {
+          "raw": "90",
+          "expected_rule_level": 1
+        }
+      ],
+      "regression_files": [
+        "internal/lab/grade_test.go",
+        "internal/lab/catalog_integrity_test.go"
+      ]
+    },
+    {
+      "id": "acr_categories",
+      "implementation": "internal/lab/grade.go",
+      "default_item_ids": [
+        "urine_acr_semiquantitative",
+        "urine_acr_quantitative"
+      ],
+      "alert_item_ids": [],
+      "activation": "default_or_alert",
+      "population": [
+        "Use the original report specimen/method/population context; no demographics are inferred."
+      ],
+      "unit": "mg/g",
+      "verified_unit_aliases": [
+        "mg/gCr"
+      ],
+      "exclusions": [
+        "Missing or unverified units cannot inherit numeric rule eligibility.",
+        "Colors encode this application display policy; no diagnosis, treatment recommendation or cross-analyte severity equivalence.",
+        "Do not collapse albumin ratios, total-protein ratios and spot concentrations.",
+        "An inequality that crosses categories is not replaced by a precise boundary."
+      ],
+      "source_loci": [
+        {
+          "source_id": "kdigo_ckd",
+          "locator": "Tables2–3; chronicity practice points; Figure48 referral criteria"
+        }
+      ],
+      "test_vectors": [
+        {
+          "raw": "29.999999999999999999",
+          "expected_rule_level": 1
+        },
+        {
+          "raw": "30",
+          "expected_rule_level": 3
+        },
+        {
+          "raw": "300",
+          "expected_rule_level": 3
+        },
+        {
+          "raw": ">300",
+          "expected_rule_level": 4
+        },
+        {
+          "raw": ">=300",
+          "expected_rule_level": null
+        }
+      ],
+      "regression_files": [
+        "internal/lab/grade_test.go",
+        "internal/lab/catalog_integrity_test.go"
+      ]
+    },
+    {
+      "id": "pcr_categories",
+      "implementation": "internal/lab/grade.go",
+      "default_item_ids": [
+        "urine_pcr"
+      ],
+      "alert_item_ids": [],
+      "activation": "default_or_alert",
+      "population": [
+        "Use the original report specimen/method/population context; no demographics are inferred."
+      ],
+      "unit": "mg/g",
+      "verified_unit_aliases": [],
+      "exclusions": [
+        "Missing or unverified units cannot inherit numeric rule eligibility.",
+        "Colors encode this application display policy; no diagnosis, treatment recommendation or cross-analyte severity equivalence.",
+        "Do not collapse albumin ratios, total-protein ratios and spot concentrations.",
+        "An inequality that crosses categories is not replaced by a precise boundary."
+      ],
+      "source_loci": [
+        {
+          "source_id": "kdigo_pcr_table",
+          "locator": "Named rule in the referenced institutional source; see docs/clinical-reference.zh-TW.md"
+        }
+      ],
+      "test_vectors": [
+        {
+          "raw": "149.999999999999999999",
+          "expected_rule_level": 1
+        },
+        {
+          "raw": "150",
+          "expected_rule_level": 3
+        },
+        {
+          "raw": "500",
+          "expected_rule_level": 3
+        },
+        {
+          "raw": ">500",
+          "expected_rule_level": 4
+        },
+        {
+          "raw": ">=500",
+          "expected_rule_level": null
+        }
+      ],
+      "regression_files": [
+        "internal/lab/grade_test.go",
+        "internal/lab/catalog_integrity_test.go"
+      ]
+    },
+    {
+      "id": "fasting_glucose_screening",
+      "implementation": "internal/lab/grade.go",
+      "default_item_ids": [],
+      "alert_item_ids": [],
+      "activation": "catalog_only_inactive",
+      "population": [
+        "Fasting confirmed; diagnostic labels apply to screening, not to reclassification of treated diabetes."
+      ],
+      "unit": "mg/dL",
+      "verified_unit_aliases": [],
+      "exclusions": [
+        "Missing or unverified units cannot inherit numeric rule eligibility.",
+        "Colors encode this application display policy; no diagnosis, treatment recommendation or cross-analyte severity equivalence.",
+        "Present in the source catalog but not selected as an automatic item default; this registry does not activate it."
+      ],
+      "source_loci": [
+        {
+          "source_id": "cdc_glycemia",
+          "locator": "Named rule in the referenced institutional source; see docs/clinical-reference.zh-TW.md"
+        },
+        {
+          "source_id": "ada_hypoglycemia",
+          "locator": "Named rule in the referenced institutional source; see docs/clinical-reference.zh-TW.md"
+        }
+      ],
+      "test_vectors": [
+        {
+          "raw": "69.999999999999999999",
+          "expected_rule_level": null
+        },
+        {
+          "raw": "70",
+          "expected_rule_level": 1
+        },
+        {
+          "raw": "100",
+          "expected_rule_level": 2
+        },
+        {
+          "raw": "126",
+          "expected_rule_level": 3
+        }
+      ],
+      "regression_files": [
+        "internal/lab/grade_test.go",
+        "internal/lab/catalog_integrity_test.go"
+      ]
+    },
+    {
+      "id": "hba1c_screening",
+      "implementation": "internal/lab/grade.go",
+      "default_item_ids": [],
+      "alert_item_ids": [],
+      "activation": "catalog_only_inactive",
+      "population": [
+        "Do not relabel known treated diabetes as prediabetes. A low out-of-reference HbA1c must retain its low flag. Assay/RBC-lifespan context matters."
+      ],
+      "unit": "%",
+      "verified_unit_aliases": [],
+      "exclusions": [
+        "Missing or unverified units cannot inherit numeric rule eligibility.",
+        "Colors encode this application display policy; no diagnosis, treatment recommendation or cross-analyte severity equivalence.",
+        "Present in the source catalog but not selected as an automatic item default; this registry does not activate it."
+      ],
+      "source_loci": [
+        {
+          "source_id": "cdc_glycemia",
+          "locator": "Named rule in the referenced institutional source; see docs/clinical-reference.zh-TW.md"
+        }
+      ],
+      "test_vectors": [
+        {
+          "raw": "5.699999999999999999",
+          "expected_rule_level": 1
+        },
+        {
+          "raw": "5.7",
+          "expected_rule_level": 2
+        },
+        {
+          "raw": "6.5",
+          "expected_rule_level": 3
+        }
+      ],
+      "regression_files": [
+        "internal/lab/grade_test.go",
+        "internal/lab/catalog_integrity_test.go"
+      ]
+    },
+    {
+      "id": "blood_glucose_low_alerts",
+      "implementation": "internal/lab/grade.go",
+      "default_item_ids": [],
+      "alert_item_ids": [
+        "fasting_plasma_glucose",
+        "blood_glucose_unspecified",
+        "capillary_postprandial_glucose"
+      ],
+      "activation": "default_or_alert",
+      "population": [
+        "Use the original report specimen/method/population context; no demographics are inferred."
+      ],
+      "unit": "mg/dL",
+      "verified_unit_aliases": [],
+      "exclusions": [
+        "Missing or unverified units cannot inherit numeric rule eligibility.",
+        "Colors encode this application display policy; no diagnosis, treatment recommendation or cross-analyte severity equivalence."
+      ],
+      "source_loci": [
+        {
+          "source_id": "ada_hypoglycemia",
+          "locator": "Named rule in the referenced institutional source; see docs/clinical-reference.zh-TW.md"
+        }
+      ],
+      "test_vectors": [
+        {
+          "raw": "53.999999999999999999",
+          "expected_rule_level": 5
+        },
+        {
+          "raw": "54",
+          "expected_rule_level": 4
+        },
+        {
+          "raw": "69.999999999999999999",
+          "expected_rule_level": 4
+        },
+        {
+          "raw": "70",
+          "expected_rule_level": null
+        }
+      ],
+      "regression_files": [
+        "internal/lab/grade_test.go",
+        "internal/lab/catalog_integrity_test.go"
+      ]
+    },
+    {
+      "id": "vgh_alert_serum_potassium",
+      "implementation": "internal/lab/grade.go",
+      "default_item_ids": [],
+      "alert_item_ids": [
+        "serum_potassium"
+      ],
+      "activation": "default_or_alert",
+      "population": [
+        "Use the original report specimen/method/population context; no demographics are inferred."
+      ],
+      "unit": "mmol/L",
+      "verified_unit_aliases": [],
+      "exclusions": [
+        "Missing or unverified units cannot inherit numeric rule eligibility.",
+        "Colors encode this application display policy; no diagnosis, treatment recommendation or cross-analyte severity equivalence.",
+        "Only named unconditioned institutional thresholds are enabled; other age, specialty, outpatient and blood-gas conditions are not inferred.",
+        "A historical result does not establish a present emergency or an original-institution critical flag."
+      ],
+      "source_loci": [
+        {
+          "source_id": "vgh_notifications",
+          "locator": "Unconditioned thresholds only, explicitly named application alerts; not an originating-lab flag or Taiwan-wide calibrated severity scale."
+        }
+      ],
+      "test_vectors": [
+        {
+          "raw": "2",
+          "expected_rule_level": 5
+        },
+        {
+          "raw": "2.000000000000000001",
+          "expected_rule_level": 4
+        },
+        {
+          "raw": "2.5",
+          "expected_rule_level": 4
+        },
+        {
+          "raw": "2.500000000000000001",
+          "expected_rule_level": null
+        },
+        {
+          "raw": "6.5",
+          "expected_rule_level": 5
+        }
+      ],
+      "regression_files": [
+        "internal/lab/grade_test.go",
+        "internal/lab/catalog_integrity_test.go"
+      ]
+    },
+    {
+      "id": "vgh_alert_serum_total_calcium",
+      "implementation": "internal/lab/grade.go",
+      "default_item_ids": [],
+      "alert_item_ids": [
+        "serum_total_calcium"
+      ],
+      "activation": "default_or_alert",
+      "population": [
+        "Use the original report specimen/method/population context; no demographics are inferred."
+      ],
+      "unit": "mg/dL",
+      "verified_unit_aliases": [],
+      "exclusions": [
+        "Missing or unverified units cannot inherit numeric rule eligibility.",
+        "Colors encode this application display policy; no diagnosis, treatment recommendation or cross-analyte severity equivalence.",
+        "Only named unconditioned institutional thresholds are enabled; other age, specialty, outpatient and blood-gas conditions are not inferred.",
+        "A historical result does not establish a present emergency or an original-institution critical flag."
+      ],
+      "source_loci": [
+        {
+          "source_id": "vgh_notifications",
+          "locator": "Unconditioned thresholds only, explicitly named application alerts; not an originating-lab flag or Taiwan-wide calibrated severity scale."
+        }
+      ],
+      "test_vectors": [
+        {
+          "raw": "6.5",
+          "expected_rule_level": 4
+        },
+        {
+          "raw": "6.500000000000000001",
+          "expected_rule_level": null
+        },
+        {
+          "raw": "13",
+          "expected_rule_level": 4
+        },
+        {
+          "raw": "15",
+          "expected_rule_level": 5
+        }
+      ],
+      "regression_files": [
+        "internal/lab/grade_test.go",
+        "internal/lab/catalog_integrity_test.go"
+      ]
+    },
+    {
+      "id": "vgh_alert_serum_sodium",
+      "implementation": "internal/lab/grade.go",
+      "default_item_ids": [],
+      "alert_item_ids": [
+        "serum_sodium"
+      ],
+      "activation": "default_or_alert",
+      "population": [
+        "Use the original report specimen/method/population context; no demographics are inferred."
+      ],
+      "unit": "mmol/L",
+      "verified_unit_aliases": [],
+      "exclusions": [
+        "Missing or unverified units cannot inherit numeric rule eligibility.",
+        "Colors encode this application display policy; no diagnosis, treatment recommendation or cross-analyte severity equivalence.",
+        "Only named unconditioned institutional thresholds are enabled; other age, specialty, outpatient and blood-gas conditions are not inferred.",
+        "A historical result does not establish a present emergency or an original-institution critical flag."
+      ],
+      "source_loci": [
+        {
+          "source_id": "vgh_notifications",
+          "locator": "Unconditioned thresholds only, explicitly named application alerts; not an originating-lab flag or Taiwan-wide calibrated severity scale."
+        }
+      ],
+      "test_vectors": [
+        {
+          "raw": "115",
+          "expected_rule_level": 4
+        },
+        {
+          "raw": "115.000000000000000001",
+          "expected_rule_level": null
+        },
+        {
+          "raw": "160",
+          "expected_rule_level": 4
+        }
+      ],
+      "regression_files": [
+        "internal/lab/grade_test.go",
+        "internal/lab/catalog_integrity_test.go"
+      ]
+    },
+    {
+      "id": "vgh_alert_serum_chloride",
+      "implementation": "internal/lab/grade.go",
+      "default_item_ids": [],
+      "alert_item_ids": [
+        "serum_chloride"
+      ],
+      "activation": "default_or_alert",
+      "population": [
+        "Use the original report specimen/method/population context; no demographics are inferred."
+      ],
+      "unit": "mmol/L",
+      "verified_unit_aliases": [],
+      "exclusions": [
+        "Missing or unverified units cannot inherit numeric rule eligibility.",
+        "Colors encode this application display policy; no diagnosis, treatment recommendation or cross-analyte severity equivalence.",
+        "Only named unconditioned institutional thresholds are enabled; other age, specialty, outpatient and blood-gas conditions are not inferred.",
+        "A historical result does not establish a present emergency or an original-institution critical flag."
+      ],
+      "source_loci": [
+        {
+          "source_id": "vgh_notifications",
+          "locator": "Unconditioned thresholds only, explicitly named application alerts; not an originating-lab flag or Taiwan-wide calibrated severity scale."
+        }
+      ],
+      "test_vectors": [
+        {
+          "raw": "75",
+          "expected_rule_level": 4
+        },
+        {
+          "raw": "75.000000000000000001",
+          "expected_rule_level": null
+        },
+        {
+          "raw": "125",
+          "expected_rule_level": 4
+        }
+      ],
+      "regression_files": [
+        "internal/lab/grade_test.go",
+        "internal/lab/catalog_integrity_test.go"
+      ]
+    },
+    {
+      "id": "vgh_alert_blood_hemoglobin",
+      "implementation": "internal/lab/grade.go",
+      "default_item_ids": [],
+      "alert_item_ids": [
+        "blood_hemoglobin"
+      ],
+      "activation": "default_or_alert",
+      "population": [
+        "Use the original report specimen/method/population context; no demographics are inferred."
+      ],
+      "unit": "g/dL",
+      "verified_unit_aliases": [],
+      "exclusions": [
+        "Missing or unverified units cannot inherit numeric rule eligibility.",
+        "Colors encode this application display policy; no diagnosis, treatment recommendation or cross-analyte severity equivalence.",
+        "Only named unconditioned institutional thresholds are enabled; other age, specialty, outpatient and blood-gas conditions are not inferred.",
+        "A historical result does not establish a present emergency or an original-institution critical flag."
+      ],
+      "source_loci": [
+        {
+          "source_id": "vgh_notifications",
+          "locator": "Unconditioned thresholds only, explicitly named application alerts; not an originating-lab flag or Taiwan-wide calibrated severity scale."
+        }
+      ],
+      "test_vectors": [
+        {
+          "raw": "5",
+          "expected_rule_level": 4
+        },
+        {
+          "raw": "5.000000000000000001",
+          "expected_rule_level": null
+        }
+      ],
+      "regression_files": [
+        "internal/lab/grade_test.go",
+        "internal/lab/catalog_integrity_test.go"
+      ]
+    },
+    {
+      "id": "vgh_alert_blood_hematocrit",
+      "implementation": "internal/lab/grade.go",
+      "default_item_ids": [],
+      "alert_item_ids": [
+        "blood_hematocrit"
+      ],
+      "activation": "default_or_alert",
+      "population": [
+        "Use the original report specimen/method/population context; no demographics are inferred."
+      ],
+      "unit": "%",
+      "verified_unit_aliases": [],
+      "exclusions": [
+        "Missing or unverified units cannot inherit numeric rule eligibility.",
+        "Colors encode this application display policy; no diagnosis, treatment recommendation or cross-analyte severity equivalence.",
+        "Only named unconditioned institutional thresholds are enabled; other age, specialty, outpatient and blood-gas conditions are not inferred.",
+        "A historical result does not establish a present emergency or an original-institution critical flag."
+      ],
+      "source_loci": [
+        {
+          "source_id": "vgh_notifications",
+          "locator": "Unconditioned thresholds only, explicitly named application alerts; not an originating-lab flag or Taiwan-wide calibrated severity scale."
+        }
+      ],
+      "test_vectors": [
+        {
+          "raw": "16",
+          "expected_rule_level": 4
+        },
+        {
+          "raw": "16.000000000000000001",
+          "expected_rule_level": null
+        },
+        {
+          "raw": "60",
+          "expected_rule_level": 4
+        },
+        {
+          "raw": "100",
+          "expected_rule_level": 4
+        }
+      ],
+      "regression_files": [
+        "internal/lab/grade_test.go",
+        "internal/lab/catalog_integrity_test.go"
+      ]
+    },
+    {
+      "id": "vgh_alert_blood_platelet_count",
+      "implementation": "internal/lab/grade.go",
+      "default_item_ids": [],
+      "alert_item_ids": [
+        "blood_platelet_count"
+      ],
+      "activation": "default_or_alert",
+      "population": [
+        "Use the original report specimen/method/population context; no demographics are inferred."
+      ],
+      "unit": "x10^3/uL",
+      "verified_unit_aliases": [],
+      "exclusions": [
+        "Missing or unverified units cannot inherit numeric rule eligibility.",
+        "Colors encode this application display policy; no diagnosis, treatment recommendation or cross-analyte severity equivalence.",
+        "Only named unconditioned institutional thresholds are enabled; other age, specialty, outpatient and blood-gas conditions are not inferred.",
+        "A historical result does not establish a present emergency or an original-institution critical flag."
+      ],
+      "source_loci": [
+        {
+          "source_id": "vgh_notifications",
+          "locator": "Unconditioned thresholds only, explicitly named application alerts; not an originating-lab flag or Taiwan-wide calibrated severity scale."
+        }
+      ],
+      "test_vectors": [
+        {
+          "raw": "30",
+          "expected_rule_level": 4
+        },
+        {
+          "raw": "30.000000000000000001",
+          "expected_rule_level": null
+        }
+      ],
+      "regression_files": [
+        "internal/lab/grade_test.go",
+        "internal/lab/catalog_integrity_test.go"
+      ]
+    },
+    {
+      "id": "vgh_alert_blood_wbc_count",
+      "implementation": "internal/lab/grade.go",
+      "default_item_ids": [],
+      "alert_item_ids": [
+        "blood_wbc_count"
+      ],
+      "activation": "default_or_alert",
+      "population": [
+        "Use the original report specimen/method/population context; no demographics are inferred."
+      ],
+      "unit": "x10^3/uL",
+      "verified_unit_aliases": [],
+      "exclusions": [
+        "Missing or unverified units cannot inherit numeric rule eligibility.",
+        "Colors encode this application display policy; no diagnosis, treatment recommendation or cross-analyte severity equivalence.",
+        "Only named unconditioned institutional thresholds are enabled; other age, specialty, outpatient and blood-gas conditions are not inferred.",
+        "A historical result does not establish a present emergency or an original-institution critical flag."
+      ],
+      "source_loci": [
+        {
+          "source_id": "vgh_notifications",
+          "locator": "Unconditioned thresholds only, explicitly named application alerts; not an originating-lab flag or Taiwan-wide calibrated severity scale."
+        }
+      ],
+      "test_vectors": [
+        {
+          "raw": "1.2",
+          "expected_rule_level": 4
+        },
+        {
+          "raw": "1.200000000000000001",
+          "expected_rule_level": null
+        },
+        {
+          "raw": "100",
+          "expected_rule_level": null
+        },
+        {
+          "raw": "100.000000000000000001",
+          "expected_rule_level": 4
+        }
+      ],
+      "regression_files": [
+        "internal/lab/grade_test.go",
+        "internal/lab/catalog_integrity_test.go"
+      ]
+    }
+  ],
+  "calculations": [
+    {
+      "id": "ckd_epi_2021_creatinine",
+      "implementation": "web/src/clinical-comparison.ts#egfrCreatinine2021",
+      "source_ids": [
+        "niddk_ckd_epi_2021",
+        "niddk_egfr_reporting"
+      ],
+      "population": [
+        "Adults >=18; source equation sex term supplied explicitly.",
+        "User confirms standardized creatinine, stable renal function and applicability."
+      ],
+      "units": [
+        "mg/dL input",
+        "mL/min/1.73m2 output"
+      ],
+      "exclusions": [
+        "Unconfirmed conditions, missing sex/age, nonpositive or nonfinite creatinine, nonexact result.",
+        "No automated pregnancy, acute kidney injury or unusual muscle-mass assessment.",
+        "No replacement of reported eGFR; no automatic original method verification."
+      ],
+      "test_vectors": [
+        {
+          "creatinine_mg_dl": "0.3",
+          "age": 18,
+          "sex": "female",
+          "expected": "157.5916220089958337172092859272225932208467"
+        },
+        {
+          "creatinine_mg_dl": "0.7",
+          "age": 40,
+          "sex": "female",
+          "expected": "112.0543067987974983147735102768754065592619"
+        },
+        {
+          "creatinine_mg_dl": "1.1",
+          "age": 70,
+          "sex": "female",
+          "expected": "54.05610523366437414339315470494423666567039"
+        },
+        {
+          "creatinine_mg_dl": "4",
+          "age": 90,
+          "sex": "female",
+          "expected": "10.13967026250502136565290667272541475774211"
+        },
+        {
+          "creatinine_mg_dl": "0.5",
+          "age": 18,
+          "sex": "male",
+          "expected": "151.6220989088429452098054920086539272133474"
+        },
+        {
+          "creatinine_mg_dl": "0.9",
+          "age": 40,
+          "sex": "male",
+          "expected": "110.7255996035548402319896346609440776277291"
+        },
+        {
+          "creatinine_mg_dl": "1.25",
+          "age": 70,
+          "sex": "male",
+          "expected": "61.94650501498152614672265669345069030124808"
+        },
+        {
+          "creatinine_mg_dl": "5",
+          "age": 90,
+          "sex": "male",
+          "expected": "10.36393468564113393310495760837769867692391"
+        }
+      ],
+      "vector_provenance": "Independent Python Decimal precision 70 reference values from RC9; never generated by the JavaScript function under test.",
+      "regression_files": [
+        "web/tests/clinical-comparison.test.mjs"
+      ]
+    },
+    {
+      "id": "sampson_nih_2020",
+      "implementation": "web/src/lipid-analysis.ts#assessLipids",
+      "source_ids": [
+        "sampson_2020"
+      ],
+      "population": [
+        "Source measurements from the same explicitly confirmed collection; original research applicability must be checked."
+      ],
+      "units": [
+        "mg/dL only"
+      ],
+      "exclusions": [
+        "TG >800 mg/dL, known or suspected Type III, missing same-collection confirmation, incompatible item/code/unit, interval or nonexact result.",
+        "Negative/nonfinite estimate or LDL estimate greater than non-HDL is rejected, never clipped.",
+        "TG >=400 does not use Friedewald. No custom coefficients for inherited disease."
+      ],
+      "test_vectors": [
+        {
+          "tc": "250",
+          "hdl": "40",
+          "tg": "50",
+          "expected": "202.4860514242905968456477025277878589"
+        },
+        {
+          "tc": "250",
+          "hdl": "40",
+          "tg": "400",
+          "expected": "137.0350152601296866465416480783770503"
+        },
+        {
+          "tc": "250",
+          "hdl": "40",
+          "tg": "800",
+          "expected": "80.86737144518802530097944920451625038"
+        }
+      ],
+      "vector_provenance": "Independent Python Decimal precision 60 reference values from RC9.",
+      "regression_files": [
+        "web/tests/lipid-high-tg.test.mjs"
+      ]
+    }
+  ],
+  "unit_policy": {
+    "source_id": "ucum_2_2",
+    "implementation": [
+      "internal/lab/units.go",
+      "web/src/unit-normalization.ts"
+    ],
+    "prefix_case_preserved": true,
+    "finite_spelling_aliases_only": true,
+    "migration": "Old custom_<20hex> limits are retained disabled under unit_review_required; incompatible observed built-in units retain separate disabled review entries. Correct built-in settings and favorites/appearance are preserved. Shared-key legacy metadata is isolated under its own ID and cannot disable an unrelated verified configuration.",
+    "regression_files": [
+      "internal/lab/units_test.go",
+      "web/tests/clinical-comparison.test.mjs"
+    ]
+  },
+  "reference_templates": [
+    {
+      "id": "creatinine",
+      "source_ids": [
+        "ncku_creatinine"
+      ],
+      "implementation": "web/src/clinical-comparison.ts#scenarioInterval",
+      "unit": "mg/dL",
+      "method": "Enzymatic method",
+      "population": "Age 1-14 source partitions; >=15 explicit sex term; source does not supply a universal elderly-specific interval.",
+      "exclusions": [
+        "Original institutional method, specimen and pretreatment are not assumed equivalent.",
+        "No automatic replacement of original reference interval or flags; this is an explicitly selected scenario."
+      ],
+      "test_vectors": [
+        {
+          "age": 14,
+          "sex": "unknown",
+          "low": 0.46,
+          "high": 0.77
+        },
+        {
+          "age": 15,
+          "sex": "male",
+          "low": 0.67,
+          "high": 1.17
+        }
+      ]
+    },
+    {
+      "id": "alp",
+      "source_ids": [
+        "ncku_alp"
+      ],
+      "implementation": "web/src/clinical-comparison.ts#scenarioInterval",
+      "unit": "U/L",
+      "method": "Enzymatic colorimetric IFCC reference method",
+      "population": "Age 1-18 source partitions; >=19 adult sex-specific interval.",
+      "exclusions": [
+        "Original institutional method, specimen and pretreatment are not assumed equivalent.",
+        "No automatic replacement of original reference interval or flags; this is an explicitly selected scenario."
+      ],
+      "test_vectors": [
+        {
+          "age": 18,
+          "sex": "male",
+          "low": 55,
+          "high": 149
+        },
+        {
+          "age": 18,
+          "sex": "female",
+          "low": 45,
+          "high": 87
+        }
+      ]
+    },
+    {
+      "id": "bun",
+      "source_ids": [
+        "ncku_bun"
+      ],
+      "implementation": "web/src/clinical-comparison.ts#scenarioInterval",
+      "unit": "mg/dL",
+      "method": "Urease/GDH kinetic method",
+      "population": "Age 1-89 only; no source interval extrapolated to >=90.",
+      "exclusions": [
+        "Original institutional method, specimen and pretreatment are not assumed equivalent.",
+        "No automatic replacement of original reference interval or flags; this is an explicitly selected scenario."
+      ],
+      "test_vectors": [
+        {
+          "age": 60,
+          "sex": "unknown",
+          "low": 8,
+          "high": 23
+        },
+        {
+          "age": 90,
+          "sex": "unknown",
+          "unavailable": true
+        }
+      ]
+    },
+    {
+      "id": "calcium",
+      "source_ids": [
+        "ncku_calcium"
+      ],
+      "implementation": "web/src/clinical-comparison.ts#scenarioInterval",
+      "unit": "mg/dL",
+      "method": "NM-BAPTA colorimetric method",
+      "population": "Age >=2; source day-based infant interval is not rounded into years.",
+      "exclusions": [
+        "Original institutional method, specimen and pretreatment are not assumed equivalent.",
+        "No automatic replacement of original reference interval or flags; this is an explicitly selected scenario."
+      ],
+      "test_vectors": [
+        {
+          "age": 1,
+          "sex": "unknown",
+          "unavailable": true
+        },
+        {
+          "age": 90,
+          "sex": "unknown",
+          "low": 8.2,
+          "high": 9.6
+        }
+      ]
+    },
+    {
+      "id": "uric_acid",
+      "source_ids": [
+        "ncku_uric_acid"
+      ],
+      "implementation": "web/src/clinical-comparison.ts#scenarioInterval",
+      "unit": "mg/dL",
+      "method": "Uricase/POD enzymatic colorimetric method",
+      "population": "Adults >=18 with explicit sex; no invented age-specific elderly partition.",
+      "exclusions": [
+        "Original institutional method, specimen and pretreatment are not assumed equivalent.",
+        "No automatic replacement of original reference interval or flags; this is an explicitly selected scenario."
+      ],
+      "test_vectors": [
+        {
+          "age": 70,
+          "sex": "male",
+          "low": 3.4,
+          "high": 7
+        },
+        {
+          "age": 70,
+          "sex": "female",
+          "low": 2.4,
+          "high": 5.7
+        }
+      ]
+    },
+    {
+      "id": "alt",
+      "source_ids": [
+        "ncku_alt"
+      ],
+      "implementation": "web/src/clinical-comparison.ts#scenarioInterval",
+      "unit": "U/L",
+      "method": "Enzymatic IFCC reference method",
+      "population": "Adults >=18 with explicit sex; source is an upper bound, not a fabricated zero lower limit.",
+      "exclusions": [
+        "Original institutional method, specimen and pretreatment are not assumed equivalent.",
+        "No automatic replacement of original reference interval or flags; this is an explicitly selected scenario."
+      ],
+      "test_vectors": [
+        {
+          "age": 70,
+          "sex": "male",
+          "low": null,
+          "high": 50
+        },
+        {
+          "age": 70,
+          "sex": "female",
+          "low": null,
+          "high": 35
+        }
+      ]
+    },
+    {
+      "id": "ck",
+      "source_ids": [
+        "ncku_ck"
+      ],
+      "implementation": "web/src/clinical-comparison.ts#scenarioInterval",
+      "unit": "U/L",
+      "method": "CK/HK/G6PDH enzymatic method",
+      "population": "Adults >=18 with explicit sex.",
+      "exclusions": [
+        "Original institutional method, specimen and pretreatment are not assumed equivalent.",
+        "No automatic replacement of original reference interval or flags; this is an explicitly selected scenario."
+      ],
+      "test_vectors": [
+        {
+          "age": 70,
+          "sex": "male",
+          "low": 39,
+          "high": 308
+        },
+        {
+          "age": 70,
+          "sex": "female",
+          "low": 26,
+          "high": 192
+        }
+      ]
+    },
+    {
+      "id": "phosphorus",
+      "source_ids": [
+        "ncku_phosphorus"
+      ],
+      "implementation": "web/src/clinical-comparison.ts#scenarioInterval",
+      "unit": "mg/dL",
+      "method": "Molybdate UV method",
+      "population": "Adults >=18; no source sex-specific interval inferred.",
+      "exclusions": [
+        "Original institutional method, specimen and pretreatment are not assumed equivalent.",
+        "No automatic replacement of original reference interval or flags; this is an explicitly selected scenario."
+      ],
+      "test_vectors": [
+        {
+          "age": 70,
+          "sex": "unknown",
+          "low": 2.5,
+          "high": 4.5
+        }
+      ]
+    },
+    {
+      "id": "albumin",
+      "source_ids": [
+        "ncku_albumin"
+      ],
+      "implementation": "web/src/clinical-comparison.ts#scenarioInterval",
+      "unit": "g/dL",
+      "method": "BCG colorimetric method",
+      "population": "Adults >=18, blood albumin only; urine albumin is a separate analyte.",
+      "exclusions": [
+        "Original institutional method, specimen and pretreatment are not assumed equivalent.",
+        "No automatic replacement of original reference interval or flags; this is an explicitly selected scenario."
+      ],
+      "test_vectors": [
+        {
+          "age": 70,
+          "sex": "unknown",
+          "low": 3.5,
+          "high": 5.2
+        }
+      ]
+    }
+  ],
+  "implementation_files": {
+    "internal/lab/grade.go": "f0d00addec6660e265d9edb7927c77222086694e4c862b6202690ee4d53fadc1",
+    "internal/lab/value.go": "e701d3351f1bf424ce0241f275dc08bd49ace6d9a2f098b7ee96cfc997c29f3d",
+    "internal/lab/units.go": "132224ca004adc9b31b6d7816bce669377f872e447646247cf1f60032ddf3966",
+    "web/src/clinical-comparison.ts": "5d8c88b9bbde9cac00df62b9b15d38f5b5ec160967d7ad151fdd1e6296d87381",
+    "web/src/unit-normalization.ts": "8b5485b1703732b40be32584b1ea057b2d23af5ec8f4f551f75d5d3d9812f092",
+    "web/src/lipid-analysis.ts": "6db0d8d47569119f22e3ffb73011c840c34268004d043065fcf131e1d0f2cd87",
+    "web/src/analysis-summary.ts": "80adcffea8e50fdbba97e43d9607218d23279b5995eee9491c8cb747c88c35f6"
+  }
+}

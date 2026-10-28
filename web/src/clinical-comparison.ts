@@ -2,6 +2,7 @@
 // Source-bound scenarios, never replacements for institutional results/flags.
 import type { LabRecord } from './api';
 import { isExact } from './model.ts';
+import { canonicalUnit as normalizedUnit } from './unit-normalization.ts';
 export type ReferenceSex = 'unknown' | 'female' | 'male';
 export type ComparisonAnalyte = 'creatinine' | 'alp' | 'bun' | 'calcium' | 'uric_acid' | 'alt' | 'ck' | 'phosphorus' | 'albumin';
 export interface ComparisonScenario { age: number | null; sex: ReferenceSex }
@@ -12,6 +13,13 @@ export interface AnalysisPreferences {
 }
 export interface ReferenceInterval { low: number | null; high: number | null; unit: string; source: string; method: string; scope: string }
 export interface DerivedResult { value: number | null; reason: string }
+export interface ComparisonInput {
+  value: number | null;
+  reason: string;
+  sourceUnit: string;
+  comparisonUnit: string;
+  conversion: 'none' | 'creatinine_umol_to_mg' | 'unavailable';
+}
 export const CLINICAL_SOURCE_DATE = '2026-10-27';
 export const CLINICAL_SOURCES = {
   creatinine: 'https://web.hosp.ncku.edu.tw/pathology/Pathology/Page/72',
@@ -24,6 +32,7 @@ export const CLINICAL_SOURCES = {
   phosphorus: 'https://web.hosp.ncku.edu.tw/pathology/Pathology/Page/88',
   albumin: 'https://web.hosp.ncku.edu.tw/pathology/Pathology/Page/104',
   egfr: 'https://www.niddk.nih.gov/research-funding/research-programs/kidney-clinical-research-epidemiology/laboratory/glomerular-filtration-rate-equations/adults',
+  egfr_reporting: 'https://www.niddk.nih.gov/research-funding/research-programs/kidney-clinical-research-epidemiology/laboratory/glomerular-filtration-rate-equations',
 } as const;
 interface AnalyteDefinition { name: string; code: string; aliases: readonly string[]; unit: string; method: string }
 export const COMPARISON_ANALYTES: Record<ComparisonAnalyte, AnalyteDefinition> = {
@@ -106,13 +115,24 @@ export function recordAnalyte(record: LabRecord): ComparisonAnalyte | null {
   const name = record.item_name.trim().toLowerCase();
   return ANALYTE_KEYS.find(key => record.order_code === COMPARISON_ANALYTES[key].code && COMPARISON_ANALYTES[key].aliases.includes(name)) ?? null;
 }
-function normalizedUnit(value: string): string { return value.replace(/\s/g, '').replaceAll('μ', 'µ').toLowerCase(); }
-export function comparisonValue(record: LabRecord, analyte: ComparisonAnalyte): number | null {
+export function comparisonInput(record: LabRecord, analyte: ComparisonAnalyte): ComparisonInput {
+  const unavailable = (reason: string): ComparisonInput => ({ value: null, reason,
+    sourceUnit: record.unit, comparisonUnit: COMPARISON_ANALYTES[analyte].unit, conversion: 'unavailable' });
   if (recordAnalyte(record) !== analyte || !isExact(record) || record.numeric_value < 0 ||
-      Number(record.result.trim()) !== record.numeric_value) return null;
+      Number(record.result.trim()) !== record.numeric_value) return unavailable('項目、醫令代碼或精確數值不符合此範本；沒有代入或補造結果。');
   const unit = normalizedUnit(record.unit);
-  if (unit === normalizedUnit(COMPARISON_ANALYTES[analyte].unit)) return record.numeric_value;
-  return analyte === 'creatinine' && unit === 'µmol/l' ? record.numeric_value / 88.4 : null;
+  if (unit === normalizedUnit(COMPARISON_ANALYTES[analyte].unit)) return {
+    value: record.numeric_value, sourceUnit: record.unit, comparisonUnit: COMPARISON_ANALYTES[analyte].unit,
+    conversion: 'none', reason: '項目、醫令代碼及單位已符合此範本的輸入條件；原院方法仍須另外核對。',
+  };
+  if (analyte === 'creatinine' && unit === 'umol/L') return {
+    value: record.numeric_value / 88.4, sourceUnit: record.unit, comparisonUnit: 'mg/dL',
+    conversion: 'creatinine_umol_to_mg', reason: '依 NIDDK 肌酸酐換算，µmol/L ÷ 88.4 = mg/dL；只轉換此情境輸入，原始數字與單位保留。',
+  };
+  return unavailable('來源單位尚未建立明確相容關係；大小寫可能改變倍率，沒有自行換算或套用門檻。');
+}
+export function comparisonValue(record: LabRecord, analyte: ComparisonAnalyte): number | null {
+  return comparisonInput(record, analyte).value;
 }
 export function intervalLabel(interval: ReferenceInterval | null): string {
   if (!interval) return '尚無適用範本';
@@ -129,7 +149,7 @@ export function referenceForRecord(record: LabRecord, preferences: AnalysisPrefe
   const interval = scenarioInterval(analyte, scenario);
   if (!interval) return null;
   if (normalizedUnit(record.unit) === normalizedUnit(interval.unit)) return interval;
-  if (analyte !== 'creatinine' || normalizedUnit(record.unit) !== 'µmol/l') return null;
+  if (analyte !== 'creatinine' || normalizedUnit(record.unit) !== 'umol/L') return null;
   return { ...interval, unit: record.unit, low: interval.low === null ? null : interval.low * 88.4, high: interval.high === null ? null : interval.high * 88.4 };
 }
 function decimalRatio(text: string): readonly [bigint, bigint] | null {
@@ -148,7 +168,7 @@ export function intervalStatus(record: LabRecord | undefined, analyte: Compariso
   const lower = interval.low === null ? null : decimalRatio(String(interval.low));
   const upper = interval.high === null ? null : decimalRatio(String(interval.high));
   if (!raw || (interval.low !== null && !lower) || (interval.high !== null && !upper)) return 'unknown';
-  const converted = analyte === 'creatinine' && normalizedUnit(record.unit) === 'µmol/l';
+  const converted = analyte === 'creatinine' && normalizedUnit(record.unit) === 'umol/L';
   const numerator = raw[0] * (converted ? 5n : 1n), denominator = raw[1] * (converted ? 442n : 1n);
   if (lower && numerator * lower[1] < lower[0] * denominator) return 'low';
   if (upper && numerator * upper[1] > upper[0] * denominator) return 'high';
@@ -172,6 +192,11 @@ export function egfrCreatinine2021(value: number | null, scenario: ComparisonSce
     Math.max(ratio, 1) ** -1.2 * 0.9938 ** scenario.age * (female ? 1.012 : 1);
   if (!Number.isFinite(result)) return { value: null, reason: '公式結果超出可計算範圍。' };
   return { value: result, reason: 'CKD-EPI 2021 情境估算，mL/min/1.73m²；不覆寫原院 eGFR。' };
+}
+// NIDDK recommends whole-number eGFR reporting. Only the final presentation is
+// rounded; source creatinine and the full equation result retain their precision.
+export function estimatedGFRLabel(value: number | null): string {
+  return value === null || !Number.isFinite(value) || value < 0 ? '未計算' : String(Math.round(value));
 }
 export function exactAgeOn(birthDate: string, examDate: string): number | null {
   const parse = (text: string): Date | null => {

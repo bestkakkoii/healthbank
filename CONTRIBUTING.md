@@ -28,6 +28,9 @@ npm --prefix web run build
 npm --prefix web test
 node scripts/build-web.mjs --verify
 python3 -W error scripts/test_release.py
+python3 -W error scripts/test_publish_release.py
+python3 -W error scripts/test_provider_contracts.py
+python3 -W error scripts/check_provider_contracts.py
 .tools/go/bin/go test -count=1 ./...
 .tools/go/bin/go test -count=1 -race ./...
 .tools/go/bin/go vet ./...
@@ -40,6 +43,31 @@ Format changed Go code with `gofmt`. The lint runner enforces zero warnings. Run
 MySQL integration requires `HEALTHBANK_TEST_MYSQL_DSN` pointing to a dedicated empty synthetic test database. Without it, the integration test is skipped, not passed. CI provides a digest-pinned disposable service. Never use a production database for tests.
 
 Run `npm --prefix web audit --audit-level=low` and the pinned `govulncheck` when assessing dependency advisories. Record the date and applicable scanner limits; a development Go standard-library version may not be comparable with published advisory version ranges.
+
+The browser acceptance gate operates a real compiled executable with wholly
+synthetic data, and checks actual downloads and generated PDFs. Install the pinned
+test-only browser/font and run it as described in [browser acceptance](docs/browser-acceptance.md).
+The release workflow runs the same harness on the extracted amd64 archive before
+publication. Browser evidence must omit runtime databases, keys, cookies and network
+traces. The product itself must not acquire a browser/PDF service dependency.
+
+## Dependency promotion
+
+An upstream update is a candidate until its source diff, compatibility requirements,
+license changes and current advisories have been reviewed. Preserve the old known-good
+commit/release identity, record the proposed immutable commit and integrity, and
+update the appropriate lock plus its scoped inventory together. Do not label a targeted
+two-package refresh as a new complete-registry audit or silently force graph-only
+dependencies past their upstream constraints. Test tools have their own verified
+browser/compiler mapping; a newer prerelease label alone is not evidence of a tested
+replacement.
+
+Promote a dependency change only after the affected behavioral tests and the full
+release gates pass. Record exact tool and packaged executable identities; a stale
+build manifest must be rebuilt. Rollback uses the prior known-good executable and
+matching pre-migration settings backup/key where a schema changed. Do not regenerate
+the identity key or claim an older executable can read a newer schema. Existing
+immutable releases and matching checksum sets must remain downloadable.
 
 ## Data and diagnostics
 

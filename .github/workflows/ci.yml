@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
       CI: "true"
@@ -70,6 +70,8 @@ jobs:
         run: |
           python3 -W error scripts/test_release.py
           python3 -W error scripts/test_publish_release.py
+          python3 -W error scripts/test_provider_contracts.py
+          python3 -W error scripts/check_provider_contracts.py
       - name: Check npm dependency advisories
         run: npm --prefix web audit --audit-level=low
       - name: Verify Go formatting and module checksums
@@ -98,3 +100,23 @@ jobs:
         run: |
           GOARCH=amd64 .tools/go/bin/go build -trimpath -buildvcs=false -o /tmp/healthbank-amd64 ./cmd/healthbank
           GOARCH=arm64 .tools/go/bin/go build -trimpath -buildvcs=false -o /tmp/healthbank-arm64 ./cmd/healthbank
+      - name: Install pinned test-only browser and Chinese font
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends poppler-utils unzip curl
+          node scripts/browser-acceptance.mjs --setup --with-deps
+          pdftotext -v
+          pdfinfo -v
+      - name: Verify compiled application in a real browser
+        run: node scripts/browser-acceptance.mjs --binary /tmp/healthbank-amd64 --evidence "$RUNNER_TEMP/healthbank-browser-evidence"
+      - name: Retain synthetic browser and PDF evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # main, verified 2026-10-27
+        with:
+          name: healthbank-synthetic-browser-ci
+          path: |
+            ${{ runner.temp }}/healthbank-browser-evidence/summary.json
+            ${{ runner.temp }}/healthbank-browser-evidence/**/*.png
+            ${{ runner.temp }}/healthbank-browser-evidence/**/*.pdf
+          if-no-files-found: ignore
+          retention-days: 7

@@ -19,14 +19,21 @@ import (
 // These contracts are taken from the observed public SPA, not guessed routes.
 // A returned array is not an independent statement of lifetime completeness.
 type SupplementField struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
-	Unit  string `json:"unit,omitempty"`
+	Name      string `json:"name"`
+	Value     string `json:"value"`
+	Unit      string `json:"unit,omitempty"`
+	Code      string `json:"code,omitempty"`
+	Role      string `json:"role,omitempty"`
+	UnitBasis string `json:"unit_basis,omitempty"`
 }
 type SupplementEntry struct {
 	Key             string            `json:"key,omitempty"`
 	Kind            string            `json:"kind,omitempty"`
 	EndDate         string            `json:"end_date,omitempty"`
+	DateRole        string            `json:"date_role,omitempty"`
+	EndDateRole     string            `json:"end_date_role,omitempty"`
+	Origin          string            `json:"origin,omitempty"`
+	ContractID      string            `json:"contract_id,omitempty"`
 	Medicine        *MedicineOrder    `json:"medicine,omitempty"`
 	Date            string            `json:"date"`
 	Institution     string            `json:"institution"`
@@ -38,13 +45,15 @@ type SupplementEntry struct {
 	DocumentActions []DocumentAction  `json:"document_actions,omitempty"`
 }
 type SupplementReport struct {
-	Category  string            `json:"category"`
-	Entries   []SupplementEntry `json:"entries"`
-	Coverage  string            `json:"coverage"`
-	FetchedAt string            `json:"fetched_at"`
-	StartDate string            `json:"start_date,omitempty"`
-	EndDate   string            `json:"end_date,omitempty"`
-	Complete  bool              `json:"complete"`
+	Category         string             `json:"category"`
+	Entries          []SupplementEntry  `json:"entries"`
+	Coverage         string             `json:"coverage"`
+	FetchedAt        string             `json:"fetched_at"`
+	StartDate        string             `json:"start_date,omitempty"`
+	EndDate          string             `json:"end_date,omitempty"`
+	Complete         bool               `json:"complete"`
+	ContractRevision string             `json:"contract_revision,omitempty"`
+	Diagnostics      []SourceDiagnostic `json:"diagnostics,omitempty"`
 }
 
 const maxSourceTextBytes = 65536
@@ -64,8 +73,11 @@ func validateSupplementReport(report SupplementReport) error {
 	tooLarge := func() error {
 		return failure("RESPONSE_TOO_LARGE", "來源資料合併後超過筆數、欄位或文字長度上限，未回傳截斷資料。")
 	}
-	if len(report.Entries) > MaxReportRecords || !withinTextBound(report.Category, report.Coverage, report.StartDate, report.EndDate) {
+	if len(report.Entries) > MaxReportRecords || len(report.Diagnostics) > maxSourceDiagnostics || !withinTextBound(report.Category, report.Coverage, report.StartDate, report.EndDate) {
 		return tooLarge()
+	}
+	if err := validateSourceMetadata(report); err != nil {
+		return err
 	}
 	for _, entry := range report.Entries {
 		if len(entry.Fields) > MaxReportRecords || len(entry.Attachments) > 500 || !withinTextBound(entry.Key, entry.Kind, entry.Date, entry.EndDate, entry.Institution, entry.Title, entry.Source) {
@@ -141,7 +153,7 @@ func rowText(row wireRow, names ...string) (string, error) {
 	}
 	return "", nil
 }
-func supplementRows(body []byte, root string) ([]wireRow, error) {
+func supplementRows(body []byte, root string, observedNull ...*bool) ([]wireRow, error) {
 	content := bytes.TrimSpace(body)
 	if len(content) == 0 {
 		return nil, changedError()
@@ -164,6 +176,9 @@ func supplementRows(body []byte, root string) ([]wireRow, error) {
 		}
 	}
 	if bytes.Equal(bytes.TrimSpace(content), []byte("null")) {
+		for _, flag := range observedNull {
+			*flag = true
+		}
 		return []wireRow{}, nil
 	}
 	var rows []wireRow
@@ -191,12 +206,19 @@ func appendKnownFields(row wireRow, specs []fieldSpec) ([]SupplementField, error
 			return nil, err
 		}
 		if value != "" {
-			fields = append(fields, SupplementField{spec.label, value, spec.unit})
+			field := SupplementField{Name: spec.label, Value: value, Unit: spec.unit, Code: strings.ToLower(spec.key)}
+			field.Role = sourceFieldRole(field.Code)
+			if spec.unit != "" {
+				field.UnitBasis = "public_contract"
+			} else if field.Role == "unit" {
+				field.UnitBasis = "source"
+			}
+			fields = append(fields, field)
 		}
 	}
 	return fields, nil
 }
-func (s *Session) supplementRequest(ctx context.Context, method, path string, params url.Values, payload []byte, root string) ([]wireRow, error) {
+func (s *Session) supplementRequest(ctx context.Context, method, path string, params url.Values, payload []byte, root string, reports ...*SupplementReport) ([]wireRow, error) {
 	body, _, err := s.request(ctx, method, path, params, payload, maxJSONBytes, true)
 	if err != nil {
 		return nil, err
@@ -208,10 +230,20 @@ func (s *Session) supplementRequest(ctx context.Context, method, path string, pa
 	if bytes.Equal(bytes.TrimSpace(body), []byte("null")) {
 		return nil, s.annotateResponseError(changedError())
 	}
-	rows, err := supplementRows(body, root)
+	var nullSection bool
+	rows, err := supplementRows(body, root, &nullSection)
 	if err != nil {
 		s.invalidateOnAuthError(err)
 		return nil, s.annotateResponseError(err)
+	}
+	for _, report := range reports {
+		var raw []byte
+		if nullSection {
+			raw = []byte("null")
+		}
+		if err := sourceSectionDiagnostic(report, report.Category, root, raw, true, false, len(rows)); err != nil {
+			return nil, err
+		}
 	}
 	return rows, nil
 }
@@ -231,7 +263,7 @@ func (s *Session) supplementReady(ctx context.Context) error {
 func (s *Session) FetchSupplement(ctx context.Context, category string, query Query) (SupplementReport, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	report := SupplementReport{Category: category, Entries: []SupplementEntry{}, Complete: false}
+	report := SupplementReport{ContractRevision: ProviderContractRevision, Category: category, Entries: []SupplementEntry{}, Complete: false}
 	spec, known := supplements[category]
 	if !known && category != "adult" && category != "self_paid" && category != "imaging" {
 		return report, failure("INVALID_INPUT", "不支援此資料類別。")
@@ -244,16 +276,16 @@ func (s *Session) FetchSupplement(ctx context.Context, category string, query Qu
 	switch category {
 	case "adult":
 		report.Coverage = "官方頁面標示最近兩次成人預防保健；保留實際回傳紀錄，不宣稱完整歷史。單位沿用該頁文字，未核對前不與其他檢驗強制合併。"
-		rows, err = s.supplementRequest(ctx, http.MethodGet, "/api/ihke3000/ihke3402s01/SP_IHKE3402S01", nil, nil, "sP_IHKE3402S01_Data")
+		rows, err = s.supplementRequest(ctx, http.MethodGet, "/api/ihke3000/ihke3402s01/SP_IHKE3402S01", nil, nil, "sP_IHKE3402S01_Data", &report)
 	case "self_paid":
 		report.Coverage = "自費健檢清單，可能含本人輸入及未完成資料；點開才讀取明細，不代表院所驗證或全部歷史。"
-		rows, err = s.supplementRequest(ctx, http.MethodPost, "/api/ihke3000/ihke3403s01/IHKE3403S01", nil, nil, "")
+		rows, err = s.supplementRequest(ctx, http.MethodPost, "/api/ihke3000/ihke3403s01/IHKE3403S01", nil, nil, "", &report)
 	case "imaging":
 		report.Coverage = "影像／病理報告清單；沿用官方全部類型搜尋，未提供日期查詢或獨立總數。報告全文及影像須另行取得，影像產製由使用者明確提出。"
 		params := url.Values{"s_type": {""}, "s_sort": {"A1"}}
 		_, err = s.supplementRequest(ctx, http.MethodGet, "/api/ihke3000/ihke3408s01/page_load", params, nil, "sp_IHKE3408S01_data")
 		if err == nil {
-			rows, err = s.supplementRequest(ctx, http.MethodGet, "/api/ihke3000/ihke3408s01/search", params, nil, "")
+			rows, err = s.supplementRequest(ctx, http.MethodGet, "/api/ihke3000/ihke3408s01/search", params, nil, "", &report)
 		}
 	default:
 		report.Coverage = spec.coverage
@@ -268,7 +300,7 @@ func (s *Session) FetchSupplement(ctx context.Context, category string, query Qu
 			params := url.Values{"s_date": {resolved.StartDate}, "e_date": {resolved.EndDate}, "s_sort": {"A1"}}
 			_, err = s.supplementRequest(ctx, http.MethodGet, "/api/ihke3000/"+spec.module+"/page_load", params, nil, spec.root)
 			if err == nil {
-				rows, err = s.supplementRequest(ctx, http.MethodGet, "/api/ihke3000/"+spec.module+"/search", params, nil, "")
+				rows, err = s.supplementRequest(ctx, http.MethodGet, "/api/ihke3000/"+spec.module+"/search", params, nil, "", &report)
 			}
 		} else {
 			// Preserve both observed recent-medicine sections, without inventing details.
@@ -276,14 +308,27 @@ func (s *Session) FetchSupplement(ctx context.Context, category string, query Qu
 			if requestErr != nil {
 				return report, requestErr
 			}
-			rows, err = supplementRows(body, spec.root)
+			var nullMain bool
+			rows, err = supplementRows(body, spec.root, &nullMain)
+			if err == nil {
+				var raw []byte
+				if nullMain {
+					raw = []byte("null")
+				}
+				err = sourceSectionDiagnostic(&report, category, spec.root, raw, true, false, len(rows))
+			}
 			if err == nil && category == "recent_medicine" {
 				var object map[string]json.RawMessage
 				if decodeJSON(body, &object) == nil {
-					if _, ok := object["chinese_data"]; ok {
+					if raw, ok := object["chinese_data"]; ok {
 						var more []wireRow
 						more, err = supplementRows(body, "chinese_data")
+						if err == nil {
+							err = sourceSectionDiagnostic(&report, category, "chinese_data", raw, true, true, len(more))
+						}
 						rows = append(rows, more...)
+					} else {
+						err = sourceSectionDiagnostic(&report, category, "chinese_data", nil, false, true, 0)
 					}
 				}
 			}
@@ -301,19 +346,24 @@ func (s *Session) FetchSupplement(ctx context.Context, category string, query Qu
 	westernRefs := map[string]westernReference{}
 	imagingRefs := map[string]westernReference{}
 	for _, row := range rows {
-		entry := SupplementEntry{Title: spec.title, Source: "官方回傳", Fields: []SupplementField{}}
+		entry := SupplementEntry{Title: spec.title, Source: "官方回傳", Fields: []SupplementField{}, ContractID: sourceContractID(category, "list"), Origin: "unknown"}
 		entry.Date, err = rowText(row, "firsT_DIAG_DATE", "real_INSPECT_DATE", "funC_DATE")
 		if err != nil {
 			return report, err
+		}
+		if entry.Date != "" {
+			entry.DateRole = "unknown" // the legacy selector can choose several distinct source dates
 		}
 		entry.Institution, err = rowText(row, "hosP_ABBR", "HOSP_NAME")
 		if err != nil {
 			return report, err
 		}
 		if category == "adult" {
+			entry.Origin = "institutional"
 			entry.Title = "成人預防保健"
 			entry.Fields, err = appendKnownFields(row, adultFields)
 		} else if category == "self_paid" {
+			entry.Origin = "mixed"
 			entry.Title = "自費健檢"
 			var seq string
 			seq, err = rowText(row, "DATA02_SEQ")
@@ -367,14 +417,22 @@ func (s *Session) FetchSupplement(ctx context.Context, category string, query Qu
 		return report, err
 	}
 	if category == "self_paid" {
+		if err := s.reserveCategoryReferences("self_paid", referenceMapSize(references, selfPaidReferenceSize), category); err != nil {
+			return report, err
+		}
 		s.selfPaidReferences = references
 	}
 	if category == "western" {
+		if err := s.reserveCategoryReferences("western", referenceMapSize(westernRefs, westernReferenceSize), category); err != nil {
+			return report, err
+		}
 		s.westernReferences = westernRefs
 	}
 	if category == "imaging" {
+		if err := s.reserveCategoryReferences("imaging", referenceMapSize(imagingRefs, westernReferenceSize), category); err != nil {
+			return report, err
+		}
 		s.imagingReferences = imagingRefs
-		s.clearDocumentCategory("imaging")
 	}
 	report.FetchedAt = time.Now().UTC().Format(time.RFC3339)
 	return report, nil
@@ -383,7 +441,7 @@ func (s *Session) FetchSupplement(ctx context.Context, category string, query Qu
 func (s *Session) FetchSelfPaidDetail(ctx context.Context, reference string) (SupplementReport, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	report := SupplementReport{Category: "self_paid_detail", Entries: []SupplementEntry{}, Coverage: "使用者或院所上傳的自費健檢原文；未直接合併為其他檢驗結果。", Complete: false}
+	report := SupplementReport{ContractRevision: ProviderContractRevision, Category: "self_paid_detail", Entries: []SupplementEntry{}, Coverage: "使用者或院所上傳的自費健檢原文；未直接合併為其他檢驗結果。", Complete: false}
 	if err := s.supplementReady(ctx); err != nil {
 		return report, err
 	}
@@ -429,10 +487,16 @@ func (s *Session) FetchSelfPaidDetail(ctx context.Context, reference string) (Su
 	for _, section := range []string{"OrdinaryInspection", "NumericalData", "ReportData"} {
 		raw, present := object[section]
 		if !present {
+			if err := sourceSectionDiagnostic(&report, "self_paid", section, nil, false, false, 0); err != nil {
+				return report, err
+			}
 			continue
 		}
 		found = true
 		if bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
+			if err := sourceSectionDiagnostic(&report, "self_paid", section, raw, true, false, 0); err != nil {
+				return report, err
+			}
 			continue
 		}
 		var groups map[string]json.RawMessage
@@ -461,7 +525,11 @@ func (s *Session) FetchSelfPaidDetail(ctx context.Context, reference string) (Su
 				if title == "" && len(fields) == 0 {
 					continue
 				}
-				report.Entries = append(report.Entries, SupplementEntry{Date: date, Institution: institution, Title: title, Source: "自費健檢／" + section, Fields: fields})
+				dateRole := ""
+				if date != "" {
+					dateRole = "examination"
+				}
+				report.Entries = append(report.Entries, SupplementEntry{Date: date, DateRole: dateRole, Origin: "mixed", ContractID: sourceContractID("self_paid", section), Institution: institution, Title: title, Source: "自費健檢／" + section, Fields: fields})
 				if len(report.Entries) > MaxReportRecords {
 					return report, failure("RESPONSE_TOO_LARGE", "自費健檢明細過多，未載入不完整資料。")
 				}
@@ -483,7 +551,7 @@ func (s *Session) FetchSelfPaidDetail(ctx context.Context, reference string) (Su
 func (s *Session) FetchWesternDetail(ctx context.Context, reference string) (SupplementReport, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	report := SupplementReport{Category: "western_detail", Entries: []SupplementEntry{}, Coverage: "這次西醫就醫的官方藥品／非藥品醫囑；不是實際服用紀錄，不推定未提供的劑量或頻次。", Complete: false}
+	report := SupplementReport{ContractRevision: ProviderContractRevision, Category: "western_detail", Entries: []SupplementEntry{}, Coverage: "這次西醫就醫的官方藥品／非藥品醫囑；不是實際服用紀錄，不推定未提供的劑量或頻次。", Complete: false}
 	if err := s.supplementReady(ctx); err != nil {
 		return report, err
 	}

@@ -33,6 +33,29 @@ func (s *Store) migrate(ctx context.Context) error {
 	if current.Valid && current.Int64 == SchemaVersion {
 		return nil
 	}
+	if !current.Valid || current.Int64 < LegacySchemaVersion {
+		if err := s.createSettingsSchema(ctx); err != nil {
+			return err
+		}
+		if err := s.recordMigration(ctx, LegacySchemaVersion); err != nil {
+			return err
+		}
+	}
+	ddl := `CREATE TABLE IF NOT EXISTS instance_settings (
+		instance_id INTEGER NOT NULL PRIMARY KEY,
+		key_check VARCHAR(64) NOT NULL,
+		key_origin VARCHAR(32) NOT NULL
+	)`
+	if s.driver == "mysql" {
+		ddl += ` ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin`
+	}
+	if _, err := s.db.ExecContext(ctx, ddl); err != nil {
+		return fmt.Errorf("apply settings schema version 2: %w", err)
+	}
+	return s.recordMigration(ctx, SchemaVersion)
+}
+
+func (s *Store) createSettingsSchema(ctx context.Context) error {
 	settingsType := "TEXT"
 	if s.driver == "mysql" {
 		settingsType = "MEDIUMTEXT"
@@ -49,9 +72,13 @@ func (s *Store) migrate(ctx context.Context) error {
 	if _, err := s.db.ExecContext(ctx, ddl); err != nil {
 		return fmt.Errorf("apply settings schema version 1: %w", err)
 	}
+	return nil
+}
+
+func (s *Store) recordMigration(ctx context.Context, version int) error {
 	_, err := s.db.ExecContext(ctx,
 		`INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)`,
-		SchemaVersion, time.Now().UTC().Format(time.RFC3339Nano))
+		version, time.Now().UTC().Format(time.RFC3339Nano))
 	if err != nil && !isDuplicate(err) {
 		return fmt.Errorf("record settings schema version: %w", err)
 	}

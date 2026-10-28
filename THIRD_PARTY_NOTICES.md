@@ -30,4 +30,26 @@ React type declarations are vendored from DefinitelyTyped at the pinned commit; 
 
 ESLint and @eslint/js are included as unmodified source npm archives under `web/vendor/`; their MIT license is also in `licenses/eslint/LICENSE`. React Hooks, typescript-eslint, globals and the supported TypeScript JavaScript API are development-only dependencies installed from the locked npm graph. Their own package distributions preserve their upstream licenses. Node.js, npm, govulncheck and Staticcheck are verified build/analysis tools downloaded by the bootstrap; they are not application runtime requirements or bundled executables. Staticcheck's unmodified MIT-licensed source is pinned to https://github.com/dominikh/go-tools/tree/54455593555daf6bfcf3c480faaada7de3145357. See `web/dependency-audit.json` for every resolved frontend dependency and its upstream constraints.
 
+## Browser and PDF verification tools
+
+Playwright and playwright-core **1.64.1** are unmodified Apache-2.0 test-only npm
+packages from https://github.com/microsoft/playwright/tree/cfe490d941f992655948eee8fd4fd94e1c4234bf.
+Their locked package distributions include their upstream license and notices.
+The matching Chromium Headless Shell is downloaded from Google's official Chrome
+for Testing distribution; the archive's upstream notices remain in the isolated
+test installation. No browser executable is included in a Healthbank deployment.
+
+The synthetic browser test uses **Noto Sans CJK TC Regular**, from
+https://github.com/notofonts/noto-cjk/tree/f8d157532fbfaeda587e826d4cd5b21a49186f7c,
+under the **SIL Open Font License 1.1**. Setup downloads and separately verifies the
+original font and its unmodified license into `.tools/browser-acceptance/fonts/`.
+It does not add a font download or remote font requirement to the application.
+The checksums and exact sources are in `web/tests/browser/toolchain.json`.
+
+Poppler's `pdftotext` and `pdfinfo` are CI/system command-line tools used to verify
+generated synthetic PDFs. They retain their system-package licenses and are not
+linked into or bundled with the application. Browser verification files, fonts,
+caches and synthetic evidence are excluded from the executable/source archives
+except for the first-party test scripts and their source metadata.
+
 Medical reference citations are attribution and provenance, not an assertion that guideline organizations endorse this software. See `docs/clinical-reference.zh-TW.md`.

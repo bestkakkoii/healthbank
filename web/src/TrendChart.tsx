@@ -4,6 +4,7 @@ import { useAnalysis, ScenarioBadge } from './AnalysisContext';
 import { referenceForRecord } from './clinical-comparison';
 import { DifferenceSummary } from './DifferenceSummary';
 import { createDatePosition, dateTime, trendGeometry, type DateScale } from './trend-model';
+import { nextChartPointIndex } from './chart-navigation';
 import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ItemOverride, LabRecord } from './api';
 import {
@@ -78,12 +79,18 @@ export function TrendChart({
   const [dateScale, setDateScale] = useState<DateScale>('elapsed');
   const [selection, setSelection] = useState<LabRecord[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [pointFocusId, setPointFocusId] = useState<string | null>(null);
+  const [recordPage, setRecordPage] = useState({ key: '', page: 0 });
   const [viewport, setViewport] = useState({ width: 920, fontSize: 16 });
   const viewportRef = useRef<HTMLDivElement>(null);
   const fontProbeRef = useRef<HTMLSpanElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const pointElements = useRef(new Map<string, SVGCircleElement>());
+  const recordsHeading = useRef<HTMLHeadingElement>(null);
+  const recordFocusPending = useRef(false);
   const titleId = useId();
   const descriptionId = useId();
+  const keyboardHelpId = useId();
   const sorted = useMemo(
     () =>
       [...group.records].sort(
@@ -95,6 +102,17 @@ export function TrendChart({
   const dated = sorted.filter((record) => Number.isFinite(day(record.exam_date)));
   const exact = dated.filter(isExact);
   const hasPoints = exact.length > 0;
+  const pointFocusIndex = Math.max(0, exact.findIndex(record => record.id === pointFocusId));
+  const recordPageKey = `${group.id}:${group.records.length}:${group.records[0]?.id ?? ''}:${group.records.at(-1)?.id ?? ''}`;
+  const recordPageCount = Math.max(1, Math.ceil(group.records.length / 50));
+  const currentRecordPage = recordPage.key === recordPageKey ? Math.min(recordPage.page, recordPageCount - 1) : 0;
+  const shownRecords = group.records.slice(currentRecordPage * 50, (currentRecordPage + 1) * 50);
+  useLayoutEffect(() => {
+    if (!recordFocusPending.current) return;
+    recordFocusPending.current = false;
+    recordsHeading.current?.focus({ preventScroll: true });
+    recordsHeading.current?.scrollIntoView({ block: 'start', behavior: 'auto' });
+  }, [currentRecordPage, recordPageKey]);
   useLayoutEffect(() => {
     const element = viewportRef.current;
     const probe = fontProbeRef.current;
@@ -259,6 +277,20 @@ export function TrendChart({
     else { setSelection([]); onDetail(record); }
   }
 
+  function changeRecordPage(page: number) {
+    recordFocusPending.current = true;
+    setRecordPage({ key: recordPageKey, page });
+  }
+
+  function recordPagination(position: 'top' | 'bottom') {
+    if (recordPageCount < 2) return null;
+    return <div className="chart-record-pagination" role="group" aria-label={`檢查紀錄分頁（${position === 'top' ? '上方' : '下方'}）`}>
+      <button type="button" className="button secondary" disabled={currentRecordPage === 0} onClick={() => changeRecordPage(currentRecordPage - 1)}>上一頁檢查紀錄</button>
+      <span>第 {currentRecordPage + 1}／{recordPageCount} 頁 · 共 {group.records.length} 筆，每頁最多 50 筆</span>
+      <button type="button" className="button secondary" disabled={currentRecordPage + 1 >= recordPageCount} onClick={() => changeRecordPage(currentRecordPage + 1)}>下一頁檢查紀錄</button>
+    </div>;
+  }
+
   function exportSvg() {
     const element = svgRef.current;
     if (!element) return;
@@ -334,6 +366,10 @@ export function TrendChart({
           </button>
         </div>
       </div>
+      <div className="chart-access-tools">
+        <button className="button quiet" type="button" onClick={() => { recordsHeading.current?.focus({ preventScroll: true }); recordsHeading.current?.scrollIntoView({ block: 'start', behavior: 'auto' }); }}>跳到完整檢查紀錄（{group.records.length} 筆）</button>
+        {hasPoints && <details><summary>圖表鍵盤操作</summary><p id={keyboardHelpId}>方向鍵逐筆切換，Home／End 到首筆／末筆；Enter 或空白鍵開啟明細，Tab 離開圖表。同日同值仍可逐筆選取。</p></details>}
+      </div>
       {exact.length ? (
         <div className="chart-container">
           <div className="chart-viewport" ref={viewportRef}>
@@ -346,7 +382,7 @@ export function TrendChart({
               className="trend-svg"
               role="group"
               aria-labelledby={titleId}
-              aria-describedby={descriptionId}
+              aria-describedby={`${descriptionId} ${keyboardHelpId}`}
               onPointerMove={(event) => setActiveId(nearestPoint(event.clientX, event.clientY)?.id ?? null)}
               onPointerLeave={() => setActiveId(null)}
               onClick={(event) => {
@@ -446,7 +482,7 @@ export function TrendChart({
               ))}
               {geometry.links.map((link, index) => <line key={`link-${index}`} x1={x(link.from)} x2={x(link.to)} y1={y(link.fromValue)} y2={y(link.toValue)} className="chart-line" strokeDasharray={link.ambiguous ? '5 5' : undefined}><title>{link.ambiguous ? '同日多值／非精確紀錄：範圍邊界連線，不推定先後或中間值' : '兩次觀測值連線，不代表中間曾測量'}</title></line>)}
               {geometry.buckets.map(bucket => bucket.low !== null && bucket.high !== null && bucket.low !== bucket.high ? <line key={`range-${bucket.date}`} x1={x(bucket.date)} x2={x(bucket.date)} y1={y(bucket.low)} y2={y(bucket.high)} className="chart-line" strokeDasharray="2 3"><title>同日 {bucket.records.length} 筆原始結果，不推測先後</title></line> : null)}
-              {exact.map((record) => (
+              {exact.map((record, index) => (
                 <g key={record.id} className={`chart-point level-${record.level ?? 0}`}>
                   <circle
                     cx={x(record.exam_date)}
@@ -455,16 +491,18 @@ export function TrendChart({
                     className="point-dot"
                   />
                   <circle
+                    ref={element => { if (element) pointElements.current.set(record.id, element); else pointElements.current.delete(record.id); }}
                     cx={x(record.exam_date)}
                     cy={y(record.numeric_value)}
                     r="22"
                     fill="transparent"
                     stroke="none"
                     className="chart-point-target"
-                    tabIndex={0}
+                    tabIndex={index === pointFocusIndex ? 0 : -1}
                     role="button"
-                    aria-label={`${dateLabel(record.exam_date)}，${record.result} ${record.unit}，${record.institution || ''}，開啟明細`}
-                    onFocus={() => { setActiveId(record.id); analysis?.setSelectedDate(record.exam_date); }}
+                    aria-label={`第 ${index + 1}／${exact.length} 筆，${dateLabel(record.exam_date)}，${record.result} ${record.unit}，${record.institution || ''}，開啟明細`}
+                    aria-describedby={keyboardHelpId}
+                    onFocus={() => { setPointFocusId(record.id); setActiveId(record.id); analysis?.setSelectedDate(record.exam_date); }}
                     onBlur={() => setActiveId(null)}
                     onClick={(event) => {
                       // Assistive technology may activate the focused SVG button
@@ -474,6 +512,13 @@ export function TrendChart({
                       activatePoint(nearest, event.detail > 0);
                     }}
                     onKeyDown={(event) => {
+                      const nextIndex = nextChartPointIndex(event.key, index, exact.length);
+                      if (nextIndex !== null) {
+                        event.preventDefault();
+                        const next = exact[nextIndex];
+                        if (next) { setPointFocusId(next.id); pointElements.current.get(next.id)?.focus(); }
+                        return;
+                      }
                       if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault();
                         activatePoint(record);
@@ -537,9 +582,11 @@ export function TrendChart({
         </p>
       )}
       <div className="chart-records">
-        <h3>
+        <h3 ref={recordsHeading} tabIndex={-1}>
           完整檢查紀錄 <span>{group.records.length} 筆</span>
         </h3>
+        {recordPagination('top')}
+        <p className="sr-only" role="status">檢查紀錄第 {currentRecordPage + 1}／{recordPageCount} 頁</p>
         <div className="simple-table-scroll">
           <table className="detail-table">
             <thead>
@@ -555,9 +602,9 @@ export function TrendChart({
               </tr>
             </thead>
             <tbody>
-              {group.records.map((record) => (
+              {shownRecords.map((record) => (
                 <tr key={record.id}>
-                  <td>{dateLabel(record.exam_date)}</td>
+                  <td>{record.exam_date ? dateLabel(record.exam_date) : record.raw_check_date || '未提供日期'}</td>
                   <td>
                     <strong>{record.result || '—'}</strong>
                     <small>{sourceFlag(record.reference_status)}</small>
@@ -584,6 +631,7 @@ export function TrendChart({
             </tbody>
           </table>
         </div>
+        {recordPagination('bottom')}
       </div>
     </section>
   );

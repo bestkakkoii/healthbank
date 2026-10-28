@@ -4,8 +4,8 @@ import type { LabRecord } from './api';
 import { useAnalysis } from './AnalysisContext';
 import { dateLabel, referenceLabel } from './model';
 import {
-  ANALYTE_KEYS, COMPARISON_ANALYTES, CLINICAL_SOURCE_DATE, CLINICAL_SOURCES, compareInterval, comparisonValue, intervalLabel, defaultAnalysis,
-  egfrCreatinine2021, exactAgeOn, recordAnalyte, scenarioInterval,
+  ANALYTE_KEYS, COMPARISON_ANALYTES, CLINICAL_SOURCE_DATE, CLINICAL_SOURCES, compareInterval, comparisonInput, intervalLabel, defaultAnalysis,
+  egfrCreatinine2021, estimatedGFRLabel, exactAgeOn, recordAnalyte, scenarioInterval,
   type ComparisonAnalyte, type ComparisonScenario, type ReferenceSex,
 } from './clinical-comparison';
 
@@ -48,7 +48,8 @@ export function ClinicalComparison({ records }: { records: LabRecord[] }) {
     finally { setSaving(false); }
   }
   const selected = candidates.find(record => record.id === selectedId) ?? candidates[0];
-  const value = selected ? comparisonValue(selected, analyte) : null;
+  const input = selected ? comparisonInput(selected, analyte) : null;
+  const value = input?.value ?? null;
   const activePerson = birthDate
     ? { ...person, age: selected ? exactAgeOn(birthDate, selected.exam_date) : null } : person;
   const scenarios = [{ label: '本人／基準情境', context: activePerson }, { label: '比較情境', context: comparison }];
@@ -82,6 +83,12 @@ export function ClinicalComparison({ records }: { records: LabRecord[] }) {
     </div>
     {saveMessage && <p role="status">{saveMessage}</p>}
     {selected && <p className="helper-text">原始結果：{selected.result} {selected.unit}；原院參考：{referenceLabel(selected)}；原院旗標：{selected.official_flag || '未提供'}。</p>}
+    {selected && input && <details className="scenario-provenance"><summary>查看這筆比較的依據與限制</summary>
+      <p>原始項目：{selected.item_name}；醫令代碼：{selected.order_code}；來源單位：{input.sourceUnit || '未提供'}；情境單位：{input.comparisonUnit}。</p>
+      <p>{input.reason}</p>
+      <p>具名範本方法：{COMPARISON_ANALYTES[analyte].method}。這筆原院檢驗的方法、檢體與前處理條件未由程式推定相同；不因此把跨院數值視為可直接互換。</p>
+      {analyte === 'creatinine' && <p>CKD-EPI 2021 另需成人年齡、公式性別條件與下方明確確認；只在最後顯示時四捨五入至整數，計算中不先捨去精度。原院 eGFR 仍保留原值。</p>}
+    </details>}
     <details className="scenario-birthdate"><summary>選填生日，依所選檢查日期計算本人當時年齡</summary>
       <label className="field">出生日期（不保存、不傳送）<input type="date" value={birthDate} onChange={event => setBirthDate(event.target.value)} /></label>
       {birthDate && activePerson.age === null && <p role="status">缺少有效檢查日期，或年齡不在本功能範圍；不推定生日或年齡。</p>}
@@ -105,11 +112,11 @@ export function ClinicalComparison({ records }: { records: LabRecord[] }) {
           <p className="scenario-range">{intervalLabel(interval)}</p>
           <p>{compareInterval(selected, analyte, interval)}</p>
           {interval && <small>{interval.scope}；已列界限含等號。方法：{interval.method}。</small>}
-          {analyte === 'creatinine' && <div className="scenario-estimate"><b>{estimated.value === null ? 'eGFR 未計算' : `情境 eGFR ${estimated.value.toFixed(1)}`}</b><p>{estimated.reason}</p></div>}
+          {analyte === 'creatinine' && <div className="scenario-estimate"><b>{estimated.value === null ? 'eGFR 未計算' : `情境 eGFR 約 ${estimatedGFRLabel(estimated.value)}`}</b><p>{estimated.reason}</p></div>}
         </article>;
       })}
     </div>
     <p className="helper-text">範本屬具名院所與方法，不是臺灣通用正常值。院所方法未核對時僅作情境對照；不是本人病情預測。未收錄項目不自造分齡界限。</p>
-    <p className="helper-text"><a href={source} target="_blank" rel="noreferrer">成大檢驗範本</a> · <a href={CLINICAL_SOURCES.egfr} target="_blank" rel="noreferrer">NIDDK 公式與限制</a> · 來源查核 {CLINICAL_SOURCE_DATE}</p>
+    <p className="helper-text"><a href={source} target="_blank" rel="noreferrer">成大檢驗範本</a> · <a href={CLINICAL_SOURCES.egfr} target="_blank" rel="noreferrer">NIDDK 公式與限制</a> · <a href={CLINICAL_SOURCES.egfr_reporting} target="_blank" rel="noreferrer">eGFR 顯示精度依據</a> · 範本來源查核 {CLINICAL_SOURCE_DATE}</p>
   </section>;
 }

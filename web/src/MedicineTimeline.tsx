@@ -1,19 +1,31 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
-import { useMemo, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { SupplementReport } from './api';
 import { medicineSeries, prescribedDayBuckets, prescribedDaySegments, type MedicineEvent } from './medicine-timeline';
 import { createDatePosition, dateTime } from './trend-model';
 
 // Prescription records are not medication administration or pharmacokinetic levels.
-export function MedicineTimeline({ reports, onDate }: {
+export function MedicineTimeline({ reports, onDate, onOpenTrends }: {
   reports: SupplementReport[];
   onDate: (date: string) => void;
+  onOpenTrends?: ((date: string) => void) | undefined;
 }) {
   const groups = useMemo(() => medicineSeries(reports), [reports]);
   const [selected, setSelected] = useState('');
   const [scale, setScale] = useState<'elapsed' | 'ordinal'>('elapsed');
   const [page, setPage] = useState(0);
+  const [markedId, setMarkedId] = useState('');
+  const eventsHeading = useRef<HTMLHeadingElement>(null);
+  const focusPending = useRef(false);
   const active = groups.find(group => group.key === selected) ?? groups[0];
+  const pageCount = Math.max(1, Math.ceil((active?.events.length ?? 0) / 100));
+  const currentPage = Math.min(page, pageCount - 1);
+  useLayoutEffect(() => {
+    if (!focusPending.current) return;
+    focusPending.current = false;
+    eventsHeading.current?.focus({ preventScroll: true });
+    eventsHeading.current?.scrollIntoView({ block: 'start', behavior: 'auto' });
+  }, [currentPage, active?.key]);
   if (!active) return null;
   const events = active.events.filter(event => event.date);
   const known = events.filter((event): event is MedicineEvent & { validDays: number } => event.validDays !== null);
@@ -31,15 +43,22 @@ export function MedicineTimeline({ reports, onDate }: {
   const middleFits = middleDate && firstDate && lastDate && x(middleDate) - x(firstDate) >= 120 && x(lastDate) - x(middleDate) >= 120;
   const labels = [firstDate, ...(middleFits ? [middleDate] : []), lastDate]
     .filter((value): value is string => Boolean(value)).filter((date, i, a) => a.indexOf(date) === i);
-  const pageCount = Math.max(1, Math.ceil(active.events.length / 100));
-  const currentPage = Math.min(page, pageCount - 1);
   const pageEnd = active.events.length - currentPage * 100;
   const shownEvents = active.events.slice(Math.max(0, pageEnd - 100), pageEnd).toReversed();
+  function showPage(next: number) { focusPending.current = true; setPage(next); }
+  function pagination(position: 'top' | 'bottom') {
+    return pageCount > 1 && <div className="medicine-event-pagination" role="group" aria-label={`處方紀錄分頁（${position === 'top' ? '上方' : '下方'}）`}>
+      <button className="button secondary" type="button" disabled={currentPage === 0} onClick={() => showPage(currentPage - 1)}>較新紀錄</button>
+      <span>第 {currentPage + 1}／{pageCount} 頁 · 每頁最多 100 筆</span>
+      <button className="button secondary" type="button" disabled={currentPage + 1 >= pageCount} onClick={() => showPage(currentPage + 1)}>較早紀錄</button>
+    </div>;
+  }
   return <section className="medicine-timeline panel" aria-label="同藥品歷次處方比較">
     <h3>同藥品處方時間圖</h3>
-    <p className="helper-text">相容的健保申報藥品代碼放在同組；電子處方代碼另列，自費藥品依院所分開，未提供院所時保留個別來源。無代碼時僅依相同原文名稱及來源比較。同日多值保留範圍，不取平均；缺少日數的日期不連線。虛線只比較相鄰日期已知的給藥日數，不推定實際服藥、用藥濃度、成分等價或處方中斷。</p>
+    <p className="helper-text">比較處方給藥日數，不代表實際服用或停藥。</p>
+    <details className="medicine-chart-method"><summary>來源分組與圖表判讀方式</summary><p className="helper-text">相容的健保申報藥品代碼放在同組；電子處方代碼另列，自費藥品依院所分開，未提供院所時保留個別來源。無代碼時僅依相同原文名稱及來源比較。同日多值保留範圍，不取平均；缺少日數的日期不連線。虛線只比較相鄰日期已知的給藥日數，不推定實際服藥、用藥濃度、成分等價或處方中斷。</p></details>
     <div className="scenario-controls">
-      <label className="field">選擇藥品<select value={active.key} onChange={event => { setSelected(event.target.value); setPage(0); }}>
+      <label className="field">選擇藥品<select value={active.key} onChange={event => { setSelected(event.target.value); setPage(0); setMarkedId(''); }}>
         {groups.map(group => <option key={group.key} value={group.key}>{group.name} · {group.code || '無官方代碼'} · {group.events.length}筆</option>)}
       </select></label>
       <label className="field">日期排列<select value={scale} onChange={event => setScale(event.target.value === 'ordinal' ? 'ordinal' : 'elapsed')}>
@@ -69,15 +88,18 @@ export function MedicineTimeline({ reports, onDate }: {
       </svg>
     </div>}
     {known.length === 0 && <p className="helper-text">缺乏可比較的給藥日數，因此只顯示下方逐次處方事件，不畫虛構的劑量曲線。</p>}
-    <div className="medicine-events"><strong>逐次來源紀錄（不聚合、不推定停藥）</strong>
-      {pageCount > 1 && <div className="scenario-controls"><button className="button secondary" type="button" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>較新紀錄</button><span>第 {currentPage + 1}／{pageCount} 頁 · 每頁最多100筆</span><button className="button secondary" type="button" disabled={currentPage + 1 >= pageCount} onClick={() => setPage(currentPage + 1)}>較早紀錄</button></div>}
+    <div className="medicine-events"><h4 ref={eventsHeading} tabIndex={-1}>逐次來源紀錄（不聚合、不推定停藥）</h4>
+      {pagination('top')}
+      <p className="sr-only" role="status">處方紀錄第 {currentPage + 1}／{pageCount} 頁</p>
       {shownEvents.map(event => <div key={event.id} className="medicine-event-row">
         <span>{event.date || event.sourceDate || '日期未知'}</span>
         <span>{event.institution || '院所未知'}</span>
         <span>{event.name} · {event.source}</span>
         <span>給藥日數：{event.days || '未提供'}；原始數量：{event.quantity || '未提供'}（單位未確認）</span>
-        <button className="button quiet" type="button" disabled={!event.date} onClick={() => onDate(event.date)}>標示檢驗日期</button>
+        <button className="button quiet" type="button" disabled={!event.date} onClick={() => { onDate(event.date); setMarkedId(event.id); }}>標示檢驗日期</button>
+        {markedId === event.id && <div className="medicine-date-feedback"><p role="status">已標示 {event.date}；請在趨勢確認當日是否有檢驗結果，同日不代表同次採檢。</p>{onOpenTrends && <button className="button secondary" type="button" onClick={() => { onDate(event.date); onOpenTrends(event.date); }}>前往檢驗趨勢</button>}</div>}
       </div>)}
+      {pagination('bottom')}
     </div>
   </section>;
 }

@@ -62,6 +62,11 @@ func (a *App) persistDiscovered(ctx context.Context, s *session) error {
 	if s.subject == "" {
 		return nil
 	}
+	unlock, err := a.lockSubject(ctx, s)
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	discovered := s.settings.Known
 	for attempt := 0; attempt < 3; attempt++ {
 		doc, err := a.store.Get(ctx, s.subject)
@@ -72,7 +77,16 @@ func (a *App) persistDiscovered(ctx context.Context, s *session) error {
 		if err != nil {
 			return err
 		}
-		changed := false
+		before, err := latest.Document()
+		if err != nil {
+			return err
+		}
+		a.catalog.ReconcileSettings(&latest)
+		reconciled, err := latest.Document()
+		if err != nil {
+			return err
+		}
+		changed := !bytes.Equal(before, reconciled)
 		for k, v := range discovered {
 			if _, exists := latest.Known[k]; !exists {
 				latest.Known[k] = v
@@ -149,6 +163,9 @@ func (a *App) fetchReports(w http.ResponseWriter, r *http.Request, s *session) {
 		return
 	}
 	if err := a.refreshSettings(r.Context(), s); err != nil {
+		if !a.requireCurrentSubject(w, r, s) {
+			return
+		}
 		a.fail(w, r, 500, "settings_read", "無法讀取個人設定。")
 		return
 	}
@@ -156,9 +173,12 @@ func (a *App) fetchReports(w http.ResponseWriter, r *http.Request, s *session) {
 	defer cancel()
 	report, err := s.official.Fetch(ctx, nhi.Query{StartDate: from, EndDate: to})
 	if err != nil {
+		if !a.requireCurrentSubject(w, r, s) {
+			return
+		}
 		var upstream *nhi.Error
 		if errors.As(err, &upstream) && upstream.Code == "SESSION_EXPIRED" {
-			s.clear()
+			a.clearSession(s)
 			if rotateErr := a.rotate(w, r, s); rotateErr != nil {
 				a.fail(w, r, 500, "session_rotate", "連線已結束，請重新整理頁面。")
 				return
@@ -167,7 +187,15 @@ func (a *App) fetchReports(w http.ResponseWriter, r *http.Request, s *session) {
 		a.upstreamError(w, r, err)
 		return
 	}
-	s.setOfficialReport(report)
+	if !a.requireCurrentSubject(w, r, s) {
+		return
+	}
+	next := &session{}
+	next.setOfficialReport(report)
+	if !a.admitReport(w, r, s, next.raw) {
+		return
+	}
+	s.raw, s.officialQuery, s.fetched, s.complete, s.warnings = next.raw, next.officialQuery, next.fetched, next.complete, next.warnings
 	_ = a.catalog.Normalize(s.raw, &s.settings)
 	if err := a.persistDiscovered(r.Context(), s); err != nil {
 		if errors.Is(err, store.ErrInvalid) {
@@ -180,6 +208,9 @@ func (a *App) fetchReports(w http.ResponseWriter, r *http.Request, s *session) {
 }
 func (a *App) currentReports(w http.ResponseWriter, r *http.Request, s *session) {
 	if err := a.refreshSettings(r.Context(), s); err != nil {
+		if !a.requireCurrentSubject(w, r, s) {
+			return
+		}
 		a.fail(w, r, 500, "settings_read", "無法讀取個人設定。")
 		return
 	}
@@ -254,9 +285,13 @@ func (a *App) importReports(w http.ResponseWriter, r *http.Request, s *session) 
 	}
 	// An imported file has no verified ownership. Use an isolated temporary
 	// configuration instead of attaching it to the currently signed-in person.
-	s.clear()
+	if !a.admitReport(w, r, s, rows) {
+		return
+	}
+	a.clearSessionState(s)
 	s.mode = "import"
 	s.raw = rows
+	a.protectWorkspace(s)
 	s.fetched = time.Now().UTC().Format(time.RFC3339)
 	s.complete = false
 	s.warnings = warnings
@@ -268,6 +303,9 @@ func (a *App) importReports(w http.ResponseWriter, r *http.Request, s *session) 
 }
 func (a *App) catalogResponse(w http.ResponseWriter, r *http.Request, s *session) {
 	if err := a.refreshSettings(r.Context(), s); err != nil {
+		if !a.requireCurrentSubject(w, r, s) {
+			return
+		}
 		a.fail(w, r, 500, "settings_read", "無法讀取個人設定。")
 		return
 	}
@@ -285,9 +323,18 @@ func (a *App) catalogResponse(w http.ResponseWriter, r *http.Request, s *session
 			out.Items[i].High = newest.ReferenceHigh
 		}
 	}
-	a.json(w, 200, out)
+	a.json(w, 200, struct {
+		lab.CatalogResponse
+		Provenance lab.CatalogProvenance `json:"provenance"`
+	}{out, a.catalog.Provenance()})
 }
 func (a *App) saveSettings(w http.ResponseWriter, r *http.Request, s *session) {
+	unlock, err := a.lockSubject(r.Context(), s)
+	if err != nil {
+		a.subjectAdmissionError(w, r, s)
+		return
+	}
+	defer unlock()
 	// Known definitions are server-owned. The browser cannot manufacture a
 	// profile or submit arbitrary JSON for persistent storage.
 	var input struct {

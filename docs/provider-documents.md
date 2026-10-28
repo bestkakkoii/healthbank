@@ -134,3 +134,23 @@ RC9 額外重新取得並核對的下載元件：
 | --- | --- |
 | [IHKE3800download.87e94a32.js](https://myhealthbank.nhi.gov.tw/IHKE3000/js/IHKE3800download.87e94a32.js) | `7073bc1ab99b3b92c1351bc6b90944d38e3e209fe7d3b12345beedfad22bd7dd` |
 | [IHKE3800download_IMG.df47eafd.js](https://myhealthbank.nhi.gov.tw/IHKE3000/js/IHKE3800download_IMG.df47eafd.js) | `8fb68daedc85efb4736c9a093de6d29547586f307e89e8725653af4c4983a4ff` |
+
+## Versioned document context and bounded handle ownership
+
+Document reports carry the same `nhi-spa.2026-10-28.2` projection revision as the
+provider data model. Allowlisted raw fields retain stable source codes; known
+upload/report/date columns are labelled as date fields without substituting them
+for specimen collection. Official generation request dates are `recorded` dates
+of an `official_summary`, not clinical examination dates. Public-contract drift
+checks include the reviewed original-file, PDF and image component chunks; see
+[provider-data.md](provider-data.md#repeatable-public-contract-drift-review).
+
+Document references and bounded preparation selector payloads participate in the
+connector/server retained-data budget. A list refresh reserves replacement detail
+handles plus retirement of that category's documents atomically. A rejected
+refresh keeps earlier handles usable. Replacing a detail's attachment set also
+requires admission before the old set or payload is cleared. Explicit preparation
+consumes its one-shot handle and releases its accounted bytes even if the remote
+operation later fails; retry still requires a new status/detail read. Expiry and
+close release all retained handle accounting. No medical artifact is written to
+disk or settings storage by this accounting.

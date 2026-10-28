@@ -1,7 +1,8 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { scenarioInterval, egfrCreatinine2021, recordAnalyte, comparisonValue, compareInterval, exactAgeOn } from '../src/clinical-comparison.ts';
+import { scenarioInterval, egfrCreatinine2021, estimatedGFRLabel, recordAnalyte, comparisonInput, comparisonValue, compareInterval, exactAgeOn } from '../src/clinical-comparison.ts';
+import { canonicalUnit } from '../src/unit-normalization.ts';
 function record(patch = {}) { return { id: 'synthetic', item_name: 'Creatinine', item_id: 'serum_creatinine', order_code: '09015C',
   result: '1', unit: 'mg/dL', numeric_value: 1, value_kind: 'numeric', official_flag: 'H', ...patch }; }
 const male = age => ({ age, sex: 'male' });
@@ -25,6 +26,29 @@ test('specimen/code, units, exactness and raw numeric consistency gate calculati
     { result: '≥1' }, { value_kind: 'inequality' }, { numeric_value: Infinity }, { result: '2', numeric_value: 1 },
     { result: '-1', numeric_value: -1 }]) assert.equal(comparisonValue(record(patch), 'creatinine'), null);
   assert.equal(comparisonValue(record({ result: '88.4', numeric_value: 88.4, unit: 'µmol/L' }), 'creatinine'), 1);
+});
+test('unit prefix case stays significant while explicit source spelling aliases remain usable', () => {
+  for (const unit of ['Mg/dL', 'MG/DL', 'Umol/L', 'UMOL/L'])
+    assert.equal(comparisonValue(record({ unit }), 'creatinine'), null);
+  assert.equal(comparisonValue(record({ unit: 'mg/dl' }), 'creatinine'), 1);
+  for (const unit of ['µmol/L', 'μmol/l', 'umol/L']) {
+    const decision = comparisonInput(record({ unit, result: '88.4', numeric_value: 88.4 }), 'creatinine');
+    assert.equal(decision.value, 1);
+    assert.equal(decision.sourceUnit, unit);
+    assert.equal(decision.conversion, 'creatinine_umol_to_mg');
+  }
+  assert.notEqual(canonicalUnit('ML/min/1.73m2'), canonicalUnit('mL/min/1.73m2'));
+  assert.notEqual(canonicalUnit('u/L'), canonicalUnit('U/L'));
+  assert.equal(canonicalUnit('mL / min / 1.73m²'), 'mL/min/1.73m2');
+});
+test('derived eGFR rounds only its presentation and keeps full calculation precision', () => {
+  const derived = egfrCreatinine2021(1.25, male(70), true);
+  assert.ok(Math.abs(derived.value - 61.946505014981526) < 1e-11);
+  assert.equal(estimatedGFRLabel(derived.value), '62');
+  assert.equal(estimatedGFRLabel(null), '未計算');
+  assert.equal(estimatedGFRLabel(Infinity), '未計算');
+  assert.equal(estimatedGFRLabel(-1), '未計算');
+  assert.equal(derived.value, egfrCreatinine2021(1.25, male(70), true).value);
 });
 test('unit-normalized interval comparison is exact at and immediately outside decimal endpoints', () => {
   const interval = scenarioInterval('creatinine', male(70));

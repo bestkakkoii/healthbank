@@ -1,0 +1,23 @@
+{
+  "verified_at": "2026-10-28",
+  "playwright": {
+    "version": "1.64.1",
+    "source_commit": "cfe490d941f992655948eee8fd4fd94e1c4234bf",
+    "release": "https://github.com/microsoft/playwright/releases/tag/v1.64.1"
+  },
+  "chromium": {
+    "revision": "1248",
+    "version": "156.0.8078.4",
+    "manifest": "https://raw.githubusercontent.com/microsoft/playwright/v1.64.1/packages/playwright-core/browsers.json",
+    "linux_x64_url": "https://storage.googleapis.com/chrome-for-testing-public/156.0.8078.4/linux64/chrome-headless-shell-linux64.zip",
+    "linux_x64_sha256": "c3e50596aef52c58f8fda3c6b3411c33d34c88b177b3ed1c2243359fd3b8ba20"
+  },
+  "font": {
+    "family": "Noto Sans CJK TC",
+    "file": "NotoSansCJKtc-Regular.otf",
+    "url": "https://raw.githubusercontent.com/notofonts/noto-cjk/f8d157532fbfaeda587e826d4cd5b21a49186f7c/Sans/OTF/TraditionalChinese/NotoSansCJKtc-Regular.otf",
+    "sha256": "dce08bd4fd91aa8aa76ed8fea4b694c2dfb8550f67871e326843212ddbeb88b4",
+    "license_url": "https://raw.githubusercontent.com/notofonts/noto-cjk/f8d157532fbfaeda587e826d4cd5b21a49186f7c/Sans/LICENSE",
+    "license_sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2"
+  }
+}

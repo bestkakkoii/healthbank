@@ -63,6 +63,92 @@ the previous descendants only after every response in that operation validates.
 A failed parent refresh keeps earlier successful child references usable. Ordinary
 clinical detail reads do not copy the entire reference map for each historical row.
 
+## Versioned fields, date meanings and response-quality diagnostics
+
+`contract_revision: nhi-spa.2026-10-28.2` identifies the Healthbank projection;
+it is not an official API version. Every allowlisted projected source field has
+a stable lowercase ASCII `code`, independent of its translated label. Known
+result, unit, reference, method, specimen and date fields have a `role`;
+medication code/name/days/quantity roles apply only in a verified medication
+context. Drug extraction no longer depends on a Chinese display label.
+A literal unit printed by the reviewed SPA carries `unit_basis: public_contract`;
+a returned unit column carries `unit_basis: source`. A printed source unit is
+not proof of a historical result's analytical method or an instruction to merge it.
+
+Entries may include `contract_id`, `origin`, `date_role` and `end_date_role`.
+Institutional, self-entered, device, mixed and official-summary sources remain
+explicit. An unknown origin remains `unknown`. Date roles distinguish examination,
+specimen collection, report, encounter, admission/discharge, explicit administrative
+periods and recorded/uploaded dates. Ambiguous `case_DATE` and medicine dates stay
+unknown unless the observed source establishes their meaning. A source-confirmed
+dispensing flag/date is not an ingestion record. A certificate validity or care
+enrollment period does not become a disease duration; an execution period does
+not become an admission or inferred medication-use interval.
+
+Each report can include bounded `diagnostics` with these fixed safe codes:
+
+| Code | Meaning | Severity |
+| --- | --- | --- |
+| `section_missing` | A known expected response section was omitted; preserve valid sections and disclose possible missing data. | warning |
+| `section_optional_absent` | An explicitly optional branch was not provided; absence does not prove zero records. | info |
+| `section_null` | A known section returned `null`, separately from an empty collection. | warning |
+| `section_empty` | A known array/keyed collection returned no rows in this response. | info |
+| `known_result_missing` | Recognized row context exists but none of its known result fields was provided; no value is invented. | warning |
+
+Diagnostics use fixed section IDs and messages, never unknown property names or
+raw response values. There are at most 128 entries. Optional `count` is a bounded
+local diagnostic count (0–50,000), **not an independent official record total**.
+A partial successful response remains `complete: false`. A wholly unrecognized
+schema, invalid scalar/array or exceeded bound still fails the operation.
+Field IDs use `^[a-z][a-z0-9_]{0,63}$`; contract/section IDs use
+`^[a-z][a-z0-9_.-]{0,127}$`. Older portable documents may omit this metadata; the
+absence does not authorize retroactive inference of dates, origins or methods.
+
+## Repeatable public-contract drift review
+
+`internal/nhi/provider-contracts.json` records the 38 provider projections,
+observed list/detail roots, collection shapes, known field/unit declarations,
+source asset loci and 87 reviewed public chunk hashes. Go regression validation
+requires those projections to remain consistent with the implementation.
+The read-only checker first reads the **current public entry document**, then
+parses its **current** app asset and chunk map without executing JavaScript.
+It retrieves the currently referenced watched files; an old immutable bundle
+remaining downloadable cannot hide a new map or changed contract.
+
+```bash
+python3 -W error scripts/test_provider_contracts.py
+python3 -W error scripts/check_provider_contracts.py
+python3 -W error scripts/check_provider_contracts.py --online --output /tmp/healthbank-provider-contract-check.json
+```
+
+The first two commands require no network. The explicit online check makes only
+credentialless public GET requests to the fixed official origin; it cannot call
+medical APIs, use cookies, authenticate, execute scripts or update the registry.
+Exit 0 means the checked snapshot matched; exit 2 reports changed bytes/map;
+exit 3 reports unavailable or unrecognized evidence. Network failure is not a
+successful no-change check and does not automatically alter clinical rules.
+The online check on **2026-10-28 07:26:25 UTC** found the current
+`app.64b5ac08.js` and all **87** watched chunks unchanged against the reviewed
+snapshot. This is public-contract evidence, not real-account validation.
+
+## Reference capacity and atomic refresh
+
+Opaque detail/document handles remain session memory only. Their admission counts
+exact retained string/payload bytes with fixed map/entry allowances. A connector
+has a 32 MiB logical reference bound and can participate in the server's shared
+per-session/process retained-data budget. These are accounting units, not exact
+Go heap/RSS measurements. Response and document working buffers have separate
+limits.
+
+All category replacements reserve their new handles and retired documents as one
+change before publication. Capacity rejection returns `RESOURCE_LIMIT` and keeps
+the previous category, document handles and nested device parent references.
+Authentication expiry, close and consumed one-shot preparation handles release
+the corresponding budget. Ordinary clinical detail reads do not rescan or clone
+all provider category maps. The server callback acquires only its dedicated budget
+mutex while the connector mutex is held; attaching or replacing a budget owner
+after reference/session initialization is rejected.
+
 ## Additional categories
 
 Paths below are relative to `https://myhealthbank.nhi.gov.tw/api/ihke3000/`.

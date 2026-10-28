@@ -52,9 +52,12 @@ func (a *App) supplementary(w http.ResponseWriter, r *http.Request, s *session) 
 		report, err = s.official.FetchSupplement(ctx, category, nhi.Query{StartDate: r.URL.Query().Get("from"), EndDate: r.URL.Query().Get("to")})
 	}
 	if err != nil {
+		if !a.requireCurrentSubject(w, r, s) {
+			return
+		}
 		var upstream *nhi.Error
 		if errors.As(err, &upstream) && upstream.Code == "SESSION_EXPIRED" {
-			s.clear()
+			a.clearSession(s)
 			if rotateErr := a.rotate(w, r, s); rotateErr != nil {
 				a.fail(w, r, 500, "session_rotate", "連線已結束，請重新整理頁面。")
 				return
@@ -65,5 +68,8 @@ func (a *App) supplementary(w http.ResponseWriter, r *http.Request, s *session) 
 	}
 	// Results are returned to this browser only. They never enter report/settings
 	// storage, discovery, logs, or another category's successful result.
+	if !a.requireCurrentSubject(w, r, s) {
+		return
+	}
 	a.json(w, http.StatusOK, report)
 }
