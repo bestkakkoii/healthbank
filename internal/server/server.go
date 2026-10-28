@@ -70,6 +70,7 @@ func New(db *store.Store, secret []byte, version string) (*App, error) {
 		a.json(w, http.StatusOK, map[string]string{"status": "ok", "version": a.version})
 	})
 	a.mux.HandleFunc("GET /api/privacy", a.privacyInfo)
+	a.mux.HandleFunc("GET /api/data/catalog", a.dataCatalog)
 	a.mux.HandleFunc("DELETE /api/settings", a.withSession(a.deleteSettings))
 	a.mux.HandleFunc("GET /api/session", a.withSession(a.getSession))
 	a.mux.HandleFunc("GET /api/auth/captcha", a.withSession(a.captcha))
@@ -77,6 +78,8 @@ func New(db *store.Store, secret []byte, version string) (*App, error) {
 	a.mux.HandleFunc("POST /api/auth/logout", a.withSession(a.logout))
 	a.mux.HandleFunc("GET /api/reports", a.withSession(a.fetchReports))
 	a.mux.HandleFunc("GET /api/supplementary", a.withSession(a.supplementary))
+	a.mux.HandleFunc("GET /api/documents", a.withSession(a.documents))
+	a.mux.HandleFunc("POST /api/documents/prepare", a.withSession(a.prepareDocument))
 	a.mux.HandleFunc("GET /api/reports/current", a.withSession(a.currentReports))
 	a.mux.HandleFunc("POST /api/reports/import", a.withSession(a.importReports))
 	a.mux.HandleFunc("POST /api/reports/demo", a.withSession(a.demo))
@@ -338,7 +341,8 @@ func (a *App) upstreamError(w http.ResponseWriter, r *http.Request, err error) {
 			"CONNECTION_REFUSED", "CONNECTION_RESET", "CONNECTION_FAILED", "REQUEST_CANCELED",
 			"UPSTREAM_REDIRECT_REJECTED", "RESPONSE_INTERRUPTED", "CAPTCHA_INVALID_IMAGE", "LOGIN_PAGE_INVALID",
 			"UPSTREAM_ACCESS_DENIED", "UPSTREAM_UNAVAILABLE", "UPSTREAM_CHANGED",
-			"UPSTREAM_REJECTED", "RESPONSE_TOO_LARGE", "INCOMPLETE_RESPONSE":
+			"UPSTREAM_REJECTED", "RESPONSE_TOO_LARGE", "INCOMPLETE_RESPONSE",
+			"DOCUMENT_INVALID", "DOCUMENT_NOT_READY", "DOCUMENT_INCOMPLETE":
 		default:
 			known = false
 		}

@@ -18,7 +18,7 @@ func (a *App) privacyInfo(w http.ResponseWriter, r *http.Request) {
 		"operator": value("HEALTHBANK_OPERATOR_NAME"), "contact": value("HEALTHBANK_PRIVACY_CONTACT"),
 		"processing_region": value("HEALTHBANK_PROCESSING_REGION"), "backup_retention": value("HEALTHBANK_BACKUP_RETENTION"),
 		"session_idle_minutes": int(sessionLifetime.Minutes()), "cleanup_interval_seconds": 60,
-		"privacy_revision": "2026-10-27", "settings_retention": "保留至使用者刪除或營運者依已告知政策刪除；備份期限另列。",
+		"privacy_revision": "2026-10-28", "settings_retention": "保留至使用者刪除或營運者依已告知政策刪除；備份期限另列。",
 	})
 }
 
