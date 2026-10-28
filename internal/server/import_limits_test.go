@@ -125,6 +125,41 @@ func TestImportUploadFileAndEnvelopeLimitsAreAtomic(t *testing.T) {
 	}
 }
 
+func TestImportRejectsUnnamedPartBeforeAValidFile(t *testing.T) {
+	app, _, _ := testApp(t)
+	browser := &browserFixture{app: app}
+	browser.refresh(t)
+	attachVerifiedFixture(t, browser, "SYNTHETIC_MULTIPART_SUBJECT", []lab.RawRecord{{ItemName: "ALT", Result: "17.125", Source: "SYNTHETIC_PRIOR"}})
+	prior := browser.cookie.Value
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	first, err := writer.CreateFormField("file")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := io.WriteString(first, "SYNTHETIC_UNNAMED_CONTENT"); err != nil {
+		t.Fatal(err)
+	}
+	second, err := writer.CreateFormFile("file", "synthetic.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := io.WriteString(second, `{"schema":"healthbank.lab.v1","records":[]}`); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	response := browser.request(http.MethodPost, "/api/reports/import", &body, writer.FormDataContentType(), browser.csrf)
+	if response.Code != http.StatusBadRequest || browser.cookie.Value != prior {
+		t.Fatal("unnamed first part was silently replaced by a later file or changed the session")
+	}
+	current := decodeResponse[reportResponse](t, browser.request(http.MethodGet, "/api/reports/current", nil, "", ""), http.StatusOK)
+	if len(current.Records) != 1 || current.Records[0].Result != "17.125" || current.Records[0].Source != "SYNTHETIC_PRIOR" {
+		t.Fatal("rejected ambiguous multipart changed the prior report")
+	}
+}
+
 func TestNginxImportEnvelopeFitsMemoryBuffer(t *testing.T) {
 	data, err := os.ReadFile(filepath.Join("..", "..", "deploy", "nginx.healthbank.conf"))
 	if err != nil {

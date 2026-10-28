@@ -3,10 +3,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/bestkakkoii/healthbank/internal/config"
 	"github.com/bestkakkoii/healthbank/internal/lab"
@@ -76,5 +78,53 @@ func TestMaintenancePreservesIdentityAndPortableSettings(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(target, "identity.key")); !os.IsNotExist(err) {
 		t.Fatal("lost key was recreated")
+	}
+}
+
+func TestSettingsTransferStoresOnlyCanonicalValidatedConfiguration(t *testing.T) {
+	db, err := store.Open(context.Background(), store.Options{SQLitePath: filepath.Join(t.TempDir(), "settings.sqlite")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	const subject = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	const hidden = "SYNTHETIC_VALUE_MUST_NOT_PERSIST"
+	snapshot := store.Snapshot{SchemaVersion: store.SchemaVersion, ExportedAt: time.Now().UTC().Format(time.RFC3339), Entries: []store.Entry{{SubjectKey: subject, Document: store.Document{Revision: 7, UpdatedAt: time.Now().UTC().Format(time.RFC3339), Settings: json.RawMessage(`{"theme":"` + hidden + `","theme":"system","font_scale":1,"favorites":[],"overrides":{}}`)}}}}
+	path := filepath.Join(t.TempDir(), "synthetic-settings.json")
+	write := func() {
+		t.Helper()
+		file, err := os.Create(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := store.EncodeSnapshot(file, snapshot); err != nil {
+			_ = file.Close()
+			t.Fatal(err)
+		}
+		if err := file.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write()
+	if err := transfer(db, "import", path); err == nil {
+		t.Fatal("ambiguous raw configuration was persisted by CLI import")
+	}
+	if prior, err := db.Get(context.Background(), subject); err != nil || prior.Revision != 0 {
+		t.Fatal("failed CLI import wrote a configuration profile")
+	}
+	// Even valid differently formatted input is stored through Settings.Document,
+	// so persisted content is exactly the schema-checked typed representation.
+	snapshot.Entries[0].Settings = json.RawMessage(`{ "theme": "system", "font_scale": 1, "favorites": [], "overrides": {} }`)
+	write()
+	if err := transfer(db, "import", path); err != nil {
+		t.Fatal(err)
+	}
+	stored, err := db.Get(context.Background(), subject)
+	if err != nil || stored.Revision != 7 {
+		t.Fatal("valid transfer failed to preserve the separate storage revision")
+	}
+	canonical, err := lab.DefaultSettings().Document()
+	if err != nil || string(stored.Settings) != string(canonical) || strings.Contains(string(stored.Settings), hidden) {
+		t.Fatal("stored JSON differs from the canonical validated schema")
 	}
 }

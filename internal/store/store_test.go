@@ -197,9 +197,21 @@ func TestInputValidationAndNewerSchema(t *testing.T) {
 	for _, raw := range []string{
 		`{"schema_version":1,"entries":[],"unknown":true}`,
 		`{"schema_version":1,"entries":[]} {}`,
+		`{"schema_version":1,"schema_version":1,"entries":[]}`,
+		`{"schema_version":1,"SCHEMA_VERSION":1,"entries":[]}`,
+		`{"schema_version":1,"entries":[],"exported_at":"\ud800"}`,
 	} {
 		if _, err := DecodeSnapshot(strings.NewReader(raw)); err == nil {
 			t.Fatal("invalid snapshot envelope accepted")
+		}
+	}
+	for _, raw := range []string{
+		`{"theme":"SYNTHETIC_HIDDEN_VALUE","theme":"system"}`,
+		`{"theme":"SYNTHETIC_HIDDEN_VALUE","THEME":"system"}`,
+		`{"theme":"\ud800"}`,
+	} {
+		if _, err := s.Put(ctx, syntheticSubject, 0, json.RawMessage(raw)); !errors.Is(err, ErrInvalid) {
+			t.Fatal("store accepted ambiguous or lossy configuration content")
 		}
 	}
 	if err := s.Import(ctx, Snapshot{SchemaVersion: SchemaVersion + 1}); !errors.Is(err, ErrUnsupportedSchema) {

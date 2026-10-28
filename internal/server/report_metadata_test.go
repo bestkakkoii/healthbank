@@ -57,8 +57,8 @@ func TestOfficialReportMetadataSurvivesAPIProjectionAndLogout(t *testing.T) {
 			if len(got.Records) != tc.rows || got.OfficialQuery == nil || got.OfficialQuery.Mode != report.Mode || got.OfficialQuery.StartDate != report.StartDate || got.OfficialQuery.EndDate != report.EndDate {
 				t.Fatal("API projection lost records, query mode or submitted historical interval")
 			}
-			if got.Complete != (tc.reportedCount >= 0) {
-				t.Fatal("reported-count availability changed the completeness contract")
+			if got.Complete != (tc.reportedCount >= 0 && tc.reportedCount == tc.rows) {
+				t.Fatal("completeness requires the independent count to match every returned record")
 			}
 			var payload struct {
 				OfficialQuery map[string]json.RawMessage `json:"official_query"`
@@ -76,6 +76,9 @@ func TestOfficialReportMetadataSurvivesAPIProjectionAndLogout(t *testing.T) {
 				}
 			} else if got.OfficialQuery.ReportedCount == nil || *got.OfficialQuery.ReportedCount != tc.reportedCount {
 				t.Fatal("official total was omitted, changed or inferred from the array length")
+			}
+			if tc.reportedCount >= 0 && tc.reportedCount != tc.rows && len(got.Warnings) == 0 {
+				t.Fatal("contradictory independent count was not disclosed")
 			}
 			if tc.rows > 0 {
 				row := got.Records[0]
