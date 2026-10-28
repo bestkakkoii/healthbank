@@ -108,6 +108,9 @@ type Session struct {
 	imagingReferences      map[string]westernReference
 	officialFileReferences map[string]officialFileReference
 	documentReferences     map[string]documentReference
+	referenceBudget        func(previous, next int64) bool
+	referenceGroups        map[string]int64
+	referenceBytes         int64
 }
 
 // New creates an isolated connector. It cannot target a caller-supplied URL.
@@ -361,6 +364,7 @@ func (s *Session) close() {
 }
 
 func (s *Session) clearAuth() {
+	s.releaseReferenceBudget()
 	s.token, s.tokenObtainedAt = "", time.Time{}
 	s.selfPaidReferences = nil
 	s.westernReferences = nil

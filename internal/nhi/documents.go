@@ -69,14 +69,12 @@ func (s *Session) clearDocumentCategory(category string) {
 
 // Commit new references only after the whole response has been validated.
 func (s *Session) replaceDocumentReferences(category, parent string, refs map[string]documentReference) error {
-	retained := 0
-	for _, ref := range s.documentReferences {
-		if ref.category != category || ref.parent != parent {
-			retained++
-		}
-	}
-	if retained+len(refs) > MaxReportRecords {
+	count, size := s.remainingDocumentReferences(category, parent, false, refs)
+	if count > MaxReportRecords {
 		return failure("RESPONSE_TOO_LARGE", "本次文件識別數量已達上限，請重新取得所需類別。")
+	}
+	if err := s.reserveReferenceGroups(map[string]int64{"documents": size}); err != nil {
+		return err
 	}
 	if s.documentReferences == nil {
 		s.documentReferences = make(map[string]documentReference)
@@ -136,7 +134,7 @@ func documentFilename(name, contentType string) string {
 func (s *Session) FetchImagingDetail(ctx context.Context, reference string) (SupplementReport, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	report := SupplementReport{Category: "imaging_detail", Entries: []SupplementEntry{}, Complete: false,
+	report := SupplementReport{ContractRevision: ProviderContractRevision, Category: "imaging_detail", Entries: []SupplementEntry{}, Complete: false,
 		Coverage: "保留影像／病理報告原文及官方影像狀態。JPEG 為官方提供的影像副本；DICOM 另行產製下載，不代替醫師閱片。"}
 	ref, ok := s.imagingReferences[reference]
 	if !ok {
@@ -164,7 +162,10 @@ func (s *Session) FetchImagingDetail(ctx context.Context, reference string) (Sup
 			return report, changedError()
 		}
 		entry := SupplementEntry{Key: medicalKey(ref.sourceType, ref.rowID, "imaging", index), Kind: "report", Date: ref.date, Institution: ref.institution,
-			Title: "影像／病理報告", Source: "官方影像／病理資料", Fields: fields}
+			Title: "影像／病理報告", Source: "官方影像／病理資料", Fields: fields, ContractID: sourceContractID("imaging", "detail"), Origin: "institutional"}
+		if entry.Date != "" {
+			entry.DateRole = "unknown"
+		} // inherited list date is not an inferred report or collection date
 		sequence, e1 := rowText(row, "ipl_CASE_SEQ_NO")
 		status, e2 := rowText(row, "jpg_STATUS")
 		rowNumber, e3 := rowText(row, "rownum")
@@ -270,7 +271,7 @@ func (s *Session) PrepareDocument(ctx context.Context, category, reference strin
 	}
 	// An ambiguous network failure must not turn an automatic retry into another
 	// upstream generation job. A fresh detail request is required before retrying.
-	delete(s.documentReferences, reference)
+	s.consumeDocumentReference(reference)
 	defer clear(ref.payload)
 	endpoint := "/api/ihke3000/IHKE3408S02/add"
 	if category == "osteoporosis" {
@@ -380,12 +381,12 @@ func (s *Session) attachProviderDocuments(category, reference string, ref provid
 func (s *Session) FetchOfficialFiles(ctx context.Context) (SupplementReport, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	report := SupplementReport{Category: "official_files", Entries: []SupplementEntry{}, Complete: false,
+	report := SupplementReport{ContractRevision: ProviderContractRevision, Category: "official_files", Entries: []SupplementEntry{}, Complete: false,
 		Coverage: "官方下載服務僅列最近 7 天已提出的產製紀錄；不是醫療資料保存年限。這裡讀取既有工作與原始檔，不自動提交新的全資料產製。"}
 	if err := s.supplementReady(ctx); err != nil {
 		return report, err
 	}
-	rows, err := s.supplementRequest(ctx, http.MethodGet, "/api/ihke3000/ihke3801s01/page_load", nil, nil, "sp_IHKE3801S01_data")
+	rows, err := s.supplementRequest(ctx, http.MethodGet, "/api/ihke3000/ihke3801s01/page_load", nil, nil, "sp_IHKE3801S01_data", &report)
 	if err != nil {
 		return report, err
 	}
@@ -408,13 +409,15 @@ func (s *Session) FetchOfficialFiles(ctx context.Context) (SupplementReport, err
 		}
 		refs[key] = officialFileReference{sequence: sequence, format: format, date: date, image: flag == "5"}
 		report.Entries = append(report.Entries, SupplementEntry{Key: medicalKey("official_files", sequence, "list", index), Kind: "document", Title: "官方產製 " + format,
-			Date: date, Source: "官方下載服務／提出日期", Fields: fields, DetailID: key})
+			Date: date, DateRole: "recorded", Origin: "official_summary", ContractID: sourceContractID("official_files", "list"), Source: "官方下載服務／提出日期", Fields: fields, DetailID: key})
 	}
 	if err := validateSupplementReport(report); err != nil {
 		return report, err
 	}
+	if err := s.reserveCategoryReferences("official_files", referenceMapSize(refs, officialFileReferenceSize), "official_files"); err != nil {
+		return report, err
+	}
 	s.officialFileReferences = refs
-	s.clearDocumentCategory("official_files")
 	report.FetchedAt = time.Now().UTC().Format(time.RFC3339Nano)
 	return report, nil
 }
@@ -422,7 +425,7 @@ func (s *Session) FetchOfficialFiles(ctx context.Context) (SupplementReport, err
 func (s *Session) FetchOfficialFileDetail(ctx context.Context, reference string) (SupplementReport, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	report := SupplementReport{Category: "official_files_detail", Entries: []SupplementEntry{}, Complete: false,
+	report := SupplementReport{ContractRevision: ProviderContractRevision, Category: "official_files_detail", Entries: []SupplementEntry{}, Complete: false,
 		Coverage: "此工作所列的官方產製範圍與狀態；只有官方確認可下載才提供檔案。原始壓縮檔可能有官方密碼保護；Healthbank 不保存或自動推算解壓密碼。"}
 	ref, ok := s.officialFileReferences[reference]
 	if !ok {
@@ -481,7 +484,10 @@ func (s *Session) FetchOfficialFileDetail(ctx context.Context, reference string)
 			fields = append(fields, SupplementField{Name: "官方明細項目", Value: label})
 		}
 	}
-	entry := SupplementEntry{Kind: "document", Date: ref.date, Title: "官方產製 " + ref.format, Source: "官方下載服務／提出日期", Fields: fields}
+	entry := SupplementEntry{Kind: "document", Date: ref.date, Title: "官方產製 " + ref.format, Source: "官方下載服務／提出日期", Fields: fields, Origin: "official_summary", ContractID: sourceContractID("official_files", "detail")}
+	if entry.Date != "" {
+		entry.DateRole = "recorded"
+	}
 	refs := make(map[string]documentReference)
 	if status == "1" {
 		downloadID, err := rowText(row, "did")

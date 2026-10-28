@@ -33,7 +33,7 @@ func (s *Session) FetchOfficialExportOptions(ctx context.Context, format string)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	category := "official_export_" + format
-	report := SupplementReport{Category: category, Entries: []SupplementEntry{}, Complete: false,
+	report := SupplementReport{ContractRevision: ProviderContractRevision, Category: category, Entries: []SupplementEntry{}, Complete: false,
 		Coverage: "以下是官方目前允許產製的原始資料範圍。明確按下產製才建立官方暫存工作；並不代表所有年度皆可提供。產製完成後到「官方已產製原始檔」下載。"}
 	spec, ok := officialExportSpecs[format]
 	if !ok {
@@ -60,9 +60,14 @@ func (s *Session) FetchOfficialExportOptions(ctx context.Context, format string)
 	if err != nil {
 		return report, err
 	}
+	if err := sourceSectionDiagnostic(&report, category, spec.root, rawRows, true, false, len(rows)); err != nil {
+		return report, err
+	}
 	refs := make(map[string]documentReference)
 	payloadBytes := 0
 	appendAction := func(entry SupplementEntry, payload []byte) error {
+		entry.Origin = "official_summary"
+		entry.ContractID = sourceContractID(category, "options")
 		payloadBytes += len(payload)
 		if payloadBytes > 1<<20 || len(report.Entries) >= MaxReportRecords {
 			return failure("RESPONSE_TOO_LARGE", "官方可產製範圍超過本次處理上限。")

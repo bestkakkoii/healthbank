@@ -68,7 +68,7 @@ func medicalKey(sourceType, rowID, section string, index int) string {
 func (s *Session) FetchMedical(ctx context.Context, category string, query Query) (SupplementReport, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	report := SupplementReport{Category: category, Entries: []SupplementEntry{}, Complete: false}
+	report := SupplementReport{ContractRevision: ProviderContractRevision, Category: category, Entries: []SupplementEntry{}, Complete: false}
 	spec, ok := medicalSpecs[category]
 	if !ok {
 		return report, failure("INVALID_INPUT", "不支援此醫療資料類別。")
@@ -91,12 +91,16 @@ func (s *Session) FetchMedical(ctx context.Context, category string, query Query
 	if err := s.supplementReady(ctx); err != nil {
 		return report, err
 	}
-	rows, err := s.supplementRequest(ctx, http.MethodGet, spec.listPath, params, nil, spec.listRoot)
+	var sourceReport []*SupplementReport
+	if spec.searchPath == "" {
+		sourceReport = append(sourceReport, &report)
+	}
+	rows, err := s.supplementRequest(ctx, http.MethodGet, spec.listPath, params, nil, spec.listRoot, sourceReport...)
 	if err != nil {
 		return report, err
 	}
 	if spec.searchPath != "" {
-		rows, err = s.supplementRequest(ctx, http.MethodGet, spec.searchPath, params, nil, "")
+		rows, err = s.supplementRequest(ctx, http.MethodGet, spec.searchPath, params, nil, "", &report)
 		if err != nil {
 			return report, err
 		}
@@ -135,6 +139,7 @@ func (s *Session) FetchMedical(ctx context.Context, category string, query Query
 			return report, changedError()
 		}
 		entry := SupplementEntry{Date: date, EndDate: end, Institution: institution, Title: spec.title, Source: "官方" + spec.title, Kind: "encounter", Fields: fields}
+		medicalEntryMetadata(&entry, category, "list", false)
 		if rowID != "" && sourceType != "" {
 			entry.Key = medicalKey(sourceType, rowID, category, index)
 			random := make([]byte, 24)
@@ -149,11 +154,13 @@ func (s *Session) FetchMedical(ctx context.Context, category string, query Query
 	if err := validateSupplementReport(report); err != nil {
 		return report, err
 	}
+	if err := s.reserveCategoryReferences("medical/"+category, referenceMapSize(refs, medicalReferenceSize), category); err != nil {
+		return report, err
+	}
 	if s.medicalReferences == nil {
 		s.medicalReferences = make(map[string]map[string]medicalReference)
 	}
 	s.medicalReferences[category] = refs
-	s.clearDocumentCategory(category)
 	report.FetchedAt = time.Now().UTC().Format(time.RFC3339Nano)
 	return report, nil
 }
@@ -161,7 +168,7 @@ func (s *Session) FetchMedical(ctx context.Context, category string, query Query
 func (s *Session) FetchMedicalDetail(ctx context.Context, category, reference string) (SupplementReport, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	report := SupplementReport{Category: category + "_detail", Entries: []SupplementEntry{}, Complete: false,
+	report := SupplementReport{ContractRevision: ProviderContractRevision, Category: category + "_detail", Entries: []SupplementEntry{}, Complete: false,
 		Coverage: "官方醫囑原文，不等同實際服用。未提供成分、單位、頻次時不推算日劑量；疾病分類不等於確診。"}
 	spec, ok := medicalSpecs[category]
 	if !ok {
@@ -199,7 +206,7 @@ func (s *Session) FetchMedicalDetail(ctx context.Context, category, reference st
 		if (category == "medicine" || category == "chronic") && json.Unmarshal(row["type_name_isr"], &dispensed) == nil && dispensed {
 			source += "／調劑"
 			for index := range fields {
-				if fields[index].Name == "就醫／調劑日期（原文，依來源類別）" {
+				if fields[index].Code == "func_date" {
 					fields[index].Name = "調劑日期（原文）"
 				}
 			}
@@ -208,6 +215,7 @@ func (s *Session) FetchMedicalDetail(ctx context.Context, category, reference st
 			return report, failure("RESPONSE_TOO_LARGE", "明細數量過多，未回傳不完整資料。")
 		}
 		header := SupplementEntry{Key: medicalKey(ref.sourceType, ref.rowID, "header", rowIndex), Date: ref.date, EndDate: ref.endDate, Institution: ref.institution, Title: spec.title + "明細", Source: source, Kind: "encounter", Fields: fields}
+		medicalEntryMetadata(&header, category, "header", dispensed)
 		if category == "hospital" {
 			header.Attachments, e = hospitalDocuments(row, ref, reference, documents)
 			if e != nil {
@@ -218,11 +226,17 @@ func (s *Session) FetchMedicalDetail(ctx context.Context, category, reference st
 		for _, section := range spec.sections {
 			raw, exists := row[strings.ToLower(section.key)]
 			if !exists {
+				if err := sourceSectionDiagnostic(&report, category, section.key, nil, false, false, 0); err != nil {
+					return report, err
+				}
 				continue
 			}
 			items, e := supplementRows(raw, "")
 			if e != nil {
 				return report, e
+			}
+			if err := sourceSectionDiagnostic(&report, category, section.key, raw, true, false, len(items)); err != nil {
+				return report, err
 			}
 			for index, item := range items {
 				fields, e := appendKnownFields(item, section.fields)
@@ -233,6 +247,7 @@ func (s *Session) FetchMedicalDetail(ctx context.Context, category, reference st
 					return report, changedError()
 				}
 				entry := SupplementEntry{Key: medicalKey(ref.sourceType, ref.rowID, section.key, index), Date: ref.date, Institution: ref.institution, Title: section.title, Source: source, Kind: section.kind, Fields: fields}
+				medicalEntryMetadata(&entry, category, section.key, dispensed)
 				if category == "procedure" || category == "hospital" {
 					entry.Date, e = rowText(item, "exe_S_DATE")
 					if e != nil {
@@ -242,8 +257,19 @@ func (s *Session) FetchMedicalDetail(ctx context.Context, category, reference st
 					if e != nil {
 						return report, e
 					}
+					entry.DateRole, entry.EndDateRole = "", ""
+					if entry.Date != "" {
+						entry.DateRole = "unknown" // execution is not admission, prescription or dispensing
+					}
+					if entry.EndDate != "" {
+						entry.EndDateRole = "period_end"
+						if entry.Date != "" {
+							entry.DateRole = "period_start"
+						}
+					}
 				}
 				if section.kind == "medicine" {
+					medicationFieldRoles(entry.Fields)
 					code, e := rowText(item, "order_code")
 					if e != nil {
 						return report, e
