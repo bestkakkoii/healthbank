@@ -401,7 +401,7 @@ export function TrendChart({
                     </g>
                   );
                 })}
-              {sharedDate && day(sharedDate) >= minX && day(sharedDate) <= maxX && <line className="chart-cursor" x1={x(sharedDate)} x2={x(sharedDate)} y1={margin.top} y2={margin.top + plotHeight} />}
+              {sharedDate && day(sharedDate) >= minX && day(sharedDate) <= maxX && Number.isFinite(x(sharedDate)) && <line className="chart-cursor" x1={x(sharedDate)} x2={x(sharedDate)} y1={margin.top} y2={margin.top + plotHeight} />}
               {yTicks.map((tick, index) => (
                 <g key={index}>
                   <line

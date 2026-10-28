@@ -1,6 +1,6 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
 import { useEffect, useRef, useState } from 'react';
-import { api, readableError, type SupplementReport, type ReportResponse } from './api';
+import { api, ApiError, readableError, type SupplementReport, type ReportResponse } from './api';
 import { useAnalysis } from './AnalysisContext';
 import { MedicineTimeline } from './MedicineTimeline';
 import { medicalDate } from './medicine-timeline';
@@ -20,8 +20,8 @@ const CATEGORIES = [
 const MEDICAL = new Set(['medicine', 'chronic', 'western', 'chinese', 'dental', 'procedure', 'hospital']);
 const BATCH_SIZE = 24;
 
-export function SupplementaryData({ authenticated, from, to }: {
-  authenticated: boolean; from: string; to: string;
+export function SupplementaryData({ authenticated, from, to, onSessionExpired }: {
+  authenticated: boolean; from: string; to: string; onSessionExpired: () => void;
 }) {
   const [page, setPage] = useState(0);
   const [category, setCategory] = useState('medicine');
@@ -45,6 +45,15 @@ export function SupplementaryData({ authenticated, from, to }: {
     const data = `${textEditorMode ? '\uFEFF' : ''}${JSON.stringify(value, null, 2)}\n`;
     downloadText(data, `healthbank-${value.category}.json`, 'application/json;charset=utf-8');
   }
+  function reportFailure(failure: unknown, prefix = '') {
+    if (failure instanceof ApiError && failure.status === 401) {
+      setReports({}); setDetails({}); setDetail(null); setProgress('');
+      setError('登入階段已結束，本次補充資料已清除。');
+      onSessionExpired();
+      return;
+    }
+    setError(prefix + readableError(failure));
+  }
   async function fetchReport(reference = '') {
     controller.current?.abort();
     const current = new AbortController(); controller.current = current;
@@ -64,7 +73,7 @@ export function SupplementaryData({ authenticated, from, to }: {
         setDetail(null);
       }
     } catch (failure) {
-      if (!current.signal.aborted) setError(readableError(failure));
+      if (!current.signal.aborted) reportFailure(failure);
     } finally {
       if (!current.signal.aborted) setBusy(false);
     }
@@ -86,14 +95,14 @@ export function SupplementaryData({ authenticated, from, to }: {
         done++; setProgress(`本次已取得 ${done}／${batch.length} 筆明細；其餘可續批取得。`);
       }
     } catch (failure) {
-      if (!current.signal.aborted) setError(`僅取得 ${done} 筆明細，已保留成功內容。${readableError(failure)}`);
+      if (!current.signal.aborted) reportFailure(failure, `僅取得 ${done} 筆明細，已保留成功內容。`);
     } finally {
       if (!current.signal.aborted) setBusy(false);
     }
   }
   const shown = detail ?? report;
   return <details className="panel analysis-tools supplementary"><summary>用藥、慢箋、就醫、手術／住院與補充官方資料</summary>
-    <p className="helper-text">查詢及明細需官方登入。處方、開立日數、領藥或疾病分類並非實際服用／確診證明；資訊只保留在當前瀏覽器記憶體，不寫入本站資料庫或跨裝置設定。</p>
+    <p className="helper-text">查詢及明細需官方登入。處方、開立日數、領藥或疾病分類並非實際服用／確診證明；資訊只在本次工作階段記憶體處理，不寫入本站資料庫或跨裝置設定。</p>
     <div className="scenario-controls">
       <label className="field">資料類別<select value={category} disabled={busy} onChange={event => { setCategory(event.target.value); setPage(0); setDetail(null); setError(''); setProgress(''); }}>{CATEGORIES.map(([key, name]) => <option value={key} key={key}>{name}</option>)}</select></label>
       <button className="button secondary" type="button" disabled={!authenticated || busy} onClick={() => { void fetchReport(); }}>{busy ? '取得中…' : '取得所選類別清單'}</button>
@@ -109,7 +118,7 @@ export function SupplementaryData({ authenticated, from, to }: {
     {report && canLoadDetails && pending.length === 0 && report.entries.some(entry => entry.detail_id) && <p className="helper-text">此清單目前可取得的明細已逐筆載入；是否涵蓋官方完整歷史，仍取決於官方回傳範圍。</p>}
     {progress && <p role="status">{progress}</p>}
     {!authenticated && <p>請先完成官方登入；匯入／示範模式不存取官方資料。</p>}
-    {error && <p className="error-text" role="alert">{error} 原先已取得的資料仍保留。</p>}
+    {error && <p className="error-text" role="alert">{error}{Object.keys(reports).length > 0 ? ' 原先已取得的資料仍保留。' : ''}</p>}
     {allDetails.length > 0 && <MedicineTimeline reports={allDetails} onDate={date => analysis?.setSelectedDate(date)} />}
     {shown && <><p role="status">{shown.entries.length} 筆 · {shown.coverage}</p>{shown.start_date && <p>送出範圍：{dateLabel(shown.start_date)} — {dateLabel(shown.end_date ?? '')}</p>}
       <div className="scenario-controls"><button className="button secondary" disabled={page === 0} onClick={() => setPage(page - 1)}>上一頁</button><span>第 {page + 1}／{Math.max(1, Math.ceil(shown.entries.length / 50))} 頁 · 全部結果已保留，每頁顯示50筆</span><button className="button secondary" disabled={(page + 1) * 50 >= shown.entries.length} onClick={() => setPage(page + 1)}>下一頁</button></div>

@@ -32,4 +32,8 @@ test('elapsed/ordinal modes preserve dates, while ordinal spreads dense early ob
   assert.ok(time(dates[1]) < 0.01);
   assert.equal(ordinal(dates[1]), 0.5);
   assert.equal(time(dates[2]), 1);
+  // A synchronized date without a source observation has no invented ordinal
+  // coordinate; callers must leave its cursor hidden in that mode.
+  assert.ok(Number.isNaN(ordinal('2023-01-01')));
+  assert.ok(Number.isFinite(time('2023-01-01')));
 });

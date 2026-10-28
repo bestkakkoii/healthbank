@@ -1755,7 +1755,7 @@ export default function App() {
 
 
           {view !== 'settings' && <><AnalysisExport records={view === 'trends' && trendGroup ? trendGroup.records : filteredGroups.flatMap(group => group.records)} /><PortableReportExport records={report.records} /></>}
-          <div hidden={view === 'settings'}><SupplementaryData key={`${session.mode}:${session.csrf_token ?? ''}:${dateFrom}:${dateTo}`} authenticated={persisted} from={dateFrom} to={dateTo} /></div>
+          <div hidden={view === 'settings'}><SupplementaryData key={`${session.mode}:${session.csrf_token ?? ''}:${dateFrom}:${dateTo}`} authenticated={persisted} from={dateFrom} to={dateTo} onSessionExpired={() => { void expireOfficialSession(); }} /></div>
           <div hidden={view !== 'trends' && view !== 'settings'}><PersonalRecords key={`${session.mode}:${session.profile_key || report.fetched_at}`} profileKey={session.profile_key ?? ''} /></div>
           <div className="print-only print-running-footer">
             <Copyright />

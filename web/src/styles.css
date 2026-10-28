@@ -4292,8 +4292,8 @@
 /* Prescription-events remain a local, scrollable supplementary inspection area. */
 .medicine-timeline { min-width: 0; overflow-wrap: anywhere; }
 .medicine-chart-scroll { max-width: 100%; overflow-x: auto; }
-.medicine-chart-scroll svg { width: 100%; min-width: 340px; height: auto; display: block; }
-.medicine-event-dot { fill: var(--text); stroke: var(--surface); stroke-width: 2; }
+.medicine-chart-scroll svg { width: 100%; min-width: 46.25rem; height: auto; display: block; font-size: 16px; }
+.medicine-event-dot { fill: var(--ink); stroke: var(--surface); stroke-width: 2; }
 .medicine-events { display: grid; gap: .5rem; margin-top: .75rem; }
 .medicine-event-row { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; border-top: 1px solid var(--border); padding: .5rem 0; }
 .medicine-event-row .button { margin-inline-start: auto; }
