@@ -1,6 +1,6 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { exportDataset } from '../../src/health-dataset.ts';
@@ -21,8 +21,9 @@ const categories = [{ id: 'medicine', label: '合成處方資料', label_en: 'Sy
 /** Actual App/IndexedDB/downloads; explicitly mocked verified-source API boundary. */
 export async function runDeviceCacheAcceptance({ createContext, baseURL, evidenceDir, fixture, importLaboratory }) {
   const temporary = await mkdtemp(path.join(os.tmpdir(), 'healthbank-cache-ui-'));
-  let context, closing = false;
+  let context, page, closing = false;
   const held = { reached: Promise.withResolvers(), release: Promise.withResolvers() };
+  const heldRestore = { reached: Promise.withResolvers(), release: Promise.withResolvers() };
   try {
     const bundle = path.join(temporary, 'synthetic-cache.js');
     await command(path.join(root, '.tools/bin/esbuild'), ['web/src/device-health-cache.ts', '--bundle', '--format=esm', '--target=es2022,safari16.4', `--outfile=${bundle}`]);
@@ -32,7 +33,7 @@ export async function runDeviceCacheAcceptance({ createContext, baseURL, evidenc
     const raw = { ...fixture.laboratory.records[0], item_name: 'ALT', order_name: '合成快取檢驗', order_code: '09026C', check_date: '113/02/03', visit_date: '113/01/19',
       result: '27.000000000000000001', unit: 'U/L', source: 'SYNTHETIC_OLD_CODE', source_name: '合成快取來源名稱', upload_date: '113/03/20 09:41:22' };
     const imported = await importLaboratory(context, baseURL, { schema: 'healthbank.lab.v2', records: [raw, { ...raw }] });
-    let token = imported.session.csrf_token, profile = PROFILE_A, presentOfficial = true, revision = 0, holdNextLaboratory = true;
+    let token = imported.session.csrf_token, profile = PROFILE_A, presentOfficial = true, revision = 0, holdNextLaboratory = true, holdNextRestore = true;
     const original = { ...imported.report, fetched_at: '2024-12-20T01:02:03Z', complete: true, warnings: [],
       official_query: { mode: 'all_history', start_date: '1912-01-01', end_date: '2024-12-20', reported_count: 2 } };
     let currentReport = original;
@@ -59,6 +60,7 @@ export async function runDeviceCacheAcceptance({ createContext, baseURL, evidenc
       }
       assert.equal(input.expected_report_revision, revision);
       assert.equal(input.document.schema, 'healthbank.lab.v2');
+      if (holdNextRestore) { holdNextRestore = false; heldRestore.reached.resolve(); await heldRestore.release.promise; }
       calls.push({ kind: 'restore' }); revision++;
       currentReport = { records: input.document.records.map((row, index) => ({ ...original.records[index % original.records.length], result: row.result,
         source: row.source, source_name: row.source_name, raw_upload_date: row.upload_date })), fetched_at: input.source_fetched_at, complete: false,
@@ -93,7 +95,7 @@ export async function runDeviceCacheAcceptance({ createContext, baseURL, evidenc
       await route.fulfill({ response, json: value });
     }));
     const stored = page => page.evaluate(async ({ modulePath, key }) => (await import(modulePath)).inspectDeviceCache(key), { modulePath: MODULE_PATH, key: PROFILE_A });
-    let page = await context.newPage(); page.setDefaultTimeout(20000);
+    page = await context.newPage(); page.setDefaultTimeout(20000);
     await page.goto(baseURL, { waitUntil: 'networkidle' });
     let panel = page.locator('#device-health-cache'); await open(panel);
     const consent = panel.getByRole('checkbox'); await consent.waitFor();
@@ -112,7 +114,12 @@ export async function runDeviceCacheAcceptance({ createContext, baseURL, evidenc
     await page.close();
     currentReport = { records: [], fetched_at: '', complete: false, warnings: [] };
     page = await context.newPage(); page.setDefaultTimeout(20000);
-    await page.goto(baseURL, { waitUntil: 'networkidle' });
+    await page.goto(baseURL, { waitUntil: 'domcontentloaded' });
+    await bounded(heldRestore.reached.promise);
+    await page.getByRole('button', { name: '醫療紀錄', exact: true }).click();
+    assert.equal(await page.getByRole('button', { name: '完整取得並保存原始檔', exact: true }).isDisabled(), true,
+      'A pending cache restore must block concurrent source acquisition.');
+    heldRestore.release.resolve();
     panel = page.locator('#device-health-cache'); await open(panel);
     await panel.getByText('已開啟這位使用者在此裝置保存的資料；本次登入未自動重新拉取全部歷史。', { exact: true }).waitFor();
     assert.equal(calls.filter(call => call.kind === 'laboratory').length, 0);
@@ -178,10 +185,18 @@ export async function runDeviceCacheAcceptance({ createContext, baseURL, evidenc
     assert.deepEqual(routeFailures.map(failure => failure.message), []);
     return { synthetic_only: true, actual_official_login: false, real_app_and_indexeddb: true, consent_required: true,
       cached_login_without_full_refetch: true, official_mode_retained: true, cached_live_capabilities_removed: true,
+      pending_cache_restore_blocks_acquisition: true,
       actual_download_preserves_provenance_duplicates_and_raw_source_fields: true, clear_before_refresh: true,
       cancelled_refresh_does_not_revive_old_data: true, future_calendar_empty_query: true, nested_details_acquired: true,
       cross_tab_clear_removes_cached_workspace: true, logout_retains_consented_cache: true, other_user_isolated: true, clear_all_revokes: true };
+  } catch (failure) {
+    if (page && !page.isClosed()) {
+      await page.screenshot({ path: path.join(evidenceDir, 'synthetic-device-cache-failure.png') }).catch(() => {});
+      const visible = await page.locator('#device-health-cache').innerText().catch(() => 'Synthetic cache panel unavailable.');
+      await writeFile(path.join(evidenceDir, 'synthetic-device-cache-failure.txt'), visible + '\n');
+    }
+    throw failure;
   } finally {
-    closing = true; held.release.resolve(); await context?.close(); await rm(temporary, { recursive: true, force: true });
+    closing = true; held.release.resolve(); heldRestore.release.resolve(); await context?.close(); await rm(temporary, { recursive: true, force: true });
   }
 }

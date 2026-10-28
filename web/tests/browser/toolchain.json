@@ -3,6 +3,7 @@
   "playwright": {
     "version": "1.64.1",
     "source_commit": "cfe490d941f992655948eee8fd4fd94e1c4234bf",
+    "browser_manifest_sha256": "2cfd419f71ac6475d81e1301fa86c34cf2a2a6bae2a0da4b5a2b18310216b6bf",
     "release": "https://github.com/microsoft/playwright/releases/tag/v1.64.1"
   },
   "chromium": {
@@ -11,6 +12,18 @@
     "manifest": "https://raw.githubusercontent.com/microsoft/playwright/v1.64.1/packages/playwright-core/browsers.json",
     "linux_x64_url": "https://storage.googleapis.com/chrome-for-testing-public/156.0.8078.4/linux64/chrome-headless-shell-linux64.zip",
     "linux_x64_sha256": "c3e50596aef52c58f8fda3c6b3411c33d34c88b177b3ed1c2243359fd3b8ba20"
+  },
+  "firefox": {
+    "revision": "1555",
+    "version": "157.0",
+    "linux_x64_url": "https://playwright.download.prss.microsoft.com/dbazure/download/playwright/builds/firefox/1555/firefox-ubuntu-24.04.zip",
+    "linux_x64_sha256": "564f74fa3c46cb83c6252145cf1569c95236c8c404d6a5a80cc736cf32265f0c"
+  },
+  "webkit": {
+    "revision": "2370",
+    "version": "27.2",
+    "linux_x64_url": "https://playwright.download.prss.microsoft.com/dbazure/download/playwright/builds/webkit/2370/webkit-ubuntu-24.04.zip",
+    "linux_x64_sha256": "63b31a5d68d908d9aee2e445b88edc4c1e1d1eba488f5bd7e35668f91315b968"
   },
   "font": {
     "family": "Noto Sans CJK TC",

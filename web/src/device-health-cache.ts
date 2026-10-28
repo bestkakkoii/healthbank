@@ -19,7 +19,7 @@ export interface DeviceCacheState { enabled: boolean; lease: DeviceCacheLease | 
 export interface DeviceCacheLoaded { state: DeviceCacheState; dataset: ImportedDataset | null }
 export type DeviceCacheEvent = { kind: 'profile'; profile_key: string } | { kind: 'all' };
 interface ProfileRecord { profile_key: string; epoch: string; revision: string; metadata: DeviceCacheMetadata | null }
-interface PayloadRecord { profile_key: string; epoch: string; revision: string; global_epoch: string; content: Blob }
+interface PayloadRecord { profile_key: string; epoch: string; revision: string; global_epoch: string; content: Uint8Array }
 export class DeviceCacheError extends Error {
   constructor(readonly code: 'unavailable' | 'invalid' | 'stale' | 'capacity' | 'quota', message: string) { super(message); this.name = 'DeviceCacheError'; }
 }
@@ -188,7 +188,7 @@ export async function saveDeviceCache(lease: DeviceCacheLease, content: string, 
   const details: DeviceCacheMetadata = { size: bytes.length, sha256: hash.digest(), saved_at: new Date().toISOString(),
     source_fetched_at: imported.laboratoryMetadata.fetched_at, records: records['records'].length,
     sources: Object.keys(imported.snapshot.reports).length, version: imported.producer.version };
-  const blob = new Blob([bytes], { type: 'application/json;charset=utf-8' }), db = await openDatabase(); signal?.throwIfAborted();
+  const db = await openDatabase(); signal?.throwIfAborted();
   const state = await transact<DeviceCacheState>(db, 'readwrite', (tx, done, fail) => {
     const cancel = () => fail(new DOMException('快取保存已取消。', 'AbortError'));
     signal?.addEventListener('abort', cancel, { once: true });
@@ -205,7 +205,9 @@ export async function saveDeviceCache(lease: DeviceCacheLease, content: string, 
           const used = values.reduce<number>((sum, value) => { const other = profile(value); return sum + (other?.profile_key !== lease.profile_key ? other?.metadata?.size ?? 0 : 0); }, 0);
           if (used + details.size > MAX_DEVICE_CACHE_BYTES) throw new DeviceCacheError('capacity', '本機健康快取合計超過 256 MiB；沒有自動刪除其他使用者資料，請先清除不需要的快取。');
           const next = { ...current, revision: token(), metadata: details };
-          const payload: PayloadRecord = { profile_key: lease.profile_key, epoch: next.epoch, revision: next.revision, global_epoch: epoch, content: blob };
+          // Store the exact bounded bytes directly. Some WebKit environments
+          // reject IDB Blob preparation even though ordinary byte storage works.
+          const payload: PayloadRecord = { profile_key: lease.profile_key, epoch: next.epoch, revision: next.revision, global_epoch: epoch, content: bytes };
           tx.objectStore('payloads').put(payload); tx.objectStore('profiles').put(next);
           done({ enabled: true, lease: leaseFor(epoch, next), metadata: details });
         } catch (error) { fail(error); }
@@ -217,7 +219,7 @@ export async function saveDeviceCache(lease: DeviceCacheLease, content: string, 
 
 export async function loadDeviceCache(key: string, signal?: AbortSignal): Promise<DeviceCacheLoaded> {
   profileKey(key); signal?.throwIfAborted(); const db = await openDatabase();
-  const selected = await transact<{ state: DeviceCacheState; content: Blob | null }>(db, 'readonly', (tx, done, fail) => controls(tx, key, (epoch, current) => {
+  const selected = await transact<{ state: DeviceCacheState; content: Uint8Array | Blob | null }>(db, 'readonly', (tx, done, fail) => controls(tx, key, (epoch, current) => {
     const state = current ? { enabled: true, lease: leaseFor(epoch, current), metadata: current.metadata } : { enabled: false, lease: null, metadata: null };
     if (!current?.metadata) { done({ state, content: null }); return; }
     const request = tx.objectStore('payloads').get(key);
@@ -226,13 +228,17 @@ export async function loadDeviceCache(key: string, signal?: AbortSignal): Promis
         const value: unknown = request.result;
         if (!isObject(value) || Object.keys(value).some(key => !['profile_key', 'epoch', 'revision', 'global_epoch', 'content'].includes(key)) ||
           value['profile_key'] !== key || value['epoch'] !== current.epoch || value['revision'] !== current.revision || value['global_epoch'] !== epoch ||
-          !(value['content'] instanceof Blob) || value['content'].size !== current.metadata?.size) return invalid();
+          !(value['content'] instanceof Blob || value['content'] instanceof Uint8Array) ||
+          (value['content'] instanceof Blob ? value['content'].size : value['content'].byteLength) !== current.metadata?.size) return invalid();
         done({ state, content: value['content'] });
       } catch (error) { fail(error); }
     };
   }, fail));
   signal?.throwIfAborted(); if (!selected.content) return { state: selected.state, dataset: null };
-  const bytes = new Uint8Array(await selected.content.arrayBuffer()); signal?.throwIfAborted();
+  // The earlier internal representation used Blob; retain lossless reads of
+  // those opt-in caches without a migration that could revive retired leases.
+  const bytes = selected.content instanceof Blob ? new Uint8Array(await selected.content.arrayBuffer()) : selected.content;
+  signal?.throwIfAborted();
   const hash = new ArchiveSHA256(); hash.update(bytes); if (hash.digest() !== selected.state.metadata?.sha256) return invalid();
   const dataset = await importDataset(bytes); signal?.throwIfAborted();
   const latest = await inspectDeviceCache(key); signal?.throwIfAborted();

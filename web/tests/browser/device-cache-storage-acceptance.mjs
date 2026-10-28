@@ -37,7 +37,12 @@ export async function runDeviceCacheStorageAcceptance({ createContext, baseURL, 
         sources: Object.keys(dataset?.snapshot.reports ?? {}) };
     }, { key, modulePath: MODULE_PATH });
     const report = await importLaboratory(context, baseURL, { schema: 'healthbank.lab.v1', records: [fixture.laboratory.records[0], fixture.laboratory.records[0]] });
-    const content = await exportDataset(report.report, { reports: {}, details: {}, states: {}, query: { from: '', to: '' } }, [], []);
+    const attachment = { category: 'medicine', id: 'f'.repeat(48), name: 'synthetic-cache.txt', content_type: 'text/plain',
+      bytes: new TextEncoder().encode('SYNTHETIC_CACHE_ATTACHMENT_ONLY') };
+    const snapshot = { reports: { medicine: { category: 'medicine', entries: [{ date: '', title: '合成快取校驗附件', institution: '', source: 'SYNTHETIC_ONLY', fields: [],
+      attachments: [{ id: attachment.id, name: attachment.name, content_type: attachment.content_type }] }], complete: false, coverage: '合成快取驗證', fetched_at: report.report.fetched_at } },
+      details: {}, states: { medicine: { status: 'ready', detail_errors: {}, query: { from: '', to: '' } } }, query: { from: '', to: '' } };
+    const content = await exportDataset(report.report, snapshot, [attachment], [{ id: 'medicine', label: '合成附件來源', group: '合成', range_mode: 'source' }]);
     const values = [fixture.laboratory.records[0].result, fixture.laboratory.records[0].result];
 
     assert.equal(await call(first, 'verifiedCacheProfile', { authenticated: true, mode: 'official', profile_key: KEY_A }), KEY_A);
@@ -49,7 +54,7 @@ export async function runDeviceCacheStorageAcceptance({ createContext, baseURL, 
     assert.equal(consent.enabled, true); assert.equal(consent.metadata, null);
     const saved = await call(first, 'saveDeviceCache', consent.lease, content);
     assert.equal(saved.metadata.records, 2); assert.equal(saved.metadata.size, Buffer.byteLength(content));
-    assert.deepEqual((await loaded(second, KEY_A)).values, values, 'Exact duplicate records must survive a real IDB Blob round trip.');
+    assert.deepEqual((await loaded(second, KEY_A)).values, values, 'Exact duplicate records must survive a real IDB byte round trip.');
     assert.equal((await loaded(second, KEY_B)).enabled, false, 'A different pseudonymous user cannot inherit the first user\'s payload.');
     assert.equal(await outcome(second, 'saveDeviceCache', consent.lease, content), 'stale', 'Earlier save revisions cannot overwrite a newer snapshot.');
 
@@ -85,21 +90,21 @@ export async function runDeviceCacheStorageAcceptance({ createContext, baseURL, 
 
     await call(first, 'saveDeviceCache', reenabled.lease, content);
     await first.evaluate(async ({ key, modulePath }) => {
-      const module = await import(modulePath), original = Blob.prototype.arrayBuffer;
+      const module = await import(modulePath), original = globalThis.SubtleCrypto.prototype.digest;
       globalThis.syntheticReadEntered = false;
-      Blob.prototype.arrayBuffer = async function() {
+      globalThis.SubtleCrypto.prototype.digest = async function(...args) {
         globalThis.syntheticReadEntered = true;
         await new Promise(resolve => { globalThis.syntheticReleaseRead = resolve; });
-        return original.call(this);
+        return original.apply(this, args);
       };
       globalThis.syntheticPendingRead = module.loadDeviceCache(key)
         .then(() => 'unexpected_success', error => error.code ?? error.name)
-        .finally(() => { Blob.prototype.arrayBuffer = original; });
+        .finally(() => { globalThis.SubtleCrypto.prototype.digest = original; });
     }, { key: KEY_A, modulePath: MODULE_PATH });
     await first.waitForFunction(() => globalThis.syntheticReadEntered);
     await call(second, 'clearAllDeviceCaches');
     assert.equal(await first.evaluate(async () => { globalThis.syntheticReleaseRead(); return globalThis.syntheticPendingRead; }), 'stale',
-      'An asynchronously decoded Blob cannot reappear after another tab cleared it.');
+      'A payload awaiting asynchronous attachment verification cannot reappear after another tab cleared it.');
 
     const concurrent = await call(first, 'enableDeviceCache', KEY_A);
     await Promise.all([outcome(first, 'saveDeviceCache', concurrent.lease, content), call(second, 'clearAllDeviceCaches')]);
@@ -114,6 +119,25 @@ export async function runDeviceCacheStorageAcceptance({ createContext, baseURL, 
     const reopened = await context.newPage(); await reopened.goto(baseURL + PAGE_PATH);
     assert.deepEqual((await loaded(reopened, KEY_A)).values, values, 'Explicitly consented IDB data survives closing the producing page.');
     await reopened.reload(); assert.deepEqual((await loaded(reopened, KEY_A)).values, values);
+    // The pinned Linux WebKit environment cannot write IDB Blob payloads; the
+    // production byte path above is required there. Engines that can create the
+    // historical representation also prove compatibility with existing caches.
+    const legacyBlobRead = context.browser().browserType().name() !== 'webkit';
+    if (legacyBlobRead) {
+      await reopened.evaluate(async ({ key, modulePath }) => {
+        const module = await import(modulePath);
+        await new Promise((resolve, reject) => {
+          const open = globalThis.indexedDB.open(module.DEVICE_CACHE_DATABASE, 1);
+          open.onerror = () => reject(open.error);
+          open.onsuccess = () => {
+            const db = open.result, tx = db.transaction('payloads', 'readwrite'), store = tx.objectStore('payloads'), get = store.get(key);
+            get.onsuccess = () => { const value = get.result; value.content = new Blob([value.content]); store.put(value); };
+            tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => { db.close(); reject(tx.error); };
+          };
+        });
+      }, { key: KEY_A, modulePath: MODULE_PATH });
+      assert.deepEqual((await loaded(reopened, KEY_A)).values, values, 'Existing Blob-backed caches remain readable with unchanged checksums and provenance.');
+    }
     await reopened.evaluate(async ({ key, modulePath }) => {
       const module = await import(modulePath);
       await new Promise((resolve, reject) => {
@@ -123,7 +147,7 @@ export async function runDeviceCacheStorageAcceptance({ createContext, baseURL, 
           const db = open.result, tx = db.transaction('payloads', 'readwrite'), store = tx.objectStore('payloads'), get = store.get(key);
           get.onsuccess = () => {
             const value = get.result;
-            value.content = new Blob([new Uint8Array(value.content.size)]); store.put(value);
+            value.content = new Uint8Array(value.content instanceof Blob ? value.content.size : value.content.byteLength); store.put(value);
           };
           tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => { db.close(); reject(tx.error); };
         };
@@ -135,7 +159,8 @@ export async function runDeviceCacheStorageAcceptance({ createContext, baseURL, 
     return { synthetic_only: true, actual_indexeddb: true, tabs: 2, duplicate_values_preserved: true,
       per_user_consent_and_isolation: true, save_revision_cas: true, clear_refresh_generation: true, clear_all_revokes_consent: true,
       stale_async_read_rejected: true, concurrent_clear_wins: true, profile_limit_enforced: true,
-      page_close_and_reload_retention: true, payload_checksum_verified: true, credentials_rejected: true };
+      page_close_and_reload_retention: true, payload_checksum_verified: true, credentials_rejected: true,
+      legacy_blob_read_tested: legacyBlobRead, storage_representation: 'validated_utf8_bytes' };
   } finally {
     await context?.close(); await rm(temporary, { recursive: true, force: true });
   }

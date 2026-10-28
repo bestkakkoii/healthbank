@@ -7,9 +7,9 @@ import { createServer } from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
-import { chromium } from 'playwright';
+import { chromium, firefox, webkit } from 'playwright';
 import { replacementLaboratory, syntheticDataset } from './fixtures.mjs';
-import { browserExecutable, fontConfig, root, sha256, toolchain, verifyBrowserSetup } from './toolchain.mjs';
+import { browserExecutable, engineExecutables, fontConfig, root, sha256, toolchain, verifyBrowserSetup } from './toolchain.mjs';
 
 async function unusedPort() {
   const socket = createServer();
@@ -425,6 +425,32 @@ export async function runBrowserAcceptance({ binary, evidenceDir }) {
     phase = 'sourced bilingual terminology';
     const { runTerminologyAcceptance } = await import('./terminology-acceptance.mjs');
     record('bilingual labels, raw source dates and mobile wrapping', await runTerminologyAcceptance({ createContext, baseURL, evidenceDir, importLaboratory }));
+    phase = 'record-bound clinical confirmation';
+    const { runClinicalConfirmationAcceptance } = await import('./clinical-confirmation-acceptance.mjs');
+    record('same-session replacement requires clinical reconfirmation', await runClinicalConfirmationAcceptance({ createContext, baseURL, evidenceDir, importLaboratory }));
+    phase = 'grading qualifications in derived exports';
+    const { runGradingContextAcceptance } = await import('./grading-context-acceptance.mjs');
+    record('qualified levels in UI, CSV, SVG and print HTML', await runGradingContextAcceptance({ createContext, baseURL, evidenceDir, importLaboratory }));
+    const compatibilityScenarios = [
+      ['atomic device storage', runDeviceCacheStorageAcceptance], ['cache lifecycle UI', runDeviceCacheAcceptance],
+      ['bilingual mobile display', runTerminologyAcceptance], ['record-bound confirmation', runClinicalConfirmationAcceptance],
+      ['qualified presentation exports', runGradingContextAcceptance], ['batch and ZIP restoration', runCollectionRestoreAcceptance],
+      ['date-batch acquisition', runBatchAcceptance], ['native originals saving', runFullAcquisitionAcceptance],
+    ];
+    result.engine_checks = [{ engine: 'chromium', version: browser.version(), platform: 'linux-x64', physical_apple_device: false }];
+    await browser.close();
+    for (const engine of [firefox, webkit]) {
+      const name = engine.name(), engineEvidence = path.join(evidenceDir, name);
+      phase = `Linux ${name} startup`; await mkdir(engineEvidence, { recursive: true });
+      browser = await engine.launch({ headless: true, executablePath: engineExecutables[name], env: { ...process.env, FONTCONFIG_FILE: fontConfig } });
+      assert.equal(browser.version(), toolchain[name].version);
+      result.engine_checks.push({ engine: name, version: browser.version(), platform: 'linux-x64', physical_apple_device: false });
+      for (const [scenario, run] of compatibilityScenarios) {
+        phase = `Linux ${name}: ${scenario}`;
+        record(phase, await run({ createContext, baseURL, evidenceDir: engineEvidence, fixture, importLaboratory, session }));
+      }
+      await browser.close();
+    }
     assert.equal(result.page_errors, 0, 'No unhandled browser errors are allowed.');
     assert.deepEqual(result.prohibited_requests, [], 'No official acquisition/login or external browser requests are allowed.');
     result.passed = true;

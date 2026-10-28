@@ -22,16 +22,26 @@ the pair requires renewing the browser, Chinese typography and PDF evidence.
 that package at exactly 1.64.1.
 
 [`web/tests/browser/toolchain.json`](web/tests/browser/toolchain.json) pins the
-release's Chromium Headless Shell **156.0.8078.4 / revision 1248**, its Google
-Chrome for Testing archive SHA-256, and Noto Sans CJK TC from immutable official
-commit `f8d157532fbfaeda587e826d4cd5b21a49186f7c`. The font and its SIL OFL 1.1
+release's Chromium Headless Shell **156.0.8078.4 / revision 1248**, Firefox
+**157.0 / revision 1555**, and Linux WebKit **27.2 / revision 2370** against the
+same Playwright browser manifest. The Chromium archive comes from Google Chrome
+for Testing; Firefox and WebKit use the official Microsoft Playwright download
+service. Each archive and the browser manifest have exact SHA-256 values.
+Noto Sans CJK TC comes from immutable official commit
+`f8d157532fbfaeda587e826d4cd5b21a49186f7c`; the font and its SIL OFL 1.1
 license are separately hashed. Setup verifies every archive before installation;
-the runner checks the actual Chromium version and rendered Chinese font family.
+the runner checks engine versions and rendered Chinese font evidence.
 Only the reviewed font directory is used, so a runner's system CJK package cannot
 silently change the baseline. Node remains the already pinned 26.12.1. The
 Ubuntu 24.04 browser libraries and Poppler CLI are system test dependencies;
 their complete package graph is not claimed to be hermetically locked. Actual
 `pdftotext` and `pdfinfo` versions are recorded in each browser evidence summary.
+
+Only this small toolchain metadata file is copied into the deployment archive so
+its relative documentation link resolves to the exact build's pins. Browser
+executables, fonts, Playwright packages and the test harness remain development
+tools. Linux Firefox/WebKit checks do not establish physical iOS/macOS acceptance;
+automated PDF generation remains a Chromium-specific test capability.
 
 The current selected npm inventory has **147 installed instances / 143 unique
 names**: three application browser-runtime instances and 144 build/lint/test

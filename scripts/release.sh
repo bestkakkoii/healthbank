@@ -45,6 +45,7 @@ release_documents=(
 release_document_assets=(
   docs/assets/healthbank-banner.svg
   docs/screenshots/history-comparison.jpg
+  web/tests/browser/toolchain.json
 )
 
 command -v "$go_command" >/dev/null

@@ -26,7 +26,7 @@
 
 ## 儲存格式、容量與一致性
 
-IndexedDB 名稱為 `healthbank.device-health-cache.v1`，版本為 `1`。`control` 保存全域換代值；`profiles` 保存使用者同意、個別換代值、修訂及摘要；`payloads` 保存經驗證的 JSON `Blob`。未使用 localStorage 作為健康資料快取的替代方案。
+IndexedDB 名稱為 `healthbank.device-health-cache.v1`，版本為 `1`。`control` 保存全域換代值；`profiles` 保存使用者同意、個別換代值、修訂及摘要；`payloads` 保存經驗證的 UTF-8 JSON 位元組（`Uint8Array`）。仍可讀取先前版本的 `Blob`，讀取時採用相同的長度、SHA-256、結構與換代驗證。直接保存位元組可兼容無法準備 IndexedDB `Blob` 的瀏覽器環境；沒有改用 localStorage 保存健康資料。
 
 | 範圍 | 限制或規則 |
 | --- | --- |
