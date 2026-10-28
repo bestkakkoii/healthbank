@@ -1,5 +1,5 @@
 # Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
-# Temporary source snapshot; remove before integration.
+# Temporary full head snapshot for final release audit; remove before integration.
 name: Current repair snapshot
 on:
   push:
