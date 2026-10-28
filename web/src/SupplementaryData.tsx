@@ -4,7 +4,10 @@ import { api, ApiError, isSessionInvalidation, readableError, type SupplementRep
 import { useAnalysis } from './AnalysisContext';
 import { MedicineTimeline } from './MedicineTimeline';
 import { dateLabel, downloadText, isObject } from './model';
-import { supplementReportJSON } from './health-dataset';
+import { supplementReportJSON, UNKNOWN_DATASET_PRODUCER, type DatasetProducer } from './health-dataset';
+import { AcquisitionBatches } from './AcquisitionBatches';
+import { batchEntryAllowance, replaceBatchCategories, type BatchRange } from './date-batches';
+import { sourceDateLabel, sourceOriginLabel } from './source-semantics';
 import { laboratoryCoverageStatus } from './coverage-status';
 import { acquireHealthData, type AcquisitionMode, type AcquisitionProgress } from './data-acquisition';
 import {
@@ -52,6 +55,7 @@ function downloadBytes(bytes: Uint8Array, name: string, type: string) {
 
 export function SupplementaryData({ authenticated, onSessionExpired, initialDataset, onDatasetChange,
   catalog = DEFAULT_DATA_CATEGORIES, onAttachmentDownloaded, archivedAttachments = {}, onFetchLaboratory, onBusyChange,
+  datasetProducer = UNKNOWN_DATASET_PRODUCER, onBatchActiveChange, onBeginBatch,
   imported = false, disabled = false, laboratory, onOpenTrends,
   sessionMode = authenticated ? 'official' : imported ? 'import' : 'anonymous',
 }: {
@@ -62,8 +66,11 @@ export function SupplementaryData({ authenticated, onSessionExpired, initialData
   catalog?: DataCategory[];
   onAttachmentDownloaded?: (attachment: DownloadedAttachment) => void;
   archivedAttachments?: Record<string, ArchivedAttachment>;
-  onFetchLaboratory?: (signal: AbortSignal) => Promise<void>;
+  onFetchLaboratory?: (signal: AbortSignal, query?: BatchRange) => Promise<ReportResponse>;
   onBusyChange?: (value: boolean) => void;
+  datasetProducer?: DatasetProducer;
+  onBatchActiveChange?: (active: boolean) => void;
+  onBeginBatch?: (categories: string[], includeLaboratory: boolean) => void;
   imported?: boolean;
   disabled?: boolean;
   laboratory?: ReportResponse;
@@ -73,6 +80,7 @@ export function SupplementaryData({ authenticated, onSessionExpired, initialData
   const [snapshot, setSnapshot] = useState<HealthDataSnapshot>(() => initialDataset ?? emptyHealthData());
   const snapshotRef = useRef(snapshot);
   const [busy, setBusy] = useState(false);
+  const [batchActive, setBatchActive] = useState(false);
   const [progress, setProgress] = useState<AcquisitionProgress | null>(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -112,7 +120,7 @@ export function SupplementaryData({ authenticated, onSessionExpired, initialData
   const failures = Object.values(snapshot.states).filter(state => state.status === 'failed').length;
   const sourceWarnings = Object.values(snapshot.reports).filter(report => report.diagnostics?.some(diagnostic => diagnostic.severity === 'warning')).length;
   const pending = catalog.reduce((count, category) => count + categoryCoverage(snapshot, category.id).pendingCount, 0);
-  const acquisitionDisabled = !authenticated || busy || disabled;
+  const acquisitionDisabled = !authenticated || busy || disabled || batchActive;
   const activeFilterCount = Number(Boolean(filter.category)) + Number(Boolean(filter.institution)) + Number(Boolean(filter.from || filter.to)) + Number(!filter.includeUnknownDates);
   const laboratoryCoverage = laboratory ? laboratoryCoverageStatus(laboratory, sessionMode) : null;
   const selectedDetail = detailView ? snapshot.details[detailView.category]?.[detailView.reference] : undefined;
@@ -314,7 +322,7 @@ export function SupplementaryData({ authenticated, onSessionExpired, initialData
     {authenticated && <div className="health-data-actions">
       <button className="button primary" type="button" disabled={acquisitionDisabled} onClick={() => { void run('refresh', selectedCategories, { from: '', to: '' }, includeLaboratory); }}>{allSourcesSelected ? '取得全部可提供資料' : '取得所選來源的全部年度'}</button>
       {(queried > 0 || labFailed) && <button className="button secondary" type="button" disabled={acquisitionDisabled} onClick={() => { void run('resume', selectedCategories, snapshot.query, includeLaboratory && labFailed); }}>接續未完成項目</button>}
-      {busy && <button className="button secondary" type="button" onClick={cancel}>停止取得</button>}
+      {busy && !batchActive && <button className="button secondary" type="button" onClick={cancel}>停止取得</button>}
     </div>}
     {imported ? <p className="health-data-notice">匯入資料；來源與完整性記載未經本次官方核對。</p> : !authenticated && sessionMode !== 'demo' && <p className="helper-text">可查看已取得紀錄；取得新資料需要官方登入。</p>}
     {progress && <div className="health-data-progress" role="status"><span>{progress.phase === 'lists' ? '來源清單' : '逐筆明細'}：{progress.done}／{progress.total} · {catalog.find(category => category.id === progress.category)?.label ?? progress.category}{progress.failed ? ` · ${progress.failed} 筆待重試` : ''}</span><progress max={Math.max(1, progress.total)} value={progress.done} aria-label={progress.phase === 'lists' ? '清單取得進度' : '明細取得進度'} /></div>}
@@ -323,10 +331,10 @@ export function SupplementaryData({ authenticated, onSessionExpired, initialData
     <details className="health-data-management" ref={management}><summary>來源狀態與查詢範圍 · {queried}／{catalog.length} 個來源已回應{pending ? ` · ${pending} 筆明細待取得` : ''}{failures ? ` · ${failures} 個來源失敗` : ''}{sourceWarnings ? ` · ${sourceWarnings} 個清單回應需確認` : ''}</summary>
     <p className="helper-text">預設要求全部可查年度及類型；沒有日期搜尋的來源，保留官方實際回傳範圍。只查近期的來源會個別標示。列表和明細逐筆取得，附件由您選擇下載。</p>
     <details className="health-data-options"><summary>選擇來源與查詢期間</summary>
-      {onFetchLaboratory && <label className="checkbox-label"><input type="checkbox" checked={includeLaboratory} disabled={busy} onChange={event => setIncludeLaboratory(event.target.checked)} />一併取得全部檢驗結果</label>}
-      <div className="health-data-actions"><button className="button secondary" type="button" disabled={busy} onClick={() => setExcluded(new Set())}>選取所有來源</button><button className="button secondary" type="button" disabled={busy} onClick={() => setExcluded(new Set(catalog.map(category => category.id)))}>清除來源選取</button></div>
+      {onFetchLaboratory && <label className="checkbox-label"><input type="checkbox" checked={includeLaboratory} disabled={busy || batchActive} onChange={event => setIncludeLaboratory(event.target.checked)} />一併取得全部檢驗結果</label>}
+      <div className="health-data-actions"><button className="button secondary" type="button" disabled={busy || batchActive} onClick={() => setExcluded(new Set())}>選取所有來源</button><button className="button secondary" type="button" disabled={busy || batchActive} onClick={() => setExcluded(new Set(catalog.map(category => category.id)))}>清除來源選取</button></div>
       {groups.map(group => <fieldset className="health-data-category-group" key={group}><legend>{group}</legend><div className="health-data-category-grid">
-        {catalog.filter(category => category.group === group).map(category => <label className="checkbox-label" key={category.id}><input type="checkbox" disabled={busy} checked={!excluded.has(category.id)} onChange={event => setExcluded(previous => { const next = new Set(previous); if (event.target.checked) next.delete(category.id); else next.add(category.id); return next; })} /><span>{category.label}<small>{category.range_mode === 'date_search' ? '支援日期搜尋' : '官方可回傳範圍'}</small></span></label>)}
+        {catalog.filter(category => category.group === group).map(category => <label className="checkbox-label" key={category.id}><input type="checkbox" disabled={busy || batchActive} checked={!excluded.has(category.id)} onChange={event => setExcluded(previous => { const next = new Set(previous); if (event.target.checked) next.delete(category.id); else next.add(category.id); return next; })} /><span>{category.label}<small>{category.range_mode === 'date_search' ? '支援日期搜尋' : '官方可回傳範圍'}</small></span></label>)}
       </div></fieldset>)}
       <form className="health-data-custom-range" onSubmit={event => { event.preventDefault(); void run('refresh', selectedCategories, { from: fromDraft, to: toDraft }, false); }}>
         <h3>另外指定取得期間</h3><p className="helper-text">只套用支援日期搜尋的來源。修改欄位不會清除資料或改變顯示篩選；送出後才查詢。檢驗結果的指定期間請在檢驗頁操作。</p>
@@ -357,6 +365,17 @@ export function SupplementaryData({ authenticated, onSessionExpired, initialData
     </details>
     </details>
 
+    {authenticated && <AcquisitionBatches catalog={catalog} selectedCategories={selectedCategories} includeLaboratory={includeLaboratory}
+      onIncludeLaboratoryChange={setIncludeLaboratory} entryAllowanceFor={categories => batchEntryAllowance(snapshotRef.current, categories)} producer={datasetProducer}
+      disabled={disabled || busy && !batchActive} fetchLaboratory={onFetchLaboratory} classifyFailure={classifyFailure}
+      onPublish={(next, categories) => publish(replaceBatchCategories(snapshotRef.current, next, categories))}
+      onBegin={(categories, includeLabs) => {
+        returnHistory.current = []; pendingFocus.current = null; setDetailView(null); setPage(0); setMarkedEvent(null);
+        onBeginBatch?.(categories, includeLabs);
+      }}
+      onActiveChange={active => { setBatchActive(active); onBatchActiveChange?.(active); }}
+      onBusyChange={markBusy} onSessionExpired={expire} />}
+
     <section className="health-data-events" aria-label="所有醫療紀錄">
       <h3 ref={recordsHeading} tabIndex={-1}>{detailView ? '所選紀錄的明細' : '跨來源醫療紀錄'}</h3>
       {detailView && <div className="health-data-actions"><button className="button secondary" type="button" onClick={returnToRecord}>返回上一層紀錄</button><button className="button secondary" type="button" disabled={acquisitionDisabled} onClick={() => { const category = detailView.category; showCategory(category); void run('refresh', [category], { from: '', to: '' }); }}>重新取得此來源與明細</button></div>}
@@ -378,8 +397,8 @@ export function SupplementaryData({ authenticated, onSessionExpired, initialData
       <div className="health-data-event-list">{filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE).map(event => {
         const entry = event.entry;
         const hasDetail = event.detailReference && Object.hasOwn(snapshot.details[event.category] ?? {}, event.detailReference);
-        return <details key={event.id} className="health-data-event" ref={element => { if (element) recordElements.current.set(event.id, element); else recordElements.current.delete(event.id); }}><summary><span>{event.date ? dateLabel(event.date) : entry.date || '未提供日期'}</span><strong>{entry.title}</strong><span>{entry.institution || '未提供院所'}</span><small>{event.categoryLabel} · {event.parentReference ? '明細紀錄' : '來源清單'}</small></summary>
-          <p className="helper-text">{entry.source}{entry.end_date ? ` · 來源迄日 ${entry.end_date}` : ''}{event.date && event.date !== entry.date ? ` · 原始日期 ${entry.date}` : ''}</p>
+        return <details key={event.id} className="health-data-event" ref={element => { if (element) recordElements.current.set(event.id, element); else recordElements.current.delete(event.id); }}><summary><span>{sourceDateLabel(event.category === 'laboratory' ? 'examination' : entry.date_role)}：{event.date ? dateLabel(event.date) : entry.date || '未提供日期'}</span><strong>{entry.title}</strong><span>{entry.institution || '未提供院所'}</span><small>{event.categoryLabel} · {event.parentReference ? '明細紀錄' : '來源清單'}</small></summary>
+          <p className="helper-text">{entry.source} · {sourceOriginLabel(entry.origin)}{entry.end_date ? ` · ${sourceDateLabel(entry.end_date_role)} ${entry.end_date}` : ''}{event.date && event.date !== entry.date ? ` · 原始日期 ${entry.date}` : ''}</p>
           {event.parentReference && <p className="helper-text">這筆內容由所選來源紀錄的明細取得；相同日期的其他資料不會自動被當作同次就醫。</p>}
           {entry.medicine && <p>藥品：{entry.medicine.name || entry.medicine.code} · 代碼 {entry.medicine.code || '未提供'} · 給藥日數 {entry.medicine.days || '未提供'} · 原始數量 {entry.medicine.quantity || '未提供'}（單位未確認）</p>}
           <dl>{entry.fields.map((field, ordinal) => <div key={`${ordinal}:${field.name}`}><dt>{field.name}</dt><dd>{field.value}{field.unit ? ` ${field.unit}` : ''}</dd></div>)}</dl>

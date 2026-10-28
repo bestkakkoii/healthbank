@@ -170,6 +170,7 @@ export default function App() {
   const datasetVersionRef = useRef(0);
   const sessionIdentity = useRef('anonymous:');
   const [dataBusy, setDataBusy] = useState(false);
+  const [dataBatchActive, setDataBatchActive] = useState(false);
   const [view, setView] = useState<View>(viewFromURL);
   const [booting, setBooting] = useState(true);
   const [busy, setBusy] = useState('');
@@ -200,7 +201,7 @@ export default function App() {
   const settings = session.settings;
   const persisted = session.authenticated && session.mode === 'official';
   const isDemo = session.mode === 'demo';
-  const controlsBusy = booting || settingsBusy || dataBusy || busy !== '';
+  const controlsBusy = booting || settingsBusy || dataBusy || dataBatchActive || busy !== '';
   const workspaceCatalog = useMemo(() => {
     const combined = new Map(dataCatalog.map(item => [item.id, item]));
     for (const item of importedDataCatalog) if (!combined.has(item.id)) combined.set(item.id, item);
@@ -499,6 +500,7 @@ export default function App() {
 
   function invalidateDatasetOperations() {
     setPrintOpen(false);
+    setDataBatchActive(false);
     // Retire captured archive callbacks before any session-changing request can
     // await. Keep successful data available if that request subsequently fails.
     datasetVersionRef.current += 1;
@@ -588,9 +590,9 @@ export default function App() {
     setDataAttachments(next);
   }
 
-  async function fetchLaboratoryForWorkspace(signal: AbortSignal) {
+  async function fetchLaboratoryForWorkspace(signal: AbortSignal, query = { from: '', to: '' }): Promise<ReportResponse> {
     const generation = sessionGeneration.current;
-    const result = await api.reports('', '', signal);
+    const result = await api.reports(query.from, query.to, signal);
     signal.throwIfAborted();
     if (generation !== sessionGeneration.current) throw new DOMException('使用階段已變更。', 'AbortError');
     await receiveReports(result, generation, undefined, signal);
@@ -599,6 +601,7 @@ export default function App() {
     if (result.official_query) {
       setDateFrom(result.official_query.start_date); setDateTo(result.official_query.end_date);
     }
+    return result;
   }
 
   async function restoreDataset(dataset: ImportedDataset) {
@@ -2055,6 +2058,18 @@ export default function App() {
                 catalog={workspaceCatalog} initialDataset={dataSnapshot} archivedAttachments={archivedAttachments} laboratory={report}
                 onDatasetChange={next => { if (datasetVersion === datasetVersionRef.current) setDataSnapshot(next); }}
                 onAttachmentDownloaded={retainAttachment} onFetchLaboratory={fetchLaboratoryForWorkspace}
+                datasetProducer={datasetProducer}
+                onBatchActiveChange={value => { if (datasetVersion === datasetVersionRef.current) setDataBatchActive(value); }}
+                onBeginBatch={(categories, includeLaboratory) => {
+                  if (datasetVersion !== datasetVersionRef.current) return;
+                  const selected = new Set(categories);
+                  const nextAttachments = dataAttachmentsRef.current.filter(file => !selected.has(file.category));
+                  dataAttachmentsRef.current = nextAttachments; setDataAttachments(nextAttachments);
+                  if (includeLaboratory) {
+                    setReport({ records: [], fetched_at: '', complete: false, warnings: ['本批檢驗尚未取得；不沿用先前期間的結果。'] });
+                    clearReportRange();
+                  }
+                }}
                 onBusyChange={value => { if (datasetVersion === datasetVersionRef.current) setDataBusy(value); }}
                 onOpenTrends={date => {
                   setYear('all');

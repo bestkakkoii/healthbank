@@ -14,6 +14,12 @@ export const SOURCE_DATE_LABELS: Record<SourceDateRole, string> = {
 
 export function sourceDateLabel(role: SourceDateRole | undefined): string { return SOURCE_DATE_LABELS[role ?? 'unknown']; }
 
+const SOURCE_ORIGIN_LABELS: Record<NonNullable<SupplementEntry['origin']>, string> = {
+  institutional: '院所紀錄', self_entered: '來源自行登錄', device: '來源裝置量測',
+  official_summary: '官方彙整', mixed: '混合來源', unknown: '來源性質未確認',
+};
+export function sourceOriginLabel(origin: SupplementEntry['origin']): string { return SOURCE_ORIGIN_LABELS[origin ?? 'unknown']; }
+
 // Only explicitly typed, compatible endpoints define a span. A prescription's
 // days/quantity and a claim/encounter pair never manufacture a treatment interval.
 export function sourceEventInterval(entry: SupplementEntry): { start: string; end: string; isInterval: boolean } {
