@@ -4,12 +4,15 @@
 package store
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
 	"time"
+
+	"github.com/bestkakkoii/healthbank/internal/strictjson"
 )
 
 const MaxSnapshotBytes = 64 << 20
@@ -110,10 +113,10 @@ func validateEntry(entry *Entry) error {
 	if err := validateSubject(entry.SubjectKey); err != nil {
 		return err
 	}
-	if entry.Revision <= 0 {
-		return fmt.Errorf("%w: imported revision must be positive", ErrInvalid)
+	if entry.Revision <= 0 || entry.Revision > MaxRevision {
+		return fmt.Errorf("%w: imported revision must be a positive JSON-safe integer", ErrInvalid)
 	}
-	if _, err := time.Parse(time.RFC3339Nano, entry.UpdatedAt); err != nil {
+	if !validConfigurationTimestamp(entry.UpdatedAt) {
 		return fmt.Errorf("%w: invalid configuration timestamp", ErrInvalid)
 	}
 	settings, err := validateSettings(entry.Settings)
@@ -127,28 +130,53 @@ func validateEntry(entry *Entry) error {
 // EncodeSnapshot writes a human-inspectable portable file. The caller should use
 // file mode 0600 and must not put this private file inside a public release.
 func EncodeSnapshot(w io.Writer, snapshot Snapshot) error {
-	encoder := json.NewEncoder(w)
+	return encodeSnapshot(w, snapshot, MaxSnapshotBytes)
+}
+
+func encodeSnapshot(w io.Writer, snapshot Snapshot, maxBytes int) error {
+	encoder := json.NewEncoder(&snapshotWriter{destination: w, remaining: maxBytes})
 	encoder.SetIndent("", "  ")
 	return encoder.Encode(snapshot)
+}
+
+type snapshotWriter struct {
+	destination io.Writer
+	remaining   int
+}
+
+func (w *snapshotWriter) Write(data []byte) (int, error) {
+	if len(data) > w.remaining {
+		return 0, fmt.Errorf("%w: settings export exceeds the restorable snapshot size limit", ErrInvalid)
+	}
+	written, err := w.destination.Write(data)
+	w.remaining -= written
+	return written, err
 }
 
 // DecodeSnapshot rejects unknown envelope fields, trailing JSON, and oversized
 // files. Configuration documents still require the application's typed schema
 // validator if their source is not an operator's own trusted export.
 func DecodeSnapshot(r io.Reader) (Snapshot, error) {
-	limited := &io.LimitedReader{R: r, N: MaxSnapshotBytes + 1}
-	decoder := json.NewDecoder(limited)
+	data, err := io.ReadAll(io.LimitReader(r, MaxSnapshotBytes+1))
+	defer clear(data)
+	if err != nil {
+		return Snapshot{}, fmt.Errorf("%w: cannot read settings snapshot", ErrInvalid)
+	}
+	if len(data) > MaxSnapshotBytes {
+		return Snapshot{}, fmt.Errorf("%w: snapshot exceeds %d bytes", ErrInvalid, MaxSnapshotBytes)
+	}
+	if err := strictjson.Validate(data, strictjson.Options{MaxDepth: 32, FoldNames: true}); err != nil {
+		return Snapshot{}, fmt.Errorf("%w: malformed or ambiguous settings snapshot", ErrInvalid)
+	}
+	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
 	var snapshot Snapshot
 	if err := decoder.Decode(&snapshot); err != nil {
-		return Snapshot{}, fmt.Errorf("decode settings snapshot: %w", err)
+		return Snapshot{}, fmt.Errorf("%w: settings snapshot does not match its schema", ErrInvalid)
 	}
 	var trailing any
 	if err := decoder.Decode(&trailing); err != io.EOF {
 		return Snapshot{}, fmt.Errorf("%w: snapshot has trailing data", ErrInvalid)
-	}
-	if limited.N <= 0 {
-		return Snapshot{}, fmt.Errorf("%w: snapshot exceeds %d bytes", ErrInvalid, MaxSnapshotBytes)
 	}
 	return snapshot, nil
 }

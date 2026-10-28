@@ -1,5 +1,6 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
 // Browser-only data. Never pass these objects to the settings or report APIs.
+import { parseStrictJSON } from './strict-json.ts';
 export type IntakeCategory = 'medicine' | 'herbal' | 'supplement' | 'other';
 export interface IntakeRecord { id: string; name: string; category: IntakeCategory; amount: string; start: string; end: string; note: string }
 export const INTAKE_CATEGORIES: Record<IntakeCategory, string> = { medicine: '西藥', herbal: '中藥', supplement: '補充品', other: '其他' };
@@ -12,7 +13,7 @@ function dateValid(value: string): boolean {
 }
 export function parseIntakeRecords(text: string): IntakeRecord[] {
   if (text.length > 256_000) throw new Error('個人紀錄檔案過大（最多256,000字元）。');
-  const value: unknown = JSON.parse(text);
+  const value = parseStrictJSON(text);
   if (!Array.isArray(value) || value.length > 200) throw new Error('個人紀錄須為最多200項的清單。');
   const result: IntakeRecord[] = [], ids = new Set<string>();
   for (const entry of value as unknown[]) {
@@ -27,6 +28,13 @@ export function parseIntakeRecords(text: string): IntakeRecord[] {
     ids.add(id); result.push({ id, name, category, amount, start, end, note });
   }
   return result;
+}
+export function decodeIntakeFile(bytes: Uint8Array): IntakeRecord[] {
+  if (bytes.byteLength > 768_000) throw new Error('個人紀錄檔案過大。');
+  let source: string;
+  try { source = new TextDecoder('utf-8', { fatal: true }).decode(bytes); }
+  catch { throw new Error('個人紀錄須為有效 UTF-8 JSON，未以替代字元修補原文。'); }
+  return parseIntakeRecords(source);
 }
 export function intakeStorageKey(profileKey: string): string | null {
   return /^[a-f0-9]{64}$/.test(profileKey) ? `healthbank.intake.v1.${profileKey}` : null;

@@ -45,6 +45,27 @@ test('adult CKD-EPI gating and equation anchor retain original observations', ()
   assert.ok(egfrCreatinine2021(1, male(70), true).value > egfrCreatinine2021(1, male(80), true).value);
   comparisonValue(original, 'creatinine'); assert.equal(original.official_flag, 'H');
 });
+
+test('CKD-EPI reproduces independent high-precision vectors across both sex and creatinine branches', () => {
+  // NIDDK 2021 creatinine equation, rechecked 2026-10-28. These synthetic
+  // reference values were computed separately with Python Decimal, precision 70;
+  // they do not call the JavaScript implementation or repeat its expression.
+  const vectors = [
+    [0.3, 18, 'female', '157.5916220089958337172092859272225932208467'],
+    [0.7, 40, 'female', '112.0543067987974983147735102768754065592619'],
+    [1.1, 70, 'female', '54.05610523366437414339315470494423666567039'],
+    [4, 90, 'female', '10.13967026250502136565290667272541475774211'],
+    [0.5, 18, 'male', '151.6220989088429452098054920086539272133474'],
+    [0.9, 40, 'male', '110.7255996035548402319896346609440776277291'],
+    [1.25, 70, 'male', '61.94650501498152614672265669345069030124808'],
+    [5, 90, 'male', '10.36393468564113393310495760837769867692391'],
+  ];
+  for (const [creatinine, age, sex, expected] of vectors) {
+    const actual = egfrCreatinine2021(creatinine, { age, sex }, true).value;
+    assert.notEqual(actual, null);
+    assert.ok(Math.abs(actual - Number(expected)) < 1e-11);
+  }
+});
 test('age is evaluated on each examination date, never from inferred birthdays', () => {
   assert.equal(exactAgeOn('1956-10-28', '2026-10-27'), 69);
   assert.equal(exactAgeOn('1956-10-28', '2026-10-28'), 70);

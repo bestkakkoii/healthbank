@@ -1,4 +1,6 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
+
+// Package webui serves the verified frontend embedded in the application executable.
 package webui
 
 import (

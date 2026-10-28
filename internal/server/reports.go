@@ -1,22 +1,26 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
+
 package server
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/bestkakkoii/healthbank/internal/lab"
 	"github.com/bestkakkoii/healthbank/internal/nhi"
 	"github.com/bestkakkoii/healthbank/internal/store"
+	"github.com/bestkakkoii/healthbank/internal/strictjson"
 )
 
 type reportResponse struct {
 	Records       []lab.Record           `json:"records"`
+	SessionToken  string                 `json:"session_token"`
 	FetchedAt     string                 `json:"fetched_at"`
 	Complete      bool                   `json:"complete"`
 	Warnings      []string               `json:"warnings"`
@@ -45,10 +49,12 @@ func (s *session) setOfficialReport(report nhi.Report) {
 		s.officialQuery.ReportedCount = &count
 	}
 	s.fetched = time.Now().UTC().Format(time.RFC3339)
-	s.complete = report.ReportedCount >= 0
+	s.complete = report.ReportedCount >= 0 && report.ReportedCount == len(report.Records)
 	s.warnings = []string{}
 	if report.ReportedCount < 0 {
 		s.warnings = append(s.warnings, "已讀取本次查詢回傳的完整資料陣列；官方未提供相同期間的獨立總筆數，無法另外核對。")
+	} else if report.ReportedCount != len(report.Records) {
+		s.warnings = append(s.warnings, "已保留本次查詢回傳的全部資料；官方相同期間的獨立總筆數與實際回傳筆數不一致，資料可能在兩次讀取間更新，尚未核對完整性。")
 	}
 }
 
@@ -76,6 +82,15 @@ func (a *App) persistDiscovered(ctx context.Context, s *session) error {
 		if !changed {
 			s.settings = latest
 			return nil
+		}
+		// Source-provided item labels are observations, not already validated
+		// persistent configuration. Preserve the report even when discovery exceeds
+		// the portable settings schema or capacity; never write an un-restorable row.
+		if err := lab.ValidateKnown(latest.Known); err != nil {
+			return fmt.Errorf("%w: discovered item definition exceeds settings constraints", store.ErrInvalid)
+		}
+		if err := lab.ValidateSettings(latest, a.catalog.ConfigurableItems(latest.Known)); err != nil {
+			return fmt.Errorf("%w: discovered settings exceed schema or capacity", store.ErrInvalid)
 		}
 		data, err := latest.Document()
 		if err != nil {
@@ -109,7 +124,7 @@ func (a *App) currentResponse(s *session) reportResponse {
 			break
 		}
 	}
-	return reportResponse{Records: records, FetchedAt: s.fetched, Complete: s.complete, Warnings: warnings, OfficialQuery: s.officialQuery}
+	return reportResponse{Records: records, SessionToken: s.csrf, FetchedAt: s.fetched, Complete: s.complete, Warnings: warnings, OfficialQuery: s.officialQuery}
 }
 func (a *App) fetchReports(w http.ResponseWriter, r *http.Request, s *session) {
 	if s.mode != "official" || s.official == nil {
@@ -155,7 +170,11 @@ func (a *App) fetchReports(w http.ResponseWriter, r *http.Request, s *session) {
 	s.setOfficialReport(report)
 	_ = a.catalog.Normalize(s.raw, &s.settings)
 	if err := a.persistDiscovered(r.Context(), s); err != nil {
-		s.warnings = append(s.warnings, "檢驗資料已取得，但新項目設定未能同步；請稍後重新取得資料。")
+		if errors.Is(err, store.ErrInvalid) {
+			s.warnings = append(s.warnings, "本次回傳的檢驗原文均已保留；新項目定義超出同步設定的格式或容量上限，尚未同步。仍可查看與匯出原始結果。")
+		} else {
+			s.warnings = append(s.warnings, "檢驗資料已取得，但新項目設定未能同步；請稍後重新取得資料。")
+		}
 	}
 	a.json(w, 200, a.currentResponse(s))
 }
@@ -195,9 +214,9 @@ func (a *App) importReports(w http.ResponseWriter, r *http.Request, s *session) 
 			}
 			return
 		}
-		if part.FormName() != "file" || filename != "" {
+		if part.FormName() != "file" || part.FileName() == "" || filename != "" {
 			_ = part.Close()
-			a.fail(w, r, 400, "upload_fields", "一次只能匯入一個檔案。")
+			a.fail(w, r, 400, "upload_fields", "一次只能匯入一個具有檔名的檔案。")
 			return
 		}
 		filename = part.FileName()
@@ -294,6 +313,10 @@ func (a *App) saveSettings(w http.ResponseWriter, r *http.Request, s *session) {
 	if next.Overrides == nil {
 		next.Overrides = map[string]lab.Override{}
 	}
+	if err := lab.ValidateKnown(next.Known); err != nil {
+		a.fail(w, r, 400, "invalid_settings", "既有項目定義不符合設定格式；未變更個人同步設定。")
+		return
+	}
 	if err := lab.ValidateSettings(next, a.catalog.ConfigurableItems(s.settings.Known)); err != nil {
 		a.fail(w, r, 400, "invalid_settings", err.Error())
 		return
@@ -329,10 +352,16 @@ func (a *App) saveSettings(w http.ResponseWriter, r *http.Request, s *session) {
 // Unknown nested fields are rejected, including credentials and result arrays.
 func ValidatePortableSettings(data []byte) (lab.Settings, error) {
 	var s lab.Settings
-	d := json.NewDecoder(strings.NewReader(string(data)))
+	if len(data) > store.MaxSettingsBytes {
+		return s, errors.New("configuration document exceeds its size limit")
+	}
+	if err := strictjson.Validate(data, strictjson.Options{MaxDepth: 32, FoldNames: true}); err != nil {
+		return s, err
+	}
+	d := json.NewDecoder(bytes.NewReader(data))
 	d.DisallowUnknownFields()
 	if err := d.Decode(&s); err != nil {
-		return s, err
+		return s, errors.New("configuration JSON does not match the settings schema")
 	}
 	if err := d.Decode(&struct{}{}); err != io.EOF {
 		return s, errors.New("one settings object required")

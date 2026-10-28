@@ -14,7 +14,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -22,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bestkakkoii/healthbank/internal/strictjson"
 	"github.com/go-sql-driver/mysql"
 	"modernc.org/sqlite"
 )
@@ -31,6 +31,9 @@ const (
 	SchemaVersion = 1
 	// MaxSettingsBytes bounds one family's per-person configuration document.
 	MaxSettingsBytes = 256 << 10
+	// Revisions cross the JSON/JavaScript API boundary as numbers. Values beyond
+	// this range cannot be represented exactly by the browser's settings client.
+	MaxRevision int64 = 1<<53 - 1
 )
 
 var (
@@ -214,7 +217,7 @@ func (s *Store) Put(ctx context.Context, subjectKey string, expectedRevision int
 	if err := validateSubject(subjectKey); err != nil {
 		return Document{}, err
 	}
-	if expectedRevision < 0 || expectedRevision == math.MaxInt64 {
+	if expectedRevision < 0 || expectedRevision >= MaxRevision {
 		return Document{}, fmt.Errorf("%w: invalid revision", ErrInvalid)
 	}
 	compact, err := validateSettings(settings)
@@ -259,7 +262,7 @@ func (s *Store) Delete(ctx context.Context, subjectKey string, expectedRevision 
 	if err := validateSubject(subjectKey); err != nil {
 		return err
 	}
-	if expectedRevision <= 0 {
+	if expectedRevision <= 0 || expectedRevision > MaxRevision {
 		return fmt.Errorf("%w: deletion requires a positive revision", ErrInvalid)
 	}
 	result, err := s.db.ExecContext(ctx,
@@ -286,8 +289,11 @@ func validateSubject(key string) error {
 
 func validateSettings(raw json.RawMessage) (json.RawMessage, error) {
 	trimmed := bytes.TrimSpace(raw)
-	if len(trimmed) == 0 || len(raw) > MaxSettingsBytes || trimmed[0] != '{' || !json.Valid(trimmed) {
+	if len(trimmed) == 0 || len(raw) > MaxSettingsBytes || trimmed[0] != '{' {
 		return nil, fmt.Errorf("%w: settings must be a JSON object of at most %d bytes", ErrInvalid, MaxSettingsBytes)
+	}
+	if err := strictjson.Validate(trimmed, strictjson.Options{MaxDepth: 32, FoldNames: true}); err != nil {
+		return nil, fmt.Errorf("%w: malformed or ambiguous settings JSON", ErrInvalid)
 	}
 	var compact bytes.Buffer
 	if err := json.Compact(&compact, trimmed); err != nil {
@@ -308,14 +314,24 @@ func scanDocument(row scanner) (Document, error) {
 	if err != nil {
 		return Document{}, fmt.Errorf("stored configuration is invalid: %w", err)
 	}
-	if doc.Revision < 1 {
+	if doc.Revision < 1 || doc.Revision > MaxRevision {
 		return Document{}, fmt.Errorf("stored configuration has invalid revision")
 	}
-	if _, err := time.Parse(time.RFC3339Nano, doc.UpdatedAt); err != nil {
+	if !validConfigurationTimestamp(doc.UpdatedAt) {
 		return Document{}, fmt.Errorf("stored configuration has invalid timestamp")
 	}
 	doc.Settings = settings
 	return doc, nil
+}
+
+func validConfigurationTimestamp(value string) bool {
+	// Match the portable MySQL column capacity as well as SQLite. time.Parse
+	// accepts arbitrary fractional precision, but VARCHAR(35) cannot store it.
+	if len(value) > 35 {
+		return false
+	}
+	_, err := time.Parse(time.RFC3339Nano, value)
+	return err == nil
 }
 
 func isDuplicate(err error) bool {

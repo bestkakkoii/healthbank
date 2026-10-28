@@ -2,7 +2,7 @@
 
 Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
-Implementation status reviewed: **2026-10-28**. This records the RC8 implementation;
+Implementation status reviewed: **2026-10-28**. This records the RC9 audited implementation;
 publication and full verification remain tied to the actual [Release](https://github.com/bestkakkoii/healthbank/releases)
 and its exact commit. See [real-environment acceptance](acceptance.zh-TW.md).
 
@@ -21,7 +21,7 @@ recommendation is introduced.
 
 ## Six implemented work tracks
 
-| Track | RC8 implementation | Remaining acceptance boundary |
+| Track | Current implementation | Remaining acceptance boundary |
 | --- | --- | --- |
 | Reliable acquisition | Independent acquisition versus display ranges; maximum supported source ranges; all selected lists then recursive details; progress, bounded retry, cancel/resume and partial-failure preservation. | Real account retention, eligibility and actual source totals cannot be proved by synthetic fixtures. |
 | Useful source coverage | 38 additional provider categories join 14 existing categories and five original-file service entries; laboratory retrieval remains its own API and is included by the workspace's all-source action. | 57 entries are capability/service entries, not 57 independent medical datasets or a claim every account supports each one. |
@@ -33,6 +33,15 @@ recommendation is introduced.
 Scientific research continues to supply named constants, coefficients, eligibility
 and limitations. This data expansion adds no new diagnostic thresholds, treatment
 recommendations or inferred medication adherence.
+
+## Deep-audit maintenance
+
+The RC9 pass rechecked the existing architecture rather than restarting it. It
+repairs ambiguous/lossy JSON, raw-date export fidelity, cross-tab session binding,
+late and ambiguous mutation responses, source-detail omissions, upstream expiry,
+settings-transfer limits and release provenance. All findings and independent
+regressions are recorded in [the deep audit](deep-audit.zh-TW.md). No new clinical
+formula or treatment rule is enabled by this maintenance.
 
 ## Implemented source coverage
 

@@ -1,7 +1,10 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
+
+// Package server serves transient medical sessions and validated configuration APIs.
 package server
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/subtle"
@@ -24,6 +27,7 @@ import (
 	"github.com/bestkakkoii/healthbank/internal/lab"
 	"github.com/bestkakkoii/healthbank/internal/nhi"
 	"github.com/bestkakkoii/healthbank/internal/store"
+	"github.com/bestkakkoii/healthbank/internal/strictjson"
 	"github.com/bestkakkoii/healthbank/internal/webui"
 )
 
@@ -103,7 +107,7 @@ func (a *App) Handler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id, err := randomToken()
 		if err != nil {
-			http.Error(w, "service unavailable", 503)
+			http.Error(w, "service unavailable", http.StatusServiceUnavailable)
 			return
 		}
 		w.Header().Set("X-Request-ID", id[:16])
@@ -183,7 +187,10 @@ func secureRequest(r *http.Request) bool {
 	return err == nil && ip != nil && ip.IsLoopback() && strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https")
 }
 func (a *App) setCookie(w http.ResponseWriter, r *http.Request, id string) {
-	http.SetCookie(w, &http.Cookie{Name: cookieName, Value: id, Path: "/", HttpOnly: true, Secure: secureRequest(r), SameSite: http.SameSiteStrictMode, MaxAge: int(sessionLifetime.Seconds())})
+	// Expiry is enforced by the server's rolling idle deadline. A fixed Max-Age
+	// would discard an actively used session after 30 minutes, while refreshing
+	// cookies on ordinary responses could resurrect a retired generation.
+	http.SetCookie(w, &http.Cookie{Name: cookieName, Value: id, Path: "/", HttpOnly: true, Secure: secureRequest(r), SameSite: http.SameSiteStrictMode})
 }
 func (a *App) withSession(next func(http.ResponseWriter, *http.Request, *session)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -207,6 +214,23 @@ func (a *App) withSession(next func(http.ResponseWriter, *http.Request, *session
 			expired := s
 			s = nil
 			go func() { expired.mu.Lock(); expired.clear(); expired.mu.Unlock() }()
+		}
+		// A request sent before rotation can arrive after its cookie generation
+		// has been retired. Creating a replacement here would let that delayed
+		// response overwrite the browser's newer cookie. Known callers must
+		// explicitly reconcile through /api/session before acquiring new state.
+		if s == nil && r.URL.Path != "/api/session" && len(r.Header.Values("X-CSRF-Token")) != 0 {
+			a.mu.Unlock()
+			a.fail(w, r, http.StatusConflict, "session_changed", "連線已更換，請確認目前使用者後重新取得資料。")
+			return
+		}
+		// Native download links cannot send the generation header. They require
+		// an existing authenticated session and must never bootstrap a cookie
+		// that could overwrite another tab's newer session in a late response.
+		if s == nil && r.URL.Path == "/api/documents" {
+			a.mu.Unlock()
+			a.fail(w, r, http.StatusUnauthorized, "login_required", "請先完成官方登入，再取得個人文件。")
+			return
 		}
 		if s == nil {
 			if len(a.sessions) >= maxSessions {
@@ -254,6 +278,17 @@ func (a *App) withSession(next func(http.ResponseWriter, *http.Request, *session
 		// parallel responses must not reissue an older generation.
 		if created {
 			a.setCookie(w, r, id)
+		}
+		// Cookies are shared across tabs. A caller that already knows a session
+		// generation must not read a different person's new generation merely
+		// because another tab rotated the browser cookie. /api/session is the
+		// explicit reconciliation endpoint; first reads without a token remain
+		// possible before the browser has established its initial session.
+		if (r.Method == http.MethodGet || r.Method == http.MethodHead) && r.URL.Path != "/api/session" {
+			if tokens := r.Header.Values("X-CSRF-Token"); len(tokens) != 0 && (len(tokens) != 1 || subtle.ConstantTimeCompare([]byte(tokens[0]), []byte(s.csrf)) != 1) {
+				a.fail(w, r, 409, "session_changed", "連線已更換，請確認目前使用者後重新取得資料。")
+				return
+			}
 		}
 		if r.Method != "GET" && r.Method != "HEAD" {
 			if origin := r.Header.Get("Origin"); origin != "" {
@@ -378,7 +413,18 @@ func (a *App) upstreamError(w http.ResponseWriter, r *http.Request, err error) {
 }
 func decodeJSON(w http.ResponseWriter, r *http.Request, v any) error {
 	r.Body = http.MaxBytesReader(w, r.Body, 256<<10)
-	dec := json.NewDecoder(r.Body)
+	data, err := io.ReadAll(r.Body)
+	defer clear(data)
+	if err != nil {
+		return err
+	}
+	if err := strictjson.Validate(data, strictjson.Options{MaxDepth: 32, FoldNames: true}); err != nil {
+		return err
+	}
+	if trimmed := bytes.TrimSpace(data); len(trimmed) == 0 || trimmed[0] != '{' {
+		return errors.New("one JSON object required")
+	}
+	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(v); err != nil {
 		return err

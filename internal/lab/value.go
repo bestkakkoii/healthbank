@@ -1,10 +1,10 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
+
 package lab
 
 import (
 	"math/big"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -147,7 +147,6 @@ func numberFloat(r *big.Rat) *float64 {
 	v, _ := r.Float64()
 	return &v
 }
-func numberString(v float64) string { return strconv.FormatFloat(v, 'f', -1, 64) }
 
 // DefinitelyAbove reports only an exact or bounded result wholly above the
 // threshold. It is used for contextual warnings, never to invent a point.

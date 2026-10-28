@@ -30,6 +30,9 @@ jobs:
     env:
       CI: "true"
       GOTOOLCHAIN: local
+      GOENV: "off"
+      GOWORK: "off"
+      GOROOT: ""
       RELEASE_VERSION: ${{ inputs.version || github.ref_name }}
       # Disposable CI-only credentials; no production or medical data is used.
       HEALTHBANK_TEST_MYSQL_DSN: healthbank_ci:healthbank-test-only@tcp(127.0.0.1:3306)/healthbank_test?parseTime=true
@@ -83,6 +86,10 @@ jobs:
         run: npm --prefix web run build
       - name: Verify frontend data handling
         run: npm --prefix web test
+      - name: Verify release provenance and publication guards
+        run: |
+          python3 -W error scripts/test_release.py
+          python3 -W error scripts/test_publish_release.py
       - name: Check npm dependency advisories
         run: npm --prefix web audit --audit-level=low
       - name: Verify Go code
@@ -96,16 +103,22 @@ jobs:
           .tools/go/bin/go test -count=1 ./...
           .tools/go/bin/go test -count=1 -race ./...
           .tools/go/bin/go vet ./...
+      - name: Require all Staticcheck analyses to pass
+        run: .tools/bin/staticcheck -checks=all ./cmd/... ./internal/...
       - name: Check reachable Go dependency advisories
         # Development Go lacks a comparable standard-library semver; see DEPENDENCIES.md.
         run: .tools/bin/govulncheck ./...
       - name: Build Linux release archives and checksums
+        id: package
         env:
           GO: ${{ github.workspace }}/.tools/go/bin/go
           COMMIT: ${{ github.sha }}
         run: |
+          version="$(python3 scripts/release.py version "$RELEASE_VERSION")"
+          echo "RELEASE_VERSION=$version" >> "$GITHUB_ENV"
+          echo "archive_prefix=healthbank_${version#v}" >> "$GITHUB_OUTPUT"
           export SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"
-          bash scripts/release.sh "$RELEASE_VERSION"
+          bash scripts/release.sh "$version"
           cd dist/releases
           sha256sum -c SHA256SUMS
       - name: Upload build artifacts for review
@@ -114,7 +127,9 @@ jobs:
         with:
           name: healthbank-${{ inputs.version || github.ref_name }}
           path: |
-            dist/releases/*.tar.gz
+            dist/releases/${{ steps.package.outputs.archive_prefix }}_linux_amd64.tar.gz
+            dist/releases/${{ steps.package.outputs.archive_prefix }}_linux_arm64.tar.gz
+            dist/releases/${{ steps.package.outputs.archive_prefix }}_source.tar.gz
             dist/releases/SHA256SUMS
           if-no-files-found: error
           retention-days: 7
@@ -124,26 +139,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          # Listing succeeds with an empty array when no release exists. Unlike
-          # a tag-specific 404, API/auth failures cannot be mistaken for absence.
-          release_tags="$(gh api --paginate "repos/$GH_REPO/releases?per_page=100" --jq '.[].tag_name')" || {
-            api_status=$?
-            printf '%s\n' 'Release lookup failed; inspect the GitHub API error above. No release will be created.' >&2
-            exit "$api_status"
-          }
-          while IFS= read -r existing_tag; do
-            if [[ "$existing_tag" == "$RELEASE_VERSION" ]]; then
-              printf 'Release %s already exists; leaving its publication state and assets unchanged.\n' "$RELEASE_VERSION"
-              exit 0
-            fi
-          done <<< "$release_tags"
-          release_flags=(--draft)
-          # SemVer build metadata may contain a dash without being a prerelease.
-          if [[ "${RELEASE_VERSION%%+*}" == *-* ]]; then
-            release_flags+=(--prerelease --latest=false)
-          fi
-          gh release create "$RELEASE_VERSION" dist/releases/*.tar.gz dist/releases/SHA256SUMS \
-            --verify-tag "${release_flags[@]}" --title "Healthbank $RELEASE_VERSION" --generate-notes
+          python3 -W error scripts/publish_release.py "$RELEASE_VERSION" "$GITHUB_SHA" tag
 
       - name: Publish candidate only after all release gates pass
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -152,24 +148,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          set -euo pipefail
-          if gh release view "$RELEASE_VERSION" >/dev/null 2>&1; then
-            echo "Release already exists: $RELEASE_VERSION; refusing to replace published assets" >&2
-            exit 1
-          fi
-          notes="$RUNNER_TEMP/release-notes.md"
-          # Extract exactly the selected version heading and notes from CHANGELOG;
-          # no stale hardcoded RC notes, and never silently publish empty notes.
-          awk -v version="$RELEASE_VERSION" '
-            index($0, "## " version " ") == 1 { found=1; printing=1; print; next }
-            printing && /^## / { exit }
-            printing { print }
-            END { if (!found) exit 2 }
-          ' CHANGELOG.md > "$notes"
-          if [[ ! -s "$notes" ]]; then
-            echo "Missing release notes for $RELEASE_VERSION" >&2
-            exit 2
-          fi
-          gh release create "$RELEASE_VERSION" dist/releases/*.tar.gz dist/releases/SHA256SUMS \
-            --target "$GITHUB_SHA" --title "Healthbank $RELEASE_VERSION" \
-            --prerelease --latest=false --notes-file "$notes"
+          python3 -W error scripts/publish_release.py "$RELEASE_VERSION" "$GITHUB_SHA" candidate

@@ -1,4 +1,5 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
+
 package lab
 
 import (
@@ -9,6 +10,8 @@ import (
 	"io"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/bestkakkoii/healthbank/internal/strictjson"
 )
 
 // Portable reports contain only original laboratory fields. They are not identity
@@ -37,7 +40,7 @@ type portableRow struct {
 }
 
 func (v portableRow) raw() RawRecord {
-	return RawRecord{CheckDate: v.CheckDate, OrderCode: v.OrderCode, OrderName: v.OrderName, ItemName: v.ItemName, Result: v.Result, Unit: v.Unit, Reference: v.Reference, Institution: v.Institution, VisitDate: v.VisitDate, Source: v.Source, OfficialFlag: v.OfficialFlag}
+	return RawRecord(v)
 }
 func validatePortable(rows []portableRow) ([]RawRecord, []string, error) {
 	if len(rows) > maxImportedRows {
@@ -61,55 +64,8 @@ func validatePortable(rows []portableRow) ([]RawRecord, []string, error) {
 // JSON structural validation rejects duplicate keys, deep structures and trailing
 // documents before decoding medical fields. Never accept last-wins ambiguity.
 func validateJSONDocument(data []byte) error {
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.UseNumber()
-	var read func(int) error
-	read = func(depth int) error {
-		if depth > 32 {
-			return errors.New("JSON巢狀層級過深。")
-		}
-		token, err := decoder.Token()
-		if err != nil {
-			return err
-		}
-		delimiter, ok := token.(json.Delim)
-		if !ok {
-			return nil
-		}
-		switch delimiter {
-		case '{':
-			seen := map[string]bool{}
-			for decoder.More() {
-				key, err := decoder.Token()
-				if err != nil {
-					return err
-				}
-				name, ok := key.(string)
-				if !ok || seen[name] {
-					return errors.New("JSON包含重複或無效欄位。")
-				}
-				seen[name] = true
-				if err := read(depth + 1); err != nil {
-					return err
-				}
-			}
-		case '[':
-			for decoder.More() {
-				if err := read(depth + 1); err != nil {
-					return err
-				}
-			}
-		default:
-			return errors.New("JSON結構不正確。")
-		}
-		_, err = decoder.Token()
-		return err
-	}
-	if err := read(0); err != nil {
-		return errors.New("JSON格式、層級或重複欄位不符合匯入規則。")
-	}
-	if _, err := decoder.Token(); err != io.EOF {
-		return errors.New("JSON包含多份文件或尾隨內容。")
+	if err := strictjson.Validate(data, strictjson.Options{}); err != nil {
+		return errors.New("JSON格式、Unicode、層級或重複欄位不符合匯入規則。")
 	}
 	return nil
 }
@@ -121,16 +77,32 @@ func parsePortableJSON(data []byte) ([]RawRecord, []string, error) {
 	if err := validateJSONDocument(data); err != nil {
 		return nil, nil, err
 	}
-	var document struct {
-		Schema  string        `json:"schema"`
-		Records []portableRow `json:"records"`
-	}
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&document); err != nil || document.Schema != portableSchema || document.Records == nil {
+	// Decode exact case-sensitive schema keys before structs: encoding/json
+	// otherwise accepts case aliases and null strings as unchanged zero values.
+	var document map[string]json.RawMessage
+	if err := json.Unmarshal(data, &document); err != nil || len(document) != 2 || document["schema"] == nil || document["records"] == nil {
 		return nil, nil, errors.New("未辨識的JSON格式。僅支援Healthbank可攜報表 healthbank.lab.v1；不是通用SDK／FHIR匯入器。")
 	}
-	return validatePortable(document.Records)
+	var schema string
+	var rows []map[string]json.RawMessage
+	if err := json.Unmarshal(document["schema"], &schema); err != nil || schema != portableSchema {
+		return nil, nil, errors.New("未辨識的JSON報表版本。")
+	}
+	if err := json.Unmarshal(document["records"], &rows); err != nil || rows == nil || len(rows) > maxImportedRows {
+		return nil, nil, errors.New("JSON檢驗資料列格式或筆數不正確。")
+	}
+	for _, row := range rows {
+		for name, value := range row {
+			if !portableFields[name] || len(value) == 0 || value[0] != '"' {
+				return nil, nil, errors.New("JSON檢驗欄位必須使用已定義名稱與原始文字，不能為null。")
+			}
+		}
+	}
+	var decoded []portableRow
+	if err := json.Unmarshal(document["records"], &decoded); err != nil {
+		return nil, nil, errors.New("JSON檢驗欄位格式不正確。")
+	}
+	return validatePortable(decoded)
 }
 func parsePortableXML(data []byte) ([]RawRecord, []string, error) {
 	if !utf8.Valid(data) {

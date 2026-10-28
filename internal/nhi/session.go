@@ -1,8 +1,8 @@
 // Copyright (c) 2026 bestkakkoii llc.
 // SPDX-License-Identifier: MIT
 
-// Package nhi implements the card-number login and other laboratory results
-// flow used by the official Taiwan NHI My Health Bank web application.
+// Package nhi implements card-number login and authorized health record retrieval
+// through fixed routes used by the official Taiwan NHI My Health Bank application.
 //
 // This is a source-derived connector, not an official or supported public API.
 // Credentials, cookies, tokens and reports are held in memory only.
@@ -28,6 +28,8 @@ import (
 	"sync"
 	"time"
 	"unicode"
+
+	"github.com/bestkakkoii/healthbank/internal/strictjson"
 )
 
 const (
@@ -279,7 +281,7 @@ func (s *Session) Login(ctx context.Context, credentials Credentials) error {
 	}
 	defer clear(body)
 	var response loginResponse
-	if err := decodeJSON(body, &response); err != nil {
+	if err := decodeStructJSON(body, &response); err != nil {
 		return s.annotateResponseError(failure("UPSTREAM_CHANGED", "健保署登入回應格式已變更，請稍後重試。"))
 	}
 	if !loginSucceeded(response.Code) {
@@ -313,7 +315,7 @@ func (s *Session) refresh(ctx context.Context) error {
 	}
 	defer clear(body)
 	var response loginResponse
-	if decodeJSON(body, &response) != nil || response.Code != "0000" || !validToken(response.Token) {
+	if decodeStructJSON(body, &response) != nil || response.Code != "0000" || !validToken(response.Token) {
 		s.clearAuth()
 		return s.annotateResponseError(sessionExpired())
 	}
@@ -448,7 +450,22 @@ func (s *Session) requestWithClient(ctx context.Context, client *http.Client, me
 }
 
 func decodeJSON(body []byte, target any) error {
-	decoder := json.NewDecoder(bytes.NewReader(bytes.TrimPrefix(body, []byte{0xef, 0xbb, 0xbf})))
+	return decodeValidatedJSON(body, target, false)
+}
+
+// Struct decoding also folds field names in encoding/json. Reject competing
+// aliases before decoding instead of letting the last value replace a result
+// or authentication field. Source dictionaries keep case-sensitive keys.
+func decodeStructJSON(body []byte, target any) error {
+	return decodeValidatedJSON(body, target, true)
+}
+
+func decodeValidatedJSON(body []byte, target any, foldNames bool) error {
+	body = bytes.TrimPrefix(body, []byte{0xef, 0xbb, 0xbf})
+	if err := strictjson.Validate(body, strictjson.Options{MaxDepth: 32, FoldNames: foldNames}); err != nil {
+		return err
+	}
+	decoder := json.NewDecoder(bytes.NewReader(body))
 	if err := decoder.Decode(target); err != nil {
 		return err
 	}

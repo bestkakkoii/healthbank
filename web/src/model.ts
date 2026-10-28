@@ -266,6 +266,8 @@ export function toCsv(records: LabRecord[]): string {
       '資料來源',
       '判讀說明',
       'Copyright',
+      '檢查日期（來源原文）',
+      '就醫日期（來源原文）',
     ],
     ...records.map((r) => [
       r.exam_date,
@@ -283,6 +285,8 @@ export function toCsv(records: LabRecord[]): string {
       r.source,
       r.interpretation,
       `© ${COPYRIGHT_YEAR} bestkakkoii llc.`,
+      r.raw_check_date ?? r.exam_date,
+      r.raw_visit_date ?? r.visit_date,
     ]),
   ];
   return '\ufeff' + rows.map((row) => row.map(quote).join(',')).join('\r\n');

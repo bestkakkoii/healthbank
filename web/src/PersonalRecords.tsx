@@ -1,8 +1,8 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAnalysis } from './AnalysisContext';
 import { downloadText, dateLabel } from './model';
-import { INTAKE_CATEGORIES, parseIntakeRecords, intakeStorageKey, intakeOnDate, type IntakeRecord, type IntakeCategory } from './personal-records';
+import { INTAKE_CATEGORIES, parseIntakeRecords, decodeIntakeFile, intakeStorageKey, intakeOnDate, type IntakeRecord, type IntakeCategory } from './personal-records';
 const blank = (): IntakeRecord => ({ id: '', name: '', category: 'other', amount: '', start: '', end: '', note: '' });
 function load(key: string | null): { records: IntakeRecord[]; remember: boolean; error: string } {
   if (!key) return { records: [], remember: false, error: '' };
@@ -11,12 +11,16 @@ function load(key: string | null): { records: IntakeRecord[]; remember: boolean;
 }
 export function PersonalRecords({ profileKey }: { profileKey: string }) {
   const importInput = useRef<HTMLInputElement>(null);
+  const importGeneration = useRef(0);
+  useEffect(() => () => { importGeneration.current += 1; }, []);
   const key = intakeStorageKey(profileKey);
   const [initial] = useState(() => load(key));
   const [records, setRecords] = useState(initial.records), [remember, setRemember] = useState(initial.remember);
   const [error, setError] = useState(initial.error), [editing, setEditing] = useState<IntakeRecord | null>(null);
   const analysis = useAnalysis();
   function commit(next: IntakeRecord[], keep = remember) {
+    // A later edit/clear/consent change supersedes any outstanding file read.
+    importGeneration.current += 1;
     try {
       const checked = parseIntakeRecords(JSON.stringify(next));
       if (key) { if (keep) localStorage.setItem(key, JSON.stringify(checked)); else localStorage.removeItem(key); }
@@ -25,13 +29,18 @@ export function PersonalRecords({ profileKey }: { profileKey: string }) {
   }
   async function importRecords(file: File | undefined) {
     if (!file) return;
+    const generation = ++importGeneration.current;
+    if (importInput.current) importInput.current.value = '';
     try {
       if (file.size > 768_000) throw new Error('個人紀錄檔案過大。');
-      const next = parseIntakeRecords(await file.text());
+      const source = new Uint8Array(await file.arrayBuffer());
+      if (generation !== importGeneration.current) return;
+      const next = decodeIntakeFile(source);
       if (records.length && !window.confirm('以匯入檔取代目前個人品項？可先匯出備份。')) return;
       if (commit(next)) setEditing(null);
-    } catch (failure) { setError(failure instanceof Error ? failure.message : '匯入失敗；原紀錄仍保留。'); }
-    finally { if (importInput.current) importInput.current.value = ''; }
+    } catch (failure) {
+      if (generation === importGeneration.current) setError(failure instanceof Error ? failure.message : '匯入失敗；原紀錄仍保留。');
+    }
   }
   function saveEdit() {
     if (!editing) return;

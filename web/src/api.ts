@@ -58,6 +58,8 @@ export interface LabRecord {
   category: string;
   exam_date: string;
   visit_date: string;
+  raw_check_date?: string;
+  raw_visit_date?: string;
   order_code: string;
   order_name: string;
   result: string;
@@ -116,6 +118,8 @@ export interface SupplementReport {
   start_date?: string; end_date?: string; complete: boolean;
 }
 export interface ReportResponse {
+  // Live API generation proof only; never part of a portable medical document.
+  session_token?: string;
   records: LabRecord[];
   fetched_at: string;
   complete: boolean;
@@ -126,6 +130,10 @@ export interface ReportResponse {
     end_date: string;
     reported_count: number | null;
   };
+}
+
+export interface LiveReportResponse extends ReportResponse {
+  session_token: string;
 }
 
 export interface CatalogItem {
@@ -214,6 +222,16 @@ export class ApiError extends Error {
   }
 }
 
+// These responses explicitly retire the caller's session generation. Other
+// forbidden/conflict responses (origin, validation or revision conflicts) do not.
+export function isSessionInvalidation(error: unknown): boolean {
+  return error instanceof ApiError && (error.status === 401 ||
+    error.status === 403 && error.code === 'csrf_mismatch' ||
+    error.status === 409 && error.code === 'session_changed' ||
+    error.status === 500 && error.code === 'session_rotate' ||
+    error.code === 'invalid_report_session');
+}
+
 let csrfToken = '';
 export function setCsrfToken(token?: string) {
   csrfToken = token ?? '';
@@ -224,7 +242,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   headers.set('Accept', 'application/json');
   if (options.body && !(options.body instanceof FormData))
     headers.set('Content-Type', 'application/json');
-  if (csrfToken && options.method && options.method !== 'GET')
+  // Read requests also belong to the page's current generation. A shared
+  // browser cookie may have changed in another tab since this UI was rendered.
+  // /api/session is the explicit operation that reconciles such a change.
+  if (csrfToken && path !== '/api/session')
     headers.set('X-CSRF-Token', csrfToken);
   const response = await fetch(path, {
     ...options,
@@ -302,6 +323,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return payload as T;
 }
 
+async function requestReport(path: string, options: RequestInit = {}): Promise<LiveReportResponse> {
+  const report = await request<ReportResponse>(path, options);
+  if (typeof report.session_token !== 'string' || !/^[a-f0-9]{64}$/.test(report.session_token))
+    throw new ApiError('伺服器未提供有效的資料使用階段識別，未套用這份報告。請重新載入頁面。', 'invalid_report_session', 200);
+  return { ...report, session_token: report.session_token };
+}
+
 async function fetchDataCatalog(signal?: AbortSignal): Promise<{ categories: DataCategory[] }> {
   const result = await request<{ categories: unknown }>('/api/data/catalog', { signal: signal ?? null });
   if (!Array.isArray(result.categories) || result.categories.length === 0 || result.categories.length > 128)
@@ -327,6 +355,11 @@ async function fetchDataCatalog(signal?: AbortSignal): Promise<{ categories: Dat
 
 export const api = {
   dataCatalog: fetchDataCatalog,
+  document: (category: string, id: string, signal: AbortSignal) =>
+    fetch(`/api/documents?${new URLSearchParams({ category, id })}`, {
+      credentials: 'same-origin', cache: 'no-store', signal,
+      headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
+    }),
   prepareDocument: (category: string, id: string, signal?: AbortSignal) =>
     request<{ status: 'requested'; message: string }>('/api/documents/prepare', {
       method: 'POST', body: JSON.stringify({ category, id }), signal: signal ?? null,
@@ -341,15 +374,15 @@ export const api = {
     request<Session>('/api/auth/login', { method: 'POST', body: JSON.stringify(body) }),
   logout: () => request<Session>('/api/auth/logout', { method: 'POST', body: '{}' }),
   reports: (from: string, to: string, signal?: AbortSignal) =>
-    request<ReportResponse>(`/api/reports?${new URLSearchParams({ from, to })}`, { signal: signal ?? null }),
+    requestReport(`/api/reports?${new URLSearchParams({ from, to })}`, { signal: signal ?? null }),
   currentReports: (signal?: AbortSignal) =>
-    request<ReportResponse>('/api/reports/current', { signal: signal ?? null }),
+    requestReport('/api/reports/current', { signal: signal ?? null }),
   importReports: (file: File) => {
     const body = new FormData();
     body.append('file', file);
-    return request<ReportResponse>('/api/reports/import', { method: 'POST', body });
+    return requestReport('/api/reports/import', { method: 'POST', body });
   },
-  demo: () => request<ReportResponse>('/api/reports/demo', { method: 'POST', body: '{}' }),
+  demo: () => requestReport('/api/reports/demo', { method: 'POST', body: '{}' }),
   catalog: (signal?: AbortSignal) => request<CatalogResponse>('/api/catalog', { signal: signal ?? null }),
   saveSettings: (settings: Settings) =>
     request<Settings>('/api/settings', {

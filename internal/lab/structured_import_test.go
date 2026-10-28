@@ -112,3 +112,23 @@ func TestPortableImportRejectsAmbiguityAndUnsupportedSources(t *testing.T) {
 		}
 	}
 }
+
+func TestPortableJSONRejectsLossyStringsAndSchemaAliases(t *testing.T) {
+	for _, document := range []string{
+		`{"schema":"healthbank.lab.v1","records":[{"item_name":"synthetic","result":"\ud800"}]}`,
+		`{"schema":"healthbank.lab.v1","records":[{"item_name":"synthetic","result":"\udc00"}]}`,
+		`{"schema":"healthbank.lab.v1","records":[{"item_name":"synthetic","result":"1","Result":"2"}]}`,
+		`{"schema":"healthbank.lab.v1","Records":[]}`,
+		`{"schema":"healthbank.lab.v1","records":[{"Item_Name":"synthetic"}]}`,
+		`{"schema":"healthbank.lab.v1","records":[{"item_name":"synthetic","result":null}]}`,
+	} {
+		if records, _, err := ParseImport("synthetic.json", []byte(document)); err == nil || len(records) != 0 {
+			t.Errorf("accepted ambiguous or lossy portable schema: %s", document)
+		}
+	}
+	document := `{"schema":"healthbank.lab.v1","records":[{"item_name":"synthetic","result":"\ud842\udfb7，原文�與\\ud800"}]}`
+	records, _, err := ParseImport("synthetic.json", []byte(document))
+	if err != nil || len(records) != 1 || records[0].Result != "𠮷，原文�與\\ud800" {
+		t.Fatal("valid non-BMP, replacement character or literal escape changed")
+	}
+}

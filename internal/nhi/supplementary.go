@@ -1,4 +1,5 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
+
 package nhi
 
 import (
@@ -14,6 +15,7 @@ import (
 	"time"
 )
 
+// SupplementField preserves a labelled value from the observed public SPA.
 // These contracts are taken from the observed public SPA, not guessed routes.
 // A returned array is not an independent statement of lifetime completeness.
 type SupplementField struct {
@@ -44,6 +46,43 @@ type SupplementReport struct {
 	EndDate   string            `json:"end_date,omitempty"`
 	Complete  bool              `json:"complete"`
 }
+
+const maxSourceTextBytes = 65536
+
+// Projected reports share the portable dataset's existing structural limits.
+// Validate the combined result before replacing live references: individually
+// bounded arrays and scalars can otherwise exceed a limit after concatenation.
+func validateSupplementReport(report SupplementReport) error {
+	withinTextBound := func(values ...string) bool {
+		for _, value := range values {
+			if len(value) > maxSourceTextBytes {
+				return false
+			}
+		}
+		return true
+	}
+	tooLarge := func() error {
+		return failure("RESPONSE_TOO_LARGE", "來源資料合併後超過筆數、欄位或文字長度上限，未回傳截斷資料。")
+	}
+	if len(report.Entries) > MaxReportRecords || !withinTextBound(report.Category, report.Coverage, report.StartDate, report.EndDate) {
+		return tooLarge()
+	}
+	for _, entry := range report.Entries {
+		if len(entry.Fields) > MaxReportRecords || len(entry.Attachments) > 500 || !withinTextBound(entry.Key, entry.Kind, entry.Date, entry.EndDate, entry.Institution, entry.Title, entry.Source) {
+			return tooLarge()
+		}
+		for _, field := range entry.Fields {
+			if !withinTextBound(field.Name, field.Value, field.Unit) {
+				return tooLarge()
+			}
+		}
+		if order := entry.Medicine; order != nil && !withinTextBound(order.Code, order.Name, order.Quantity, order.Days) {
+			return tooLarge()
+		}
+	}
+	return nil
+}
+
 type westernReference struct{ rowID, sourceType, date, institution string }
 
 type fieldSpec struct{ key, label, unit string }
@@ -93,7 +132,7 @@ func rowText(row wireRow, names ...string) (string, error) {
 			continue
 		}
 		var text wireText
-		if json.Unmarshal(value, &text) != nil || len(text) > 65536 {
+		if json.Unmarshal(value, &text) != nil || len(text) > maxSourceTextBytes {
 			return "", changedError()
 		}
 		if strings.TrimSpace(string(text)) != "" {
@@ -324,6 +363,9 @@ func (s *Session) FetchSupplement(ctx context.Context, category string, query Qu
 		}
 		report.Entries = append(report.Entries, entry)
 	}
+	if err := validateSupplementReport(report); err != nil {
+		return report, err
+	}
 	if category == "self_paid" {
 		s.selfPaidReferences = references
 	}
@@ -429,6 +471,9 @@ func (s *Session) FetchSelfPaidDetail(ctx context.Context, reference string) (Su
 	if !found {
 		return report, changedError()
 	}
+	if err := validateSupplementReport(report); err != nil {
+		return report, err
+	}
 	report.FetchedAt = time.Now().UTC().Format(time.RFC3339)
 	return report, nil
 }
@@ -485,6 +530,9 @@ func (s *Session) FetchWesternDetail(ctx context.Context, reference string) (Sup
 				}
 			}
 		}
+	}
+	if err := validateSupplementReport(report); err != nil {
+		return report, err
 	}
 	report.FetchedAt = time.Now().UTC().Format(time.RFC3339)
 	return report, nil

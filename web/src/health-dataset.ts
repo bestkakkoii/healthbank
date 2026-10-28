@@ -3,6 +3,7 @@ import type { ReportResponse, SupplementEntry, SupplementReport } from './api';
 import type { AcquisitionState, DataCategory, DownloadedAttachment, HealthDataSnapshot } from './health-data';
 import { validAcquisitionQuery } from './health-data.ts';
 import { isObject } from './model.ts';
+import { parseStrictJSON } from './strict-json.ts';
 import { assertPortableReportSize, portableRows, PORTABLE_REPORT_SCHEMA } from './portable-report.ts';
 
 export const DATASET_SCHEMA = 'healthbank.dataset.v1';
@@ -13,7 +14,7 @@ const MAX_CATEGORIES = 200;
 const MAX_FIELD_BYTES = 65_536;
 const encoder = new TextEncoder();
 type PortableRow = ReturnType<typeof portableRows>[number];
-export type LaboratoryMetadata = Omit<ReportResponse, 'records'>;
+export type LaboratoryMetadata = Pick<ReportResponse, 'fetched_at' | 'complete' | 'warnings' | 'official_query'>;
 export interface ImportedDataset {
   laboratoryJSON: string;
   laboratoryMetadata: LaboratoryMetadata;
@@ -200,56 +201,6 @@ function snapshot(value: unknown): HealthDataSnapshot {
   return result;
 }
 
-// JSON.parse alone silently accepts repeated object keys. Check the structure
-// first so coverage, source values and attachments cannot have ambiguous values.
-function parseJSON(source: string): unknown {
-  let position = 0;
-  function space() { while (/\s/.test(source[position] ?? '') && position < source.length) position++; }
-  function string(): string {
-    const start = position++;
-    while (position < source.length) {
-      const character = source[position++];
-      if (character === '\\') position++;
-      else if (character === '"') {
-        const value: unknown = JSON.parse(source.slice(start, position));
-        return text(value, MAX_DATASET_BYTES);
-      }
-    }
-    return invalid();
-  }
-  function scan(depth: number): void {
-    if (depth > 24) return invalid();
-    space();
-    if (source[position] === '"') { string(); return; }
-    const open = source[position];
-    if (open !== '{' && open !== '[') {
-      const start = position;
-      while (position < source.length && !/[\s,}\]]/.test(source[position] ?? '')) position++;
-      if (position === start) return invalid();
-      return;
-    }
-    position++; space();
-    const close = open === '{' ? '}' : ']';
-    const keys = new Set<string>();
-    if (source[position] === close) { position++; return; }
-    for (;;) {
-      if (open === '{') {
-        if (source[position] !== '"') return invalid();
-        const key = string();
-        if (keys.has(key) || ['__proto__', 'constructor', 'prototype'].includes(key)) return invalid();
-        keys.add(key); space();
-        if (source[position++] !== ':') return invalid();
-      }
-      scan(depth + 1); space();
-      if (source[position] === close) { position++; return; }
-      if (source[position++] !== ',') return invalid();
-      space();
-    }
-  }
-  scan(0); space();
-  if (position !== source.length) return invalid();
-  return JSON.parse(source) as unknown;
-}
 
 function base64(bytes: Uint8Array): string {
   const chunks: string[] = [];
@@ -282,21 +233,10 @@ function validateAttachment(bytes: Uint8Array, contentType: string): void {
   }
 }
 
-export async function exportDataset(report: ReportResponse, data: HealthDataSnapshot, files: DownloadedAttachment[], categories: DataCategory[], bom = false): Promise<string> {
-  if (files.length > 10_000) return invalid();
-  const labRecords = laboratoryRows(portableRows(report.records));
-  // This is the exact body sent to the laboratory importer on restore. Check
-  // the same bound on both paths before producing an un-restorable archive.
-  assertPortableReportSize(JSON.stringify({ schema: PORTABLE_REPORT_SCHEMA, records: labRecords }));
-  const handles = new Map<string, string>();
-  const downloaded = new Map(files.map(file => [JSON.stringify([file.category, file.id]), file]));
-  const local = (category: string, kind: string, id: string) => {
-    const key = JSON.stringify([category, kind, id]);
-    let handle = handles.get(key);
-    if (!handle) { handle = `archive_${handles.size + 1}`; handles.set(key, handle); }
-    return handle;
-  };
-  const cleanReport = (category: string, source: SupplementReport): SupplementReport => ({
+function portableSupplementReport(category: string, source: SupplementReport,
+  local: (category: string, kind: string, id: string) => string,
+  downloaded: Map<string, DownloadedAttachment>): SupplementReport {
+  return {
     category: source.category, coverage: source.coverage, fetched_at: source.fetched_at, complete: source.complete,
     ...(source.start_date === undefined ? {} : { start_date: source.start_date }),
     ...(source.end_date === undefined ? {} : { end_date: source.end_date }),
@@ -316,11 +256,43 @@ export async function exportDataset(report: ReportResponse, data: HealthDataSnap
           ...(size === undefined ? {} : { size }) };
       }) }),
     })),
-  });
+  };
+}
+
+// Standalone list downloads share the whole-dataset projection: local archive
+// relationships preserve source structure without exporting live capabilities.
+export function supplementReportJSON(report: SupplementReport): string {
+  const handles = new Map<string, string>();
+  const local = (category: string, kind: string, id: string) => {
+    const key = JSON.stringify([category, kind, id]);
+    let value = handles.get(key);
+    if (!value) { value = `archive_${handles.size + 1}`; handles.set(key, value); }
+    return value;
+  };
+  const output = `${JSON.stringify(portableSupplementReport(report.category, report, local, new Map()), null, 2)}\n`;
+  if (encoder.encode(output).length > MAX_DATASET_BYTES) throw new Error('來源清單超過 128 MiB，未輸出截斷內容。');
+  return output;
+}
+
+export async function exportDataset(report: ReportResponse, data: HealthDataSnapshot, files: DownloadedAttachment[], categories: DataCategory[], bom = false): Promise<string> {
+  if (files.length > 10_000) return invalid();
+  const labRecords = laboratoryRows(portableRows(report.records));
+  // This is the exact body sent to the laboratory importer on restore. Check
+  // the same bound on both paths before producing an un-restorable archive.
+  assertPortableReportSize(JSON.stringify({ schema: PORTABLE_REPORT_SCHEMA, records: labRecords }));
+  const handles = new Map<string, string>();
+  const downloaded = new Map(files.map(file => [JSON.stringify([file.category, file.id]), file]));
+  const local = (category: string, kind: string, id: string) => {
+    const key = JSON.stringify([category, kind, id]);
+    let handle = handles.get(key);
+    if (!handle) { handle = `archive_${handles.size + 1}`; handles.set(key, handle); }
+    return handle;
+  };
+
   const sanitized: HealthDataSnapshot = {
-    reports: Object.fromEntries(Object.entries(data.reports).map(([category, value]) => [category, cleanReport(category, value)])),
+    reports: Object.fromEntries(Object.entries(data.reports).map(([category, value]) => [category, portableSupplementReport(category, value, local, downloaded)])),
     details: Object.fromEntries(Object.entries(data.details).map(([category, values]) => [category,
-      Object.fromEntries(Object.entries(values).map(([id, value]) => [local(category, 'detail', id), cleanReport(category, value)]))])),
+      Object.fromEntries(Object.entries(values).map(([id, value]) => [local(category, 'detail', id), portableSupplementReport(category, value, local, downloaded)]))])),
     states: Object.fromEntries(Object.entries(data.states).map(([category, state]) => [category, {
       status: state.status === 'loading' ? 'cancelled' : state.status,
       ...(state.error === undefined ? {} : { error: state.error }),
@@ -359,7 +331,7 @@ export async function importDataset(bytes: Uint8Array): Promise<ImportedDataset>
   let source: string;
   try { source = new TextDecoder('utf-8', { fatal: true }).decode(bytes).replace(/^\uFEFF/, ''); }
   catch { throw new Error('資料包須為有效 UTF-8 JSON。'); }
-  const v = object(parseJSON(source), ['schema', 'exported_at', 'laboratory', 'catalog', 'data', 'attachments']);
+  const v = object(parseStrictJSON(source), ['schema', 'exported_at', 'laboratory', 'catalog', 'data', 'attachments']);
   if (v['schema'] !== DATASET_SCHEMA) throw new Error('此檔案不是 Healthbank 完整資料包 healthbank.dataset.v1；檢驗 JSON/XML 請使用檢驗匯入。');
   text(v['exported_at'], 100);
   const lab = object(v['laboratory']);

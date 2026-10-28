@@ -334,6 +334,32 @@ func TestPersonalIntervalsRejectDoubleIncludedEndpoints(t *testing.T) {
 	}
 }
 
+func TestPersonalIntervalsPreserveSubFloatPrecision(t *testing.T) {
+	const a, b, c = "1.00000000000000000001", "1.00000000000000000002", "1.00000000000000000003"
+	band := func(lower, upper string) Band {
+		return Band{Lower: pointer(lower), Upper: pointer(upper), LowerInclusive: true, Level: 1}
+	}
+	for _, tc := range []struct {
+		name  string
+		bands []Band
+		valid bool
+	}{
+		{"narrow_valid", []Band{band(a, b)}, true},
+		{"reversed", []Band{band(b, a)}, false},
+		{"overlapping", []Band{band(a, c), band(b, c)}, false},
+		{"exact_adjacent", []Band{band(a, b), band(b, c)}, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			settings := DefaultSettings()
+			settings.Known["synthetic"] = KnownItem{ID: "synthetic", Key: "synthetic", Name: "Synthetic"}
+			settings.Overrides["synthetic"] = Override{Enabled: true, Bands: tc.bands}
+			if err := ValidateSettings(settings, settings.Known); (err == nil) != tc.valid {
+				t.Fatalf("exact source bounds validation: %v", err)
+			}
+		})
+	}
+}
+
 func TestSharedACRConfigurationAndSettingsExcludeObservations(t *testing.T) {
 	catalog := gradingCatalog(t)
 	settings := DefaultSettings()

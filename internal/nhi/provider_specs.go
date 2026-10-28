@@ -1,4 +1,5 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
+
 package nhi
 
 import (
@@ -91,7 +92,7 @@ func buildProviderSpecs() map[string]providerSpec {
 	plan := providerSectionSpec("myplan", "照護計畫收案", "健康存摺／照護計畫", "case_date", []fieldSpec{{"mhbt_name", "計畫名稱", ""}, {"mhbt_memo", "來源計畫說明", ""}, {"case_date", "收案日期（原文）", ""}, {"close_date", "結案日期（原文）", ""}})
 	plan.titleField, plan.end = "mhbt_name", "close_date"
 	add("care_plans", "參與的照護計畫", "照護與追蹤", sourceCoverage, get("/api/ihke3000/IHKE3213S01/page_load", plan))
-	screenFields := []fieldSpec{{"func_DATE", "篩檢日期（原文）", ""}, {"code_CNAME", "篩檢結果（原文）", ""}, {"code_ENAME", "來源結果代碼", ""}, {"cytopathic_CODE", "來源檢驗分類", ""}}
+	screenFields := []fieldSpec{{"func_DATE", "篩檢日期（原文）", ""}, {"code_CNAME", "篩檢結果（原文）", ""}, {"code_ENAME", "來源結果代碼", ""}, {"cytopathic_CODE", "來源檢驗分類", ""}, {"lung_RADS", "來源肺部判讀報告（原文）", ""}, {"diagnosis_CODE", "來源判讀報告（原文，非本站診斷）", ""}, {"hpv_diagnosis_code_rpt", "來源 HPV 判讀報告（原文）", ""}, {"assay_RESULT", "來源檢驗結果代碼（原文）", ""}}
 	for _, row := range []struct{ id, title, path, root string }{
 		{"screen_colorectal", "大腸癌篩檢", "/api/ihke3000/ihke3404s02/SP_IHKE3404S02", "sP_IHKE3404S02_Data"},
 		{"screen_oral", "口腔癌篩檢", "/api/ihke3000/ihke3404s03/SP_IHKE3404S03", "sP_IHKE3404S03_Data"},
@@ -125,7 +126,7 @@ func buildProviderSpecs() map[string]providerSpec {
 		{"sp_IHKE3410S01", "COVID-19 檢驗", "real_INSPECT_DATE"}, {"sp_IHKE3410S02", "COVID-19 快篩來源", "real_INSPECT_DATE"}, {"sp_IHKE3410S04", "COVID-19 其他來源", "real_INSPECT_DATE"},
 		{"sp_IHKE3410S05", "COVID-19 接種", "inoculate_D"}, {"sp_IHKE3410S09", "COVID-19 採檢與確認", "sample_DATE"},
 	} {
-		fields := append(append([]fieldSpec{}, providerResultFields...), fieldSpec{"code_cname", "疫苗名稱", ""}, fieldSpec{"inoculate_D", "接種日期（原文）", ""}, fieldSpec{"sample_DATE", "採檢日期（原文）", ""}, fieldSpec{"confirm_DATE", "確認日期（原文）", ""}, fieldSpec{"assay_METHOD", "檢測方法（原文）", ""}, fieldSpec{"inspect_RESULT", "文字結果（原文）", ""}, fieldSpec{"lab_UNIT_NAME", "檢驗單位名稱", ""})
+		fields := append(append([]fieldSpec{}, providerResultFields...), fieldSpec{"code_cname", "疫苗名稱", ""}, fieldSpec{"inoculate_D", "接種日期（原文）", ""}, fieldSpec{"sample_DATE", "採檢日期（原文）", ""}, fieldSpec{"confirm_DATE", "確認日期（原文）", ""}, fieldSpec{"recv_DATE", "來源報告日期（原文，非採檢日期）", ""}, fieldSpec{"assay_DISEA", "來源送驗疾病（原文，非診斷確認）", ""}, fieldSpec{"inspect_MODE", "檢體種類（原文）", ""}, fieldSpec{"assay_METHOD", "檢測方法（原文）", ""}, fieldSpec{"inspect_RESULT", "文字結果（原文）", ""}, fieldSpec{"lab_UNIT_NAME", "檢驗單位名稱", ""})
 		covidSections = append(covidSections, providerSectionSpec(section.root, section.title, "健康存摺／COVID-19 專區", section.date, fields))
 	}
 	add("covid", "COVID-19 檢驗與接種", "預防與篩檢", sourceCoverage+"不呼叫重整或產生證明操作；不轉出個人 QR 識別。", get("/api/ihke3000/IHKE3410S01/page_load", covidSections...))
@@ -211,8 +212,9 @@ func providerDetailRequest(category string, ref providerReference) (providerRequ
 		fields := []fieldSpec{{"assay_DATE", "檢驗日期（原文）", ""}, {"assay_NAME", "來源檢驗名稱", ""}, {"assay_VALUE", "結果（原文）", ""}, {"assay_SOURCE_NAME", "來源類型（原文）", ""}, {"unit_DATA", "單位（原文）", ""}}
 		return post("/api/ihke3000/ihke3721s01/SP_IHKE3721S07", map[string]string{"dType": ref.rowID, "dStr": ref.query.StartDate, "dEnd": ref.query.EndDate}, providerSectionSpec("sP_IHKE3721S07_Data", ref.title, "健康存摺／家庭醫師追蹤檢驗", "assay_DATE", fields)), nil
 	case "exercise":
+		header := providerSectionSpec("", "既有運動記錄時間", "健康存摺／使用者自行記錄", "SPORTDATE_DATE", []fieldSpec{{"SPORTDATE_DATE", "來源記錄日期（原文）", ""}, {"SPORTDATE_HOUR", "來源記錄小時（原文）", ""}, {"SPORTDATE_MINUTE", "來源記錄分鐘（原文）", ""}})
 		fields := []fieldSpec{{"CODE", "來源運動項目代碼", ""}, {"CODE_LEVEL", "來源強度代碼（原文）", ""}, {"TOT_HR", "來源時數", "小時"}, {"TOT_MIN", "來源分鐘數", "分鐘"}}
-		return post("/api/ihke3000/ihke3207s02/SP_IHKE3207S04", map[string]string{"c_rowid": ref.rowID}, providerSectionSpec("oneRecordList", ref.title, "健康存摺／使用者自行記錄", "@parent", fields)), nil
+		return post("/api/ihke3000/ihke3207s02/SP_IHKE3207S04", map[string]string{"c_rowid": ref.rowID}, header, providerSectionSpec("oneRecordList", ref.title, "健康存摺／使用者自行記錄", "@parent", fields)), nil
 	case "physiology":
 		if ref.kind == "device_day" {
 			fields := []fieldSpec{{"cdate", "來源量測日期／時間（原文）", ""}, {"value", "行動裝置量測值（原文）", ""}, {"code", "來源量測項目代碼", ""}, {"unit_DATA", "單位（原文）", ""}}

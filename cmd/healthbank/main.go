@@ -1,4 +1,5 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
+
 package main
 
 import (
@@ -140,6 +141,9 @@ func transfer(db *store.Store, action, path string) error {
 		if err := out.Sync(); err != nil {
 			return err
 		}
+		if err := out.Close(); err != nil {
+			return fmt.Errorf("close settings export: %w", err)
+		}
 		good = true
 		fmt.Printf("Exported %d configuration profiles. Back up the matching identity.key separately.\n", len(snapshot.Entries))
 		return nil
@@ -153,10 +157,18 @@ func transfer(db *store.Store, action, path string) error {
 	if err != nil {
 		return err
 	}
-	for _, entry := range snapshot.Entries {
-		if _, err := server.ValidatePortableSettings(entry.Settings); err != nil {
+	for i, entry := range snapshot.Entries {
+		validated, err := server.ValidatePortableSettings(entry.Settings)
+		if err != nil {
 			return fmt.Errorf("configuration schema rejected: %w", err)
 		}
+		// Persist exactly the typed, reconciled configuration that was validated,
+		// never the original raw JSON from an untrusted portable file.
+		canonical, err := validated.Document()
+		if err != nil {
+			return errors.New("cannot encode validated configuration")
+		}
+		snapshot.Entries[i].Settings = canonical
 	}
 	if err := db.Import(ctx, snapshot); err != nil {
 		return err
