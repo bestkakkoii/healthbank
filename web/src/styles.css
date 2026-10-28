@@ -4329,6 +4329,11 @@
 .portable-export .button-row { margin-block: .65rem; }
 .portable-export .button { white-space: normal; overflow-wrap: anywhere; max-inline-size: 100%; }
 .portable-export .helper-text { margin-block: .4rem; }
+.terminology-english { display: block; margin-top: .2rem; color: var(--ink-muted); font-size: .85em; font-weight: 400; line-height: 1.4; overflow-wrap: anywhere; text-transform: none; }
+.device-health-cache { min-inline-size: 0; }
+.device-health-cache p { overflow-wrap: anywhere; }
+.device-health-cache .button-row { flex-wrap: wrap; margin-block: .7rem; }
+.device-health-cache .button { white-space: normal; overflow-wrap: anywhere; max-inline-size: 100%; }
 @media (max-width: 480px) {
   .chart-record-pagination > span { flex-basis: 100%; order: -1; }
   .chart-access-tools > .button { inline-size: 100%; }

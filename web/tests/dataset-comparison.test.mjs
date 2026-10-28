@@ -23,7 +23,7 @@ test('v2 preserves semantic evidence and producer hashes while v1 remains explic
   const restored = await decode(saved);
   assert.deepEqual(restored.producer, producer);
   assert.deepEqual(restored.snapshot.reports.hospital, snapshot.reports.hospital);
-  const old = JSON.parse(await exportDataset(lab, emptyHealthData(), [], category)); old.schema = LEGACY_DATASET_SCHEMA; delete old.producer;
+  const old = JSON.parse(await exportDataset(lab, emptyHealthData(), [], category)); old.schema = LEGACY_DATASET_SCHEMA; old.laboratory.schema = 'healthbank.lab.v1'; delete old.producer;
   const legacy = await decode(JSON.stringify(old)); assert.equal(legacy.producer, null);
   old.producer = producer; await assert.rejects(decode(JSON.stringify(old)));
   for (const patch of [value => { value.data.reports.hospital.entries[0].date_role = 'guess'; }, value => { value.data.reports.hospital.diagnostics[0].count = 50001; }, value => { value.producer.clinical_catalog_revision = 'unverified-fake-hash'; }, value => { value.data.reports.hospital.entries[0].fields[0].code = 'patient:secret'; }]) {

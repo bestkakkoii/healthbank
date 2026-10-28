@@ -32,6 +32,7 @@ export interface HealthEvent {
   id: string;
   category: string;
   categoryLabel: string;
+  categoryLabelEn?: string;
   date: string;
   entry: SupplementEntry;
   detailReference: string;
@@ -137,17 +138,19 @@ export function categoryCoverage(snapshot: HealthDataSnapshot, category: string)
 // dates, titles or institutions never merge two independent source records.
 export function healthEvents(snapshot: HealthDataSnapshot, categories: DataCategory[]): HealthEvent[] {
   const labels = new Map(categories.map(category => [category.id, category.label]));
+  const englishLabels = new Map(categories.filter(category => category.label_en).map(category => [category.id, category.label_en]));
   const events: HealthEvent[] = [];
   for (const [category, report] of Object.entries(snapshot.reports)) {
+    const englishLabel = englishLabels.get(category);
     for (const [index, entry] of report.entries.entries()) {
       events.push({ id: JSON.stringify([category, 'list', index]), category,
-        categoryLabel: labels.get(category) ?? category, date: sourceEventDate(entry.date), entry,
+        categoryLabel: labels.get(category) ?? category, ...(englishLabel ? { categoryLabelEn: englishLabel } : {}), date: sourceEventDate(entry.date), entry,
         detailReference: entry.detail_id ?? '', parentReference: '', fetchedAt: report.fetched_at });
     }
     for (const [reference, detail] of Object.entries(snapshot.details[category] ?? {})) {
       for (const [index, entry] of detail.entries.entries()) {
         events.push({ id: JSON.stringify([category, reference, index]), category,
-          categoryLabel: labels.get(category) ?? category, date: sourceEventDate(entry.date), entry,
+          categoryLabel: labels.get(category) ?? category, ...(englishLabel ? { categoryLabelEn: englishLabel } : {}), date: sourceEventDate(entry.date), entry,
           detailReference: entry.detail_id ?? '', parentReference: reference, fetchedAt: detail.fetched_at });
       }
     }
@@ -157,7 +160,7 @@ export function healthEvents(snapshot: HealthDataSnapshot, categories: DataCateg
 
 export function laboratoryEvents(report: ReportResponse): HealthEvent[] {
   return report.records.map((record, index) => ({
-    id: JSON.stringify(['laboratory', index, record.id]), category: 'laboratory', categoryLabel: '檢驗結果',
+    id: JSON.stringify(['laboratory', index, record.id]), category: 'laboratory', categoryLabel: '檢驗結果', categoryLabelEn: 'Laboratory results',
     date: sourceEventDate(record.exam_date), detailReference: '', parentReference: '', fetchedAt: report.fetched_at,
     entry: {
       date: record.raw_check_date ?? record.exam_date, institution: record.institution, title: record.display_name || record.item_name,
@@ -174,6 +177,8 @@ export function laboratoryEvents(report: ReportResponse): HealthEvent[] {
         { name: '檢查日期（原文）', value: record.raw_check_date ?? record.exam_date },
         { name: '就醫日期（非採檢日期）', value: record.visit_date },
         { name: '就醫日期（原文，非採檢日期）', value: record.raw_visit_date ?? record.visit_date },
+        { name: '上傳日期（原文，非採檢日期）', value: record.raw_upload_date ?? record.upload_date ?? '' },
+        { name: '資料來源名稱（原文）', value: record.source_name ?? '' },
       ].filter(field => field.value !== ''),
     },
   }));
@@ -193,7 +198,7 @@ export function filterHealthEvents(events: HealthEvent[], filter: EventFilter): 
     }
     if (words.length === 0) return true;
     const entry = event.entry;
-    const text = [event.categoryLabel, entry.date, entry.end_date, entry.institution, entry.title, entry.source,
+    const text = [event.categoryLabel, event.categoryLabelEn, entry.date, entry.end_date, entry.institution, entry.title, entry.source,
       entry.medicine?.code, entry.medicine?.name, ...entry.fields.flatMap(field => [field.name, field.value, field.unit])]
       .filter(Boolean).join('\n').toLocaleLowerCase('zh-TW');
     return words.every(word => text.includes(word));

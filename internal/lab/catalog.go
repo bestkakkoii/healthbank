@@ -23,20 +23,25 @@ type match struct {
 	Unit string `json:"unit_raw"`
 }
 type Definition struct {
-	ID          string            `json:"id"`
-	Name        string            `json:"display_name_zh_tw"`
-	Match       match             `json:"source_match"`
-	Aliases     []match           `json:"source_aliases,omitempty"`
-	Key         string            `json:"configuration_key"`
-	Kind        string            `json:"kind"`
-	ValueKind   string            `json:"value_kind"`
-	Rule        string            `json:"default_rule"`
-	Alerts      []string          `json:"alert_rules,omitempty"`
-	Reference   *ReferenceProfile `json:"reference_profile"`
-	Description string            `json:"description_zh_tw,omitempty"`
-	Sources     []string          `json:"sources,omitempty"`
-	Specimen    string            `json:"specimen"`
-	Notes       []string          `json:"notes"`
+	ID          string             `json:"id"`
+	Name        string             `json:"display_name_zh_tw"`
+	EnglishName string             `json:"display_name_en,omitempty"`
+	TermNote    string             `json:"terminology_note,omitempty"`
+	TermSources []string           `json:"terminology_sources,omitempty"`
+	TermLoci    []terminologyLocus `json:"terminology_source_loci,omitempty"`
+	TermBasis   string             `json:"terminology_basis,omitempty"`
+	Match       match              `json:"source_match"`
+	Aliases     []match            `json:"source_aliases,omitempty"`
+	Key         string             `json:"configuration_key"`
+	Kind        string             `json:"kind"`
+	ValueKind   string             `json:"value_kind"`
+	Rule        string             `json:"default_rule"`
+	Alerts      []string           `json:"alert_rules,omitempty"`
+	Reference   *ReferenceProfile  `json:"reference_profile"`
+	Description string             `json:"description_zh_tw,omitempty"`
+	Sources     []string           `json:"sources,omitempty"`
+	Specimen    string             `json:"specimen"`
+	Notes       []string           `json:"notes"`
 	Domain      struct {
 		Minimum *string `json:"minimum"`
 		Maximum *string `json:"maximum"`
@@ -80,10 +85,12 @@ type sourceDefinition struct {
 	EffectiveDate string `json:"effective_date"`
 }
 type Catalog struct {
-	ID      string                      `json:"catalog_id"`
-	Items   []Definition                `json:"items"`
-	Rules   map[string]Rule             `json:"rules"`
-	Sources map[string]sourceDefinition `json:"sources"`
+	ID           string                      `json:"catalog_id"`
+	Items        []Definition                `json:"items"`
+	Rules        map[string]Rule             `json:"rules"`
+	Sources      map[string]sourceDefinition `json:"sources"`
+	TermNotice   string                      `json:"terminology_notice"`
+	NameGlossary []sourceNameTerm            `json:"source_name_glossary"`
 }
 
 func LoadCatalog() (*Catalog, error) {
@@ -163,6 +170,9 @@ type CatalogItem struct {
 	ID          string            `json:"id"`
 	Key         string            `json:"configuration_key"`
 	Name        string            `json:"display_name"`
+	EnglishName string            `json:"display_name_en,omitempty"`
+	TermNote    string            `json:"terminology_note,omitempty"`
+	TermSources []string          `json:"terminology_sources,omitempty"`
 	Category    string            `json:"category"`
 	Unit        string            `json:"unit"`
 	Low         *string           `json:"reference_low"`
@@ -184,12 +194,21 @@ type Source struct {
 	Edition string `json:"edition,omitempty"`
 }
 type CatalogResponse struct {
-	Items   []CatalogItem `json:"items"`
-	Sources []Source      `json:"sources"`
+	Items        []CatalogItem `json:"items"`
+	Sources      []Source      `json:"sources"`
+	TermNotice   string        `json:"terminology_notice,omitempty"`
+	NameGlossary []CatalogTerm `json:"source_name_glossary,omitempty"`
 }
 
 func (c *Catalog) ForSettings(s Settings) CatalogResponse {
-	out := CatalogResponse{Items: []CatalogItem{}, Sources: []Source{}}
+	out := CatalogResponse{Items: []CatalogItem{}, Sources: []Source{}, TermNotice: c.TermNotice}
+	for _, term := range c.NameGlossary {
+		out.NameGlossary = append(out.NameGlossary, CatalogTerm{
+			Names: append([]string(nil), term.Names...), Name: term.Name,
+			EnglishName: term.EnglishName, Note: term.Note,
+			Sources: append([]string(nil), term.Sources...), Basis: term.Basis,
+		})
+	}
 	known := c.ConfigurableItems(s.Known)
 	ids := make([]string, 0, len(known))
 	for id := range known {
@@ -212,12 +231,16 @@ func (c *Catalog) ForSettings(s Settings) CatalogResponse {
 		for _, d := range c.Items {
 			if d.Key == k.Key && d.Kind == "measurement" {
 				item.Builtin = true
+				item.EnglishName = d.EnglishName
+				item.TermNote = d.TermNote
+				item.TermSources = appendUnique(item.TermSources, d.TermSources...)
 				item.ValueKind = d.ValueKind
 				rule := c.Rules[d.Rule]
 				item.Rule = rule
 				item.Sources = appendUnique(item.Sources, rule.Sources...)
 				item.Sources = appendUnique(item.Sources, d.Sources...)
 				item.Aliases = appendUnique(item.Aliases, d.Match.Name)
+				item.Aliases = appendUnique(item.Aliases, d.Name, d.EnglishName)
 				item.OrderCodes = appendUnique(item.OrderCodes, d.Match.Code)
 				for _, alias := range d.Aliases {
 					item.Aliases = appendUnique(item.Aliases, alias.Name)
@@ -236,6 +259,9 @@ func (c *Catalog) ForSettings(s Settings) CatalogResponse {
 				}
 				item.Description = description(d)
 			}
+		}
+		if !item.Builtin && k.LegacyFor == "" {
+			c.describeSourceName(&item, k.Name)
 		}
 		out.Items = append(out.Items, item)
 	}
@@ -357,7 +383,7 @@ func description(d Definition) string {
 	case "urine_glucose_dipstick":
 		return "尿糖陽性只作異常標記；SGLT2類藥物會增加尿糖，不能用加號數量推定危險程度。"
 	case "venous_oxygen_saturation", "venous_po2":
-		return "靜脈血氣：不可套用動脈血氧或指尖SpO2標準；顯示原院區間與原始結果。"
+		return "血氣檢體的動脈／靜脈來源未確認，不直接套用動脈血氧或指尖 SpO2 標準；保留原院區間與原始結果。"
 	case "serum_ldl_cholesterol":
 		return "個人治療目標依心血管風險而異；三酸甘油脂極高時須確認是直接量測或計算值。"
 	default:

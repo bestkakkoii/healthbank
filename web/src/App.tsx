@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   api,
+  ApiError,
   defaultSettings,
   isSessionInvalidation,
   readableError,
   setCsrfToken,
   type CatalogResponse,
+  type DataFieldTerm,
   type ItemOverride,
   type LabRecord,
   type LiveReportResponse,
@@ -31,6 +33,12 @@ import { AnalysisExport, MultiIndicator, LipidCalculation, PortableReportExport 
 import { PersonalRecords } from './PersonalRecords';
 import { SupplementaryData, CoverageSummary } from './SupplementaryData';
 import { DatasetTools } from './DatasetTools';
+import { DeviceHealthCache } from './DeviceHealthCache';
+import { useDeviceHealthCache } from './use-device-health-cache';
+import { inspectDeviceCache, sameDeviceCacheLease, verifiedCacheProfile, type DeviceCacheLease, type DeviceCacheMetadata } from './device-health-cache';
+import { cachedSourceSnapshot } from './cache-provenance';
+import { acquireHealthData } from './data-acquisition';
+import { createTerminologyIndex, groupTerminology, groupTerminologySearchText, recordTerminology } from './terminology-display';
 import type { CollectionRestoration } from './collection-restoration';
 import { PrintReport } from './PrintReport';
 import { NativePrintReport } from './NativePrintReport';
@@ -160,6 +168,7 @@ export default function App() {
   const [report, setReport] = useState<ReportResponse>(EMPTY_REPORT);
   const [catalog, setCatalog] = useState<CatalogResponse>(EMPTY_CATALOG);
   const [dataCatalog, setDataCatalog] = useState<DataCategory[]>([]);
+  const [dataFieldTerms, setDataFieldTerms] = useState<DataFieldTerm[]>([]);
   const [dataCatalogError, setDataCatalogError] = useState('');
   const [dataCatalogLoading, setDataCatalogLoading] = useState(false);
   const [dataSnapshot, setDataSnapshot] = useState<HealthDataSnapshot>(emptyHealthData);
@@ -169,6 +178,8 @@ export default function App() {
   const [importedLaboratoryMetadata, setImportedLaboratoryMetadata] = useState<LaboratoryMetadata | null>(null);
   const [importedDatasetProducer, setImportedDatasetProducer] = useState<DatasetProducer | null>(null);
   const [restorationContext, setRestorationContext] = useState<CollectionRestoration | null>(null);
+  const [cacheWorkspace, setCacheWorkspace] = useState(false);
+  const [cacheLoginRequest, setCacheLoginRequest] = useState(0);
   const [datasetVersion, setDatasetVersion] = useState(0);
   const datasetVersionRef = useRef(0);
   const sessionIdentity = useRef('anonymous:');
@@ -204,7 +215,7 @@ export default function App() {
   const settings = session.settings;
   const persisted = session.authenticated && session.mode === 'official';
   const isDemo = session.mode === 'demo';
-  const controlsBusy = booting || settingsBusy || dataBusy || dataBatchActive || busy !== '';
+  const workBusy = booting || settingsBusy || dataBusy || dataBatchActive || busy !== '';
   const workspaceCatalog = useMemo(() => {
     const combined = new Map(dataCatalog.map(item => [item.id, item]));
     for (const item of importedDataCatalog) if (!combined.has(item.id)) combined.set(item.id, item);
@@ -218,12 +229,17 @@ export default function App() {
   const datasetExportReport = importedLaboratoryMetadata
     ? { ...report, ...importedLaboratoryMetadata, records: report.records }
     : report;
-  const datasetProducer: DatasetProducer = {
+  const datasetProducer = useMemo<DatasetProducer>(() => ({
     application: 'Healthbank', version: session.version || 'unknown', connector_revision: 'nhi-spa.2026-10-28.3',
     clinical_catalog_id: catalog.provenance?.catalog_id ?? 'unknown',
     clinical_catalog_revision: catalog.provenance?.catalog_revision ?? 'unknown',
     clinical_evidence_revision: catalog.provenance?.evidence_revision ?? 'unknown',
-  };
+  }), [session.version, catalog.provenance]);
+  const deviceCache = useDeviceHealthCache({ session, ready: !booting, blocked: workBusy, cacheView: cacheWorkspace,
+    loginRequest: cacheLoginRequest, report: datasetExportReport, snapshot: dataSnapshot, attachments: dataAttachments,
+    categories: workspaceCatalog, producer: datasetProducer, restore: restoreCachedWorkspace, clearWorkspace: clearCachedWorkspace,
+    initialFetch: signal => fetchReports('all_history', signal), refresh: refreshAllWorkspace });
+  const controlsBusy = workBusy || deviceCache.busy;
 
   useEffect(() => {
     const restoreView = () => {
@@ -288,7 +304,7 @@ export default function App() {
           setSession(verified.mode === 'official' ? verified : { ...verified,
             settings: { ...verified.settings, theme: initialSettings().theme, font_scale: initialSettings().font_scale } });
           setError(SESSION_CHANGED_MESSAGE);
-          if (results[2].status === 'fulfilled') setDataCatalog(results[2].value.categories);
+          if (results[2].status === 'fulfilled') { setDataCatalog(results[2].value.categories); setDataFieldTerms(results[2].value.field_terms ?? []); }
           else setDataCatalogError(`醫療資料來源目錄無法載入。${readableError(results[2].reason)}`);
           return;
         }
@@ -296,13 +312,15 @@ export default function App() {
         else setError(`參考項目目錄暫時無法載入。${readableError(results[0].reason)}`);
         if (results[1].status === 'fulfilled') {
           const current = results[1].value;
-          setReport(current);
+          // A retained server copy of a device cache is not redisplayed before
+          // the current device consent/lease has been checked again.
+          setReport(current.cache_provenance ? EMPTY_REPORT : current);
           if (current.official_query) {
             setDateFrom(current.official_query.start_date);
             setDateTo(current.official_query.end_date);
           }
         } else setError(readableError(results[1].reason));
-        if (results[2].status === 'fulfilled') setDataCatalog(results[2].value.categories);
+        if (results[2].status === 'fulfilled') { setDataCatalog(results[2].value.categories); setDataFieldTerms(results[2].value.field_terms ?? []); }
         else setDataCatalogError(`醫療資料來源目錄無法載入。${readableError(results[2].reason)}`);
       } catch (error) {
         if (!controller.signal.aborted) setError(readableError(error));
@@ -346,6 +364,8 @@ export default function App() {
   }, [message]);
 
   const groups = useMemo(() => groupRecords(report.records), [report.records]);
+  const terminology = useMemo(() => createTerminologyIndex(catalog), [catalog]);
+  const groupNames = useMemo(() => new Map(groups.map(group => [group.id, groupTerminology(group, terminology)])), [groups, terminology]);
   const years = useMemo(
     () =>
       [...new Set(report.records.map((record) => record.exam_date.slice(0, 4)).filter(Boolean))]
@@ -353,16 +373,16 @@ export default function App() {
         .reverse(),
     [report.records],
   );
-  const filteredGroups = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase();
-    return groups
-      .map((group) => ({
+  const datedGroups = useMemo(() => groups.map((group) => ({
         ...group,
         records: group.records.filter(
           (record) => year === 'all' || record.exam_date.startsWith(`${year}-`),
         ),
-      }))
-      .filter(
+      })), [groups, year]);
+  const groupSearch = useMemo(() => new Map(datedGroups.map(group => [group.id, groupTerminologySearchText(group, terminology)])), [datedGroups, terminology]);
+  const filteredGroups = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase();
+    return datedGroups.filter(
         (group) =>
           group.records.length &&
           (category === 'all' || group.category === category) &&
@@ -376,11 +396,9 @@ export default function App() {
                 record.official_flag === '1',
             )) &&
           (!normalized ||
-            `${group.name} ${group.abbreviation} ${group.unit} ${group.records.map((record) => record.order_code).join(' ')}`
-              .toLocaleLowerCase()
-              .includes(normalized)),
+            groupSearch.get(group.id)?.includes(normalized)),
       );
-  }, [groups, category, year, onlyFavorites, onlyAbnormal, settings.favorites, query]);
+  }, [datedGroups, category, onlyFavorites, onlyAbnormal, settings.favorites, query, groupSearch]);
   const selectedGroup = groups.find((group) => group.id === selectedGroupId) ?? groups[0];
   const selectedExportRecords = useMemo(() => view === 'trends' && selectedGroup
     ? selectedGroup.records.filter(record => year === 'all' || record.exam_date.startsWith(`${year}-`))
@@ -466,11 +484,13 @@ export default function App() {
   const configurableKeys = configuredGroups.map((group) => group.configurationKey);
   const customBaselineCount = Object.keys(settings.overrides).length;
   const builtinCount = configuredGroups.filter((group) => catalogByKey.get(group.configurationKey)?.builtin).length;
+  const configurationSearch = useMemo(() => new Map(configuredGroups.map(group => [group.id,
+    `${groupTerminologySearchText(group, terminology)} ${catalogByKey.get(group.configurationKey)?.aliases.join(' ') ?? ''} ${catalogByKey.get(group.configurationKey)?.order_codes.join(' ') ?? ''}`.toLocaleLowerCase(),
+  ])), [configuredGroups, terminology, catalogByKey]);
   const visibleConfigurationGroups = configuredGroups.filter(
     (group) =>
       (category === 'all' || group.category === category) &&
-      `${group.name} ${group.abbreviation} ${group.unit} ${catalogByKey.get(group.configurationKey)?.aliases.join(' ') ?? ''} ${catalogByKey.get(group.configurationKey)?.order_codes.join(' ') ?? ''} ${group.records.map((record) => record.order_code).join(' ')}`
-        .toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()),
+      configurationSearch.get(group.id)?.includes(query.trim().toLocaleLowerCase()),
   );
   const nav = NAV.find((item) => item.id === view);
   if (!nav) throw new Error('Unknown application view.');
@@ -520,6 +540,7 @@ export default function App() {
     setImportedLaboratoryMetadata(null);
     setImportedDatasetProducer(null);
     setRestorationContext(null);
+    setCacheWorkspace(false);
     setDataBusy(false);
   }
 
@@ -576,7 +597,7 @@ export default function App() {
 
   async function reloadDataCatalog() {
     setDataCatalogLoading(true); setDataCatalogError('');
-    try { setDataCatalog((await api.dataCatalog()).categories); }
+    try { const next = await api.dataCatalog(); setDataCatalog(next.categories); setDataFieldTerms(next.field_terms ?? []); }
     catch (failure) {
       if (isSessionInvalidation(failure)) await expireOfficialSession();
       setDataCatalogError(`醫療資料來源目錄無法載入。${readableError(failure)}`);
@@ -606,6 +627,104 @@ export default function App() {
       setDateFrom(result.official_query.start_date); setDateTo(result.official_query.end_date);
     }
     return result;
+  }
+
+  async function restoreCachedWorkspace(dataset: ImportedDataset, metadata: DeviceCacheMetadata, lease: DeviceCacheLease, signal: AbortSignal) {
+    const generation = sessionGeneration.current, expectedIdentity = sessionIdentity.current;
+    const current = await api.session(signal); signal.throwIfAborted();
+    if (generation !== sessionGeneration.current || sessionKey(current) !== expectedIdentity || verifiedCacheProfile(current) !== lease.profile_key)
+      throw new DOMException('目前驗證身分已變更，沒有開啟先前使用者的快取。', 'AbortError');
+    if (typeof current.report_revision !== 'number' || !Number.isSafeInteger(current.report_revision) || current.report_revision < 0)
+      throw new Error('目前伺服器尚未提供快取還原版本防護，請更新伺服器後再開啟本機快取。');
+    const existing = await api.currentReports(signal); signal.throwIfAborted();
+    if (existing.session_token !== current.csrf_token) throw new Error(SESSION_CHANGED_MESSAGE);
+    const original = dataset.laboratoryMetadata.cache_provenance;
+    const sourceQuery = original?.source_query ?? dataset.laboratoryMetadata.official_query;
+    // Reloading a page must not replace a newer in-memory official laboratory
+    // read with an older local snapshot. Its source snapshots remain labelled.
+    const result = existing.fetched_at && !existing.cache_provenance ? existing : await api.restoreCachedReports({
+      expected_profile_key: lease.profile_key, expected_report_revision: current.report_revision,
+      saved_at: metadata.saved_at, source_fetched_at: dataset.laboratoryMetadata.fetched_at,
+      source_complete: original?.source_complete ?? dataset.laboratoryMetadata.complete,
+      ...(sourceQuery === undefined ? {} : { source_query: sourceQuery }), document: JSON.parse(dataset.laboratoryJSON) as unknown,
+    }, signal);
+    const [verified, nextCatalog, consent] = await Promise.all([api.session(signal), api.catalog(signal), inspectDeviceCache(lease.profile_key)]);
+    signal.throwIfAborted();
+    if (generation !== sessionGeneration.current || sessionKey(verified) !== expectedIdentity || verifiedCacheProfile(verified) !== lease.profile_key || result.session_token !== verified.csrf_token)
+      throw new DOMException(SESSION_CHANGED_MESSAGE, 'AbortError');
+    if (!consent.lease || !sameDeviceCacheLease(lease, consent.lease))
+      throw new Error('快取在還原期間已更新或清除，沒有把舊資料放回工作區。');
+    invalidateDatasetOperations();
+    installSession(verified); setCatalog(nextCatalog); setReport(result); setAssessmentStale(false); resetFilters();
+    const source = result.cache_provenance?.source_query ?? result.official_query;
+    setDateFrom(source?.start_date ?? ''); setDateTo(source?.end_date ?? '');
+    setDataSnapshot(cachedSourceSnapshot(dataset.snapshot, metadata.saved_at));
+    dataAttachmentsRef.current = dataset.attachments; setDataAttachments(dataset.attachments);
+    setImportedDataCatalog(dataset.catalog); setImportedDatasetProducer(dataset.producer); setImportedLaboratoryMetadata(null);
+    setRestorationContext(null); setCacheWorkspace(true);
+  }
+
+  async function clearCachedWorkspace(profileKey: string, scope: 'cache_only' | 'all_reports', signal: AbortSignal) {
+    if (verifiedCacheProfile(session) !== profileKey) throw new DOMException(SESSION_CHANGED_MESSAGE, 'AbortError');
+    const clearActive = scope === 'all_reports' || cacheWorkspace || Boolean(report.cache_provenance);
+    const generation = clearActive ? ++sessionGeneration.current : sessionGeneration.current;
+    if (clearActive) {
+      const retained = scope === 'cache_only' && !report.cache_provenance ? report : null;
+      clearSessionRecords(); setReport(retained ?? { records: [], fetched_at: '', complete: false, warnings: [] });
+    }
+    try {
+      await api.clearCachedReports(profileKey, scope, signal);
+      const next = await api.session(signal); signal.throwIfAborted();
+      if (generation !== sessionGeneration.current) throw new DOMException(SESSION_CHANGED_MESSAGE, 'AbortError');
+      if (verifiedCacheProfile(next) !== profileKey || sessionKey(next) !== sessionIdentity.current) {
+        await expireOfficialSession(); throw new DOMException(SESSION_CHANGED_MESSAGE, 'AbortError');
+      }
+      installSession(next);
+    } catch (failure) {
+      if (isSessionInvalidation(failure)) await expireOfficialSession();
+      throw failure;
+    }
+  }
+
+  async function refreshAllWorkspace(signal: AbortSignal) {
+    const generation = sessionGeneration.current;
+    setBusy('正在重新取得全部可讀取來源…'); setError('');
+    let snapshot = emptyHealthData();
+    try {
+      const currentCatalog = await api.dataCatalog(signal); signal.throwIfAborted();
+      if (generation !== sessionGeneration.current) throw new DOMException(SESSION_CHANGED_MESSAGE, 'AbortError');
+      setDataCatalog(currentCatalog.categories);
+      setDataFieldTerms(currentCatalog.field_terms ?? []);
+      try { await fetchLaboratoryForWorkspace(signal); }
+      catch (failure) {
+        signal.throwIfAborted();
+        if (isSessionInvalidation(failure)) throw failure;
+        setReport({ records: [], fetched_at: '', complete: false, warnings: [`本輪檢驗尚未取得：${readableError(failure)}`] });
+      }
+      const acquired = await acquireHealthData({ snapshot, categories: currentCatalog.categories.map(category => category.id),
+        query: { from: '', to: '' }, mode: 'refresh', signal,
+        fetchReport: (category, reference, query, signal) => api.supplementary(category, query.from, query.to, reference, signal),
+        classifyFailure: failure => ({ message: readableError(failure), expired: isSessionInvalidation(failure),
+          retryable: failure instanceof TypeError || failure instanceof ApiError && [502, 503, 504].includes(failure.status) }),
+        onUpdate: next => { snapshot = next; if (generation === sessionGeneration.current) setDataSnapshot(next); },
+        onProgress: progress => { if (generation === sessionGeneration.current) setBusy(`正在取得${progress.phase === 'lists' ? '來源清單' : '明細'}：${progress.done}/${progress.total}；未成功 ${progress.failed}`); },
+      });
+      if (acquired.expired) { await expireOfficialSession(); throw new DOMException(SESSION_CHANGED_MESSAGE, 'AbortError'); }
+      signal.throwIfAborted();
+    } catch (failure) {
+      if (signal.aborted && generation === sessionGeneration.current) {
+        setDataSnapshot({ ...snapshot, states: Object.fromEntries(Object.entries(snapshot.states).map(([id, state]) =>
+          [id, state.status === 'loading' ? { ...state, status: 'cancelled' } : state])) });
+      } else if (isSessionInvalidation(failure)) await expireOfficialSession();
+      throw failure;
+    } finally {
+      if (generation === sessionGeneration.current) {
+        // This acquisition runs outside SupplementaryData's local controller.
+        // Install its completed/partial snapshot in a fresh view as well as the
+        // export/cache model, and retire callbacks captured by the empty view.
+        invalidateDatasetOperations(); setBusy('');
+      }
+    }
   }
 
   async function restoreDataset(dataset: ImportedDataset, collection?: CollectionRestoration) {
@@ -687,7 +806,7 @@ export default function App() {
     else setError(`資料已取得，但參考項目目錄無法更新。${readableError(results[1].reason)}`);
   }
 
-  async function loggedIn(next: Session, notice = '') {
+  function loggedIn(next: Session, notice = ''): Promise<void> {
     sessionGeneration.current += 1;
     clearMedicalDataset();
     sessionIdentity.current = `${next.mode}:${next.csrf_token ?? ''}`;
@@ -700,8 +819,9 @@ export default function App() {
     clearReportRange();
     setLoginOpen(false);
     navigate('overview');
-    await fetchReports('all_history');
+    setCacheLoginRequest(current => current + 1);
     if (notice) setMessage(notice);
+    return Promise.resolve();
   }
 
   async function expireOfficialSession() {
@@ -746,7 +866,7 @@ export default function App() {
     }
   }
 
-  async function fetchReports(mode: ReportQueryMode) {
+  async function fetchReports(mode: ReportQueryMode, signal?: AbortSignal) {
     const generation = sessionGeneration.current;
     const from = mode === 'all_history' ? '' : dateFrom;
     const to = mode === 'all_history' ? '' : dateTo;
@@ -760,8 +880,9 @@ export default function App() {
     setError('');
     setMessage('');
     try {
-      const result = await api.reports(from, to);
-      await receiveReports(result, generation);
+      const result = await api.reports(from, to, signal);
+      signal?.throwIfAborted();
+      await receiveReports(result, generation, undefined, signal);
       if (generation !== sessionGeneration.current) return;
       if (result.official_query) {
         setDateFrom(result.official_query.start_date);
@@ -770,6 +891,7 @@ export default function App() {
       setRangeOpen(false);
       setMessage(`已取得本次查詢回傳的 ${result.records.length} 筆檢驗結果。`);
     } catch (error) {
+      if (signal?.aborted) return;
       if (generation !== sessionGeneration.current) return;
       if (isSessionInvalidation(error)) {
         await expireOfficialSession();
@@ -1190,18 +1312,18 @@ export default function App() {
                 <>
                   <button
                     className="button primary"
-                    onClick={() => void fetchReports('all_history')}
+                    onClick={() => { if (cacheWorkspace || deviceCache.state.enabled) void deviceCache.refresh(); else void fetchReports('all_history'); }}
                     disabled={controlsBusy}
                   >
                     <Icon name="refresh" size={18} />
-                    取得全部歷史檢驗
+                    {cacheWorkspace || deviceCache.state.enabled ? '清除舊資料並重新取得' : '取得全部歷史檢驗'}
                   </button>
                   <button
                     className="button secondary"
                     aria-expanded={rangeOpen}
                     aria-controls={rangeOpen ? 'report-date-range' : undefined}
                     onClick={() => setRangeOpen(!rangeOpen)}
-                    disabled={controlsBusy}
+                    disabled={controlsBusy || cacheWorkspace}
                   >
                     指定期間
                   </button>
@@ -1221,6 +1343,10 @@ export default function App() {
 
           {(view === 'comparison' || view === 'trends' || view === 'settings') && <details className="panel compact-disclosure"><summary>判讀條件</summary><ClinicalComparison records={report.records} /></details>}
           {view !== 'data' && <AnalysisStamp />}
+          <DeviceHealthCache cache={deviceCache} disabled={workBusy} />
+          {cacheWorkspace && <Alert>{report.cache_provenance
+            ? '目前顯示此裝置保存的歷史資料；本次登入沒有重新向官方拉取。'
+            : '醫療來源已從此裝置快取開啟；檢驗工作區保留目前另行取得的官方資料。'}各來源保留原始取得時間。需要更新時，請使用「清除舊資料並重新取得全部來源」。</Alert>}
           {view !== 'settings' && view !== 'data' && <CoverageSummary report={report} mode={session.mode} />}
           {rangeOpen && persisted && (
             <form
@@ -1364,7 +1490,7 @@ export default function App() {
                   <button
                     className="button primary large-button"
                     onClick={() => {
-                      if (persisted) void fetchReports('all_history');
+                      if (persisted) { if (cacheWorkspace || deviceCache.state.enabled) void deviceCache.refresh(); else void fetchReports('all_history'); }
                       else openLogin();
                     }}
                     disabled={controlsBusy}
@@ -1510,7 +1636,8 @@ export default function App() {
                                 className={`attention-marker level-surface-${record.level ?? 0}`}
                               />
                               <span className="attention-name">
-                                <b>{record.display_name || record.item_name}</b>
+                                <b>{recordTerminology(record, terminology).name}</b>
+                                {recordTerminology(record, terminology).englishName && <span className="terminology-english" lang="en">{recordTerminology(record, terminology).englishName}</span>}
                                 <small>
                                   {dateLabel(record.exam_date)} ·{' '}
                                   {record.institution || categoryLabel(record.category)}
@@ -1620,9 +1747,10 @@ export default function App() {
                             >
                               <span className="favorite-card-title">
                                 <Icon name="star" size={17} />
-                                <b>{group.name}</b>
+                                <b>{groupNames.get(group.id)?.name ?? group.name}</b>
                                 <Icon name="trend" size={19} />
                               </span>
+                              {groupNames.get(group.id)?.englishName && <span className="terminology-english" lang="en">{groupNames.get(group.id)?.englishName}</span>}
                               <span className="favorite-value">
                                 {latest.result}
                                 <small>{group.unit}</small>
@@ -1700,6 +1828,7 @@ export default function App() {
                   {filteredGroups.length ? (
                     <ComparisonTable
                       groups={filteredGroups}
+                      terminology={terminology}
                       favorites={settings.favorites}
                       granularity={granularity}
                       saving={controlsBusy}
@@ -1759,7 +1888,7 @@ export default function App() {
                               .filter((group) => group.category === value)
                               .map((group) => (
                                 <option key={group.id} value={group.id}>
-                                  {group.name} · {group.unit}
+                                  {groupNames.get(group.id)?.name ?? group.name}{groupNames.get(group.id)?.englishName ? ` / ${groupNames.get(group.id)?.englishName}` : ''} · {group.unit}
                                 </option>
                               ))}
                           </optgroup>
@@ -1783,7 +1912,8 @@ export default function App() {
                       <div className="trend-item-heading">
                         <div>
                           <span>{categoryLabel(trendGroup.category)}</span>
-                          <h3>{trendGroup.name}</h3>
+                          <h3>{groupNames.get(trendGroup.id)?.name ?? trendGroup.name}</h3>
+                          {groupNames.get(trendGroup.id)?.englishName && <p className="terminology-english" lang="en">{groupNames.get(trendGroup.id)?.englishName}</p>}
                           <p>
                             {trendGroup.abbreviation} · {trendGroup.unit}
                           </p>
@@ -1894,7 +2024,7 @@ export default function App() {
                     </div>
                     <div>
                       <dt>檢驗結果</dt>
-                      <dd>只在目前使用階段保留；登出或使用階段結束後清除。</dd>
+                      <dd>伺服器只在目前使用階段處理。裝置健康快取須另外明確同意；已同意的本機快取會在登出後保留，可在上方個別或全部清除。</dd>
                     </div>
                     <div>
                       <dt>登入欄位</dt>
@@ -1939,6 +2069,7 @@ export default function App() {
                     : '目前設定尚未跨裝置保存。透過健康存摺登入後，可儲存個人設定。'}
                 </div>
                 {toolbar}
+                {catalog.terminology_notice && <p className="helper-text">{catalog.terminology_notice}</p>}
                 {visibleConfigurationGroups.length ? (
                   <div className="configuration-list">
                     {visibleConfigurationGroups.map((group) => {
@@ -1953,6 +2084,7 @@ export default function App() {
                           <div className="configuration-name">
                             <span>{categoryLabel(group.category)} · {item?.builtin ? '內建項目' : '新增項目'}</span>
                             <b>{group.name}</b>
+                            {groupTerminology(group, terminology).englishName && <span className="terminology-english" lang="en">{groupTerminology(group, terminology).englishName}</span>}
                             <small>
                               {group.abbreviation} · {group.unit}
                               {!!item?.order_codes.length && ` · ${item.order_codes.join('／')}`}
@@ -2057,10 +2189,10 @@ export default function App() {
             {dataCatalogError && <Alert tone="error">{dataCatalogError}<button className="button secondary" type="button" disabled={dataCatalogLoading} onClick={() => { void reloadDataCatalog(); }}>{dataCatalogLoading ? '重新取得中…' : '重新取得來源目錄'}</button></Alert>}
             {!booting && <>
               <SupplementaryData key={`${session.mode}:${session.csrf_token ?? ''}:${datasetVersion}`}
-                authenticated={persisted} imported={session.mode === 'import'}
+                authenticated={persisted && !cacheWorkspace} imported={session.mode === 'import'} cached={cacheWorkspace}
                 sessionMode={session.mode}
                 disabled={settingsBusy || busy !== '' || dataCatalog.length === 0}
-                catalog={workspaceCatalog} initialDataset={dataSnapshot} archivedAttachments={archivedAttachments} laboratory={report}
+                catalog={workspaceCatalog} fieldTerms={dataFieldTerms} initialDataset={dataSnapshot} archivedAttachments={archivedAttachments} laboratory={report}
                 onDatasetChange={next => { if (datasetVersion === datasetVersionRef.current) setDataSnapshot(next); }}
                 onAttachmentDownloaded={retainAttachment} onFetchLaboratory={fetchLaboratoryForWorkspace}
                 datasetProducer={datasetProducer}

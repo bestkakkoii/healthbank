@@ -12,6 +12,7 @@ import {
   type MeasurementGroup,
 } from './model';
 import { Copyright, Icon, LevelBadge } from './ui';
+import { groupTerminology, type TerminologyIndex } from './terminology-display';
 
 const PRINT_ITEM_COLUMNS = 4;
 
@@ -73,6 +74,7 @@ interface ComparisonTableProps {
   granularity: ComparisonMode;
   saving?: boolean;
   configurableKeys: string[];
+  terminology?: TerminologyIndex;
   onFavorite: (key: string) => void;
   onDetail: (record: LabRecord) => void;
   onTrend: (id: string) => void;
@@ -210,11 +212,13 @@ function ResultCell({
   records,
   interactive,
   onDetail,
+  displayName,
 }: {
   group: MeasurementGroup;
   records: LabRecord[];
   interactive: boolean;
   onDetail: (record: LabRecord) => void;
+  displayName: string;
 }) {
   if (records.length === 0) return <><span aria-hidden="true">—</span><span className="sr-only">這個日期未取得此項檢驗資料</span></>;
   const recent = group.records[0];
@@ -263,7 +267,7 @@ function ResultCell({
             key={record.id}
             onClick={() => onDetail(record)}
           >
-            <span className="sr-only">{group.name}，{dateLabel(record.exam_date)}，單位 {record.unit}；</span>
+            <span className="sr-only">{displayName}，{dateLabel(record.exam_date)}，單位 {record.unit}；</span>
             {content}
             <span className="sr-only">；原院參考 {reference}，{sourceFlag(record.reference_status)}，查看明細</span>
           </button>
@@ -284,6 +288,7 @@ export function ComparisonTable(props: ComparisonTableProps) {
     granularity,
     saving,
     configurableKeys,
+    terminology,
     onFavorite,
     onDetail,
     onTrend,
@@ -292,6 +297,10 @@ export function ComparisonTable(props: ComparisonTableProps) {
   const id = useId();
   const rows = useMemo(() => buildComparisonMatrix(groups), [groups]);
   const sections = useMemo(() => groupComparisonRows(rows, granularity), [rows, granularity]);
+  const terminologyByGroup = useMemo(
+    () => new Map(groups.map(group => [group.id, groupTerminology(group, terminology)])),
+    [groups, terminology],
+  );
   const printBatches = Array.from(
     { length: Math.ceil(groups.length / PRINT_ITEM_COLUMNS) },
     (_, index) => groups.slice(index * PRINT_ITEM_COLUMNS, (index + 1) * PRINT_ITEM_COLUMNS),
@@ -315,6 +324,9 @@ export function ComparisonTable(props: ComparisonTableProps) {
             {columns.map((group, columnIndex) => {
               const favorite = favorites.includes(group.configurationKey);
               const configurable = configurableKeys.includes(group.configurationKey);
+              const display = terminologyByGroup.get(group.id);
+              const name = display?.name || group.name;
+              const originalNames = display?.originalNames ?? [group.abbreviation];
               return (
                 <th
                   scope="col"
@@ -331,14 +343,15 @@ export function ComparisonTable(props: ComparisonTableProps) {
                           className="item-name-button"
                           onClick={() => onTrend(group.id)}
                         >
-                          {group.name}
+                          {name}
                         </button>
                       ) : (
-                        <span className="item-name-button">{group.name}</span>
+                        <span className="item-name-button">{name}</span>
                       )}
+                      {display?.englishName && <span className="terminology-english" lang="en">{display.englishName}</span>}
                       <div className="table-item-meta">
-                        {group.abbreviation !== group.name && (
-                          <span className="table-abbreviation">{group.abbreviation}</span>
+                        {originalNames.some(original => original !== name) && (
+                          <span className="table-abbreviation">原名：{originalNames.join('／')}</span>
                         )}
                         <span className="unit-line">單位：{group.unit}</span>
                       </div>
@@ -353,7 +366,7 @@ export function ComparisonTable(props: ComparisonTableProps) {
                         type="button"
                         className={`icon-button star-button ${favorite ? 'is-favorite' : ''}`}
                         onClick={() => onFavorite(group.configurationKey)}
-                        aria-label={`${favorite ? '取消' : '加入'}關注：${group.name}，${group.unit}`}
+                        aria-label={`${favorite ? '取消' : '加入'}關注：${name}，${group.unit}`}
                         aria-pressed={favorite}
                         disabled={saving || !configurable}
                       >
@@ -363,7 +376,7 @@ export function ComparisonTable(props: ComparisonTableProps) {
                         type="button"
                         className="text-button"
                         onClick={() => onTrend(group.id)}
-                        aria-label={`查看${group.name}趨勢`}
+                        aria-label={`查看${name}趨勢`}
                       >
                         <Icon name="trend" size={15} />
                         趨勢
@@ -373,7 +386,7 @@ export function ComparisonTable(props: ComparisonTableProps) {
                         className="text-button"
                         onClick={() => onConfigure(group)}
                         disabled={saving || !configurable}
-                        aria-label={`設定${group.name}基準`}
+                        aria-label={`設定${name}基準`}
                       >
                         <Icon name="settings" size={15} />
                         基準
@@ -454,6 +467,7 @@ export function ComparisonTable(props: ComparisonTableProps) {
                       >
                         <ResultCell
                           group={group}
+                          displayName={terminologyByGroup.get(group.id)?.name || group.name}
                           records={records}
                           interactive={interactive}
                           onDetail={onDetail}

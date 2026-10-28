@@ -352,3 +352,48 @@ func TestAcquisitionPackageStatusAndCancelDoNotWaitForSessionLock(t *testing.T) 
 		t.Fatal("cancel retained dataset")
 	}
 }
+
+func TestCacheWorkspaceMutationCancelsPackageBeforeSessionGate(t *testing.T) {
+	for _, tc := range []struct {
+		name, method string
+		validProof   bool
+		cancelled    bool
+	}{
+		{"restore", http.MethodPost, true, true},
+		{"clear", http.MethodDelete, true, true},
+		{"read", http.MethodGet, true, false},
+		{"invalid_proof", http.MethodDelete, false, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			app, browser, s := packageTestBrowser(t)
+			created := decodeResponse[packageStatus](t, browser.jsonRequest(t, http.MethodPost, "/api/acquisition/packages", syntheticPackageInput()), http.StatusCreated)
+			request := httptest.NewRequest(tc.method, "https://healthbank.test/api/reports/cache", nil)
+			request.AddCookie(browser.cookie)
+			request.Header.Set("Origin", "https://healthbank.test")
+			proof := browser.csrf
+			if !tc.validProof {
+				proof = "invalid_synthetic_proof"
+			}
+			request.Header.Set("X-CSRF-Token", proof)
+			s.mu.Lock()
+			done := make(chan struct{})
+			go func() {
+				app.cancelPackagesBeforeMutation(request)
+				close(done)
+			}()
+			select {
+			case <-done:
+			case <-time.After(2 * time.Second):
+				s.mu.Unlock()
+				t.Fatal("cache clear/restore waited behind the active transfer session gate")
+			}
+			s.mu.Unlock()
+			app.mu.Lock()
+			p := app.packages[created.ID]
+			app.mu.Unlock()
+			if (p.view().State == "cancelled") != tc.cancelled {
+				t.Fatal("cache operation did not respect the current generation and mutation proof")
+			}
+		})
+	}
+}

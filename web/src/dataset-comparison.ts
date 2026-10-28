@@ -261,7 +261,7 @@ export function datasetDifferenceFields(row: DatasetDifference): { name: string;
   const value: unknown = JSON.parse(row.content);
   if (!isObject(value)) return [];
   const names: Record<string, string> = row.kind === 'laboratory'
-    ? { check_date: '檢查日期（原文）', order_code: '醫令代碼', order_name: '醫令名稱', item_name: '檢驗項目', result: '原始結果', unit: '原始單位', reference: '原院參考值', institution: '院所', visit_date: '就醫日期（原文）', source: '來源', official_flag: '原院旗標' }
+    ? { check_date: '檢查日期（原文）', order_code: '醫令代碼', order_name: '醫令名稱', item_name: '檢驗項目', result: '原始結果', unit: '原始單位', reference: '原院參考值', institution: '院所', visit_date: '就醫日期（原文）', source: '來源', official_flag: '原院旗標', upload_date: '上傳日期（原文）', source_name: '資料來源名稱（原文）' }
     : row.kind === 'attachment' ? { name: '附件名稱', content_type: '附件類型', size: '位元組數', sha256: '附件 SHA-256' }
       : { date: '來源日期', end_date: '來源結束日期', date_role: '來源日期用途', end_date_role: '來源結束日期用途', origin: '來源紀錄性質', contract_id: '來源契約識別',
         institution: '院所', title: '紀錄標題', source: '來源', kind: '來源紀錄類型' };

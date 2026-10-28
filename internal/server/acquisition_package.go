@@ -225,6 +225,10 @@ func (a *App) cancelPackagesBeforeMutation(r *http.Request) {
 		if r.URL.Path == "/api/settings" && r.Method != http.MethodDelete {
 			return
 		}
+	case "/api/reports/cache":
+		if r.Method != http.MethodPost && r.Method != http.MethodDelete {
+			return
+		}
 	case "/api/auth/captcha":
 	default:
 		return

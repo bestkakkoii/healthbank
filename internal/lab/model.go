@@ -25,6 +25,8 @@ type RawRecord struct {
 	VisitDate    string
 	Source       string
 	OfficialFlag string
+	UploadDate   string
+	SourceName   string
 }
 
 type Record struct {
@@ -38,6 +40,8 @@ type Record struct {
 	VisitDate        string   `json:"visit_date"`
 	RawCheckDate     string   `json:"raw_check_date"`
 	RawVisitDate     string   `json:"raw_visit_date"`
+	UploadDate       string   `json:"upload_date,omitempty"`
+	RawUploadDate    string   `json:"raw_upload_date,omitempty"`
 	OrderCode        string   `json:"order_code"`
 	OrderName        string   `json:"order_name"`
 	Result           string   `json:"result"`
@@ -47,6 +51,7 @@ type Record struct {
 	ReferenceText    string   `json:"reference_text"`
 	Institution      string   `json:"institution"`
 	Source           string   `json:"source"`
+	SourceName       string   `json:"source_name,omitempty"`
 	Level            *int     `json:"level"`
 	ReferenceStatus  string   `json:"reference_status"`
 	Interpretation   string   `json:"interpretation"`

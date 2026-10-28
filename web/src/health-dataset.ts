@@ -1,10 +1,10 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
-import type { ReportResponse, SupplementEntry, SupplementReport, SupplementField, SourceDiagnostic } from './api';
+import type { ReportResponse, SupplementEntry, SupplementReport, SupplementField, SourceDiagnostic, CacheProvenance, OfficialReportQuery } from './api';
 import type { AcquisitionState, DataCategory, DownloadedAttachment, HealthDataSnapshot } from './health-data';
 import { validAcquisitionQuery } from './health-data.ts';
 import { isObject } from './model.ts';
 import { parseStrictJSON } from './strict-json.ts';
-import { assertPortableReportSize, portableRows, PORTABLE_REPORT_SCHEMA } from './portable-report.ts';
+import { assertPortableReportSize, portableRows, PORTABLE_REPORT_SCHEMA, LEGACY_PORTABLE_REPORT_SCHEMA } from './portable-report.ts';
 import { SOURCE_DATE_ROLES, SOURCE_FIELD_ROLES, SOURCE_ORIGINS, SOURCE_DIAGNOSTIC_CODES } from './source-semantics.ts';
 
 export const DATASET_SCHEMA = 'healthbank.dataset.v2';
@@ -23,7 +23,7 @@ const MAX_CATEGORIES = 200;
 const MAX_FIELD_BYTES = 65_536;
 const encoder = new TextEncoder();
 export type PortableRow = ReturnType<typeof portableRows>[number];
-export type LaboratoryMetadata = Pick<ReportResponse, 'fetched_at' | 'complete' | 'warnings' | 'official_query'>;
+export type LaboratoryMetadata = Pick<ReportResponse, 'fetched_at' | 'complete' | 'warnings' | 'official_query' | 'cache_provenance'>;
 export interface ImportedDataset {
   exportedAt: string;
   producer: DatasetProducer | null;
@@ -113,41 +113,65 @@ function query(value: unknown): HealthDataSnapshot['query'] {
   if (!validAcquisitionQuery(result)) return invalid();
   return result;
 }
-function catalogItems(value: unknown): DataCategory[] {
+function catalogItems(value: unknown, modern = true): DataCategory[] {
   const seen = new Set<string>();
   return list(value, MAX_CATEGORIES).map(item => {
-    const v = object(item, ['id', 'label', 'group', 'range_mode', 'has_details']);
+    const v = object(item, ['id', 'label', 'group', 'range_mode', 'has_details', ...(modern ? ['label_en'] : [])]);
     const id = categoryID(v['id']);
     if (seen.has(id)) return invalid();
     seen.add(id);
     const range = v['range_mode'];
     if (range !== 'date_search' && range !== 'source') return invalid();
     return { id, label: text(v['label'], 500), group: text(v['group'], 500), range_mode: range,
+      ...(v['label_en'] === undefined ? {} : { label_en: text(v['label_en'], 500) }),
       ...(v['has_details'] === undefined ? {} : { has_details: boolean(v['has_details']) }) };
   });
 }
-function metadata(value: unknown): LaboratoryMetadata {
-  const v = object(value, ['schema', 'records', 'fetched_at', 'complete', 'warnings', 'official_query']);
+function officialQuery(value: unknown): OfficialReportQuery {
+  const q = object(value, ['mode', 'start_date', 'end_date', 'reported_count']);
+  const mode = q['mode'];
+  if (mode !== 'all_history' && mode !== 'custom') return invalid();
+  const range = query({ from: q['start_date'], to: q['end_date'] });
+  if (!range.from || !range.to) return invalid();
+  return { mode, start_date: range.from, end_date: range.to,
+    reported_count: q['reported_count'] === null ? null : integer(q['reported_count'], Number.MAX_SAFE_INTEGER) };
+}
+function cacheTimestamp(value: unknown, allowEmpty = false): string {
+  const result = text(value, 100);
+  if (allowEmpty && !result) return result;
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/.test(result) ||
+    !validAcquisitionQuery({ from: result.slice(0, 10), to: result.slice(0, 10) }) || !Number.isFinite(Date.parse(result))) return invalid();
+  return result;
+}
+function cacheProvenance(value: unknown): CacheProvenance {
+  const v = object(value, ['kind', 'saved_at', 'restored_at', 'source_fetched_at', 'source_complete', 'source_query']);
+  if (v['kind'] !== 'device_cache') return invalid();
+  return { kind: 'device_cache', saved_at: cacheTimestamp(v['saved_at']), restored_at: cacheTimestamp(v['restored_at']),
+    source_fetched_at: cacheTimestamp(v['source_fetched_at'], true), source_complete: boolean(v['source_complete']),
+    ...(v['source_query'] === undefined ? {} : { source_query: officialQuery(v['source_query']) }) };
+}
+function metadata(value: unknown, modern = true): LaboratoryMetadata {
+  const v = object(value, ['schema', 'records', 'fetched_at', 'complete', 'warnings', 'official_query', ...(modern ? ['cache_provenance'] : [])]);
   const result: LaboratoryMetadata = { fetched_at: text(v['fetched_at'], 100), complete: boolean(v['complete']),
     warnings: list(v['warnings'], 1000).map(warning => text(warning)) };
   if (v['official_query'] !== undefined) {
-    const q = object(v['official_query'], ['mode', 'start_date', 'end_date', 'reported_count']);
-    const mode = q['mode'];
-    if (mode !== 'all_history' && mode !== 'custom') return invalid();
-    const range = query({ from: q['start_date'], to: q['end_date'] });
-    if (!range.from || !range.to) return invalid();
-    result.official_query = { mode, start_date: range.from, end_date: range.to,
-      reported_count: q['reported_count'] === null ? null : integer(q['reported_count'], Number.MAX_SAFE_INTEGER) };
+    result.official_query = officialQuery(v['official_query']);
+  }
+  if (v['cache_provenance'] !== undefined) {
+    result.cache_provenance = cacheProvenance(v['cache_provenance']);
+    if (result.complete || result.official_query || result.fetched_at !== result.cache_provenance.source_fetched_at) return invalid();
   }
   return result;
 }
 const LAB_FIELDS = ['check_date', 'order_code', 'order_name', 'item_name', 'result', 'unit', 'reference', 'institution', 'visit_date', 'source', 'official_flag'];
-function laboratoryRows(value: unknown): PortableRow[] {
+function laboratoryRows(value: unknown, modern = true): PortableRow[] {
   return list(value, 50_000).map(item => {
-    const v = object(item, LAB_FIELDS);
+    const v = object(item, [...LAB_FIELDS, ...(modern ? ['upload_date', 'source_name'] : [])]);
     const row = { check_date: text(v['check_date']), order_code: text(v['order_code']), order_name: text(v['order_name']),
       item_name: text(v['item_name']), result: text(v['result']), unit: text(v['unit']), reference: text(v['reference']),
-      institution: text(v['institution']), visit_date: text(v['visit_date']), source: text(v['source']), official_flag: text(v['official_flag']) };
+      institution: text(v['institution']), visit_date: text(v['visit_date']), source: text(v['source']), official_flag: text(v['official_flag']),
+      ...(v['upload_date'] === undefined ? {} : { upload_date: text(v['upload_date']) }),
+      ...(v['source_name'] === undefined ? {} : { source_name: text(v['source_name']) }) };
     if (!row.item_name.trim()) return invalid();
     return row;
   });
@@ -208,11 +232,14 @@ function snapshot(value: unknown, modern = true): HealthDataSnapshot {
   let entries = 0;
   function report(value: unknown): SupplementReport {
     const r = object(value, ['category', 'entries', 'coverage', 'fetched_at', 'start_date', 'end_date', 'complete',
-      ...(modern ? ['contract_revision', 'diagnostics'] : [])]);
+      ...(modern ? ['contract_revision', 'diagnostics', 'cache_provenance'] : [])]);
     const rows = list(r['entries'], 50_000);
     entries += rows.length;
     if (entries > MAX_ENTRIES) return invalid();
+    const cached = r['cache_provenance'] === undefined ? undefined : cacheProvenance(r['cache_provenance']);
+    if (cached && (boolean(r['complete']) || r['fetched_at'] !== cached.source_fetched_at || cached.source_query)) return invalid();
     return { category: text(r['category'], 150), entries: rows.map(row => entry(row, modern)), coverage: text(r['coverage']), fetched_at: text(r['fetched_at'], 100), complete: boolean(r['complete']),
+      ...(cached === undefined ? {} : { cache_provenance: cached }),
       ...(r['contract_revision'] === undefined ? {} : { contract_revision: fixedID(r['contract_revision']) }),
       ...(r['diagnostics'] === undefined ? {} : { diagnostics: diagnostics(r['diagnostics']) }),
       ...(r['start_date'] === undefined ? {} : { start_date: text(r['start_date'], 100) }),
@@ -318,6 +345,7 @@ function portableSupplementReport(category: string, source: SupplementReport,
     ...(source.end_date === undefined ? {} : { end_date: source.end_date }),
     ...(source.contract_revision === undefined ? {} : { contract_revision: source.contract_revision }),
     ...(source.diagnostics === undefined ? {} : { diagnostics: source.diagnostics.map(item => ({ ...item })) }),
+    ...(source.cache_provenance === undefined ? {} : { cache_provenance: cacheProvenance(source.cache_provenance) }),
     entries: source.entries.map(row => ({ date: row.date, institution: row.institution, title: row.title, source: row.source,
       fields: row.fields.map(field => sourceField(field, true)),
       ...(row.date_role === undefined ? {} : { date_role: row.date_role }),
@@ -400,7 +428,8 @@ async function projectDataset(report: ReportResponse, data: HealthDataSnapshot, 
       size: file.bytes.length, sha256: await sha256(file.bytes), data_base64: base64(file.bytes) });
   }
   const reportMetadata: LaboratoryMetadata = { fetched_at: report.fetched_at, complete: report.complete,
-    warnings: report.warnings, ...(report.official_query === undefined ? {} : { official_query: report.official_query }) };
+    warnings: report.warnings, ...(report.official_query === undefined ? {} : { official_query: report.official_query }),
+    ...(report.cache_provenance === undefined ? {} : { cache_provenance: cacheProvenance(report.cache_provenance) }) };
   const document: DatasetDocument = { schema: DATASET_SCHEMA, exported_at: new Date().toISOString(), producer: producer(producedBy),
     ...(importedFrom === undefined ? {} : { imported_from: producer(importedFrom) }),
     laboratory: { schema: PORTABLE_REPORT_SCHEMA, records: labRecords, ...reportMetadata },
@@ -449,12 +478,13 @@ export async function importDataset(bytes: Uint8Array): Promise<ImportedDataset>
   const producedBy = modern ? producer(v['producer']) : null;
   const importedFrom = modern && v['imported_from'] !== undefined ? producer(v['imported_from']) : null;
   const lab = object(v['laboratory']);
-  if (lab['schema'] !== PORTABLE_REPORT_SCHEMA) return invalid();
-  const laboratoryMetadata = metadata(lab);
-  const laboratoryJSON = JSON.stringify({ schema: PORTABLE_REPORT_SCHEMA, records: laboratoryRows(lab['records']) });
+  const modernLaboratory = lab['schema'] === PORTABLE_REPORT_SCHEMA;
+  if (!modernLaboratory && lab['schema'] !== LEGACY_PORTABLE_REPORT_SCHEMA || !modern && modernLaboratory) return invalid();
+  const laboratoryMetadata = metadata(lab, modern);
+  const laboratoryJSON = JSON.stringify({ schema: lab['schema'], records: laboratoryRows(lab['records'], modernLaboratory) });
   assertPortableReportSize(laboratoryJSON);
   const data = snapshot(v['data'], modern);
-  const catalog = catalogItems(v['catalog']);
+  const catalog = catalogItems(v['catalog'], modern);
   const files: DownloadedAttachment[] = [];
   const references = new Map<string, { category: string; name: string; content_type: string }>();
   for (const [category, report] of Object.entries(data.reports)) {
@@ -493,5 +523,6 @@ export async function importDataset(bytes: Uint8Array): Promise<ImportedDataset>
 }
 
 export function datasetLaboratoryRows(dataset: ImportedDataset): PortableRow[] {
-  return laboratoryRows(object(parseStrictJSON(dataset.laboratoryJSON), ['schema', 'records'])['records']);
+  const document = object(parseStrictJSON(dataset.laboratoryJSON), ['schema', 'records']);
+  return laboratoryRows(document['records'], document['schema'] === PORTABLE_REPORT_SCHEMA);
 }

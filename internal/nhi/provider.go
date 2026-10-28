@@ -206,15 +206,7 @@ func providerNoData(category string, object wireRow) (bool, error) {
 			return false, changedError()
 		}
 	}
-	if category == "home_care" {
-		raw, ok := object["hasdata"]
-		var present bool
-		if !ok || json.Unmarshal(raw, &present) != nil {
-			return false, changedError()
-		}
-		return !present, nil
-	}
-	if category == "source_diabetes_assessment" {
+	if category == "home_care" || category == "source_diabetes_assessment" {
 		raw, ok := object["hasdata"]
 		if !ok {
 			return false, changedError()

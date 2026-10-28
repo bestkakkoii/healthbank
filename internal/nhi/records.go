@@ -47,6 +47,7 @@ type Record struct {
 	Institution  string `json:"institution"`
 	VisitDate    string `json:"visitDate"`
 	Source       string `json:"source"`
+	SourceName   string `json:"sourceName,omitempty"`
 	UploadDate   string `json:"uploadDate,omitempty"`
 	OfficialFlag string `json:"officialFlag,omitempty"`
 }
@@ -106,7 +107,8 @@ func (s *Session) Fetch(ctx context.Context, query Query) (Report, error) {
 		report.ReportedCount = meta.count
 	}
 	minimumCount := -1
-	if query.StartDate <= meta.start && query.EndDate >= meta.end {
+	containsInitialInterval := query.StartDate <= meta.start && query.EndDate >= meta.end
+	if containsInitialInterval {
 		minimumCount = meta.count
 	}
 	if minimumCount > MaxReportRecords {
@@ -136,8 +138,38 @@ func (s *Session) Fetch(ctx context.Context, query Query) (Report, error) {
 			ExpectedCount: minimumCount, ReceivedCount: len(records),
 		})
 	}
+	// Equal counts alone cannot establish that a later response retained the
+	// records already observed in the contained initial interval. Compare exact
+	// source rows as a multiset, including duplicate multiplicity. A mismatch
+	// can reflect an upstream update; do not guess a merge or silently replace
+	// the caller's prior report with the inconsistent response.
+	if containsInitialInterval {
+		matched := matchedInitialRecords(meta.records, records)
+		if matched != len(meta.records) {
+			// Existing count diagnostics describe total response length. Do not
+			// mislabel the number of matched initial rows as that total.
+			return report, s.annotateResponseError(&Error{
+				Code: "INCOMPLETE_RESPONSE", Message: "本次搜尋未包含來源首頁已回傳的所有原始資料列（含同值重複次數）；官方資料可能在兩次讀取間更新，尚未取代先前資料。請重新取得或明確指定期間。",
+			})
+		}
+	}
 	report.Records = records
 	return report, nil
+}
+
+func matchedInitialRecords(initial, searched []Record) int {
+	remaining := make(map[Record]int, len(initial))
+	for _, record := range initial {
+		remaining[record]++
+	}
+	matched := 0
+	for _, record := range searched {
+		if remaining[record] > 0 {
+			remaining[record]--
+			matched++
+		}
+	}
+	return matched
 }
 
 // resolveQuery takes one snapshot of today's date before any network work. The current
@@ -165,9 +197,10 @@ func validateQuery(query Query) error {
 }
 
 type metadata struct {
-	start string
-	end   string
-	count int
+	start   string
+	end     string
+	count   int
+	records []Record
 }
 
 func parseMetadata(body []byte) (metadata, error) {
@@ -202,7 +235,15 @@ func parseMetadata(body []byte) (metadata, error) {
 			return metadata{}, changedError()
 		}
 	}
-	return metadata{start: start, end: end, count: count}, nil
+	var records []Record
+	if !bytes.Equal(bytes.TrimSpace(firstPage), []byte("null")) {
+		var err error
+		records, err = parseRecords(firstPage)
+		if err != nil {
+			return metadata{}, err
+		}
+	}
+	return metadata{start: start, end: end, count: count, records: records}, nil
 }
 
 // wireText accepts JSON strings, numbers or null without rounding a result.
@@ -247,6 +288,7 @@ type wireRecord struct {
 	Institution  wireText `json:"hosP_ABBR"`
 	VisitDate    wireText `json:"funC_DATE"`
 	Source       wireText `json:"orI_TYPE"`
+	SourceName   wireText `json:"orI_TYPE_NAME"`
 	UploadDate   wireText `json:"assaY_UPLOAD_DATE"`
 	OfficialFlag wireText `json:"assaY_MARK"`
 }
@@ -277,7 +319,7 @@ func parseRecords(body []byte) ([]Record, error) {
 		records = append(records, Record{
 			CheckDate: string(row.CheckDate), OrderCode: string(row.OrderCode), OrderName: string(row.OrderName),
 			ItemName: string(row.ItemName), Result: string(row.Result), Unit: string(row.Unit), Reference: string(row.Reference),
-			Institution: string(row.Institution), VisitDate: string(row.VisitDate), Source: string(row.Source),
+			Institution: string(row.Institution), VisitDate: string(row.VisitDate), Source: string(row.Source), SourceName: string(row.SourceName),
 			UploadDate: string(row.UploadDate), OfficialFlag: string(row.OfficialFlag),
 		})
 	}

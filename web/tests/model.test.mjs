@@ -43,10 +43,10 @@ test('CSV preserves commas, quotes, line breaks, source flags and same-day dupli
 });
 
 test('CSV retains raw date strings alongside normalized date columns', () => {
-  const csv = toCsv([observation({ raw_check_date: '115/01/20 08:30', raw_visit_date: '原始日期未明' })]);
+  const csv = toCsv([observation({ raw_check_date: '115/01/20 08:30', raw_visit_date: '原始日期未明', raw_upload_date: '115/02/03 10:12', source_name: '合成來源名稱' })]);
   assert.ok(csv.includes('"檢查日期（來源原文）","就醫日期（來源原文）"'));
   assert.ok(csv.includes('\r\n"2026-01-20",'));
-  assert.ok(csv.endsWith(',"115/01/20 08:30","原始日期未明"'));
+  assert.ok(csv.endsWith(',"115/01/20 08:30","原始日期未明","115/02/03 10:12","合成來源名稱"'));
 });
 
 test('grouping preserves source identities, units, every duplicate and original input order', () => {

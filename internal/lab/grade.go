@@ -205,7 +205,7 @@ func (c *Catalog) Normalize(raw []RawRecord, s *Settings) []Record {
 		d := c.match(r)
 		p := parseValue(r.Result)
 		lo, hi := parseReference(r.Reference)
-		rec := Record{ID: rowID(r, idx), ItemID: d.ID, ConfigurationKey: d.Key, ItemName: r.ItemName, DisplayName: d.Name, Category: category(d), ExamDate: NormalizeDate(r.CheckDate), VisitDate: NormalizeDate(r.VisitDate), RawCheckDate: r.CheckDate, RawVisitDate: r.VisitDate, OrderCode: r.OrderCode, OrderName: r.OrderName, Result: r.Result, Unit: r.Unit, ReferenceLow: lo, ReferenceHigh: hi, ReferenceText: r.Reference, Institution: r.Institution, Source: r.Source, ReferenceStatus: referenceStatus(p, lo, hi), NumericValue: numberFloat(p.exact), ValueKind: p.kind, RuleSource: "none", OfficialFlag: r.OfficialFlag}
+		rec := Record{ID: rowID(r, idx), ItemID: d.ID, ConfigurationKey: d.Key, ItemName: r.ItemName, DisplayName: d.Name, Category: category(d), ExamDate: NormalizeDate(r.CheckDate), VisitDate: NormalizeDate(r.VisitDate), UploadDate: NormalizeDate(r.UploadDate), RawCheckDate: r.CheckDate, RawVisitDate: r.VisitDate, RawUploadDate: r.UploadDate, OrderCode: r.OrderCode, OrderName: r.OrderName, Result: r.Result, Unit: r.Unit, ReferenceLow: lo, ReferenceHigh: hi, ReferenceText: r.Reference, Institution: r.Institution, Source: r.Source, SourceName: r.SourceName, ReferenceStatus: referenceStatus(p, lo, hi), NumericValue: numberFloat(p.exact), ValueKind: p.kind, RuleSource: "none", OfficialFlag: r.OfficialFlag}
 		if d.Kind == "metadata" {
 			rec.ValueKind = "metadata"
 			rec.NumericValue = nil
@@ -331,7 +331,7 @@ func (c *Catalog) Normalize(raw []RawRecord, s *Settings) []Record {
 			rec.Interpretation += " SGLT2類用藥可增加尿糖。"
 		}
 		if d.ID == "venous_oxygen_saturation" || d.ID == "venous_po2" {
-			rec.Interpretation += " 此為靜脈血氣，不能套用指尖SpO2／動脈血氧門檻。"
+			rec.Interpretation += " 此項血氣的動脈／靜脈檢體未經來源確認，不能直接套用指尖 SpO2／動脈血氧門檻。"
 		}
 		if rec.ExamDate == "" {
 			rec.Interpretation += " 檢查日期格式待確認，未以就醫日期代替。"

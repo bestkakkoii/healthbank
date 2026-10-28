@@ -48,6 +48,7 @@ export interface Session {
   version: string;
   csrf_token?: string;
   profile_key?: string;
+  report_revision?: number;
 }
 
 export interface LabRecord {
@@ -61,6 +62,9 @@ export interface LabRecord {
   visit_date: string;
   raw_check_date?: string;
   raw_visit_date?: string;
+  upload_date?: string;
+  raw_upload_date?: string;
+  source_name?: string;
   order_code: string;
   order_name: string;
   result: string;
@@ -99,9 +103,14 @@ export interface DocumentAction {
 export interface DataCategory {
   id: string;
   label: string;
+  label_en?: string;
   group: string;
   range_mode: 'date_search' | 'source';
   has_details?: boolean;
+}
+export interface DataFieldTerm { label: string; label_en: string }
+export interface DataCatalogResponse {
+  categories: DataCategory[]; field_terms?: DataFieldTerm[]; terminology_basis?: 'healthbank_editorial_translation';
 }
 export type SourceDateRole = 'examination' | 'specimen_collection' | 'report' | 'encounter' | 'admission' | 'discharge' | 'claim_start' | 'claim_end' | 'prescription' | 'dispensing' | 'recorded' | 'uploaded' | 'valid_from' | 'valid_to' | 'period_start' | 'period_end' | 'unknown';
 export interface SupplementField {
@@ -133,6 +142,19 @@ export interface SupplementReport {
   start_date?: string; end_date?: string; complete: boolean;
   contract_revision?: string;
   diagnostics?: SourceDiagnostic[];
+  cache_provenance?: CacheProvenance;
+}
+export interface OfficialReportQuery {
+  mode: ReportQueryMode; start_date: string; end_date: string; reported_count: number | null;
+}
+export interface CacheProvenance {
+  kind: 'device_cache'; saved_at: string; restored_at: string; source_fetched_at: string;
+  source_complete: boolean; source_query?: OfficialReportQuery;
+}
+export interface CachedReportInput {
+  expected_profile_key: string; expected_report_revision: number; saved_at: string;
+  source_fetched_at: string; source_complete: boolean; source_query?: OfficialReportQuery;
+  document: unknown;
 }
 export interface ReportResponse {
   // Live API generation proof only; never part of a portable medical document.
@@ -141,12 +163,8 @@ export interface ReportResponse {
   fetched_at: string;
   complete: boolean;
   warnings: string[];
-  official_query?: {
-    mode: ReportQueryMode;
-    start_date: string;
-    end_date: string;
-    reported_count: number | null;
-  };
+  official_query?: OfficialReportQuery;
+  cache_provenance?: CacheProvenance;
 }
 
 export interface LiveReportResponse extends ReportResponse {
@@ -157,6 +175,9 @@ export interface CatalogItem {
   id: string;
   configuration_key: string;
   display_name: string;
+  display_name_en?: string;
+  terminology_note?: string;
+  terminology_sources?: string[];
   category: string;
   unit: string;
   reference_low: string | null;
@@ -194,6 +215,12 @@ export interface CatalogResponse {
   items: CatalogItem[];
   sources: Source[];
   provenance?: { catalog_id: string; catalog_revision: string; evidence_revision: string };
+  terminology_notice?: string;
+  source_name_glossary?: SourceNameTerminology[];
+}
+export interface SourceNameTerminology {
+  source_names: string[]; display_name: string; display_name_en: string; terminology_note?: string;
+  terminology_sources?: string[]; terminology_basis: 'primary_source_terms' | 'literal_source_translation';
 }
 
 export interface LoginInput {
@@ -245,7 +272,7 @@ export class ApiError extends Error {
 export function isSessionInvalidation(error: unknown): boolean {
   return error instanceof ApiError && (error.status === 401 ||
     error.status === 403 && error.code === 'csrf_mismatch' ||
-    error.status === 409 && error.code === 'session_changed' ||
+    error.status === 409 && ['session_changed', 'cache_profile_changed'].includes(error.code) ||
     error.status === 500 && error.code === 'session_rotate' ||
     error.code === 'invalid_report_session');
 }
@@ -348,8 +375,8 @@ async function requestReport(path: string, options: RequestInit = {}): Promise<L
   return { ...report, session_token: report.session_token };
 }
 
-async function fetchDataCatalog(signal?: AbortSignal): Promise<{ categories: DataCategory[] }> {
-  const result = await request<{ categories: unknown }>('/api/data/catalog', { signal: signal ?? null });
+async function fetchDataCatalog(signal?: AbortSignal): Promise<DataCatalogResponse> {
+  const result = await request<{ categories: unknown; field_terms?: unknown; terminology_basis?: unknown }>('/api/data/catalog', { signal: signal ?? null });
   if (!Array.isArray(result.categories) || result.categories.length === 0 || result.categories.length > 128)
     throw new ApiError('資料來源目錄格式不正確，請重新取得。', 'invalid_catalog', 200);
   const categories: DataCategory[] = [];
@@ -362,13 +389,31 @@ async function fetchDataCatalog(signal?: AbortSignal): Promise<{ categories: Dat
       !item.label.trim() || item.label.length > 240 || typeof item.group !== 'string' ||
       !item.group.trim() || item.group.length > 240 ||
       item.range_mode !== 'date_search' && item.range_mode !== 'source' ||
-      'has_details' in item && typeof item.has_details !== 'boolean')
+      'has_details' in item && typeof item.has_details !== 'boolean' ||
+      'label_en' in item && (typeof item.label_en !== 'string' || !item.label_en.trim() || item.label_en.length > 240))
       throw new ApiError('資料來源目錄格式不正確，請重新取得。', 'invalid_catalog', 200);
     seen.add(item.id);
     categories.push({ id: item.id, label: item.label, group: item.group, range_mode: item.range_mode,
+      ...('label_en' in item && typeof item.label_en === 'string' ? { label_en: item.label_en } : {}),
       ...('has_details' in item && typeof item.has_details === 'boolean' ? { has_details: item.has_details } : {}) });
   }
-  return { categories };
+  const terms: DataFieldTerm[] = [], labels = new Set<string>();
+  if (result.field_terms !== undefined) {
+    if (!Array.isArray(result.field_terms) || result.field_terms.length > 256 || result.terminology_basis !== 'healthbank_editorial_translation')
+      throw new ApiError('資料來源詞彙目錄格式不正確。', 'invalid_catalog', 200);
+    const values: unknown[] = result.field_terms;
+    for (const item of values) {
+      if (typeof item !== 'object' || item === null || !('label' in item) || !('label_en' in item) ||
+        typeof item.label !== 'string' || !item.label.trim() || item.label.length > 240 || labels.has(item.label) ||
+        typeof item.label_en !== 'string' || !item.label_en.trim() || item.label_en.length > 240)
+        throw new ApiError('資料來源詞彙目錄格式不正確。', 'invalid_catalog', 200);
+      labels.add(item.label); terms.push({ label: item.label, label_en: item.label_en });
+    }
+  }
+  if (result.terminology_basis !== undefined && result.terminology_basis !== 'healthbank_editorial_translation')
+    throw new ApiError('資料來源詞彙依據無法辨識。', 'invalid_catalog', 200);
+  return { categories, field_terms: terms,
+    ...(result.terminology_basis === undefined ? {} : { terminology_basis: 'healthbank_editorial_translation' }) };
 }
 
 function invalidAcquisitionResponse(): never {
@@ -492,6 +537,11 @@ export const api = {
     requestReport(`/api/reports?${new URLSearchParams({ from, to })}`, { signal: signal ?? null }),
   currentReports: (signal?: AbortSignal) =>
     requestReport('/api/reports/current', { signal: signal ?? null }),
+  restoreCachedReports: (input: CachedReportInput, signal?: AbortSignal) =>
+    requestReport('/api/reports/cache', { method: 'POST', body: JSON.stringify(input), signal: signal ?? null }),
+  clearCachedReports: (profileKey: string, scope: 'cache_only' | 'all_reports', signal?: AbortSignal) =>
+    request<{ status: 'cleared' }>('/api/reports/cache', { method: 'DELETE',
+      body: JSON.stringify({ expected_profile_key: profileKey, scope }), signal: signal ?? null }),
   importReports: (file: File) => {
     const body = new FormData();
     body.append('file', file);

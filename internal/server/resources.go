@@ -155,7 +155,7 @@ func (m *sessionMemory) replaceReports(rows []lab.RawRecord) bool {
 	// Source text is counted even where Go may share string backing storage.
 	bytes := int64(len(rows)) * 512
 	for _, row := range rows {
-		bytes += int64(len(row.CheckDate) + len(row.OrderCode) + len(row.OrderName) + len(row.ItemName) + len(row.Result) + len(row.Unit) + len(row.Reference) + len(row.Institution) + len(row.VisitDate) + len(row.Source) + len(row.OfficialFlag))
+		bytes += int64(len(row.CheckDate) + len(row.OrderCode) + len(row.OrderName) + len(row.ItemName) + len(row.Result) + len(row.Unit) + len(row.Reference) + len(row.Institution) + len(row.VisitDate) + len(row.Source) + len(row.OfficialFlag) + len(row.UploadDate) + len(row.SourceName))
 	}
 	m.budget.mu.Lock()
 	previous := m.reports
@@ -176,7 +176,10 @@ func (a *App) operationWorkingSet(r *http.Request, s *session) (int64, bool) {
 		return 128 << 20, true
 	case "/api/acquisition/packages/download":
 		return 1 << 20, false // Each source transfer separately reserves its working set.
-	case "/api/reports/import":
+	case "/api/reports/import", "/api/reports/cache":
+		if r.Method == http.MethodDelete {
+			return 0, false
+		}
 		return 192 << 20, true
 	case "/api/reports", "/api/supplementary":
 		return 128 << 20, true

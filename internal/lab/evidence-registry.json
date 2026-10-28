@@ -3,7 +3,7 @@
   "registry_id": "healthbank.clinical-evidence.v1",
   "copyright": "Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.",
   "catalog_id": "healthbank_lab_defaults_tw",
-  "catalog_sha256": "8e0ec3c2a0753826ac0a9e02e1e25474ffee406bcc12e6a585114ea380dcb3d5",
+  "catalog_sha256": "bcc66de1a819e7dd22ac145d3095042e4151b2a2a9f8b3a3d49d3dcf179fffdb",
   "scope": "Reviewable links between implemented interpretation rules, applicability, source loci and synthetic regression vectors. This registry is not a clinical certification or evidence of live-account data.",
   "maintenance": {
     "rule_changes_require": [
@@ -1514,12 +1514,39 @@
     }
   ],
   "implementation_files": {
-    "internal/lab/grade.go": "f0d00addec6660e265d9edb7927c77222086694e4c862b6202690ee4d53fadc1",
+    "internal/lab/grade.go": "48bda99cc790137e1737863614f1df72bbd4b9b21e00dde5de8608ecd6e69c9e",
     "internal/lab/value.go": "e701d3351f1bf424ce0241f275dc08bd49ace6d9a2f098b7ee96cfc997c29f3d",
     "internal/lab/units.go": "132224ca004adc9b31b6d7816bce669377f872e447646247cf1f60032ddf3966",
     "web/src/clinical-comparison.ts": "5d8c88b9bbde9cac00df62b9b15d38f5b5ec160967d7ad151fdd1e6296d87381",
     "web/src/unit-normalization.ts": "8b5485b1703732b40be32584b1ea057b2d23af5ec8f4f551f75d5d3d9812f092",
     "web/src/lipid-analysis.ts": "6db0d8d47569119f22e3ffb73011c840c34268004d043065fcf131e1d0f2cd87",
-    "web/src/analysis-summary.ts": "80adcffea8e50fdbba97e43d9607218d23279b5995eee9491c8cb747c88c35f6"
+    "web/src/analysis-summary.ts": "80adcffea8e50fdbba97e43d9607218d23279b5995eee9491c8cb747c88c35f6",
+    "internal/lab/catalog.go": "e47d8f0a0a3a9734d5240fa743a425e0d49d3b2a6b33be2881b561413f8d9939",
+    "internal/lab/terminology.go": "308d605d1855d230bc3cffe45884c75d99c41fc5c5bac065424f0f09d060559a"
+  },
+  "terminology": {
+    "verified_date": "2026-10-28",
+    "scope": "Display metadata only; no new clinical rules, source identity matching, rule eligibility, specimen inference or unit conversions.",
+    "source_locations": "catalog.json items[].terminology_source_loci and source_name_glossary[].terminology_source_loci; exact source spelling, attribution and translation basis are retained there.",
+    "primary_procedure_snapshot": "Public NHI dataset 174450, names only; exact upstream CSV SHA-256 is pinned in catalog.sources.nhi_procedure_names.",
+    "ambiguity_guards": [
+      "Payment/procedure code cannot override the reported analyte name.",
+      "Generic blood-gas fields do not establish arterial or venous collection.",
+      "Glossary matches are exact and case-sensitive, and never enter Catalog.match.",
+      "Display enrichment leaves raw names, result precision, units, dates, dynamic keys and clinical rules unchanged.",
+      "Shared ACR and qualitative urine-protein settings use method-neutral English labels.",
+      "Literal source-label translations have an explicit note and make no external medical authority claim."
+    ],
+    "regression_tests": [
+      "TestTerminologyPreservesRawRecordsIdentitiesAndRules",
+      "TestTerminologyKeepsBillingProceduresSeparateFromAnalytes",
+      "TestTerminologyDoesNotInferBloodGasSpecimen",
+      "TestTerminologyRetainsLegacyConflictLabels",
+      "TestEmbeddedTerminologyHasExplicitAttributionAndSharedKeyMeaning",
+      "TestTerminologyCatalogExposesNamesWithoutInventingMeasurements",
+      "TestTerminologyKeepsSpecimenAndFastingUncertainty"
+    ],
+    "public_display_contract": "CatalogResponse.source_name_glossary exposes attributed exact-source-name metadata for missing-only and nonmeasurement rows without creating observations or settings; public arrays are copied.",
+    "normalization_metadata_review": "The same reviewed Normalize delta retains a separate normalized/raw upload date and raw source label; neither substitutes for examination/visit dates nor changes clinical matching."
   }
 }

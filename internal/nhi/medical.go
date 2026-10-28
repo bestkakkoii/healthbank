@@ -258,7 +258,9 @@ func (s *Session) fetchMedicalDetail(ctx context.Context, owner, reference strin
 				if len(fields) == 0 {
 					return report, changedError()
 				}
-				entry := SupplementEntry{Key: medicalKey(ref.sourceType, ref.rowID, section.key, index), Date: ref.date, Institution: ref.institution, Title: section.title, Source: source, Kind: section.kind, Fields: fields}
+				// A source detail may return multiple parent rows for the same
+				// bound record. Preserve each nested occurrence independently.
+				entry := SupplementEntry{Key: medicalKey(ref.sourceType, ref.rowID, fmt.Sprintf("%s\x00%d", section.key, rowIndex), index), Date: ref.date, Institution: ref.institution, Title: section.title, Source: source, Kind: section.kind, Fields: fields}
 				medicalEntryMetadata(&entry, category, section.key, dispensed)
 				if category == "procedure" || category == "hospital" {
 					entry.Date, e = rowText(item, "exe_S_DATE")

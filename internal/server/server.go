@@ -51,6 +51,8 @@ type session struct {
 	settings                 lab.Settings
 	raw                      []lab.RawRecord
 	officialQuery            *officialQueryMetadata
+	cacheProvenance          *cacheReportProvenance
+	reportRevision           uint64
 	fetched                  string
 	complete                 bool
 	warnings                 []string
@@ -112,6 +114,8 @@ func NewWithLimits(db *store.Store, secret []byte, version string, limits config
 	a.mux.HandleFunc("DELETE /api/acquisition/packages", a.cancelAcquisitionPackage)
 	a.mux.HandleFunc("GET /api/reports/current", a.withSession(a.currentReports))
 	a.mux.HandleFunc("POST /api/reports/import", a.withSession(a.importReports))
+	a.mux.HandleFunc("POST /api/reports/cache", a.withSession(a.restoreCachedReports))
+	a.mux.HandleFunc("DELETE /api/reports/cache", a.withSession(a.clearCachedReports))
 	a.mux.HandleFunc("POST /api/reports/demo", a.withSession(a.demo))
 	a.mux.HandleFunc("GET /api/catalog", a.withSession(a.catalogResponse))
 	a.mux.HandleFunc("PUT /api/settings", a.withSession(a.saveSettings))
@@ -212,6 +216,8 @@ func (a *App) clearSessionState(s *session) {
 	s.settings = lab.DefaultSettings()
 	s.raw = nil
 	s.officialQuery = nil
+	s.cacheProvenance = nil
+	s.reportRevision++
 	s.fetched = ""
 	s.complete = false
 	s.warnings = []string{}
@@ -545,7 +551,7 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, v any) error {
 	return nil
 }
 func (a *App) sessionView(s *session) map[string]any {
-	return map[string]any{"authenticated": s.mode == "official", "mode": s.mode, "settings": s.settings, "version": a.version, "csrf_token": s.csrf, "profile_key": s.subject}
+	return map[string]any{"authenticated": s.mode == "official", "mode": s.mode, "settings": s.settings, "version": a.version, "csrf_token": s.csrf, "profile_key": s.subject, "report_revision": s.reportRevision}
 }
 func (a *App) refreshSettings(ctx context.Context, s *session) error {
 	if s.scope != nil && s.scope.ctx.Err() != nil {
@@ -641,9 +647,7 @@ func (a *App) login(w http.ResponseWriter, r *http.Request, s *session) {
 	}
 	a.bindSubject(s, config.Subject(a.secret, in.Identity))
 	s.mode = "official"
-	s.raw = nil
-	s.fetched = ""
-	s.warnings = []string{}
+	s.resetReportAfterLogin()
 	if err := a.refreshSettings(r.Context(), s); err != nil {
 		a.clearSession(s)
 		a.fail(w, r, 500, "settings_read", "登入成功但個人設定無法讀取，請稍後重試。")
@@ -656,6 +660,22 @@ func (a *App) login(w http.ResponseWriter, r *http.Request, s *session) {
 	}
 	a.json(w, 200, a.sessionView(s))
 }
+
+// Only a successful upstream login reaches this transition. Drop any earlier
+// import/demo report and its accounting without closing the verified connector.
+func (s *session) resetReportAfterLogin() {
+	if s.memory != nil {
+		s.memory.releaseReports()
+	}
+	s.raw = nil
+	s.cacheProvenance = nil
+	s.officialQuery = nil
+	s.reportRevision++
+	s.complete = false
+	s.fetched = ""
+	s.warnings = []string{}
+}
+
 func (a *App) logout(w http.ResponseWriter, r *http.Request, s *session) {
 	if s.official != nil && s.mode == "official" {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)

@@ -261,6 +261,142 @@
       "access_note": "Official indexed recommendation text verified; full-page retrieval unavailable.",
       "verified_date": "2026-10-27",
       "type": "primary_clinical_source"
+    },
+    "nhi_procedure_names": {
+      "title": "中央健康保險署：醫療服務給付項目及支付標準（中英文項目名稱）",
+      "url": "https://data.gov.tw/dataset/174450",
+      "type": "official_public_procedure_vocabulary",
+      "edition": "2026-10-28 公開 CSV 快照",
+      "verified_date": "2026-10-28",
+      "resource_url": "https://info.nhi.gov.tw/api/iode0000s01/Dataset?rId=A21030000I-D20021-001",
+      "sha256": "92665007200afc24946e7f80b39e2e38470b8976ecf5c23b0cc0af86d8aa9342",
+      "license": "政府資料開放授權條款第1版",
+      "scope": "Procedure/billing names only. A code can cover a panel or several reported analytes; it never overrides a source item name, specimen, method or unit."
+    },
+    "vghtc_lab_terms": {
+      "title": "臺中榮民總醫院：APP 檢驗項目總表",
+      "url": "https://www.vghtc.gov.tw/News_Content/2453/8102",
+      "type": "official_hospital_bilingual_vocabulary",
+      "edition": "2026-02-03 頁面；2026-10-28 核對",
+      "verified_date": "2026-10-28",
+      "sha256": "ac1a9e43beda594ac2fa75612f540a8ad7e2cb4d3d71f35fc4c8efeffae5af44",
+      "scope": "Names only; no reference ranges, institution-specific specimen assumptions or method equivalence imported."
+    },
+    "medline_rbc_terms": {
+      "title": "美國國家醫學圖書館 MedlinePlus：Red Blood Cell (RBC) Indices",
+      "url": "https://medlineplus.gov/lab-tests/red-blood-cell-rbc-indices/",
+      "verified_date": "2026-10-28",
+      "type": "official_medical_terminology"
+    },
+    "medline_alt_terms": {
+      "title": "美國國家醫學圖書館 MedlinePlus：ALT Blood Test",
+      "url": "https://medlineplus.gov/lab-tests/alt-blood-test/",
+      "verified_date": "2026-10-28",
+      "type": "official_medical_terminology"
+    },
+    "medline_ast_terms": {
+      "title": "美國國家醫學圖書館 MedlinePlus：AST Test",
+      "url": "https://medlineplus.gov/lab-tests/ast-test/",
+      "verified_date": "2026-10-28",
+      "type": "official_medical_terminology"
+    },
+    "medline_ntprobnp_terms": {
+      "title": "美國國家醫學圖書館 MedlinePlus：BNP 與 NT-proBNP",
+      "url": "https://medlineplus.gov/lab-tests/natriuretic-peptide-tests-bnp-nt-probnp/",
+      "verified_date": "2026-10-28",
+      "type": "official_medical_terminology"
+    },
+    "niddk_uacr_terms": {
+      "title": "美國國家糖尿病、消化及腎臟疾病研究所：Assess Urine Albumin",
+      "url": "https://www.niddk.nih.gov/health-information/professionals/clinical-tools-patient-management/kidney-disease/identify-manage-patients/evaluate-ckd/assess-urine-albumin",
+      "edition": "2012-03 最後審閱；2026-10-28 名稱核對",
+      "verified_date": "2026-10-28",
+      "type": "official_medical_terminology"
+    },
+    "radiometer_blood_gas_terms": {
+      "title": "Radiometer ABL90 FLEX PLUS Instructions for Use：血氣參數定義",
+      "url": "https://www.ruh.nhs.uk/pathology/documents/poct/SOP_Radiometer_ABL90_Flex_Plus_IFU_Instructions.pdf",
+      "edition": "Software 3.4；文件 996-178N；NHS 公開保存本",
+      "verified_date": "2026-10-28",
+      "type": "manufacturer_parameter_definitions",
+      "scope": "Parameter naming only. Does not establish the source laboratory instrument, calculation method, arterial/venous specimen, reference interval or result validity."
+    },
+    "sysmex_cell_terms": {
+      "title": "Sysmex：血球分析術語",
+      "url": "https://www.sysmex-europe.com/academy/library/glossary/",
+      "type": "manufacturer_parameter_definitions",
+      "verified_date": "2026-10-28",
+      "access_note": "Official indexed glossary text reviewed; direct page retrieval returned 403. Parameter list independently cross-checked on the official XN Check product page.",
+      "secondary_url": "https://www.sysmex-europe.com/products/products-detail/xn-check/",
+      "scope": "IG and RDW name definitions only; no instrument or reference-range inference."
+    },
+    "who_mnpt_terms": {
+      "title": "世界衛生組織：凝血活酶及血漿之國際標準指引，MNPT 定義",
+      "url": "https://cdn.who.int/media/docs/default-source/biologicals/blood-products/document-migration/trs_979_annex_6.pdf?sfvrsn=5c960b91_3",
+      "edition": "WHO Technical Report Series 979, Annex 6 (2013)",
+      "verified_date": "2026-10-28",
+      "type": "official_medical_terminology"
+    },
+    "newcastle_mnaptt_terms": {
+      "title": "Newcastle Hospitals Laboratories：Activated Partial Thromboplastin Ratio",
+      "url": "https://laboratories.newcastle-hospitals.nhs.uk/test-directory/activated-partial-thromboplastin-ratio/",
+      "verified_date": "2026-10-28",
+      "type": "official_hospital_parameter_definitions"
+    },
+    "michigan_anaerobic_terms": {
+      "title": "University of Michigan MLabs：Anaerobic Culture, Wound",
+      "url": "https://mlabs.umich.edu/tests/anaerobic-culture-wound",
+      "verified_date": "2026-10-28",
+      "type": "official_hospital_test_directory"
+    },
+    "medline_creatinine_terms": {
+      "title": "美國國家醫學圖書館 MedlinePlus：Creatinine Test",
+      "url": "https://medlineplus.gov/lab-tests/creatinine-test/",
+      "verified_date": "2026-10-28",
+      "type": "official_medical_terminology"
+    },
+    "nlm_segmented_neutrophil_terms": {
+      "title": "美國國家醫學圖書館 CDE：Segmented neutrophils",
+      "url": "https://cde.nlm.nih.gov/deView?tinyId=9H1gCYxlX",
+      "verified_date": "2026-10-28",
+      "type": "official_controlled_vocabulary",
+      "scope": "Segmented neutrophil wording only; no LOINC code, automated method or population is assigned to source records."
+    },
+    "cap_sediment_terms": {
+      "title": "College of American Pathologists：Urine Sediment Master List",
+      "url": "https://documents.cap.org/documents/CMA2022.pdf",
+      "edition": "2022",
+      "verified_date": "2026-10-28",
+      "type": "professional_body_vocabulary",
+      "access_note": "Official indexed list text reviewed; direct PDF retrieval returned 502.",
+      "scope": "Cell and organism names only; no specimen, diagnosis or microscopic classification is inferred for an unspecified source label."
+    },
+    "sysmex_rdw_terms": {
+      "title": "Sysmex SEED：Defining reference intervals，參數縮寫表",
+      "url": "https://www.sysmex-europe.com/fileadmin/media/f100/Academy/Documents/SEED/Haematology/Sysmex_SEED_Defining_reference_intervals.pdf",
+      "edition": "EN.N.06/23",
+      "verified_date": "2026-10-28",
+      "type": "manufacturer_parameter_definitions",
+      "access_note": "Official indexed parameter table reviewed; direct PDF retrieval returned 403.",
+      "scope": "RDW-CV and RDW-SD expanded names only; no reference intervals or formulas imported."
+    },
+    "medline_globulin_terms": {
+      "title": "美國國家醫學圖書館 MedlinePlus：Globulin Test",
+      "url": "https://medlineplus.gov/lab-tests/globulin-test/",
+      "verified_date": "2026-10-28",
+      "type": "official_medical_terminology"
+    },
+    "medline_thyroid_terms": {
+      "title": "美國國家醫學圖書館 MedlinePlus：Thyroid function tests",
+      "url": "https://medlineplus.gov/ency/article/003444.htm",
+      "verified_date": "2026-10-28",
+      "type": "official_medical_terminology"
+    },
+    "medline_hba1c_terms": {
+      "title": "美國國家醫學圖書館 MedlinePlus：Hemoglobin A1C (HbA1c) Test",
+      "url": "https://medlineplus.gov/lab-tests/hemoglobin-a1c-hba1c-test/",
+      "verified_date": "2026-10-28",
+      "type": "official_medical_terminology"
     }
   },
   "rules": {
@@ -1086,7 +1222,24 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine albumin-to-creatinine ratio (UACR)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "niddk_uacr_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Urine examination: UACR row 76; creatinine row 14; urine protein row 17"
+        },
+        {
+          "source_id": "niddk_uacr_terms",
+          "locator": "Assess Urine Albumin: albumin concentration, urine creatinine and their ratio are separate quantities"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "名稱為尿白蛋白／肌酸酐比值；半定量與定量原始通道分開保留，共用個人設定不代表檢驗方法等同。"
     },
     {
       "id": "urine_acr_quantitative",
@@ -1108,7 +1261,24 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine albumin-to-creatinine ratio (UACR)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "niddk_uacr_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Urine examination: UACR row 76; creatinine row 14; urine protein row 17"
+        },
+        {
+          "source_id": "niddk_uacr_terms",
+          "locator": "Assess Urine Albumin: albumin concentration, urine creatinine and their ratio are separate quantities"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "名稱為尿白蛋白／肌酸酐比值；半定量與定量原始通道分開保留，共用個人設定不代表檢驗方法等同。"
     },
     {
       "id": "serum_alt",
@@ -1137,7 +1307,18 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Alanine aminotransferase (ALT)",
+      "terminology_sources": [
+        "medline_alt_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_alt_terms",
+          "locator": "What is an ALT blood test?: alanine aminotransferase"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "urine_albumin_semiquantitative",
@@ -1165,11 +1346,27 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine albumin concentration (semiquantitative)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "niddk_uacr_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Urine examination: UACR row 76; creatinine row 14; urine protein row 17"
+        },
+        {
+          "source_id": "niddk_uacr_terms",
+          "locator": "Assess Urine Albumin: albumin concentration, urine creatinine and their ratio are separate quantities"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "serum_albumin",
-      "display_name_zh_tw": "血清白蛋白",
+      "display_name_zh_tw": "血液白蛋白",
       "source_match": {
         "order_code": "09038C",
         "item_name": "Albumin",
@@ -1194,7 +1391,24 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Blood albumin",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Blood albumin"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 09038C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "與尿液項目分開；來源名稱與健保代碼不單獨確認血清或血漿。"
     },
     {
       "id": "blood_atypical_lymphocyte_percentage",
@@ -1217,11 +1431,27 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": "100"
-      }
+      },
+      "display_name_en": "Atypical lymphocytes (%)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Atypical lymphocytes (%)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 08013C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "venous_base_excess",
-      "display_name_zh_tw": "靜脈血鹼剩餘",
+      "display_name_zh_tw": "血氣鹼剩餘（血液模型 BE(B)）",
       "source_match": {
         "order_code": "09041B",
         "item_name": "BE(B)",
@@ -1233,13 +1463,30 @@
       "reference_profile": null,
       "default_rule": "unclassified",
       "notes": [
-        "No applicable venous source-lab interval established; do not copy the manual arterial BE range."
+        "No source-confirmed arterial/venous specimen or applicable source-laboratory BE interval; do not import an arterial interval."
       ],
-      "specimen": "venous_blood",
+      "specimen": "blood_unconfirmed",
       "physical_domain": {
         "minimum": null,
         "maximum": null
-      }
+      },
+      "display_name_en": "Blood-gas base excess, blood model (BE(B))",
+      "terminology_sources": [
+        "nhi_procedure_names",
+        "radiometer_blood_gas_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09041B: Blood gas analysis; no arterial/venous distinction in the payment name"
+        },
+        {
+          "source_id": "radiometer_blood_gas_terms",
+          "locator": "Printed pp. 213, 292–293: pH, pCO2, pO2, cBase(B), cBase(Ecf), actual/standard bicarbonate, ctCO2 and sO2 definitions"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "來源欄名未確認動脈或靜脈檢體；舊有項目識別碼僅為設定相容性保留。BE(B) 與細胞外液模型 BE(ecf) 分開保留。"
     },
     {
       "id": "serum_bun",
@@ -1268,7 +1515,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Blood urea nitrogen (BUN)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Blood urea nitrogen (BUN)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 09002C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "urine_bacteria",
@@ -1294,7 +1557,18 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine bacteria",
+      "terminology_sources": [
+        "cap_sediment_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "cap_sediment_terms",
+          "locator": "Organisms: bacteria"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "blood_band_neutrophil_percentage",
@@ -1325,7 +1599,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": "100"
-      }
+      },
+      "display_name_en": "Band neutrophils (%)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Band neutrophils (%)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 08013C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "blood_basophil_percentage",
@@ -1356,7 +1646,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": "100"
-      }
+      },
+      "display_name_en": "Basophils (%)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Basophils (%)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 08013C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "urine_bilirubin",
@@ -1382,7 +1688,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine bilirubin",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine bilirubin"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 06012C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "venous_blood_gas_panel",
@@ -1402,7 +1724,24 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Venous blood gas panel",
+      "terminology_sources": [
+        "nhi_procedure_names",
+        "radiometer_blood_gas_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09041B: Blood gas analysis; no arterial/venous distinction in the payment name"
+        },
+        {
+          "source_id": "radiometer_blood_gas_terms",
+          "locator": "Printed pp. 213, 292–293: pH, pCO2, pO2, cBase(B), cBase(Ecf), actual/standard bicarbonate, ctCO2 and sO2 definitions"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "只有此來源組別明確標示 vein；不能據此替其他未連結的血氣結果推定檢體。"
     },
     {
       "id": "serum_ck",
@@ -1431,7 +1770,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Creatine kinase (CK)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Creatine kinase (CK)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 09032C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "serum_crp",
@@ -1462,7 +1817,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "C-reactive protein (CRP)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: C-reactive protein (CRP)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 12015C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "serum_total_calcium",
@@ -1496,7 +1867,23 @@
       },
       "alert_rules": [
         "vgh_alert_serum_total_calcium"
-      ]
+      ],
+      "display_name_en": "Total calcium",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Total calcium"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 09011C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "urine_casts",
@@ -1522,7 +1909,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urinary casts",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urinary casts"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 06012C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "serum_chloride",
@@ -1554,7 +1957,23 @@
       },
       "alert_rules": [
         "vgh_alert_serum_chloride"
-      ]
+      ],
+      "display_name_en": "Chloride (Cl)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Chloride (Cl)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 09023C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "serum_total_cholesterol",
@@ -1583,7 +2002,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Total cholesterol",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Total cholesterol"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 09001C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "urine_clarity",
@@ -1603,7 +2038,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine clarity",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine clarity"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 06012C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "urine_color",
@@ -1623,11 +2074,27 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine color",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine color"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 06012C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "serum_creatinine",
-      "display_name_zh_tw": "血清肌酸酐",
+      "display_name_zh_tw": "血液肌酸酐",
       "source_match": {
         "order_code": "09015C",
         "item_name": "Creatinine",
@@ -1679,7 +2146,24 @@
           "item_name": "Creatinine(健檢)",
           "unit_raw": "mg/dL"
         }
-      ]
+      ],
+      "display_name_en": "Blood creatinine",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Blood creatinine"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 09015C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "與尿液項目分開；來源名稱與健保代碼不單獨確認血清或血漿。"
     },
     {
       "id": "spot_urine_creatinine",
@@ -1701,7 +2185,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Spot urine creatinine concentration",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Spot urine creatinine concentration"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 09016C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "urine_crystals",
@@ -1727,7 +2227,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine crystals",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine crystals"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 06012C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "blood_eosinophil_percentage",
@@ -1758,7 +2274,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": "100"
-      }
+      },
+      "display_name_en": "Eosinophils (%)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Eosinophils (%)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 08013C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "urine_epithelial_cells",
@@ -1786,7 +2318,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine epithelial cells",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine epithelial cells"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 06012C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "urine_glucose_dipstick",
@@ -1814,11 +2362,27 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine glucose",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine glucose"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 06012C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "fasting_plasma_glucose",
-      "display_name_zh_tw": "空腹血糖",
+      "display_name_zh_tw": "飯前血糖（來源標示 AC）",
       "source_match": {
         "order_code": "09005C",
         "item_name": "Glucose-AC(飯前)",
@@ -1851,11 +2415,28 @@
       },
       "alert_rules": [
         "blood_glucose_low_alerts"
-      ]
+      ],
+      "display_name_en": "Pre-meal blood glucose (source AC label)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Pre-meal blood glucose (source AC label)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 09005C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "AC／飯前為來源標示，不單獨證明禁食時數；需要空腹條件的判讀仍須確認採檢情境。"
     },
     {
       "id": "venous_bicarbonate",
-      "display_name_zh_tw": "靜脈血碳酸氫根",
+      "display_name_zh_tw": "血氣實際碳酸氫根",
       "source_match": {
         "order_code": "09041B",
         "item_name": "HCO3-act",
@@ -1876,11 +2457,28 @@
       },
       "default_rule": "report_reference",
       "notes": [],
-      "specimen": "venous_blood",
+      "specimen": "blood_unconfirmed",
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Blood-gas actual bicarbonate (HCO3-act)",
+      "terminology_sources": [
+        "nhi_procedure_names",
+        "radiometer_blood_gas_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09041B: Blood gas analysis; no arterial/venous distinction in the payment name"
+        },
+        {
+          "source_id": "radiometer_blood_gas_terms",
+          "locator": "Printed pp. 213, 292–293: pH, pCO2, pO2, cBase(B), cBase(Ecf), actual/standard bicarbonate, ctCO2 and sO2 definitions"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "來源欄名未確認動脈或靜脈檢體；舊有項目識別碼僅為設定相容性保留。HCO3-act 為實際碳酸氫根名稱，與標準碳酸氫根 HCO3-std 分開保留。"
     },
     {
       "id": "serum_hdl_cholesterol",
@@ -1911,7 +2509,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "High-density lipoprotein cholesterol (HDL-C)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: High-density lipoprotein cholesterol (HDL-C)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 09043C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "blood_hemoglobin",
@@ -1963,7 +2577,23 @@
       },
       "alert_rules": [
         "vgh_alert_blood_hemoglobin"
-      ]
+      ],
+      "display_name_en": "Hemoglobin (Hb)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Hemoglobin (Hb)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 08011C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "blood_hba1c",
@@ -1997,7 +2627,18 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": "100"
-      }
+      },
+      "display_name_en": "Glycated hemoglobin (HbA1c)",
+      "terminology_sources": [
+        "medline_hba1c_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_hba1c_terms",
+          "locator": "Other names: glycated hemoglobin"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "blood_hematocrit",
@@ -2049,7 +2690,23 @@
       },
       "alert_rules": [
         "vgh_alert_blood_hematocrit"
-      ]
+      ],
+      "display_name_en": "Hematocrit (Hct)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Hematocrit (Hct)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 08011C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "urine_ketones",
@@ -2075,7 +2732,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine ketones",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine ketones"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 06012C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "serum_ldl_cholesterol",
@@ -2107,7 +2780,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Low-density lipoprotein cholesterol (LDL-C)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Low-density lipoprotein cholesterol (LDL-C)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 09044C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "urine_leukocyte_esterase",
@@ -2133,7 +2822,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine leukocyte esterase",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine leukocyte esterase"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 06012C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "blood_lymphocyte_percentage",
@@ -2164,7 +2869,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": "100"
-      }
+      },
+      "display_name_en": "Lymphocytes (%)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Lymphocytes (%)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 08013C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "blood_mch",
@@ -2193,7 +2914,18 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Mean corpuscular hemoglobin (MCH)",
+      "terminology_sources": [
+        "medline_rbc_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_rbc_terms",
+          "locator": "What are red blood cell indices?: MCV, MCH, MCHC and RDW"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "blood_mchc",
@@ -2222,7 +2954,18 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Mean corpuscular hemoglobin concentration (MCHC)",
+      "terminology_sources": [
+        "medline_rbc_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_rbc_terms",
+          "locator": "What are red blood cell indices?: MCV, MCH, MCHC and RDW"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "blood_mcv",
@@ -2251,7 +2994,18 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Mean corpuscular volume (MCV)",
+      "terminology_sources": [
+        "medline_rbc_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_rbc_terms",
+          "locator": "What are red blood cell indices?: MCV, MCH, MCHC and RDW"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "urine_albumin_quantitative",
@@ -2282,7 +3036,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine albumin concentration (quantitative)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "niddk_uacr_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Urine examination: UACR row 76; creatinine row 14; urine protein row 17"
+        },
+        {
+          "source_id": "niddk_uacr_terms",
+          "locator": "Assess Urine Albumin: albumin concentration, urine creatinine and their ratio are separate quantities"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "blood_monocyte_percentage",
@@ -2313,7 +3083,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": "100"
-      }
+      },
+      "display_name_en": "Monocytes (%)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Monocytes (%)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 08013C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "plasma_nt_probnp",
@@ -2363,7 +3149,19 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "N-terminal pro-B-type natriuretic peptide (NT-proBNP)",
+      "terminology_sources": [
+        "medline_ntprobnp_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_ntprobnp_terms",
+          "locator": "What are natriuretic peptide tests?: distinct BNP and N-terminal pro b-type natriuretic peptide"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "保留 NT-proBNP，不以 12193C 支付項目的 BNP／Pro-BNP 統稱覆蓋實際檢驗名稱。"
     },
     {
       "id": "blood_neutrophil_percentage",
@@ -2394,7 +3192,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": "100"
-      }
+      },
+      "display_name_en": "Neutrophils (%)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Neutrophils (%)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 08013C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "urine_nitrite",
@@ -2420,11 +3234,27 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine nitrite",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine nitrite"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 06012C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "venous_oxygen_saturation",
-      "display_name_zh_tw": "靜脈血氧飽和度",
+      "display_name_zh_tw": "血氣氧飽和度",
       "source_match": {
         "order_code": "09041B",
         "item_name": "O2sat",
@@ -2445,14 +3275,31 @@
       },
       "default_rule": "report_reference",
       "notes": [
-        "Keep the current report60–85% interval. No matching venous interval found in the Songshan manual.",
-        "Not finger pulse-ox SpO2. Do not apply arterial95–98% or pulse-ox emergency cutoffs."
+        "Preserve the live report interval; the stored reference template is not proof of a venous specimen.",
+        "Not finger pulse-ox SpO2; do not assume arterial oxygen-saturation thresholds."
       ],
-      "specimen": "venous_blood",
+      "specimen": "blood_unconfirmed",
       "physical_domain": {
         "minimum": "0",
         "maximum": "100"
-      }
+      },
+      "display_name_en": "Blood-gas oxygen saturation (sO2)",
+      "terminology_sources": [
+        "nhi_procedure_names",
+        "radiometer_blood_gas_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09041B: Blood gas analysis; no arterial/venous distinction in the payment name"
+        },
+        {
+          "source_id": "radiometer_blood_gas_terms",
+          "locator": "Printed pp. 213, 292–293: pH, pCO2, pO2, cBase(B), cBase(Ecf), actual/standard bicarbonate, ctCO2 and sO2 definitions"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "來源欄名未確認動脈或靜脈檢體；舊有項目識別碼僅為設定相容性保留。血氣氧飽和度不等同指尖血氧 SpO2。"
     },
     {
       "id": "urine_occult_blood",
@@ -2478,11 +3325,27 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine occult blood",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine occult blood"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 06012C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "venous_pco2",
-      "display_name_zh_tw": "靜脈血二氧化碳分壓",
+      "display_name_zh_tw": "血氣二氧化碳分壓",
       "source_match": {
         "order_code": "09041B",
         "item_name": "PCO2",
@@ -2505,7 +3368,7 @@
       "notes": [
         "Use live report interval first. Optional demographic profile requires explicit applicability; do not infer sex/age from this sample."
       ],
-      "specimen": "venous_blood",
+      "specimen": "blood_unconfirmed",
       "optional_reference_profiles": [
         {
           "applicability": "male",
@@ -2527,7 +3390,24 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Blood-gas carbon dioxide partial pressure (pCO2)",
+      "terminology_sources": [
+        "nhi_procedure_names",
+        "radiometer_blood_gas_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09041B: Blood gas analysis; no arterial/venous distinction in the payment name"
+        },
+        {
+          "source_id": "radiometer_blood_gas_terms",
+          "locator": "Printed pp. 213, 292–293: pH, pCO2, pO2, cBase(B), cBase(Ecf), actual/standard bicarbonate, ctCO2 and sO2 definitions"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "來源欄名未確認動脈或靜脈檢體；舊有項目識別碼僅為設定相容性保留。"
     },
     {
       "id": "urine_ph",
@@ -2556,11 +3436,27 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": "14"
-      }
+      },
+      "display_name_en": "Urine pH",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine pH"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 06012C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "venous_po2",
-      "display_name_zh_tw": "靜脈血氧分壓",
+      "display_name_zh_tw": "血氣氧分壓",
       "source_match": {
         "order_code": "09041B",
         "item_name": "PO2",
@@ -2581,13 +3477,30 @@
       },
       "default_rule": "report_reference",
       "notes": [
-        "Peripheral venous pO2 cannot substitute for arterial oxygenation assessment."
+        "Arterial or venous specimen is not established by the generic PO2 name or payment code. Do not infer arterial oxygenation from an unspecified sample."
       ],
-      "specimen": "venous_blood",
+      "specimen": "blood_unconfirmed",
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Blood-gas oxygen partial pressure (pO2)",
+      "terminology_sources": [
+        "nhi_procedure_names",
+        "radiometer_blood_gas_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09041B: Blood gas analysis; no arterial/venous distinction in the payment name"
+        },
+        {
+          "source_id": "radiometer_blood_gas_terms",
+          "locator": "Printed pp. 213, 292–293: pH, pCO2, pO2, cBase(B), cBase(Ecf), actual/standard bicarbonate, ctCO2 and sO2 definitions"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "來源欄名未確認動脈或靜脈檢體；舊有項目識別碼僅為設定相容性保留。"
     },
     {
       "id": "serum_phosphorus",
@@ -2616,7 +3529,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Phosphorus (P)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Phosphorus (P)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 09012C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "blood_platelet_count",
@@ -2648,7 +3577,23 @@
       },
       "alert_rules": [
         "vgh_alert_blood_platelet_count"
-      ]
+      ],
+      "display_name_en": "Platelet count (PLT)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Platelet count (PLT)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 08011C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "serum_potassium",
@@ -2680,7 +3625,23 @@
       },
       "alert_rules": [
         "vgh_alert_serum_potassium"
-      ]
+      ],
+      "display_name_en": "Potassium (K)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Potassium (K)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 09022C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "urine_protein_dipstick",
@@ -2707,7 +3668,24 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine protein (qualitative)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine protein (qualitative)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 06012C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "尿蛋白定性與其原始方法名稱分開保留；共用個人設定不代表不同試劑或方法等同。"
     },
     {
       "id": "urine_rbc_microscopy",
@@ -2735,7 +3713,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine red blood cells, microscopy",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine red blood cells, microscopy"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 06012C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "blood_rbc_count",
@@ -2784,11 +3778,27 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Red blood cell count (RBC)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Red blood cell count (RBC)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 08011C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "blood_rdw_cv",
-      "display_name_zh_tw": "紅血球分布寬度",
+      "display_name_zh_tw": "紅血球分布寬度（變異係數）",
       "source_match": {
         "order_code": "08011C",
         "item_name": "RDW-CV",
@@ -2813,7 +3823,24 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": "100"
-      }
+      },
+      "display_name_en": "Red cell distribution width, coefficient of variation (RDW-CV)",
+      "terminology_sources": [
+        "medline_rbc_terms",
+        "sysmex_rdw_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_rbc_terms",
+          "locator": "What are RBC indices?: red cell distribution width"
+        },
+        {
+          "source_id": "sysmex_rdw_terms",
+          "locator": "Abbreviations table: RDW-CV coefficient of variation"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "CV 為變異係數；與以 fL 表示的 RDW-SD 分開保留。"
     },
     {
       "id": "blood_segment_neutrophil_percentage",
@@ -2845,7 +3872,18 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": "100"
-      }
+      },
+      "display_name_en": "Segmented neutrophils (%)",
+      "terminology_sources": [
+        "nlm_segmented_neutrophil_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nlm_segmented_neutrophil_terms",
+          "locator": "Designations: segmented neutrophils per 100 white blood cells; no automated method inferred"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "serum_sodium",
@@ -2879,7 +3917,23 @@
       },
       "alert_rules": [
         "vgh_alert_serum_sodium"
-      ]
+      ],
+      "display_name_en": "Sodium (Na)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Sodium (Na)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 09021C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "urine_specific_gravity",
@@ -2908,7 +3962,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine specific gravity",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine specific gravity"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 06012C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "spot_urine_total_protein",
@@ -2930,7 +4000,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Spot urine total protein concentration",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Spot urine total protein concentration"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 09040C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "serum_triglycerides",
@@ -2962,7 +4048,23 @@
       },
       "alert_rules": [
         "adult_triglycerides"
-      ]
+      ],
+      "display_name_en": "Triglycerides (TG)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Triglycerides (TG)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 09004C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "urine_pcr",
@@ -2982,7 +4084,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine protein-to-creatinine ratio (UPCR)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine protein-to-creatinine ratio (UPCR)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 09040C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "serum_uric_acid",
@@ -3031,7 +4149,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Uric acid",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Uric acid"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 09013C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "urine_urobilinogen",
@@ -3057,7 +4191,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine urobilinogen",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine urobilinogen"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 06012C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "urine_wbc_microscopy",
@@ -3085,7 +4235,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine white blood cells, microscopy",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine white blood cells, microscopy"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 06012C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "blood_wbc_count",
@@ -3117,11 +4283,27 @@
       },
       "alert_rules": [
         "vgh_alert_blood_wbc_count"
-      ]
+      ],
+      "display_name_en": "White blood cell count (WBC)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: White blood cell count (WBC)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 08011C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "venous_total_co2",
-      "display_name_zh_tw": "靜脈血總二氧化碳",
+      "display_name_zh_tw": "血氣總二氧化碳",
       "source_match": {
         "order_code": "09041B",
         "item_name": "ctCO2",
@@ -3142,11 +4324,28 @@
       },
       "default_rule": "report_reference",
       "notes": [],
-      "specimen": "venous_blood",
+      "specimen": "blood_unconfirmed",
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Blood-gas total carbon dioxide (ctCO2)",
+      "terminology_sources": [
+        "nhi_procedure_names",
+        "radiometer_blood_gas_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09041B: Blood gas analysis; no arterial/venous distinction in the payment name"
+        },
+        {
+          "source_id": "radiometer_blood_gas_terms",
+          "locator": "Printed pp. 213, 292–293: pH, pCO2, pO2, cBase(B), cBase(Ecf), actual/standard bicarbonate, ctCO2 and sO2 definitions"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "來源欄名未確認動脈或靜脈檢體；舊有項目識別碼僅為設定相容性保留。ctCO2 未註明 (B)／(P)，不擅自指定全血或血漿的計算模型。"
     },
     {
       "id": "egfr",
@@ -3168,7 +4367,23 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Estimated glomerular filtration rate (eGFR)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "kdigo_ckd"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Kidney category, row 96: estimated glomerular filtration rate"
+        },
+        {
+          "source_id": "kdigo_ckd",
+          "locator": "Abbreviations: eGFR, estimated glomerular filtration rate"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "plasma_hs_troponin_i",
@@ -3218,11 +4433,28 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "High-sensitivity cardiac troponin I (hs-cTnI)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: High-sensitivity cardiac troponin I (hs-cTnI)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 09099C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "高敏感度依來源名稱 hs 標示；支付代碼 09099C 本身不能確認檢驗平台或高敏感度方法。"
     },
     {
       "id": "venous_ph",
-      "display_name_zh_tw": "靜脈血酸鹼值",
+      "display_name_zh_tw": "血氣酸鹼值",
       "source_match": {
         "order_code": "09041B",
         "item_name": "pH",
@@ -3245,11 +4477,28 @@
       "notes": [
         "Use supplied report7.32–7.43. Reject the manual typo72.43."
       ],
-      "specimen": "venous_blood",
+      "specimen": "blood_unconfirmed",
       "physical_domain": {
         "minimum": "0",
         "maximum": "14"
-      }
+      },
+      "display_name_en": "Blood-gas pH",
+      "terminology_sources": [
+        "nhi_procedure_names",
+        "radiometer_blood_gas_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09041B: Blood gas analysis; no arterial/venous distinction in the payment name"
+        },
+        {
+          "source_id": "radiometer_blood_gas_terms",
+          "locator": "Printed pp. 213, 292–293: pH, pCO2, pO2, cBase(B), cBase(Ecf), actual/standard bicarbonate, ctCO2 and sO2 definitions"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "來源欄名未確認動脈或靜脈檢體；舊有項目識別碼僅為設定相容性保留。"
     },
     {
       "id": "manual_smear_status",
@@ -3269,7 +4518,12 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Manual slide review status",
+      "terminology_sources": [],
+      "terminology_source_loci": [],
+      "terminology_basis": "literal_source_translation",
+      "terminology_note": "來源狀態欄位的文字翻譯；不表示本應用執行人工閱片。"
     },
     {
       "id": "blood_ck_mb_activity",
@@ -3303,7 +4557,19 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Creatine kinase MB isoenzyme activity (CK-MB)",
+      "terminology_sources": [
+        "vgh_ck_mb_activity"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vgh_ck_mb_activity",
+          "locator": "CK-MB activity assay; U/L, not CK-MB mass concentration"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "此來源單位為活性 U/L，不與 CK-MB 質量濃度直接合併。"
     },
     {
       "id": "plasma_d_dimer_unspecified",
@@ -3345,7 +4611,19 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "D-dimer (reporting convention unspecified)",
+      "terminology_sources": [
+        "ash_d_dimer"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "ash_d_dimer",
+          "locator": "D-dimer assay reporting conventions: FEU and DDU must not be assumed equivalent"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "來源單位未標示 FEU 或 DDU，兩種計量制不互換；保留原始拼寫 D-D diamer。"
     },
     {
       "id": "blood_glucose_unspecified",
@@ -3373,7 +4651,24 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Blood glucose (fasting status unspecified)",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Blood glucose (fasting status unspecified)"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 09005C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "來源未註明空腹狀態；健保支付項目名稱不取代實際採檢條件。"
     },
     {
       "id": "capillary_postprandial_glucose",
@@ -3401,7 +4696,24 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Postprandial capillary blood glucose",
+      "terminology_sources": [
+        "vghtc_lab_terms",
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Postprandial capillary blood glucose"
+        },
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "Procedure 09140C; supporting procedure vocabulary only, not independent analyte/specimen proof"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "來源明確標示飯後及微血管採血，未註明距離進食多久。"
     },
     {
       "id": "blood_total_homocysteine",
@@ -3435,7 +4747,18 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Total homocysteine",
+      "terminology_sources": [
+        "cych_homocysteine"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "cych_homocysteine",
+          "locator": "Test name and total homocysteine assay description"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "blood_intact_pth",
@@ -3481,7 +4804,18 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Intact parathyroid hormone (iPTH)",
+      "terminology_sources": [
+        "ucl_intact_pth"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "ucl_intact_pth",
+          "locator": "Intact parathyroid hormone assay name"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "serum_total_vitamin_b12",
@@ -3527,7 +4861,18 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Total vitamin B12",
+      "terminology_sources": [
+        "edah_vitamin_b12"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "edah_vitamin_b12",
+          "locator": "Vitamin B12 test name; distinct from active B12"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
     },
     {
       "id": "urine_protein_qualitative",
@@ -3567,9 +4912,2503 @@
       "physical_domain": {
         "minimum": "0",
         "maximum": null
-      }
+      },
+      "display_name_en": "Urine protein (qualitative)",
+      "terminology_sources": [
+        "cych_urine_protein"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "cych_urine_protein",
+          "locator": "Urine protein qualitative test, payment code 06003C"
+        }
+      ],
+      "terminology_basis": "primary_source_terms",
+      "terminology_note": "尿蛋白定性與其原始方法名稱分開保留；共用個人設定不代表不同試劑或方法等同。"
     }
   ],
   "copyright": "Copyright (c) 2026 bestkakkoii llc. All rights reserved.",
-  "settings_configuration_count": 76
+  "settings_configuration_count": 76,
+  "terminology_notice": "中英文名稱依具名醫療來源整理，中文統一用語及來源欄位譯文由 Healthbank 編輯；並非全部為健保署逐字官方譯名。名稱對照不變更原始名稱、紀錄身分、檢體、單位、檢驗方法或判讀規則。",
+  "terminology_contract": {
+    "verified_date": "2026-10-28",
+    "identity_matching": "Existing exact code + name + verified unit matching is unchanged; display-only glossary never participates in matching or reconciliation.",
+    "unknown_names": "Retain raw source text when no exact case-sensitive reviewed spelling exists.",
+    "source_preservation": [
+      "item_name",
+      "order_name",
+      "order_code",
+      "raw results",
+      "raw units",
+      "raw dates"
+    ],
+    "procedure_vs_analyte": "Official payment names describe procedures, not necessarily each result. For example, 09016C cannot turn an ACR result into a urine creatinine concentration.",
+    "translation_basis": "Primary sources establish terminology. Chinese editorial wording and literal source-label translations are identified separately from verbatim official names.",
+    "method_limit": "Name-only translation does not establish assay method, fasting duration, specimen type or clinical comparability.",
+    "raw_labels_without_context": "Abbreviations such as Albumin, RBC, WBC, Glucose, Protein, Bilirubin and pH remain specimen-neutral outside a verified full source match.",
+    "historical_ids": "The venous_* item IDs are retained for settings compatibility; only the explicit Blood gas analysis-vein panel establishes venous wording. Individual generic gas fields do not establish arterial/venous collection.",
+    "source_name_count": 148,
+    "glossary_entry_count": 128,
+    "builtin_definition_count": 80,
+    "procedure_names_snapshot": [
+      {
+        "order_code": "06003C",
+        "official_name_zh_tw": "尿蛋白",
+        "official_name_en": "Urine protein"
+      },
+      {
+        "order_code": "06012C",
+        "official_name_zh_tw": "尿一般檢查（包括蛋白、糖、尿膽元、膽紅素、尿沈渣、比重、顏色、混濁度、白血球酯脢、潛血、酸鹼度及酮體）",
+        "official_name_en": "General urine examination"
+      },
+      {
+        "order_code": "08011C",
+        "official_name_zh_tw": "全套血液檢查Ｉ（八項）",
+        "official_name_en": "CBC-I(WBC,RBC,HB,HCT,PLATELET COUNT,MCV,MCH,MCHC)"
+      },
+      {
+        "order_code": "08013C",
+        "official_name_zh_tw": "白血球分類計數",
+        "official_name_en": "WBC differential count"
+      },
+      {
+        "order_code": "08026C",
+        "official_name_zh_tw": "凝血酶原時間 (一段式)",
+        "official_name_en": "Prothrombin time"
+      },
+      {
+        "order_code": "08036C",
+        "official_name_zh_tw": "部分凝血活酶時間",
+        "official_name_en": "APTT (activated partial thromboplastin time)"
+      },
+      {
+        "order_code": "08079B",
+        "official_name_zh_tw": "D雙合體試驗",
+        "official_name_en": "D dimer test"
+      },
+      {
+        "order_code": "09001C",
+        "official_name_zh_tw": "總膽固醇",
+        "official_name_en": "Cholestero1, total"
+      },
+      {
+        "order_code": "09002C",
+        "official_name_zh_tw": "血中尿素氮",
+        "official_name_en": "BUN, blood urea nitrogen"
+      },
+      {
+        "order_code": "09004C",
+        "official_name_zh_tw": "三酸甘油脂",
+        "official_name_en": "Triglyceride (TG)"
+      },
+      {
+        "order_code": "09005C",
+        "official_name_zh_tw": "血液及體液葡萄糖-空腹",
+        "official_name_en": "Glucose-Ante Cibum, AC"
+      },
+      {
+        "order_code": "09006C",
+        "official_name_zh_tw": "醣化血紅素",
+        "official_name_en": "HbA1c (Hemoglobin A1c)"
+      },
+      {
+        "order_code": "09011C",
+        "official_name_zh_tw": "鈣",
+        "official_name_en": "Ca (Calcium)"
+      },
+      {
+        "order_code": "09012C",
+        "official_name_zh_tw": "磷",
+        "official_name_en": "P (Phosphoras)"
+      },
+      {
+        "order_code": "09013C",
+        "official_name_zh_tw": "尿酸",
+        "official_name_en": "Uric acid"
+      },
+      {
+        "order_code": "09015C",
+        "official_name_zh_tw": "肌酸酐、血",
+        "official_name_en": "Creatinine (B) CRTN"
+      },
+      {
+        "order_code": "09016C",
+        "official_name_zh_tw": "肌酐、尿",
+        "official_name_en": "Creatinine (U) CRTN"
+      },
+      {
+        "order_code": "09021C",
+        "official_name_zh_tw": "鈉",
+        "official_name_en": "Na (Sodium)"
+      },
+      {
+        "order_code": "09022C",
+        "official_name_zh_tw": "鉀",
+        "official_name_en": "K(Potassium)"
+      },
+      {
+        "order_code": "09023C",
+        "official_name_zh_tw": "氯",
+        "official_name_en": "Cl (Chloride)"
+      },
+      {
+        "order_code": "09026C",
+        "official_name_zh_tw": "血清麩胺酸丙酮酸轉氨基脢",
+        "official_name_en": "S-GPT/ALT"
+      },
+      {
+        "order_code": "09027C",
+        "official_name_zh_tw": "鹼性磷酯酶",
+        "official_name_en": "Alkaline phosphatase"
+      },
+      {
+        "order_code": "09032C",
+        "official_name_zh_tw": "肌酸磷化脢",
+        "official_name_en": "CPK(Creatine-phospho-kinase)"
+      },
+      {
+        "order_code": "09033C",
+        "official_name_zh_tw": "乳酸脫氫脢",
+        "official_name_en": "LDH(Lactic dehydrogenase)"
+      },
+      {
+        "order_code": "09038C",
+        "official_name_zh_tw": "白蛋白",
+        "official_name_en": "Albumin"
+      },
+      {
+        "order_code": "09040C",
+        "official_name_zh_tw": "全蛋白",
+        "official_name_en": "Total protein"
+      },
+      {
+        "order_code": "09041B",
+        "official_name_zh_tw": "血液氣體分析",
+        "official_name_en": "Blood gas analysis"
+      },
+      {
+        "order_code": "09043C",
+        "official_name_zh_tw": "高密度脂蛋白－膽固醇",
+        "official_name_en": "HDL-C (highdensity lipoprotein cholesterol)"
+      },
+      {
+        "order_code": "09044C",
+        "official_name_zh_tw": "低密度脂蛋白－膽固醇",
+        "official_name_en": "LDL-C (Lowdensity lipoprotein cholesterol)"
+      },
+      {
+        "order_code": "09071C",
+        "official_name_zh_tw": "肌酸磷酸酶(MB同功酶)",
+        "official_name_en": "CK-MB (Creatine phosphokinase-MB)"
+      },
+      {
+        "order_code": "09099C",
+        "official_name_zh_tw": "心肌旋轉蛋白Ｉ",
+        "official_name_en": "Troponin I"
+      },
+      {
+        "order_code": "09122C",
+        "official_name_zh_tw": "Intact副甲狀腺素免疫分析",
+        "official_name_en": "Intact parathyrin (EIA/LIA)"
+      },
+      {
+        "order_code": "09129C",
+        "official_name_zh_tw": "維生素B12免疫分析",
+        "official_name_en": "VIT-B12 (EIA/LIA)"
+      },
+      {
+        "order_code": "09130C",
+        "official_name_zh_tw": "葉酸免疫分析",
+        "official_name_en": "Folic acid (EIA/LIA)"
+      },
+      {
+        "order_code": "09140C",
+        "official_name_zh_tw": "血液及體液葡萄糖-餐後",
+        "official_name_en": "Glucose-Post Cibum, PC"
+      },
+      {
+        "order_code": "12015C",
+        "official_name_zh_tw": "Ｃ反應性蛋白試驗 －  免疫比濁法",
+        "official_name_en": "C.R.P (C-reactive protein) - Nephelometry"
+      },
+      {
+        "order_code": "12111C",
+        "official_name_zh_tw": "微白蛋白 （免疫比濁法）",
+        "official_name_en": "Microalbumin (Nephelometry)"
+      },
+      {
+        "order_code": "12151C",
+        "official_name_zh_tw": "同半胱胺酸",
+        "official_name_en": "Homocysteine"
+      },
+      {
+        "order_code": "12193C",
+        "official_name_zh_tw": "B型利納肽(B型利納利尿胜肽)",
+        "official_name_en": "Pro-BNP/(BNP)"
+      }
+    ]
+  },
+  "source_name_glossary": [
+    {
+      "source_names": [
+        "A/C ratio",
+        "ACR"
+      ],
+      "display_name_zh_tw": "白蛋白／肌酸酐比值（ACR）",
+      "display_name_en": "Albumin-to-creatinine ratio (ACR)",
+      "terminology_note": "來源名稱表示比值，未以此名稱單獨確認檢體、半定量或定量方法；不等同肌酸酐濃度。",
+      "terminology_sources": [
+        "niddk_uacr_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "niddk_uacr_terms",
+          "locator": "Assess Urine Albumin: ratio definition"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "ABO RESULT"
+      ],
+      "display_name_zh_tw": "ABO 血型",
+      "display_name_en": "ABO blood group",
+      "terminology_note": "血型文字結果，不轉換成數值或嚴重度。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: ABO blood group"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "ALP"
+      ],
+      "display_name_zh_tw": "鹼性磷酸酶",
+      "display_name_en": "Alkaline phosphatase (ALP)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09027C: Alkaline phosphatase"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "ALT"
+      ],
+      "display_name_zh_tw": "丙胺酸轉胺酶",
+      "display_name_en": "Alanine aminotransferase (ALT)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "medline_alt_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_alt_terms",
+          "locator": "What is an ALT blood test?"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "AST"
+      ],
+      "display_name_zh_tw": "天門冬胺酸轉胺酶",
+      "display_name_en": "Aspartate aminotransferase (AST)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "medline_ast_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_ast_terms",
+          "locator": "What is an AST test?"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "APTT"
+      ],
+      "display_name_zh_tw": "活化部分凝血活酶時間",
+      "display_name_en": "Activated partial thromboplastin time (APTT)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "08036C: APTT"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "APTT Control"
+      ],
+      "display_name_zh_tw": "APTT 對照值",
+      "display_name_en": "Activated partial thromboplastin time, control",
+      "terminology_note": "來源標示 Control，與個人 APTT 結果分開；不自行推定它等同 MNAPTT。",
+      "terminology_sources": [
+        "newcastle_mnaptt_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "newcastle_mnaptt_terms",
+          "locator": "Clinical background: patient APTT versus laboratory normal/control values"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Aptt patient"
+      ],
+      "display_name_zh_tw": "APTT 個人檢體結果",
+      "display_name_en": "Activated partial thromboplastin time, patient",
+      "terminology_note": "來源 patient 與 Control 欄位分開保留。",
+      "terminology_sources": [
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "08036C: APTT"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Acetone Urine"
+      ],
+      "display_name_zh_tw": "尿液丙酮（來源名稱）",
+      "display_name_en": "Urine acetone (source label)",
+      "terminology_note": "依來源文字直譯；不把丙酮名稱自行等同所有酮體或指定試紙偵測成分。",
+      "terminology_sources": [],
+      "terminology_source_loci": [],
+      "terminology_basis": "literal_source_translation"
+    },
+    {
+      "source_names": [
+        "Albumin"
+      ],
+      "display_name_zh_tw": "白蛋白（檢體未註明）",
+      "display_name_en": "Albumin (specimen unspecified)",
+      "terminology_note": "名稱本身不能區分血液或尿液，也不能區分濃度與比值。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Albumin (specimen unspecified)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Amylase"
+      ],
+      "display_name_zh_tw": "澱粉酶",
+      "display_name_en": "Amylase",
+      "terminology_note": "",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Amylase"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Anaerobic Culture(pus)"
+      ],
+      "display_name_zh_tw": "膿液厭氧菌培養",
+      "display_name_en": "Anaerobic culture, pus",
+      "terminology_note": "保留來源膿液與厭氧菌培養標示，不推定採檢部位或培養結果。",
+      "terminology_sources": [
+        "michigan_anaerobic_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "michigan_anaerobic_terms",
+          "locator": "Test name and synonyms: pus, anaerobe culture"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Atypical-Lymphocyte"
+      ],
+      "display_name_zh_tw": "非典型淋巴球",
+      "display_name_en": "Atypical lymphocytes",
+      "terminology_note": "名稱不單獨確認比例或絕對數量。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Atypical lymphocytes"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "BE(B)",
+        "Blood gas BE(B)"
+      ],
+      "display_name_zh_tw": "血氣鹼剩餘（血液模型）",
+      "display_name_en": "Blood-gas base excess, blood model (BE(B))",
+      "terminology_note": "不推定動脈／靜脈檢體；與 BE(ecf) 分開。",
+      "terminology_sources": [
+        "radiometer_blood_gas_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "radiometer_blood_gas_terms",
+          "locator": "Printed p. 292: cBase(B), actual base excess"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Blood gas BE(ecf)"
+      ],
+      "display_name_zh_tw": "血氣鹼剩餘（細胞外液模型）",
+      "display_name_en": "Blood-gas base excess, extracellular-fluid model (BE(ecf))",
+      "terminology_note": "不推定動脈／靜脈檢體；與 BE(B) 分開。",
+      "terminology_sources": [
+        "radiometer_blood_gas_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "radiometer_blood_gas_terms",
+          "locator": "Printed p. 292: cBase(Ecf), standard base excess"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "BIOCHEM"
+      ],
+      "display_name_zh_tw": "生化檢驗組別（來源標籤）",
+      "display_name_en": "Biochemistry group (source label)",
+      "terminology_note": "組別標籤的文字翻譯，不推定此列為有效數值量測。",
+      "terminology_sources": [],
+      "terminology_source_loci": [],
+      "terminology_basis": "literal_source_translation"
+    },
+    {
+      "source_names": [
+        "BUN"
+      ],
+      "display_name_zh_tw": "血中尿素氮",
+      "display_name_en": "Blood urea nitrogen (BUN)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Blood urea nitrogen (BUN)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Bacteria"
+      ],
+      "display_name_zh_tw": "細菌（檢體未註明）",
+      "display_name_en": "Bacteria (specimen unspecified)",
+      "terminology_note": "只對照來源文字；檢體、方法及單位仍以原始紀錄為準。",
+      "terminology_sources": [
+        "cap_sediment_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "cap_sediment_terms",
+          "locator": "Cells and organisms: spermatozoa, bacteria and yeast/fungi; generic names only"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Band neutrophil"
+      ],
+      "display_name_zh_tw": "帶狀嗜中性球",
+      "display_name_en": "Band neutrophils",
+      "terminology_note": "名稱不單獨確認比例或絕對數量。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Band neutrophils"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Basophil"
+      ],
+      "display_name_zh_tw": "嗜鹼性球",
+      "display_name_en": "Basophils",
+      "terminology_note": "名稱不單獨確認比例或絕對數量。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Basophils"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Bilirubin"
+      ],
+      "display_name_zh_tw": "膽紅素（分型及檢體未註明）",
+      "display_name_en": "Bilirubin (fraction and specimen unspecified)",
+      "terminology_note": "未指定總膽紅素、直接膽紅素或尿膽紅素。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Bilirubin (fraction and specimen unspecified)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Blood gas HCO3-act",
+        "HCO3-act"
+      ],
+      "display_name_zh_tw": "血氣實際碳酸氫根",
+      "display_name_en": "Blood-gas actual bicarbonate (HCO3-act)",
+      "terminology_note": "act 與 std 分開；不推定動脈／靜脈檢體或儀器。",
+      "terminology_sources": [
+        "radiometer_blood_gas_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "radiometer_blood_gas_terms",
+          "locator": "Printed p. 292: cHCO3-(P)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Blood gas HCO3-std"
+      ],
+      "display_name_zh_tw": "血氣標準碳酸氫根",
+      "display_name_en": "Blood-gas standard bicarbonate (HCO3-std)",
+      "terminology_note": "標準條件模型的名稱不等同實際碳酸氫根，分開保留。",
+      "terminology_sources": [
+        "radiometer_blood_gas_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "radiometer_blood_gas_terms",
+          "locator": "Printed p. 292: cHCO3-(P,st)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Blood gas PCO2"
+      ],
+      "display_name_zh_tw": "血氣二氧化碳分壓",
+      "display_name_en": "Blood-gas carbon dioxide partial pressure (pCO2)",
+      "terminology_note": "來源未確認動脈或靜脈。",
+      "terminology_sources": [
+        "radiometer_blood_gas_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "radiometer_blood_gas_terms",
+          "locator": "Printed p. 213: pCO2"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Blood gas PH"
+      ],
+      "display_name_zh_tw": "血氣酸鹼值",
+      "display_name_en": "Blood-gas pH",
+      "terminology_note": "來源未確認動脈或靜脈。",
+      "terminology_sources": [
+        "radiometer_blood_gas_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "radiometer_blood_gas_terms",
+          "locator": "Printed p. 213: pH"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Blood gas PO2"
+      ],
+      "display_name_zh_tw": "血氣氧分壓",
+      "display_name_en": "Blood-gas oxygen partial pressure (pO2)",
+      "terminology_note": "來源未確認動脈或靜脈。",
+      "terminology_sources": [
+        "radiometer_blood_gas_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "radiometer_blood_gas_terms",
+          "locator": "Printed p. 213: pO2"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Blood gas analysis-vein"
+      ],
+      "display_name_zh_tw": "靜脈血氣檢驗組別",
+      "display_name_en": "Venous blood gas panel",
+      "terminology_note": "vein 只適用於此明確命名的來源組別，不推定其他未連結紀錄的檢體。",
+      "terminology_sources": [
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09041B: blood gas analysis; vein is an explicit source-name modifier"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Blood gas so2"
+      ],
+      "display_name_zh_tw": "血氣氧飽和度",
+      "display_name_en": "Blood-gas oxygen saturation (sO2)",
+      "terminology_note": "不等同指尖 SpO2，也不確認動脈／靜脈。",
+      "terminology_sources": [
+        "radiometer_blood_gas_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "radiometer_blood_gas_terms",
+          "locator": "Printed p. 293: sO2"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "CK"
+      ],
+      "display_name_zh_tw": "肌酸激酶",
+      "display_name_en": "Creatine kinase (CK)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Creatine kinase (CK)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "CK-MB"
+      ],
+      "display_name_zh_tw": "肌酸激酶 MB 同功酶",
+      "display_name_en": "Creatine kinase MB isoenzyme (CK-MB)",
+      "terminology_note": "名稱本身不能區分活性 U/L 與質量濃度。",
+      "terminology_sources": [
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09071C: CK-MB"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "CLARITY",
+        "Clarity"
+      ],
+      "display_name_zh_tw": "清澈度（檢體未註明）",
+      "display_name_en": "Clarity (specimen unspecified)",
+      "terminology_note": "只對照來源文字；檢體、方法及單位仍以原始紀錄為準。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Clarity (specimen unspecified)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "CRP"
+      ],
+      "display_name_zh_tw": "C 反應性蛋白",
+      "display_name_en": "C-reactive protein (CRP)",
+      "terminology_note": "未標示 hs，不自行改稱高敏感度 CRP。",
+      "terminology_sources": [
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "12015C: C-reactive protein"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Calcium"
+      ],
+      "display_name_zh_tw": "鈣（分型未註明）",
+      "display_name_en": "Calcium (fraction unspecified)",
+      "terminology_note": "僅憑名稱不確認總鈣或游離鈣；原始單位及方法另行保留。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Calcium (fraction unspecified)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Cast"
+      ],
+      "display_name_zh_tw": "圓柱體（檢體未註明）",
+      "display_name_en": "Casts (specimen unspecified)",
+      "terminology_note": "只對照來源文字；檢體、方法及單位仍以原始紀錄為準。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Casts (specimen unspecified)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Chloride(Cl)"
+      ],
+      "display_name_zh_tw": "氯",
+      "display_name_en": "Chloride (Cl)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09023C: chloride"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Cholesterol"
+      ],
+      "display_name_zh_tw": "膽固醇（來源未標分型）",
+      "display_name_en": "Cholesterol (fraction unspecified)",
+      "terminology_note": "若缺少完整代碼及單位對照，不僅憑名稱改作總膽固醇或 HDL／LDL。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Cholesterol (fraction unspecified)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Color",
+        "Colour"
+      ],
+      "display_name_zh_tw": "顏色（檢體未註明）",
+      "display_name_en": "Color (specimen unspecified)",
+      "terminology_note": "只對照來源文字；檢體、方法及單位仍以原始紀錄為準。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Color (specimen unspecified)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Creatinine",
+        "Creatinine(健檢)"
+      ],
+      "display_name_zh_tw": "肌酸酐（檢體未註明）",
+      "display_name_en": "Creatinine (specimen unspecified)",
+      "terminology_note": "健檢只是來源情境標籤，不確認血液或尿液。",
+      "terminology_sources": [
+        "medline_creatinine_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_creatinine_terms",
+          "locator": "Creatinine test: blood and urine are distinct specimens"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Creatinine Clearance Rate"
+      ],
+      "display_name_zh_tw": "肌酸酐清除率",
+      "display_name_en": "Creatinine clearance",
+      "terminology_note": "不與肌酸酐濃度或 eGFR 合併。",
+      "terminology_sources": [
+        "medline_creatinine_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_creatinine_terms",
+          "locator": "Creatinine clearance test"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Creatinine-24hrs urine"
+      ],
+      "display_name_zh_tw": "24 小時尿液肌酸酐",
+      "display_name_en": "24-hour urine creatinine",
+      "terminology_note": "保留 24 小時採集標示；無單位時不推定濃度或每日排出量。",
+      "terminology_sources": [
+        "medline_creatinine_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_creatinine_terms",
+          "locator": "24-hour urine creatinine collection"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Creatinine-spot urine"
+      ],
+      "display_name_zh_tw": "單次尿液肌酸酐",
+      "display_name_en": "Spot urine creatinine",
+      "terminology_note": "單次採集不等同 24 小時採集；數量意義依原始單位。",
+      "terminology_sources": [
+        "medline_creatinine_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_creatinine_terms",
+          "locator": "Spot urine sample and creatinine"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Creatinine-urine"
+      ],
+      "display_name_zh_tw": "尿液肌酸酐",
+      "display_name_en": "Urine creatinine",
+      "terminology_note": "未註明單次或 24 小時採集，不自行補上。",
+      "terminology_sources": [
+        "medline_creatinine_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_creatinine_terms",
+          "locator": "Urine creatinine"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Crystal"
+      ],
+      "display_name_zh_tw": "結晶（檢體未註明）",
+      "display_name_en": "Crystals (specimen unspecified)",
+      "terminology_note": "只對照來源文字；檢體、方法及單位仍以原始紀錄為準。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Crystals (specimen unspecified)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "D-D diamer"
+      ],
+      "display_name_zh_tw": "D-二聚體（計量制未註明）",
+      "display_name_en": "D-dimer (reporting convention unspecified)",
+      "terminology_note": "原始拼寫保留；FEU／DDU 未註明時不互換。",
+      "terminology_sources": [
+        "ash_d_dimer"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "ash_d_dimer",
+          "locator": "D-dimer assay reporting conventions"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Eosinophil"
+      ],
+      "display_name_zh_tw": "嗜酸性球",
+      "display_name_en": "Eosinophils",
+      "terminology_note": "名稱不單獨確認比例或絕對數量。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Eosinophils"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Ep cell-urine"
+      ],
+      "display_name_zh_tw": "尿液上皮細胞",
+      "display_name_en": "Urine epithelial cells",
+      "terminology_note": "",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine epithelial cells"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Epithelial cell",
+        "epith.cells"
+      ],
+      "display_name_zh_tw": "上皮細胞（檢體未註明）",
+      "display_name_en": "Epithelial cells (specimen unspecified)",
+      "terminology_note": "只對照來源文字；檢體、方法及單位仍以原始紀錄為準。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Epithelial cells (specimen unspecified)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Folic acid"
+      ],
+      "display_name_zh_tw": "葉酸",
+      "display_name_en": "Folate (folic acid)",
+      "terminology_note": "不推定血清或紅血球葉酸方法。",
+      "terminology_sources": [
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09130C: Folic acid"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Free T4"
+      ],
+      "display_name_zh_tw": "游離甲狀腺素",
+      "display_name_en": "Free thyroxine (free T4)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "medline_thyroid_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_thyroid_terms",
+          "locator": "Common thyroid function tests: free thyroxine and thyroid-stimulating hormone"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Globulin"
+      ],
+      "display_name_zh_tw": "球蛋白",
+      "display_name_en": "Globulin",
+      "terminology_note": "未指定個別免疫球蛋白，也不推定測定或計算方法。",
+      "terminology_sources": [
+        "medline_globulin_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_globulin_terms",
+          "locator": "What is a globulin test?: globulin terminology"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Glucose"
+      ],
+      "display_name_zh_tw": "葡萄糖（採檢情境未註明）",
+      "display_name_en": "Glucose (collection context unspecified)",
+      "terminology_note": "名稱本身不能確認血液／尿液、空腹、飯後或口服耐糖試驗。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Glucose (collection context unspecified)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Glucose (PC/DEXTRO)"
+      ],
+      "display_name_zh_tw": "葡萄糖（來源標示 PC／DEXTRO）",
+      "display_name_en": "Glucose (source PC/DEXTRO label)",
+      "terminology_note": "保留原始縮寫；不推定採檢時間、檢體、血糖機型或耐糖試驗條件。",
+      "terminology_sources": [],
+      "terminology_source_loci": [],
+      "terminology_basis": "literal_source_translation"
+    },
+    {
+      "source_names": [
+        "Glucose-AC(飯前)"
+      ],
+      "display_name_zh_tw": "飯前血糖（來源標示 AC）",
+      "display_name_en": "Pre-meal blood glucose (source AC label)",
+      "terminology_note": "來源標示飯前，不單獨證明禁食時數。",
+      "terminology_sources": [
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09005C: glucose, ante cibum"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Glucose-PC(飯後)-微血管採血法"
+      ],
+      "display_name_zh_tw": "飯後微血管血糖",
+      "display_name_en": "Postprandial capillary blood glucose",
+      "terminology_note": "不推定飯後兩小時或血糖機型。",
+      "terminology_sources": [
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09140C: glucose, post cibum; capillary collection is explicit in the source name"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "HCT",
+        "Hct"
+      ],
+      "display_name_zh_tw": "血比容",
+      "display_name_en": "Hematocrit (Hct)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Hematocrit (Hct)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "HDL-Cholesterol"
+      ],
+      "display_name_zh_tw": "高密度脂蛋白膽固醇",
+      "display_name_en": "High-density lipoprotein cholesterol (HDL-C)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09043C: HDL-C"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Hb",
+        "Hemoglobin"
+      ],
+      "display_name_zh_tw": "血紅素",
+      "display_name_en": "Hemoglobin (Hb)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Hemoglobin (Hb)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "HbA1c"
+      ],
+      "display_name_zh_tw": "糖化血色素",
+      "display_name_en": "Glycated hemoglobin (HbA1c)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "medline_hba1c_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_hba1c_terms",
+          "locator": "Other names: glycated hemoglobin"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Hematology"
+      ],
+      "display_name_zh_tw": "血液學檢驗組別（來源標籤）",
+      "display_name_en": "Hematology group (source label)",
+      "terminology_note": "組別標籤的文字翻譯，不推定此列為有效數值量測。",
+      "terminology_sources": [],
+      "terminology_source_loci": [],
+      "terminology_basis": "literal_source_translation"
+    },
+    {
+      "source_names": [
+        "Homocysteine"
+      ],
+      "display_name_zh_tw": "同半胱胺酸",
+      "display_name_en": "Homocysteine",
+      "terminology_note": "名稱單獨不確認總量、方法或檢體。",
+      "terminology_sources": [
+        "cych_homocysteine"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "cych_homocysteine",
+          "locator": "Test name"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "I-PTH"
+      ],
+      "display_name_zh_tw": "完整副甲狀腺素",
+      "display_name_en": "Intact parathyroid hormone (iPTH)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "ucl_intact_pth"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "ucl_intact_pth",
+          "locator": "Intact PTH test name"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "IG%"
+      ],
+      "display_name_zh_tw": "未成熟顆粒球比例",
+      "display_name_en": "Immature granulocytes (%)",
+      "terminology_note": "百分比與絕對計數分開保留。",
+      "terminology_sources": [
+        "sysmex_cell_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "sysmex_cell_terms",
+          "locator": "IG: immature granulocytes; official parameter list distinguishes IG% and IG#"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "INR"
+      ],
+      "display_name_zh_tw": "國際標準化比值",
+      "display_name_en": "International normalized ratio (INR)",
+      "terminology_note": "保留來源計算結果，不以來源不明的 PT／對照值自行重算。",
+      "terminology_sources": [
+        "who_mnpt_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "who_mnpt_terms",
+          "locator": "Annex 6, section 2: INR definition"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "K",
+        "Potassium(K)"
+      ],
+      "display_name_zh_tw": "鉀",
+      "display_name_en": "Potassium (K)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09022C: Potassium"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Ketone"
+      ],
+      "display_name_zh_tw": "酮體（檢體未註明）",
+      "display_name_en": "Ketones (specimen unspecified)",
+      "terminology_note": "不單獨確認血液或尿液，也不指定乙醯乙酸、β-羥丁酸或丙酮。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Ketones (specimen unspecified)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "LDH"
+      ],
+      "display_name_zh_tw": "乳酸脫氫酶",
+      "display_name_en": "Lactate dehydrogenase (LDH)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09033C: LDH"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "LDL-Cholesterol"
+      ],
+      "display_name_zh_tw": "低密度脂蛋白膽固醇",
+      "display_name_en": "Low-density lipoprotein cholesterol (LDL-C)",
+      "terminology_note": "名稱與支付代碼不單獨確認直接測定或估算公式。",
+      "terminology_sources": [
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09044C: LDL-C"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Leukocyte esterase"
+      ],
+      "display_name_zh_tw": "白血球酯酶（檢體未註明）",
+      "display_name_en": "Leukocyte esterase (specimen unspecified)",
+      "terminology_note": "只對照來源文字；檢體、方法及單位仍以原始紀錄為準。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Leukocyte esterase (specimen unspecified)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Lipase"
+      ],
+      "display_name_zh_tw": "脂肪酶",
+      "display_name_en": "Lipase",
+      "terminology_note": "",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Lipase"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Lymphocyte"
+      ],
+      "display_name_zh_tw": "淋巴球",
+      "display_name_en": "Lymphocytes",
+      "terminology_note": "名稱不單獨確認比例或絕對數量。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Lymphocytes"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "MCH"
+      ],
+      "display_name_zh_tw": "平均紅血球血紅素量",
+      "display_name_en": "Mean corpuscular hemoglobin (MCH)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "medline_rbc_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_rbc_terms",
+          "locator": "What are RBC indices?: MCH"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "MCHC"
+      ],
+      "display_name_zh_tw": "平均紅血球血紅素濃度",
+      "display_name_en": "Mean corpuscular hemoglobin concentration (MCHC)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "medline_rbc_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_rbc_terms",
+          "locator": "What are RBC indices?: MCHC"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "MCV"
+      ],
+      "display_name_zh_tw": "平均紅血球容積",
+      "display_name_en": "Mean corpuscular volume (MCV)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "medline_rbc_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_rbc_terms",
+          "locator": "What are RBC indices?: MCV"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "MNAPTT"
+      ],
+      "display_name_zh_tw": "平均正常活化部分凝血活酶時間",
+      "display_name_en": "Mean normal activated partial thromboplastin time (MNAPTT)",
+      "terminology_note": "實驗室正常比較值的名稱，不當作個人的 APTT 結果。",
+      "terminology_sources": [
+        "newcastle_mnaptt_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "newcastle_mnaptt_terms",
+          "locator": "Clinical background: MNAPTT expansion"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "MNPT",
+        "PT MNPT"
+      ],
+      "display_name_zh_tw": "平均正常凝血酶原時間",
+      "display_name_en": "Mean normal prothrombin time (MNPT)",
+      "terminology_note": "實驗室正常比較值的名稱，不當作個人的 PT 結果。",
+      "terminology_sources": [
+        "who_mnpt_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "who_mnpt_terms",
+          "locator": "Annex 6, section 2: MNPT definition"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Microalbumin-urine"
+      ],
+      "display_name_zh_tw": "尿白蛋白",
+      "display_name_en": "Urine albumin",
+      "terminology_note": "保留 Microalbumin 原始用語；尿白蛋白濃度與 ACR 分開。",
+      "terminology_sources": [
+        "niddk_uacr_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "niddk_uacr_terms",
+          "locator": "Assess Urine Albumin: urine albumin versus UACR"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Monocyte"
+      ],
+      "display_name_zh_tw": "單核球",
+      "display_name_en": "Monocytes",
+      "terminology_note": "名稱不單獨確認比例或絕對數量。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Monocytes"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "NT-ProBNP"
+      ],
+      "display_name_zh_tw": "N 端 B 型利鈉肽前驅物",
+      "display_name_en": "N-terminal pro-B-type natriuretic peptide (NT-proBNP)",
+      "terminology_note": "與 BNP 分開保留。",
+      "terminology_sources": [
+        "medline_ntprobnp_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_ntprobnp_terms",
+          "locator": "What are natriuretic peptide tests?: NT-proBNP"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Na",
+        "Sodium(Na)"
+      ],
+      "display_name_zh_tw": "鈉",
+      "display_name_en": "Sodium (Na)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09021C: Sodium"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Neutrophil"
+      ],
+      "display_name_zh_tw": "嗜中性球",
+      "display_name_en": "Neutrophils",
+      "terminology_note": "名稱不單獨確認比例或絕對數量。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Neutrophils"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Nitrite"
+      ],
+      "display_name_zh_tw": "亞硝酸鹽（檢體未註明）",
+      "display_name_en": "Nitrite (specimen unspecified)",
+      "terminology_note": "只對照來源文字；檢體、方法及單位仍以原始紀錄為準。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Nitrite (specimen unspecified)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "O2sat"
+      ],
+      "display_name_zh_tw": "氧飽和度（檢體及方法未註明）",
+      "display_name_en": "Oxygen saturation (specimen and method unspecified)",
+      "terminology_note": "不僅憑縮寫改作指尖 SpO2 或指定動脈／靜脈檢體。",
+      "terminology_sources": [
+        "radiometer_blood_gas_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "radiometer_blood_gas_terms",
+          "locator": "Printed p. 293: sO2"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "ONE Touch Glucos不送檢驗科"
+      ],
+      "display_name_zh_tw": "葡萄糖（來源標示 ONE Touch／不送檢驗科）",
+      "display_name_en": "Glucose (source ONE Touch / not sent to laboratory label)",
+      "terminology_note": "原始儀器及流程字樣照錄，不推定特定機型、檢體、空腹或飯後狀態。",
+      "terminology_sources": [],
+      "terminology_source_loci": [],
+      "terminology_basis": "literal_source_translation"
+    },
+    {
+      "source_names": [
+        "Occult Blood"
+      ],
+      "display_name_zh_tw": "潛血（檢體未註明）",
+      "display_name_en": "Occult blood (specimen unspecified)",
+      "terminology_note": "可能出現在不同檢體；不僅憑名稱合併尿液與糞便檢驗。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Occult blood (specimen unspecified)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "PCO2"
+      ],
+      "display_name_zh_tw": "二氧化碳分壓（檢體未註明）",
+      "display_name_en": "Carbon dioxide partial pressure (pCO2)",
+      "terminology_note": "只對照來源文字；檢體、方法及單位仍以原始紀錄為準。",
+      "terminology_sources": [
+        "radiometer_blood_gas_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "radiometer_blood_gas_terms",
+          "locator": "Printed p. 213: pCO2"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "PH",
+        "pH"
+      ],
+      "display_name_zh_tw": "酸鹼值（檢體未註明）",
+      "display_name_en": "pH (specimen unspecified)",
+      "terminology_note": "大小寫不同的原始識別仍分開；不僅憑名稱區分血液或尿液。",
+      "terminology_sources": [
+        "radiometer_blood_gas_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "radiometer_blood_gas_terms",
+          "locator": "Printed p. 213: pH"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "PLT",
+        "Platelet count"
+      ],
+      "display_name_zh_tw": "血小板計數",
+      "display_name_en": "Platelet count (PLT)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Platelet count (PLT)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "PO2"
+      ],
+      "display_name_zh_tw": "氧分壓（檢體未註明）",
+      "display_name_en": "Oxygen partial pressure (pO2)",
+      "terminology_note": "只對照來源文字；檢體、方法及單位仍以原始紀錄為準。",
+      "terminology_sources": [
+        "radiometer_blood_gas_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "radiometer_blood_gas_terms",
+          "locator": "Printed p. 213: pO2"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "PSA(RIA)"
+      ],
+      "display_name_zh_tw": "攝護腺特異抗原（來源標示 RIA）",
+      "display_name_en": "Prostate-specific antigen (source RIA label)",
+      "terminology_note": "保留來源 RIA 字樣；不把其他 PSA 方法視為等同。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Tumor marker category: PSA"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "PT (pt)",
+        "Prothrombin time"
+      ],
+      "display_name_zh_tw": "凝血酶原時間",
+      "display_name_en": "Prothrombin time (PT)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "08026C: Prothrombin time"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Phosphorus"
+      ],
+      "display_name_zh_tw": "磷",
+      "display_name_en": "Phosphorus (P)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09012C: P; source English spelling is retained in the procedure snapshot only"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Protein"
+      ],
+      "display_name_zh_tw": "蛋白質（檢體及方法未註明）",
+      "display_name_en": "Protein (specimen and method unspecified)",
+      "terminology_note": "不僅憑名稱改作尿蛋白、總蛋白定量或蛋白／肌酸酐比值。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Protein (specimen and method unspecified)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Protein(qualitative)"
+      ],
+      "display_name_zh_tw": "蛋白質定性（檢體未註明）",
+      "display_name_en": "Protein, qualitative (specimen unspecified)",
+      "terminology_note": "qualitative 僅表示定性；此名稱對照不單獨確認尿液檢體或試紙方法。",
+      "terminology_sources": [
+        "cych_urine_protein"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "cych_urine_protein",
+          "locator": "Qualitative protein terminology"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Pus culture"
+      ],
+      "display_name_zh_tw": "膿液培養",
+      "display_name_en": "Pus culture",
+      "terminology_note": "未標明好氧或厭氧時，不自行指定培養條件。",
+      "terminology_sources": [
+        "michigan_anaerobic_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "michigan_anaerobic_terms",
+          "locator": "Pus culture specimen terminology"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "R.B.C.",
+        "RBC"
+      ],
+      "display_name_zh_tw": "紅血球（檢體及方法未註明）",
+      "display_name_en": "Red blood cells (specimen and method unspecified)",
+      "terminology_note": "保留各自原始識別，不僅憑名稱合併血球計數與尿液鏡檢。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Red blood cells (specimen and method unspecified)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "RBC-urine",
+        "Urine RBC"
+      ],
+      "display_name_zh_tw": "尿液紅血球",
+      "display_name_en": "Urine red blood cells",
+      "terminology_note": "方法及計數單位依原始紀錄，不自動改作每高倍視野。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine red blood cells"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "RDW-CV"
+      ],
+      "display_name_zh_tw": "紅血球分布寬度（變異係數）",
+      "display_name_en": "Red cell distribution width, coefficient of variation (RDW-CV)",
+      "terminology_note": "與 RDW-SD 分開保留。",
+      "terminology_sources": [
+        "sysmex_rdw_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "sysmex_rdw_terms",
+          "locator": "Abbreviations table: RDW-CV coefficient of variation; RDW-SD standard deviation"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "RDW-SD"
+      ],
+      "display_name_zh_tw": "紅血球分布寬度（標準差）",
+      "display_name_en": "Red cell distribution width, standard deviation (RDW-SD)",
+      "terminology_note": "與 RDW-CV 分開保留。",
+      "terminology_sources": [
+        "sysmex_rdw_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "sysmex_rdw_terms",
+          "locator": "Abbreviations table: RDW-CV coefficient of variation; RDW-SD standard deviation"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "RH TYPE"
+      ],
+      "display_name_zh_tw": "Rh 血型",
+      "display_name_en": "Rh blood group",
+      "terminology_note": "保留來源文字結果；不把未明示的其他 Rh 抗原型別推定為已檢驗。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Rh blood group"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "STRIP Glucose"
+      ],
+      "display_name_zh_tw": "試紙葡萄糖（檢體未註明）",
+      "display_name_en": "Glucose, strip test (specimen unspecified)",
+      "terminology_note": "STRIP 為來源方法字樣；不自行指定尿液或血液檢體。",
+      "terminology_sources": [],
+      "terminology_source_loci": [],
+      "terminology_basis": "literal_source_translation"
+    },
+    {
+      "source_names": [
+        "Segment Neutrophil"
+      ],
+      "display_name_zh_tw": "分葉嗜中性球",
+      "display_name_en": "Segmented neutrophils",
+      "terminology_note": "名稱不單獨確認比例或絕對數量。",
+      "terminology_sources": [
+        "nlm_segmented_neutrophil_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nlm_segmented_neutrophil_terms",
+          "locator": "Designations: segmented neutrophils; only name semantics used"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Specific Gravity"
+      ],
+      "display_name_zh_tw": "比重（檢體未註明）",
+      "display_name_en": "Specific gravity (specimen unspecified)",
+      "terminology_note": "只對照來源文字；檢體、方法及單位仍以原始紀錄為準。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Specific gravity (specimen unspecified)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Spermatozoa"
+      ],
+      "display_name_zh_tw": "精子（檢體未註明）",
+      "display_name_en": "Spermatozoa (specimen unspecified)",
+      "terminology_note": "來源文字翻譯；不能僅憑名稱推定精液檢驗或生育力評估。",
+      "terminology_sources": [
+        "cap_sediment_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "cap_sediment_terms",
+          "locator": "Cells and organisms: spermatozoa, bacteria and yeast/fungi; generic names only"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Stool OB(EIA/LIA)-老人體檢"
+      ],
+      "display_name_zh_tw": "糞便潛血（來源標示 EIA／LIA）",
+      "display_name_en": "Stool occult blood (source EIA/LIA label)",
+      "terminology_note": "保留來源方法與健檢情境，不據此推定檢驗平台或可比較性。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Stool examination: fecal occult blood test"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Strip WBC"
+      ],
+      "display_name_zh_tw": "試紙白血球項目（來源名稱）",
+      "display_name_en": "Strip WBC (source label)",
+      "terminology_note": "原始名稱不明確等同白血球計數或白血球酯酶；分開保留。",
+      "terminology_sources": [],
+      "terminology_source_loci": [],
+      "terminology_basis": "literal_source_translation"
+    },
+    {
+      "source_names": [
+        "TSH"
+      ],
+      "display_name_zh_tw": "甲狀腺刺激素",
+      "display_name_en": "Thyroid-stimulating hormone (TSH)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "medline_thyroid_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "medline_thyroid_terms",
+          "locator": "Common thyroid function tests: free thyroxine and thyroid-stimulating hormone"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Total Bilirubin",
+        "Total bilirubin"
+      ],
+      "display_name_zh_tw": "總膽紅素",
+      "display_name_en": "Total bilirubin",
+      "terminology_note": "",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Total bilirubin"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Total Protein"
+      ],
+      "display_name_zh_tw": "總蛋白",
+      "display_name_en": "Total protein",
+      "terminology_note": "來源未明示檢體，不以名稱單獨區分血液或尿液。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Total protein"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Total protein-24hrs urine"
+      ],
+      "display_name_zh_tw": "24 小時尿液總蛋白",
+      "display_name_en": "24-hour urine total protein",
+      "terminology_note": "無單位時不推定濃度或每日排出量。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: 24-hour urine total protein"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Total protein-spot urine"
+      ],
+      "display_name_zh_tw": "單次尿液總蛋白",
+      "display_name_en": "Spot urine total protein",
+      "terminology_note": "不與 24 小時尿液或蛋白／肌酸酐比值合併。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Spot urine total protein"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Total protein-urine"
+      ],
+      "display_name_zh_tw": "尿液總蛋白",
+      "display_name_en": "Urine total protein",
+      "terminology_note": "未註明單次或 24 小時採集，不自行補上。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine total protein"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Triglyceride"
+      ],
+      "display_name_zh_tw": "三酸甘油脂",
+      "display_name_en": "Triglycerides (TG)",
+      "terminology_note": "",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Triglycerides (TG)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "UPCR"
+      ],
+      "display_name_zh_tw": "尿蛋白／肌酸酐比值",
+      "display_name_en": "Urine protein-to-creatinine ratio (UPCR)",
+      "terminology_note": "不是尿白蛋白／肌酸酐比值，也不是總蛋白濃度。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine protein-to-creatinine ratio (UPCR)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Uric acid"
+      ],
+      "display_name_zh_tw": "尿酸",
+      "display_name_en": "Uric acid",
+      "terminology_note": "",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Uric acid"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Urine Bilirubin"
+      ],
+      "display_name_zh_tw": "尿膽紅素",
+      "display_name_en": "Urine bilirubin",
+      "terminology_note": "",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine bilirubin"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Urine Cast"
+      ],
+      "display_name_zh_tw": "尿液圓柱體",
+      "display_name_en": "Urinary casts",
+      "terminology_note": "",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urinary casts"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Urine Occult Blood"
+      ],
+      "display_name_zh_tw": "尿潛血",
+      "display_name_en": "Urine occult blood",
+      "terminology_note": "",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine occult blood"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Urine Protein"
+      ],
+      "display_name_zh_tw": "尿蛋白",
+      "display_name_en": "Urine protein",
+      "terminology_note": "名稱未指定定性、定量或方法，不自行補上。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine protein"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Urine WBC",
+        "WBC-urine"
+      ],
+      "display_name_zh_tw": "尿液白血球",
+      "display_name_en": "Urine white blood cells",
+      "terminology_note": "方法及計數單位依原始紀錄，不自動改作每高倍視野。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urine white blood cells"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Urobilinogen"
+      ],
+      "display_name_zh_tw": "尿膽素原（檢體未註明）",
+      "display_name_en": "Urobilinogen (specimen unspecified)",
+      "terminology_note": "只對照來源文字；檢體、方法及單位仍以原始紀錄為準。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: Urobilinogen (specimen unspecified)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Vitamin B12"
+      ],
+      "display_name_zh_tw": "維生素 B12",
+      "display_name_en": "Vitamin B12",
+      "terminology_note": "不僅憑名稱改作活性 B12 或指定方法。",
+      "terminology_sources": [
+        "edah_vitamin_b12"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "edah_vitamin_b12",
+          "locator": "Vitamin B12 test name"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "W.B.C.",
+        "WBC"
+      ],
+      "display_name_zh_tw": "白血球（檢體及方法未註明）",
+      "display_name_en": "White blood cells (specimen and method unspecified)",
+      "terminology_note": "保留各自原始識別，不僅憑名稱合併血球計數與尿液鏡檢。",
+      "terminology_sources": [
+        "vghtc_lab_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "vghtc_lab_terms",
+          "locator": "Laboratory names table: White blood cells (specimen and method unspecified)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "Yeast"
+      ],
+      "display_name_zh_tw": "酵母菌（檢體未註明）",
+      "display_name_en": "Yeast (specimen unspecified)",
+      "terminology_note": "來源文字翻譯；不推定菌種、培養或感染診斷。",
+      "terminology_sources": [
+        "cap_sediment_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "cap_sediment_terms",
+          "locator": "Cells and organisms: spermatozoa, bacteria and yeast/fungi; generic names only"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "ctCO2"
+      ],
+      "display_name_zh_tw": "總二氧化碳（來源未標模型）",
+      "display_name_en": "Total carbon dioxide (ctCO2, model unspecified)",
+      "terminology_note": "來源未標 (B)／(P)，不推定全血或血漿計算模型，也不確認動脈／靜脈。",
+      "terminology_sources": [
+        "radiometer_blood_gas_terms"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "radiometer_blood_gas_terms",
+          "locator": "Printed p. 292: ctCO2(P) and ctCO2(B)"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "eGFR"
+      ],
+      "display_name_zh_tw": "估算腎絲球過濾率",
+      "display_name_en": "Estimated glomerular filtration rate (eGFR)",
+      "terminology_note": "名稱不單獨確認公式、肌酸酐校正或體表面積標準化單位。",
+      "terminology_sources": [
+        "kdigo_ckd"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "kdigo_ckd",
+          "locator": "Abbreviations: eGFR"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "hs Troponin I"
+      ],
+      "display_name_zh_tw": "高敏感度心肌肌鈣蛋白 I",
+      "display_name_en": "High-sensitivity cardiac troponin I (hs-cTnI)",
+      "terminology_note": "保留來源 hs 標示；不以代碼推定平台、方法或參考界值。",
+      "terminology_sources": [
+        "nhi_procedure_names"
+      ],
+      "terminology_source_loci": [
+        {
+          "source_id": "nhi_procedure_names",
+          "locator": "09099C: Troponin I; high-sensitivity modifier is explicitly in source name"
+        }
+      ],
+      "terminology_basis": "primary_source_terms"
+    },
+    {
+      "source_names": [
+        "是否人工閱片"
+      ],
+      "display_name_zh_tw": "人工閱片狀態",
+      "display_name_en": "Manual slide review status",
+      "terminology_note": "來源狀態欄位的文字翻譯，不表示本應用執行人工閱片。",
+      "terminology_sources": [],
+      "terminology_source_loci": [],
+      "terminology_basis": "literal_source_translation"
+    },
+    {
+      "source_names": [
+        "檢驗值:"
+      ],
+      "display_name_zh_tw": "檢驗值（來源未提供項目名）",
+      "display_name_en": "Test result (analyte unspecified)",
+      "terminology_note": "只有通用欄位標題，無法判定檢驗項目；保留原始內容，不建立猜測名稱。",
+      "terminology_sources": [],
+      "terminology_source_loci": [],
+      "terminology_basis": "literal_source_translation"
+    }
+  ]
 }

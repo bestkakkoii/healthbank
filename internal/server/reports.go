@@ -19,12 +19,13 @@ import (
 )
 
 type reportResponse struct {
-	Records       []lab.Record           `json:"records"`
-	SessionToken  string                 `json:"session_token"`
-	FetchedAt     string                 `json:"fetched_at"`
-	Complete      bool                   `json:"complete"`
-	Warnings      []string               `json:"warnings"`
-	OfficialQuery *officialQueryMetadata `json:"official_query,omitempty"`
+	Records         []lab.Record           `json:"records"`
+	SessionToken    string                 `json:"session_token"`
+	FetchedAt       string                 `json:"fetched_at"`
+	Complete        bool                   `json:"complete"`
+	Warnings        []string               `json:"warnings"`
+	OfficialQuery   *officialQueryMetadata `json:"official_query,omitempty"`
+	CacheProvenance *cacheReportProvenance `json:"cache_provenance,omitempty"`
 }
 
 // officialQueryMetadata describes the exact interval submitted to search. It
@@ -38,9 +39,11 @@ type officialQueryMetadata struct {
 }
 
 func (s *session) setOfficialReport(report nhi.Report) {
+	s.cacheProvenance = nil
+	s.reportRevision++
 	raw := make([]lab.RawRecord, 0, len(report.Records))
 	for _, v := range report.Records {
-		raw = append(raw, lab.RawRecord{CheckDate: v.CheckDate, OrderCode: v.OrderCode, OrderName: v.OrderName, ItemName: v.ItemName, Result: v.Result, Unit: v.Unit, Reference: v.Reference, Institution: v.Institution, VisitDate: v.VisitDate, Source: v.Source, OfficialFlag: v.OfficialFlag})
+		raw = append(raw, lab.RawRecord{CheckDate: v.CheckDate, OrderCode: v.OrderCode, OrderName: v.OrderName, ItemName: v.ItemName, Result: v.Result, Unit: v.Unit, Reference: v.Reference, Institution: v.Institution, VisitDate: v.VisitDate, Source: v.Source, OfficialFlag: v.OfficialFlag, UploadDate: v.UploadDate, SourceName: v.SourceName})
 	}
 	s.raw = raw
 	s.officialQuery = &officialQueryMetadata{Mode: report.Mode, StartDate: report.StartDate, EndDate: report.EndDate}
@@ -138,7 +141,7 @@ func (a *App) currentResponse(s *session) reportResponse {
 			break
 		}
 	}
-	return reportResponse{Records: records, SessionToken: s.csrf, FetchedAt: s.fetched, Complete: s.complete, Warnings: warnings, OfficialQuery: s.officialQuery}
+	return reportResponse{Records: records, SessionToken: s.csrf, FetchedAt: s.fetched, Complete: s.complete, Warnings: warnings, OfficialQuery: s.officialQuery, CacheProvenance: s.cacheProvenance}
 }
 func (a *App) fetchReports(w http.ResponseWriter, r *http.Request, s *session) {
 	if s.mode != "official" || s.official == nil {
@@ -196,6 +199,8 @@ func (a *App) fetchReports(w http.ResponseWriter, r *http.Request, s *session) {
 		return
 	}
 	s.raw, s.officialQuery, s.fetched, s.complete, s.warnings = next.raw, next.officialQuery, next.fetched, next.complete, next.warnings
+	s.cacheProvenance = nil
+	s.reportRevision++
 	_ = a.catalog.Normalize(s.raw, &s.settings)
 	if err := a.persistDiscovered(r.Context(), s); err != nil {
 		if errors.Is(err, store.ErrInvalid) {

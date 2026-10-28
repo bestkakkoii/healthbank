@@ -416,6 +416,15 @@ export async function runBrowserAcceptance({ binary, evidenceDir }) {
     record('isolated synthetic full acquisition and original-file saving', await runFullAcquisitionAcceptance({ createContext, baseURL, evidenceDir, fixture, importLaboratory, session }));
     const { runCollectionRestoreAcceptance } = await import('./collection-restore-acceptance.mjs');
     record('batch and ZIP restoration with sticky mobile comparison dates', await runCollectionRestoreAcceptance({ createContext, baseURL, evidenceDir, fixture, importLaboratory, session }));
+    phase = 'device cache atomic storage';
+    const { runDeviceCacheStorageAcceptance } = await import('./device-cache-storage-acceptance.mjs');
+    record('device cache opt-in, isolation and atomic revocation', await runDeviceCacheStorageAcceptance({ createContext, baseURL, fixture, importLaboratory }));
+    phase = 'synthetic verified-user cache UI';
+    const { runDeviceCacheAcceptance } = await import('./device-cache-acceptance.mjs');
+    record('cached login, clear-before-refresh and cross-tab UI', await runDeviceCacheAcceptance({ createContext, baseURL, evidenceDir, fixture, importLaboratory }));
+    phase = 'sourced bilingual terminology';
+    const { runTerminologyAcceptance } = await import('./terminology-acceptance.mjs');
+    record('bilingual labels, raw source dates and mobile wrapping', await runTerminologyAcceptance({ createContext, baseURL, evidenceDir, importLaboratory }));
     assert.equal(result.page_errors, 0, 'No unhandled browser errors are allowed.');
     assert.deepEqual(result.prohibited_requests, [], 'No official acquisition/login or external browser requests are allowed.');
     result.passed = true;

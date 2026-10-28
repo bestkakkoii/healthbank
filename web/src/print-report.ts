@@ -4,6 +4,7 @@ import { categoryCoverage, filterHealthEvents, healthEvents, type DataCategory, 
 import { dateLabel, formatTime, groupRecords } from './model.ts';
 import { medicalDate } from './medicine-timeline.ts';
 import { laboratoryCoverageStatus } from './coverage-status.ts';
+import { cacheProvenanceText } from './cache-provenance.ts';
 import { sourceDateLabel, sourceOriginLabel } from './source-semantics.ts';
 
 export interface PrintOptions {
@@ -66,21 +67,22 @@ export function createPrintReport(input: PrintReportInput): PrintReportData {
     includeUnknownDates: options.includeUnknownDates,
   });
   const laboratoryCoverage = options.scope === 'selection'
-    ? `依指定項目及日期保留 ${laboratory.length} 筆檢驗；未以此分享範圍核對官方總數，不代表完整歷史。`
+    ? `依指定項目及日期保留 ${laboratory.length} 筆檢驗；未以此分享範圍核對官方總數，不代表完整歷史。${report.cache_provenance ? cacheProvenanceText(report.cache_provenance) : ''}`
     : laboratoryCoverageStatus(report, mode).summary;
   const includedCategories = options.clinical ? categories.filter(category =>
     options.scope === 'all' || clinical.some(event => event.category === category.id)) : [];
   const coverage = includedCategories.map(category => {
-    if (options.scope === 'selection') return { label: category.label,
-      summary: `本報表選取 ${clinical.filter(event => event.category === category.id).length} 筆來源紀錄；未以此分享範圍核對官方總數，不代表完整歷史。` };
-    const state = categoryCoverage(snapshot, category.id);
     const source = snapshot.reports[category.id];
+    const cached = source?.cache_provenance ? cacheProvenanceText(source.cache_provenance) : '';
+    if (options.scope === 'selection') return { label: category.label,
+      summary: `本報表選取 ${clinical.filter(event => event.category === category.id).length} 筆來源紀錄；未以此分享範圍核對官方總數，不代表完整歷史。${cached}` };
+    const state = categoryCoverage(snapshot, category.id);
     const range = source?.start_date || source?.end_date ? `來源期間：${source.start_date || '未提供'}～${source.end_date || '未提供'}。` : '';
     const diagnostics = [source, ...Object.values(snapshot.details[category.id] ?? {})]
       .flatMap(value => value?.diagnostics ?? []).filter(item => item.severity === 'warning');
     const notices = [...new Set(diagnostics.map(item => `${item.message}${item.count === undefined ? '' : `（${item.count} 筆）`}`))];
     return { label: category.label, summary: state.queried
-      ? `清單 ${state.count} 筆；已取得明細 ${state.loadedCount}/${state.detailCount}，待取得 ${state.pendingCount}。${range}${source?.coverage ?? ''}${snapshot.states[category.id]?.status === 'failed' ? '最近更新失敗，保留先前成功內容。' : ''}${notices.length ? `來源回應提醒：${notices.join('；')}` : ''}`
+      ? `清單 ${state.count} 筆；已取得明細 ${state.loadedCount}/${state.detailCount}，待取得 ${state.pendingCount}。${cached}${range}${source?.coverage ?? ''}${snapshot.states[category.id]?.status === 'failed' ? '最近更新失敗，保留先前成功內容。' : ''}${notices.length ? `來源回應提醒：${notices.join('；')}` : ''}`
       : '尚未查詢；不代表沒有紀錄。' };
   });
   return { laboratory, clinical, options: { ...options }, version: input.version, generatedAt: input.generatedAt, mode,
@@ -120,7 +122,10 @@ function interpretationIndex(records: LabRecord[]) {
   } };
 }
 function labRows(records: LabRecord[], note: (record: LabRecord) => string) {
-  return records.map((record, index) => `<tr data-laboratory-row="${index + 1}"><td>${rawDate(record)}${paragraph(`就醫：${(record.raw_visit_date ?? record.visit_date) || '未提供'}`, 'secondary')}</td><td>${escape(record.display_name || record.item_name)}${paragraph(`原文：${record.item_name}`, 'secondary')}${paragraph(`醫令：${record.order_code} ${record.order_name}`, 'secondary')}</td><td>${result(record)}</td><td>${escape(record.reference_text || '原院參考值未提供')}${note(record)}${paragraph(`資料來源：${record.source || '未提供'}`, 'secondary')}</td></tr>`).join('');
+  return records.map((record, index) => `<tr data-laboratory-row="${index + 1}"><td>${rawDate(record)}${paragraph(`就醫：${(record.raw_visit_date ?? record.visit_date) || '未提供'}`, 'secondary')}${sourceUpload(record)}</td><td>${escape(record.display_name || record.item_name)}${paragraph(`原文：${record.item_name}`, 'secondary')}${paragraph(`醫令：${record.order_code} ${record.order_name}`, 'secondary')}</td><td>${result(record)}</td><td>${escape(record.reference_text || '原院參考值未提供')}${note(record)}${paragraph(`資料來源：${record.source || '未提供'}`, 'secondary')}${record.source_name === undefined ? '' : paragraph(`來源名稱：${record.source_name || '未提供'}`, 'secondary')}</td></tr>`).join('');
+}
+function sourceUpload(record: LabRecord): string {
+  return record.raw_upload_date === undefined && record.upload_date === undefined ? '' : paragraph(`上傳：${(record.raw_upload_date ?? record.upload_date) || '未提供'}`, 'secondary');
 }
 function comparisonTables(records: LabRecord[], note: (record: LabRecord) => string) {
   const groups = groupRecords(records);
@@ -133,7 +138,7 @@ function comparisonTables(records: LabRecord[], note: (record: LabRecord) => str
       for (const record of group.records) { const cell = map.get(record.exam_date); if (cell) cell.push(record); else map.set(record.exam_date, [record]); }
       return map;
     });
-    sections.push(`<section class="comparison-section"><h2>檢驗日期對照 · 項目 ${offset + 1}～${offset + batch.length}</h2><table class="comparison"><thead><tr><th scope="col">檢查日期</th>${batch.map(group => `<th scope="col">${escape(group.name)}${paragraph(group.unit, 'secondary')}</th>`).join('')}</tr></thead><tbody>${[...dates].toSorted((a, b) => b.localeCompare(a)).map(date => `<tr><th scope="row">${escape(dateLabel(date))}</th>${cells.map(map => `<td>${(map.get(date) ?? []).map(record => `<div class="observation">${result(record)}${paragraph(`原日期：${(record.raw_check_date ?? record.exam_date) || '未提供'}`, 'secondary')}${paragraph(`原院參考：${record.reference_text || '未提供'}`, 'secondary')}${note(record)}</div>`).join('') || '—'}</td>`).join('')}</tr>`).join('')}</tbody></table></section>`);
+    sections.push(`<section class="comparison-section"><h2>檢驗日期對照 · 項目 ${offset + 1}～${offset + batch.length}</h2><table class="comparison"><thead><tr><th scope="col">檢查日期</th>${batch.map(group => `<th scope="col">${escape(group.name)}${paragraph(group.unit, 'secondary')}</th>`).join('')}</tr></thead><tbody>${[...dates].toSorted((a, b) => b.localeCompare(a)).map(date => `<tr><th scope="row">${escape(dateLabel(date))}</th>${cells.map(map => `<td>${(map.get(date) ?? []).map(record => `<div class="observation">${result(record)}${paragraph(`原日期：${(record.raw_check_date ?? record.exam_date) || '未提供'}`, 'secondary')}${sourceUpload(record)}${record.source_name === undefined ? '' : paragraph(`來源名稱：${record.source_name || '未提供'}`, 'secondary')}${paragraph(`原院參考：${record.reference_text || '未提供'}`, 'secondary')}${note(record)}</div>`).join('') || '—'}</td>`).join('')}</tr>`).join('')}</tbody></table></section>`);
   }
   return sections.join('');
 }

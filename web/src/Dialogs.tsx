@@ -1,5 +1,5 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
-import { useEffect, useRef, useState, type SubmitEvent, type DragEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type SubmitEvent, type DragEvent } from 'react';
 import {
   api,
   isSessionInvalidation,
@@ -27,6 +27,7 @@ import {
   type RuleBand,
 } from './model';
 import { Alert, Icon, LevelBadge, Loading, Modal } from './ui';
+import { createTerminologyIndex, groupTerminology, recordTerminology, type TerminologyDisplay } from './terminology-display';
 
 import {
   forgetAllRememberedUsers, forgetRememberedUser, maskedIdentity,
@@ -441,6 +442,35 @@ export function ImportDialog({
   );
 }
 
+function TerminologyNotes({ display, catalog }: { display: TerminologyDisplay; catalog: CatalogResponse }) {
+  const sources = catalog.sources.filter(source => display.sourceIds.includes(source.id));
+  if (display.basis === 'raw') return null;
+  return (
+    <section className="detail-notes">
+      {display.note && <p>{display.note}</p>}
+      {(sources.length > 0 || catalog.terminology_notice) && (
+        <details>
+          <summary>名稱來源與整理方式</summary>
+          {catalog.terminology_notice && <p className="helper-text">{catalog.terminology_notice}</p>}
+          {sources.length > 0 && (
+            <ul className="source-list">
+              {sources.map(source => (
+                <li key={source.id}>
+                  {source.url ? (
+                    <a href={source.url} target="_blank" rel="noreferrer">
+                      {source.title}{source.edition ? ` · ${source.edition}` : ''}<Icon name="external" size={15} />
+                    </a>
+                  ) : <span>{source.title}{source.edition ? ` · ${source.edition}` : ''}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </details>
+      )}
+    </section>
+  );
+}
+
 export function DetailDialog({
   record,
   catalog,
@@ -456,17 +486,18 @@ export function DetailDialog({
   onTrend: () => void;
   onConfigure: () => void;
 }) {
-  const item = catalog.items.find(
-    (i) => i.id === record.item_id || i.configuration_key === record.configuration_key,
-  );
+  const terminology = useMemo(() => createTerminologyIndex(catalog), [catalog]);
+  const display = recordTerminology(record, terminology);
+  const item = terminology.byKey.get(record.configuration_key) ?? terminology.byID.get(record.item_id);
   const sources = catalog.sources.filter((s) => item?.sources.includes(s.id));
   return (
     <Modal
-      title={record.display_name || record.item_name}
+      title={display.name}
       subtitle={`${record.item_name} · ${categoryLabel(record.category)}`}
       onClose={onClose}
       wide
     >
+      {display.englishName && <p className="terminology-english" lang="en">{display.englishName}</p>}
       <div className="detail-result">
         <div>
           <span>檢查結果</span>
@@ -491,6 +522,10 @@ export function DetailDialog({
         </Alert>
       )}
       <dl className="detail-grid">
+        <div className="detail-wide">
+          <dt>原始檢驗名稱</dt>
+          <dd>{record.item_name || '未提供'}</dd>
+        </div>
         <div>
           <dt>檢查日期</dt>
           <dd>{dateLabel(record.exam_date)}{record.raw_check_date !== undefined && record.raw_check_date !== record.exam_date &&
@@ -501,6 +536,13 @@ export function DetailDialog({
           <dd>{dateLabel(record.visit_date)}{record.raw_visit_date !== undefined && record.raw_visit_date !== record.visit_date &&
             <small>來源原文：{record.raw_visit_date || '未提供'}</small>}</dd>
         </div>
+        {(record.upload_date !== undefined || record.raw_upload_date !== undefined) && (
+          <div>
+            <dt>上傳日期</dt>
+            <dd>{dateLabel(record.upload_date ?? '')}{record.raw_upload_date !== undefined && record.raw_upload_date !== record.upload_date &&
+              <small>來源原文：{record.raw_upload_date || '未提供'}</small>}</dd>
+          </div>
+        )}
         <div>
           <dt>醫事機構</dt>
           <dd>{record.institution || '未提供'}</dd>
@@ -509,6 +551,12 @@ export function DetailDialog({
           <dt>資料來源</dt>
           <dd>{record.source || '未提供'}</dd>
         </div>
+        {record.source_name !== undefined && (
+          <div>
+            <dt>來源名稱</dt>
+            <dd>{record.source_name || '未提供'}</dd>
+          </div>
+        )}
         <div>
           <dt>醫令代碼</dt>
           <dd>{record.order_code || '未提供'}</dd>
@@ -526,6 +574,7 @@ export function DetailDialog({
           <dd>{record.rule_source || '未提供可適用的分級依據'}</dd>
         </div>
       </dl>
+      <TerminologyNotes display={display} catalog={catalog} />
       {item?.description && (
         <section className="detail-notes">
           <h3>項目說明</h3>
@@ -608,9 +657,8 @@ function DefaultRuleSummary({
   catalog: CatalogResponse;
 }) {
   const item = catalog.items.find(
-    (item) =>
-      item.id === group.records[0]?.item_id || item.configuration_key === group.configurationKey,
-  );
+    (item) => item.configuration_key === group.configurationKey,
+  ) ?? catalog.items.find(item => item.id === group.records[0]?.item_id);
   if (!item) return null;
   const rule = rulePreview(item.default_rule);
   const alerts = item.alert_rules.map(rulePreview).filter((rule) => rule.bands.length > 0);
@@ -710,6 +758,8 @@ export function BaselineDialog({
   onClose: () => void;
   persisted: boolean;
 }) {
+  const terminology = useMemo(() => createTerminologyIndex(catalog), [catalog]);
+  const display = groupTerminology(group, terminology);
   const latest = group.records[0];
   const actualValues = group.records.filter((record) => record.value_kind !== 'missing');
   const catalogItem = catalog.items.find(
@@ -787,6 +837,7 @@ export function BaselineDialog({
       wide
       busy={busy}
     >
+      {display.englishName && <p className="terminology-english" lang="en">{display.englishName}</p>}
       <div className="baseline-source">
         <span>最近一次原院參考值</span>
         <b>
@@ -806,6 +857,7 @@ export function BaselineDialog({
           ? '設定會同步至您登入的其他裝置。'
           : '目前未經官網登入，設定只在本次使用階段生效。'}
       </p>
+      <TerminologyNotes display={display} catalog={catalog} />
       <DefaultRuleSummary group={group} catalog={catalog} />
       <p className="baseline-mode">
         {override?.enabled
