@@ -14,6 +14,6 @@ test('portable JSON uses unambiguous UTF-8 bytes and round-trips Chinese', () =>
     const data = JSON.parse(decoded);
     assert.equal(data.records[0].item_name, '三酸甘油酯');
     assert.equal(data.records[0].institution, '合成測試院所');
-    assert.equal(data.schema, 'healthbank.lab.v1');
+    assert.equal(data.schema, 'healthbank.lab.v2');
   }
 });

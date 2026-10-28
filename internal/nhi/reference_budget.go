@@ -57,13 +57,15 @@ func westernReferenceSize(ref westernReference) int64 {
 	return referenceStrings(ref.rowID, ref.sourceType, ref.date, ref.institution)
 }
 func medicalReferenceSize(ref medicalReference) int64 {
-	return referenceStrings(ref.category, ref.rowID, ref.sourceType, ref.date, ref.endDate, ref.institution)
+	return referenceStrings(ref.category, ref.rowID, ref.sourceType, ref.date, ref.endDate, ref.institution, ref.kind, ref.orderCode, ref.sourceTitle) + int64(cap(ref.children))*16 + referenceStrings(ref.children...)
 }
 func providerReferenceSize(ref providerReference) int64 {
-	return referenceStrings(ref.rowID, ref.sourceType, ref.date, ref.dateRole, ref.institution, ref.title, ref.unit, ref.kind, ref.originKey, ref.parentReference, ref.query.StartDate, ref.query.EndDate)
+	// The two retained slices add headers beyond the original fixed entry
+	// allowance; their backing-array capacity and string bytes are separate.
+	return 48 + referenceStrings(ref.rowID, ref.sourceType, ref.date, ref.dateRole, ref.institution, ref.title, ref.unit, ref.kind, ref.originKey, ref.parentReference, ref.query.StartDate, ref.query.EndDate) + int64(cap(ref.refillTimes))*16 + referenceStrings(ref.refillTimes...) + int64(cap(ref.children))*16 + referenceStrings(ref.children...)
 }
 func officialFileReferenceSize(ref officialFileReference) int64 {
-	return referenceStrings(ref.sequence, ref.format, ref.date)
+	return referenceStrings(ref.sequence, ref.format, ref.date, ref.bundleDate)
 }
 func documentReferenceSize(ref documentReference) int64 {
 	return referenceStrings(ref.category, ref.parent, ref.kind, ref.rowID, ref.sourceType, ref.sequence, ref.format, ref.date, ref.downloadID) + int64(cap(ref.payload))

@@ -61,7 +61,7 @@ export function readRememberedLogins(storage: LoginStorage): LoginStorageResult 
 export function writeRememberedUser(storage: LoginStorage, entry: RememberedUser): void {
   const normalized = user(entry);
   if (!normalized) throw new Error('登入欄位格式不正確，未保存。[LOGIN_STORAGE_INVALID]');
-  // Read inside the write operation so another tab's newly added user is not lost.
+  // Read the latest stored list here instead of closing over an earlier UI snapshot.
   const current = readRememberedLogins(storage);
   if (current.warning) throw new Error(current.warning);
   const users = current.users.filter(existing => existing.identity !== normalized.identity);

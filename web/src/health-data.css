@@ -3,6 +3,12 @@
 .health-data-workspace h2, .health-data-workspace h3, .health-data-workspace h4 { margin-block: .5rem; overflow-wrap: anywhere; }
 .health-data-workspace p { overflow-wrap: anywhere; }
 .health-data-workspace input, .health-data-workspace select { min-inline-size: 0; max-inline-size: 100%; }
+.health-data-full-acquisition { margin-block: 1rem; padding: .9rem; border: 1px solid var(--border); border-radius: .6rem; min-inline-size: 0; }
+.health-data-full-acquisition li { margin-block: .5rem; overflow-wrap: anywhere; }
+.health-data-full-acquisition ol { padding-inline-start: 1.8rem; }
+.health-data-package { margin-block-start: 1rem; padding-block-start: .8rem; border-block-start: 1px solid var(--border); }
+.health-data-package > .button { margin-block: .5rem; max-inline-size: 100%; white-space: normal; overflow-wrap: anywhere; }
+.health-data-package .button[aria-disabled="true"] { opacity: .55; cursor: not-allowed; }
 .health-data-actions { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin-block: .8rem; }
 .health-data-actions > * { min-inline-size: 0; max-inline-size: 100%; white-space: normal; overflow-wrap: anywhere; }
 .health-data-notice { padding: .8rem; border-inline-start: .25rem solid var(--accent); background: var(--surface-soft); }
@@ -54,3 +60,14 @@
   .health-data-management > summary, .health-data-display-options > summary { padding-inline: 0; }
   .medicine-event-pagination > span { flex-basis: 100%; order: -1; }
 }
+.collection-tools { margin-block: 1rem; border-block-start: 1px solid var(--border); padding-block-start: 1rem; }
+.collection-tools summary { cursor: pointer; font-weight: 700; }
+.collection-summary { margin-block: 1rem; min-width: 0; }
+.collection-file-list { list-style: none; margin: 1rem 0; padding: 0; }
+.collection-file-list > li { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: .75rem; padding: .85rem 0; border-block-end: 1px solid var(--border); min-width: 0; }
+.collection-file-list > li > div { min-width: 0; max-width: 100%; }
+.collection-file-list strong, .collection-file-list p, .collection-summary li, .batch-collection-export { overflow-wrap: anywhere; }
+.collection-file-list p { margin-block: .35rem; }
+.collection-file-picker { display: grid; gap: .35rem; max-width: 100%; font-size: .9em; }
+.collection-file-picker input { max-width: 100%; }
+.batch-collection-export { margin-block-start: 1rem; padding-block-start: 1rem; border-block-start: 1px solid var(--border); }

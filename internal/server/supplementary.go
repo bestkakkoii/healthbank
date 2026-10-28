@@ -28,6 +28,8 @@ func (a *App) supplementary(w http.ResponseWriter, r *http.Request, s *session) 
 		}
 		if nhi.MedicalCategory(category) {
 			report, err = s.official.FetchMedicalDetail(ctx, category, reference)
+		} else if nhi.RecentMedicalCategory(category) {
+			report, err = s.official.FetchRecentMedicalDetail(ctx, category, reference)
 		} else if nhi.ProviderCategory(category) {
 			report, err = s.official.FetchProviderDetail(ctx, category, reference)
 		} else if category == "self_paid" {

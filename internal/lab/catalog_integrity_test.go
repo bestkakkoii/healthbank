@@ -2,6 +2,7 @@
 package lab
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
@@ -60,6 +61,59 @@ func TestEmbeddedCatalogHasUnambiguousSourceAndRuleContracts(t *testing.T) {
 			if err := ValidateSettings(settings, map[string]KnownItem{"synthetic": {Key: "synthetic"}}); err != nil {
 				t.Fatalf("%s has invalid or overlapping exact bands: %v", id, err)
 			}
+		}
+	}
+}
+
+func TestEmbeddedTerminologyHasExplicitAttributionAndSharedKeyMeaning(t *testing.T) {
+	catalog := gradingCatalog(t)
+	if catalog.TermNotice == "" || len(catalog.NameGlossary) == 0 {
+		t.Fatal("terminology has no display contract")
+	}
+	check := func(name, english, basis, note string, sources []string, loci []terminologyLocus) {
+		t.Helper()
+		if strings.TrimSpace(name) == "" || strings.TrimSpace(english) == "" {
+			t.Fatal("terminology is missing a language")
+		}
+		if basis == "literal_source_translation" {
+			if note == "" || len(sources) != 0 || len(loci) != 0 {
+				t.Fatal("literal translation claims external terminology evidence")
+			}
+			return
+		}
+		if basis != "primary_source_terms" || len(sources) == 0 || len(loci) != len(sources) {
+			t.Fatal("clinical terminology lacks an explicit basis")
+		}
+		seen := map[string]bool{}
+		for _, locus := range loci {
+			source := catalog.Sources[locus.SourceID]
+			if seen[locus.SourceID] || !slices.Contains(sources, locus.SourceID) || source.Title == "" || !strings.HasPrefix(source.URL, "https://") || locus.Locator == "" {
+				t.Fatal("terminology contains an incomplete or duplicated source locus")
+			}
+			seen[locus.SourceID] = true
+		}
+	}
+	shared := map[string]Definition{}
+	for _, item := range catalog.Items {
+		check(item.Name, item.EnglishName, item.TermBasis, item.TermNote, item.TermSources, item.TermLoci)
+		if item.Kind == "measurement" {
+			if previous, exists := shared[item.Key]; exists && (previous.EnglishName != item.EnglishName || previous.TermNote != item.TermNote) {
+				t.Fatalf("shared configuration %s has conflicting terminology", item.Key)
+			}
+			shared[item.Key] = item
+		}
+	}
+	seenNames := map[string]bool{}
+	for _, term := range catalog.NameGlossary {
+		check(term.Name, term.EnglishName, term.Basis, term.Note, term.Sources, term.Loci)
+		if len(term.Names) == 0 {
+			t.Fatal("glossary entry cannot be matched to an exact source spelling")
+		}
+		for _, name := range term.Names {
+			if name == "" || strings.TrimSpace(name) != name || seenNames[name] {
+				t.Fatal("glossary source spelling is empty, padded or ambiguous")
+			}
+			seenNames[name] = true
 		}
 	}
 }

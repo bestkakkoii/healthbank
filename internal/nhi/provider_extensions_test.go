@@ -44,8 +44,13 @@ func TestProviderAdditionalCareContracts(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if detail.Complete || detail.StartDate != "" || len(detail.Entries) != 2 || detail.Entries[0].Key == detail.Entries[1].Key || detail.Entries[0].Date != "112/01/02" || detail.Entries[0].Institution != "合成院所" {
+			if detail.Complete || detail.StartDate != "" || len(detail.Entries) != 11 || detail.Entries[0].Key == detail.Entries[1].Key || detail.Entries[0].Date != "112/01/02" || detail.Entries[0].Institution != "合成院所" {
 				t.Fatal("care duplicates, encounter dates or source coverage were changed")
+			}
+			for _, index := range detail.Entries[2:] {
+				if index.Kind != "source_index" || index.DetailID == "" || index.Date != "" {
+					t.Fatal("separate source chart entries were missing or became invented observations")
+				}
 			}
 			values := map[string]bool{}
 			for _, field := range detail.Entries[0].Fields {
@@ -73,7 +78,7 @@ func TestProviderFamilyHealthPressureIndex(t *testing.T) {
 		case "/api/ihke3000/ihke3726s01/SP_IHKE3726S07":
 			calls.Add(1)
 			var payload map[string]string
-			if r.Method != http.MethodPost || json.NewDecoder(r.Body).Decode(&payload) != nil || len(payload) != 3 || payload["dType"] != "BP" || payload["dStr"] != "1912-01-01" || payload["dEnd"] == "" {
+			if r.Method != http.MethodPost || json.NewDecoder(r.Body).Decode(&payload) != nil || len(payload) != 3 || payload["dType"] != "EBP" || payload["dStr"] != "1912-01-01" || payload["dEnd"] == "" {
 				t.Error("family health pressure lost its full-period source selector")
 			}
 			respondJSON(t, w, map[string]any{"sP_IHKE3726S07_Data": []any{map[string]any{"assaY_DATE": "99/01/01", "assaY_VALUE": "120.0001", "assay_VALUE_1": "70.0001", "c_ASSAY_VALUE": "120.0001/70.0001", "assaY_SOURCE_NAME": "合成自行登打", "hosp_ABBR": "合成機構"}}})
@@ -82,10 +87,19 @@ func TestProviderFamilyHealthPressureIndex(t *testing.T) {
 		}
 	})
 	list, err := s.FetchProvider(context.Background(), "family_health_followup", Query{})
-	if err != nil || len(list.Entries) != 1 || list.Entries[0].Kind != "source_index" || list.Entries[0].Date != "" {
+	if err != nil {
+		t.Fatal(err)
+	}
+	var sourceIndex SupplementEntry
+	for _, entry := range list.Entries {
+		if entry.Kind == "source_index" {
+			sourceIndex = entry
+		}
+	}
+	if sourceIndex.DetailID == "" || sourceIndex.Date != "" {
 		t.Fatalf("pressure object was lost or its next-check date became an observation: %v", err)
 	}
-	detail, err := s.FetchProviderDetail(context.Background(), "family_health_followup", list.Entries[0].DetailID)
+	detail, err := s.FetchProviderDetail(context.Background(), "family_health_followup", sourceIndex.DetailID)
 	if err != nil || calls.Load() != 1 || len(detail.Entries) != 1 || detail.Entries[0].Date != "99/01/01" || detail.Complete {
 		t.Fatalf("pressure history unavailable: %v", err)
 	}
@@ -121,7 +135,7 @@ func TestProviderDeviceActivityDiscoveryAndNestedRead(t *testing.T) {
 			if r.Method != http.MethodPost || len(payload) != 3 || payload["cCode"] != "SYNTHETIC-STEPS" || payload["cSDate"] != "19120101" || payload["cEDate"] != "20261028" {
 				t.Error("device raw query omitted the selected full period")
 			}
-			respondJSON(t, w, map[string]any{"sP_IHKE3205S03": []any{map[string]any{"codE_NAME": "來源步數", "uniT_DATA": "步"}}, "devicelist": []any{map[string]any{"cdate": "115/10/01", "edate": "2026-10-01", "value": "12345"}}})
+			respondJSON(t, w, map[string]any{"sP_IHKE3205S03": []any{map[string]any{"codE_NAME": "來源步數", "uniT_DATA": "步"}}, "act_os": "UNKNOWN_PLATFORM", "devicelist": []any{map[string]any{"cdate": "115/10/01", "edate": "2026-10-01", "value": "12345", "act_os": "RAW_INDEX_PLATFORM"}}})
 		case "/api/ihke3000/ihke3205s02/SP_IHKE3205S08":
 			if r.Method != http.MethodPost || len(payload) != 5 || payload["cSDate"] != "19120101" || payload["cEDate"] != "20261028" || payload["cCode1"] != "SYNTHETIC-STEPS" || payload["cCode2"] != "" || payload["cCode3"] != "" {
 				t.Error("device series query lost its observed selectors")
@@ -131,7 +145,7 @@ func TestProviderDeviceActivityDiscoveryAndNestedRead(t *testing.T) {
 			if r.Method != http.MethodGet || len(r.URL.Query()) != 2 || r.URL.Query().Get("code") != "SYNTHETIC-STEPS" || r.URL.Query().Get("cal_date") != "2026-10-01" {
 				t.Error("device day escaped the returned source selector")
 			}
-			respondJSON(t, w, map[string]any{"devicelist": []any{map[string]any{"cdate": "2026-10-01 08:00", "value": "120.00000000000000001"}}})
+			respondJSON(t, w, map[string]any{"cdate": "來源日期頁籤", "devicelist": []any{map[string]any{"cdate": "2026-10-01 08:00", "value": "120.00000000000000001", "act_os": "RAW_DAY_PLATFORM"}}})
 		default:
 			t.Error("unexpected or mutating device route")
 		}
@@ -142,8 +156,12 @@ func TestProviderDeviceActivityDiscoveryAndNestedRead(t *testing.T) {
 	}
 	parent := list.Entries[0].DetailID
 	detail, err := s.FetchProviderDetail(context.Background(), "device_activity", parent)
-	if err != nil || len(detail.Entries) != 2 || detail.StartDate != "1912-01-01" || detail.EndDate != "2026-10-28" {
+	if err != nil || len(detail.Entries) != 4 || detail.StartDate != "1912-01-01" || detail.EndDate != "2026-10-28" {
 		t.Fatalf("device full period/index query failed: %v", err)
+	}
+	metadata := detail.Entries[1]
+	if metadata.Kind != "source_metadata" || metadata.Date != "" || len(metadata.Fields) != 2 || metadata.Fields[0].Value != "來源步數" || metadata.Fields[1].Value != "步" || detail.Entries[3].Fields[1].Unit != "" || fieldValues(detail.Entries, "act_os")[1] != "UNKNOWN_PLATFORM" {
+		t.Fatal("source item/unit definition was lost or incorrectly applied to a measurement")
 	}
 	child := detail.Entries[0].DetailID
 	if child == "" || detail.Entries[0].Kind != "source_index" || s.providerReferences["device_activity"][child].parentReference != parent {
@@ -153,7 +171,7 @@ func TestProviderDeviceActivityDiscoveryAndNestedRead(t *testing.T) {
 		t.Fatal("device activity child escaped its category")
 	}
 	day, err := s.FetchProviderDetail(context.Background(), "device_activity", child)
-	if err != nil || len(day.Entries) != 1 || calls.Load() != 4 || day.Entries[0].Date != "2026-10-01 08:00" {
+	if err != nil || len(day.Entries) != 2 || calls.Load() != 4 || day.Entries[0].Date != "2026-10-01 08:00" || fieldValues(day.Entries, "act_os")[0] != "RAW_DAY_PLATFORM" || day.Entries[1].Date != "" {
 		t.Fatalf("nested activity day failed: %v", err)
 	}
 	body, _ := json.Marshal([]SupplementReport{list, detail, day})

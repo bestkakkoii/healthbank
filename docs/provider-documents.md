@@ -4,16 +4,16 @@ Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
 查核日期：**2026-10-28（臺灣時間）**。本模組根據健保署網站公開前端程式的實際請求實作，
 不是健保署承諾支援的公開 API。公開程式與合成測試可驗證請求、解析及隔離，不能證明個別真實帳號的文件可用性。
-Healthbank 使用官方授權工作階段取得資料，以自己的資料工作區呈現；不複製官方行政、通知或表單管理介面。
+Healthbank 使用官方授權工作階段取得資料，以自己的資料工作區呈現；既有提醒及其原始行事曆可讀取保存，不代替官方執行行政、通知編輯或表單提交。
 
 ## 應用 API
 
 | 方法與路徑 | 輸入 | 回傳與用途 |
 | --- | --- | --- |
-| `GET /api/data/catalog` | 無 | `{categories:[{id,label,group,range_mode,has_details}]}`；公開的程式能力目錄，不是個人的資料清單，不建立登入工作階段。 |
+| `GET /api/data/catalog` | 無 | `categories` 內含 `id,label,label_en,group,range_mode,has_details`，另有欄位名稱詞彙與翻譯依據；公開的程式能力目錄，不是個人的資料清單，不建立登入工作階段。 |
 | `GET /api/supplementary` | `category`；可選 `detail` | 類別清單或明細；影像、官方檔案及產製範圍使用下表所列類別。 |
 | `GET /api/documents` | `category`、`id` | 已取得明細所列附件；`Content-Disposition: attachment`。不接受上游 URL。`HEAD` 不會啟動文件取得。 |
-| `POST /api/documents/prepare` | JSON `{category,id}`，同源及 `X-CSRF-Token` | 明確要求官方產製文件；成功為 HTTP 202、`{status:"requested",message:"…"}`，不是產製完成。 |
+| `POST /api/documents/prepare` | JSON `{category,id}`，同源及 `X-CSRF-Token` | 明確要求官方產製文件；成功為 HTTP 202、`status:"requested"`、安全訊息與 `refresh`，不是產製完成。 |
 
 除能力目錄外，均須已完成官方身分驗證。匯入資料或示範資料不能授權存取官方文件。
 全部 API 繼承 `Cache-Control: no-store, private`、禁止代理緩衝及不嗅探內容類型標頭。
@@ -31,9 +31,11 @@ Healthbank 使用官方授權工作階段取得資料，以自己的資料工作
 }
 ```
 
-`name` 是可直接下載的安全檔名，保留 `.pdf`、`.zip` 或 `.txt`；移除路徑及跨平台不允許的字元。
+`name` 是依驗證類型建立的安全檔名，可為 PDF、ZIP、JPEG、PNG、ICS 或原文文字；不直接使用上游任意檔名。
 `size` 只有可確認時才提供。`kind` 為 `prepare_jpeg`、`prepare_dicom` 或 `prepare_export`。
-取得清單、批次取得明細及匯出 Healthbank 資料包都不會自動執行這些產製操作。
+一般取得清單、批次取得明細及單純匯出資料包不執行產製。使用者另行啟動「完整取得並保存原始檔」，且選擇要求官方準備檔案時，才在該流程中提交每個已取得動作一次。
+
+`refresh` 只提供來源可證實的關聯：JPEG 回到原父明細，API 的 `refresh.correlation` 為 `"same_record"`；DICOM／整包原始檔回到 `official_files`，此 API 欄位為 `"unavailable"`，前端取得狀態則保留 `correlation_unavailable`。不把官方回傳的成功訊息當作工作識別，不用時間、檔名或新增數量猜測檔案歸屬。輪詢有界，模糊送達結果不自動重播。
 
 ## 資料與上游流程
 
@@ -48,7 +50,11 @@ Healthbank 使用官方授權工作階段取得資料，以自己的資料工作
 | `hospital` 病摘 | `IHKE3309S02/getxml?crid&ctype`，`file_name` | 官方 `showXML` 將該字串直接作為 HTML 顯示。Healthbank 保留原顯示內容並以 `.txt` 下載，不執行標記，也不稱為原始 XML。 |
 | `hospital` PDF | `IHKE3309S02/getpdf` → 官方回傳 PDF 位址 → `IHKE3309S02/delpdf` | 取得原 PDF 後要求清理此次上游暫存。只有相同官方來源、限定目錄內的 PDF 位址可讀取；不傳 JWT 給靜態 PDF，禁止重新導向。 |
 | `e_prescriptions` | `ihke3212s01/IHKE3212_pdf?tid&tid2&recipeType` | 兩個 `tid` 均來自已驗證清單的同一處方識別。此方法存在於公開元件，但目前元件畫面未呼叫該按鈕；真實帳號可用性另須驗收。 |
+| `e_prescriptions` ICS | `ihke3212s01/IHKE3212_ics`，來源處方與續領序號 | 僅保留來源提供的建議續領視窗；已有領藥日期不另造待領行事曆，不匯入系統行事曆或推定實際服藥。 |
+| `self_paid` 原始檔 | `ihke3403S07/download`，`DATA02_SEQ`、`FILE_SEQ` | 父報告驗證後的來源檔案；保留每個檔案與重複項目，兩個識別不能由瀏覽器自行指定。 |
+| `child_schedule`／`stored_reminders` ICS | `ihke3104s01/IHKE3104S08?SEQ_NO` | 綁定已存來源提醒，依各來源顯示條件才提供；兒童時程須同時有來源序號及非空提醒日期。非已接種或已就醫證明。 |
 | `official_files` | `ihke3801s01/page_load`；`ihke3801s02/page_load`；`app_download?gid` 或 `download?seq_no` | 既有原始檔產製工作及檔案，只有來源狀態 `1` 才建立下載識別；有 `did` 時綁定來源 `gid` 路徑，否則使用原序號路徑。 |
+| `official_files` 整包 | `ihke3801s01/download` | 使用該筆已完成明細實際回傳的 `file_txt_DATE`，與查詢工作所用 `txt_DATE` 分開，不能互相替代。 |
 | `official_files` DICOM | `ihke3801s02/imgF_page_load`；`app_imgF_download?gid` 或 `imgF_download?seq_no` | 下載官方準備的原始影像 ZIP；不在 Healthbank 伺服器解壓或進行診斷閱片。 |
 | `official_export_html` | `ihke3802s01/page_load`；POST `add` 的 `row_id` | 每類選用官方提供的全部範圍；沒有全部選項時使用來源列出的各月份，保留可產製範圍供使用者檢視。 |
 | `official_export_xml` | `ihke3803s01/page_load`；POST `add` 的 `dat` | 精確保留官方提供的產製參數，不自行推測格式或年度選項。 |
@@ -73,6 +79,7 @@ Healthbank 使用官方授權工作階段取得資料，以自己的資料工作
 | JPEG／病摘來源 JSON | 48 MiB 的編碼回應上限。 |
 | 單份緩衝 PDF 內容／JPEG 解碼後原始資料總量 | 32 MiB；JPEG 至多 500 張，每張尺寸及編碼須可辨識。超限會拒絕，不回傳部分影像組。 |
 | 官方原始 ZIP／PDF／DICOM | 串流上限 500 MiB、整次最多 5 分鐘；不以整份大型檔案占用記憶體。 |
+| 原始文字／JSON／XML／HTML | 最大 32 MiB，驗證 UTF-8 與必要格式後當作惰性原文下載；不套用醫療欄位的大小寫正規化，不執行標記。明確錯誤／登入失效回應仍拒絕。 |
 | 文件及產製識別 | 當次連線合計最多 50,000 個，列表更新及登入重設清除。 |
 | 原始檔產製參數 | 每次產製選項回應合計最多 1 MiB，僅留於工作階段記憶體，使用或失效時清除引用。 |
 
@@ -90,6 +97,8 @@ PDF 下載以 `X-Healthbank-Document-Warning: official_temporary_cleanup_unconfi
 
 Healthbank 不寫入醫療文件、官方 Cookie／權杖、產製參數或下載歷史至 SQL、應用日誌或伺服器檔案。
 使用者明確下載到自己的裝置後，由使用者管理。原始醫療文件及第三方內容不因本專案的 MIT 授權而改變授權。
+
+完整取得流程以同一套來源下載器串流建立 `healthbank.acquisition.package.v1` ZIP，逐檔保留實際大小、SHA-256、可用性與失敗原因。正常單檔失敗可以產生明示部分成功的有效 ZIP；傳輸中斷不產生完成雜湊。內含資料包、外部 JSON、分包及保存確認契約見[資料工作區](data-workspace.zh-TW.md#完整取得與串流-zip)。
 
 ## 驗證範圍
 
@@ -137,7 +146,7 @@ RC9 額外重新取得並核對的下載元件：
 
 ## Versioned document context and bounded handle ownership
 
-Document reports carry the same `nhi-spa.2026-10-28.2` projection revision as the
+Document reports carry the same `nhi-spa.2026-10-28.3` projection revision as the
 provider data model. Allowlisted raw fields retain stable source codes; known
 upload/report/date columns are labelled as date fields without substituting them
 for specimen collection. Official generation request dates are `recorded` dates

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 bestkakkoii llc.
 // SPDX-License-Identifier: MIT
 import type { CatalogReference, LabRecord, Level, LevelBand } from './api';
+import { gradingContextText } from './grading-context.ts';
 
 export const COPYRIGHT_YEAR = new Intl.DateTimeFormat('en', {
   year: 'numeric', timeZone: 'Asia/Taipei',
@@ -103,6 +104,9 @@ export function rulePreview(value: unknown) {
     kind: typeof rule['kind'] === 'string' ? rule['kind'] : '',
     unit: typeof rule['unit'] === 'string' ? rule['unit'] : '',
     description: typeof rule['description'] === 'string' ? rule['description'] : '',
+    conditions: strings(rule['conditions']),
+    scopeLabel: typeof rule['scope_label'] === 'string' ? rule['scope_label'] : '',
+    applicabilityNote: typeof rule['applicability_note'] === 'string' ? rule['applicability_note'] : '',
     normalValues: strings(rule['normal_text_values']),
     positiveValues: strings(rule['positive_text_values']),
     reviewValues: strings(rule['review_text_values']),
@@ -260,6 +264,7 @@ export function toCsv(records: LabRecord[]): string {
       '參考區間比較',
       '原院異常標記（原始值）',
       '顯示分級',
+      '分級依據與適用限制',
       '醫事機構',
       '就醫日期',
       '醫令代碼',
@@ -268,6 +273,8 @@ export function toCsv(records: LabRecord[]): string {
       'Copyright',
       '檢查日期（來源原文）',
       '就醫日期（來源原文）',
+      '上傳日期（來源原文）',
+      '資料來源名稱（原文）',
     ],
     ...records.map((r) => [
       r.exam_date,
@@ -279,6 +286,7 @@ export function toCsv(records: LabRecord[]): string {
       sourceFlag(r.reference_status),
       r.official_flag ?? '',
       r.level ? `L${r.level} ${LEVELS[r.level].label}` : '未判定',
+      gradingContextText(r),
       r.institution,
       r.visit_date,
       r.order_code,
@@ -287,6 +295,8 @@ export function toCsv(records: LabRecord[]): string {
       `© ${COPYRIGHT_YEAR} bestkakkoii llc.`,
       r.raw_check_date ?? r.exam_date,
       r.raw_visit_date ?? r.visit_date,
+      r.raw_upload_date ?? r.upload_date ?? '',
+      r.source_name ?? '',
     ]),
   ];
   return '\ufeff' + rows.map((row) => row.map(quote).join(',')).join('\r\n');

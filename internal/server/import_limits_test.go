@@ -160,7 +160,7 @@ func TestImportRejectsUnnamedPartBeforeAValidFile(t *testing.T) {
 	}
 }
 
-func TestNginxImportEnvelopeFitsMemoryBuffer(t *testing.T) {
+func TestNginxAcceptedRequestsFitMemoryBuffer(t *testing.T) {
 	data, err := os.ReadFile(filepath.Join("..", "..", "deploy", "nginx.healthbank.conf"))
 	if err != nil {
 		t.Fatal(err)
@@ -185,7 +185,10 @@ func TestNginxImportEnvelopeFitsMemoryBuffer(t *testing.T) {
 		return value
 	}
 	maximum := size("client_max_body_size")
-	if maximum != lab.MaxImportBytes+(64<<10) || size("client_body_buffer_size") < maximum {
+	// The acquisition plan can carry a full dataset plus bounded file descriptors;
+	// it is larger than either the multipart import or device-cache envelope.
+	required := max(int64(lab.MaxImportBytes+(64<<10)), int64(maxPackageBody))
+	if maximum != required || size("client_body_buffer_size") < maximum {
 		t.Fatal("nginx can reject an accepted upload or spill its request body beyond the memory buffer")
 	}
 	for _, directive := range []string{"client_body_in_file_only off;", "proxy_request_buffering off;", "proxy_buffering off;", "proxy_max_temp_file_size 0;", "proxy_cache off;", "proxy_store off;"} {

@@ -5,7 +5,7 @@
   "timezone": "Asia/Taipei",
   "checked_at_taipei": "2026-10-27 09:34:53+08:00",
   "node_version": "26.12.1",
-  "package_lock_sha256": "c90cbc1a8af004195745b3296a53ab3c759c904b3e8fd83b8f7e5a91fc01096e",
+  "package_lock_sha256": "eb2b2168fcbff3252f9fecc71b42a0aa5dd91daad98984a2069e1a26ceb426b8",
   "scope": "Every installed dependency instance from package-lock.json, with targeted refreshes listed separately. The original checked_at and existing registry comparisons remain the historical full-registry audit; adding verified test tools is not a new full-graph latest-version audit. The project root and linked source-directory definitions are not double-counted.",
   "comparison_policy": "Official registry metadata includes prereleases. Compatibility honors incoming upstream semver ranges and Node engines. Project exact pins are displayed but excluded as compatibility constraints, so they cannot hide an available upgrade. Source-built packages are compared by upstream commit, not registry version number.",
   "summary": {
@@ -5045,6 +5045,15 @@
       "retention_policy": "Use the current official Playwright stable and its matching reviewed Chromium for reproducible browser/PDF acceptance; expose the newer daily alpha instead of calling stable the highest published version.",
       "toolchain_file": "web/tests/browser/toolchain.json",
       "package_lock_sha256": "c90cbc1a8af004195745b3296a53ab3c759c904b3e8fd83b8f7e5a91fc01096e"
+    }
+  ],
+  "lockfile_metadata_updates": [
+    {
+      "checked_at": "2026-10-28T11:55:46.230742+00:00",
+      "scope": "Application root version only, from 1.0.3-rc.10 to 1.0.3-rc.11; all dependency package selections, versions, integrities, links and upstream metadata are unchanged. This is not a new registry audit.",
+      "previous_package_lock_sha256": "c90cbc1a8af004195745b3296a53ab3c759c904b3e8fd83b8f7e5a91fc01096e",
+      "package_lock_sha256": "eb2b2168fcbff3252f9fecc71b42a0aa5dd91daad98984a2069e1a26ceb426b8",
+      "dependency_selection_changed": false
     }
   ]
 }

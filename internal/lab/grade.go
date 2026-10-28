@@ -205,7 +205,7 @@ func (c *Catalog) Normalize(raw []RawRecord, s *Settings) []Record {
 		d := c.match(r)
 		p := parseValue(r.Result)
 		lo, hi := parseReference(r.Reference)
-		rec := Record{ID: rowID(r, idx), ItemID: d.ID, ConfigurationKey: d.Key, ItemName: r.ItemName, DisplayName: d.Name, Category: category(d), ExamDate: NormalizeDate(r.CheckDate), VisitDate: NormalizeDate(r.VisitDate), RawCheckDate: r.CheckDate, RawVisitDate: r.VisitDate, OrderCode: r.OrderCode, OrderName: r.OrderName, Result: r.Result, Unit: r.Unit, ReferenceLow: lo, ReferenceHigh: hi, ReferenceText: r.Reference, Institution: r.Institution, Source: r.Source, ReferenceStatus: referenceStatus(p, lo, hi), NumericValue: numberFloat(p.exact), ValueKind: p.kind, RuleSource: "none", OfficialFlag: r.OfficialFlag}
+		rec := Record{ID: rowID(r, idx), ItemID: d.ID, ConfigurationKey: d.Key, ItemName: r.ItemName, DisplayName: d.Name, Category: category(d), ExamDate: NormalizeDate(r.CheckDate), VisitDate: NormalizeDate(r.VisitDate), UploadDate: NormalizeDate(r.UploadDate), RawCheckDate: r.CheckDate, RawVisitDate: r.VisitDate, RawUploadDate: r.UploadDate, OrderCode: r.OrderCode, OrderName: r.OrderName, Result: r.Result, Unit: r.Unit, ReferenceLow: lo, ReferenceHigh: hi, ReferenceText: r.Reference, Institution: r.Institution, Source: r.Source, SourceName: r.SourceName, ReferenceStatus: referenceStatus(p, lo, hi), NumericValue: numberFloat(p.exact), ValueKind: p.kind, RuleSource: "none", OfficialFlag: r.OfficialFlag}
 		if d.Kind == "metadata" {
 			rec.ValueKind = "metadata"
 			rec.NumericValue = nil
@@ -235,15 +235,18 @@ func (c *Catalog) Normalize(raw []RawRecord, s *Settings) []Record {
 		case "within":
 			rec.Level = pointer(1)
 			rec.RuleSource = "live_report"
+			setGradingContext(&rec, "source_reference", "report_reference", c.Rules["report_reference"])
 			rec.Interpretation = "位於本筆報告的原院參考區間。"
 		case "high", "low":
 			rec.Level = pointer(3)
 			rec.RuleSource = "live_report"
+			setGradingContext(&rec, "source_reference", "report_reference", c.Rules["report_reference"])
 			rec.Interpretation = "偏離本筆報告的原院參考區間；顏色不代表已校準的疾病嚴重度。"
 		}
 		rule := c.Rules[d.Rule]
 		if rule.Kind == "numeric_bands" {
 			if ruleMatchesUnit(rule, r.Unit) && numericKind(p) {
+				setGradingContext(&rec, "profile", d.Rule, rule)
 				if level, ok := classifyBands(p, sourceBands(rule)); ok {
 					rec.Level = level
 					rec.RuleSource = strings.Join(rule.Sources, ",")
@@ -267,14 +270,17 @@ func (c *Catalog) Normalize(raw []RawRecord, s *Settings) []Record {
 			token := strings.ToLower(strings.TrimSpace(r.Result))
 			switch {
 			case containsToken(rule.NormalText, token):
+				setGradingContext(&rec, "qualitative", d.Rule, rule)
 				rec.Level = pointer(1)
 				rec.RuleSource = "qualitative_reference"
 				rec.Interpretation = "符合此項目的預期定性結果；不代表其他檢查均正常。"
 			case containsToken(rule.PositiveText, token):
+				setGradingContext(&rec, "qualitative", d.Rule, rule)
 				rec.Level = pointer(3)
 				rec.RuleSource = "qualitative_reference"
 				rec.Interpretation = "定性／半定量異常標記；加號數量不直接對應危險級別。"
 			case containsToken(rule.ReviewText, token):
+				setGradingContext(&rec, "qualitative", d.Rule, rule)
 				rec.Level = nil
 				rec.RuleSource = "qualitative_reference"
 				rec.Interpretation = "微量／弱反應的意義依檢驗方法而異，部分方法列為可接受；須核對原院參考說明，未直接指定異常級別。"
@@ -287,6 +293,7 @@ func (c *Catalog) Normalize(raw []RawRecord, s *Settings) []Record {
 				// verified-unit thresholds to a later unit-less source result.
 				rec.Interpretation += " 個人設定尚未套用，須先確認此筆資料的量測單位。"
 			} else if len(o.Bands) > 0 {
+				setGradingContext(&rec, "personal", "personal", Rule{})
 				if v, matched := classifyBands(p, o.Bands); matched {
 					rec.Level = v
 					rec.RuleSource = "personal"
@@ -297,6 +304,7 @@ func (c *Catalog) Normalize(raw []RawRecord, s *Settings) []Record {
 					rec.Interpretation = "結果未完整落在單一個人設定區間；未指定單一分級。"
 				}
 			} else if o.ReferenceLow != nil || o.ReferenceHigh != nil {
+				setGradingContext(&rec, "personal", "personal", Rule{})
 				status := referenceStatus(p, o.ReferenceLow, o.ReferenceHigh)
 				switch status {
 				case "within":
@@ -319,6 +327,7 @@ func (c *Catalog) Normalize(raw []RawRecord, s *Settings) []Record {
 			}
 			bands := sourceBands(alertRule)
 			if alert, ok := guaranteedAlertFloor(p, bands); ok {
+				appendGradingContext(&rec, "independent_alert", alertID, alertRule)
 				if rec.Level == nil || *rec.Level < *alert {
 					rec.Level = alert
 				}
@@ -331,7 +340,7 @@ func (c *Catalog) Normalize(raw []RawRecord, s *Settings) []Record {
 			rec.Interpretation += " SGLT2類用藥可增加尿糖。"
 		}
 		if d.ID == "venous_oxygen_saturation" || d.ID == "venous_po2" {
-			rec.Interpretation += " 此為靜脈血氣，不能套用指尖SpO2／動脈血氧門檻。"
+			rec.Interpretation += " 此項血氣的動脈／靜脈檢體未經來源確認，不能直接套用指尖 SpO2／動脈血氧門檻。"
 		}
 		if rec.ExamDate == "" {
 			rec.Interpretation += " 檢查日期格式待確認，未以就醫日期代替。"

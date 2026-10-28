@@ -253,7 +253,7 @@ test('unified laboratory events preserve duplicate raw inequalities, source unit
   const record = { id: 'same-id', item_name: '合成檢驗原名', display_name: '合成檢驗', result: '>50',
     unit: 'mg/dL', reference_text: '<40', reference_low: null, reference_high: '40', official_flag: '1',
     exam_date: '2026-10-28', visit_date: '2026-10-20', institution: '合成院所', source: '合成檢驗來源',
-    order_code: 'SYNTHETIC', order_name: '合成醫令' };
+    order_code: 'SYNTHETIC', order_name: '合成醫令', raw_upload_date: '115/11/03 09:17', upload_date: '2026-11-03', source_name: '合成原始來源名稱' };
   const events = laboratoryEvents({ records: [record, { ...record }], fetched_at: '2026-10-28', complete: false, warnings: [] });
   assert.equal(events.length, 2);
   assert.notEqual(events[0].id, events[1].id);
@@ -263,7 +263,10 @@ test('unified laboratory events preserve duplicate raw inequalities, source unit
   assert.deepEqual(events[0].entry.fields.find(field => field.name === '原始結果'), { name: '原始結果', value: '>50', unit: 'mg/dL' });
   assert.equal(events[0].entry.fields.find(field => field.name === '就醫日期（非採檢日期）').value, '2026-10-20');
   assert.equal(events[0].entry.fields.find(field => field.name === '原院旗標（原文）').value, '1');
+  assert.equal(events[0].entry.fields.find(field => field.name === '上傳日期（原文，非採檢日期）').value, '115/11/03 09:17');
+  assert.equal(events[0].entry.fields.find(field => field.name === '資料來源名稱（原文）').value, '合成原始來源名稱');
   assert.equal(filterHealthEvents(events, { ...noFilter, text: '>50', category: 'laboratory' }).length, 2);
+  assert.equal(filterHealthEvents(events, { ...noFilter, text: 'laboratory 合成原始來源名稱' }).length, 2);
 });
 
 test('known source timestamps remain selectable by date while their full original values survive', () => {

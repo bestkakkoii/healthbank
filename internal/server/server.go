@@ -51,6 +51,8 @@ type session struct {
 	settings                 lab.Settings
 	raw                      []lab.RawRecord
 	officialQuery            *officialQueryMetadata
+	cacheProvenance          *cacheReportProvenance
+	reportRevision           uint64
 	fetched                  string
 	complete                 bool
 	warnings                 []string
@@ -60,6 +62,7 @@ type App struct {
 	mu       sync.Mutex
 	sessions map[string]*session
 	subjects map[string]*subjectScope
+	packages map[string]*acquisitionPackage
 	store    *store.Store
 	catalog  *lab.Catalog
 	secret   []byte
@@ -105,8 +108,14 @@ func NewWithLimits(db *store.Store, secret []byte, version string, limits config
 	a.mux.HandleFunc("GET /api/supplementary", a.withSession(a.supplementary))
 	a.mux.HandleFunc("GET /api/documents", a.withSession(a.documents))
 	a.mux.HandleFunc("POST /api/documents/prepare", a.withSession(a.prepareDocument))
+	a.mux.HandleFunc("POST /api/acquisition/packages", a.withSession(a.createAcquisitionPackage))
+	a.mux.HandleFunc("GET /api/acquisition/packages/download", a.withSession(a.downloadAcquisitionPackage))
+	a.mux.HandleFunc("GET /api/acquisition/packages/status", a.acquisitionPackageStatus)
+	a.mux.HandleFunc("DELETE /api/acquisition/packages", a.cancelAcquisitionPackage)
 	a.mux.HandleFunc("GET /api/reports/current", a.withSession(a.currentReports))
 	a.mux.HandleFunc("POST /api/reports/import", a.withSession(a.importReports))
+	a.mux.HandleFunc("POST /api/reports/cache", a.withSession(a.restoreCachedReports))
+	a.mux.HandleFunc("DELETE /api/reports/cache", a.withSession(a.clearCachedReports))
 	a.mux.HandleFunc("POST /api/reports/demo", a.withSession(a.demo))
 	a.mux.HandleFunc("GET /api/catalog", a.withSession(a.catalogResponse))
 	a.mux.HandleFunc("PUT /api/settings", a.withSession(a.saveSettings))
@@ -154,6 +163,7 @@ func (a *App) cleanup() {
 		case <-a.stop:
 			return
 		case now := <-tick.C:
+			a.expireAcquisitionPackages(now)
 			var expired []*session
 			a.mu.Lock()
 			for id, s := range a.sessions {
@@ -194,6 +204,7 @@ func (a *App) clearSession(s *session) {
 // clearSessionState preserves a newly admitted replacement report reservation.
 // Callers must install that report immediately while holding the session lock.
 func (a *App) clearSessionState(s *session) {
+	a.clearAcquisitionPackages(s)
 	a.releaseSubject(s)
 	if s.official != nil {
 		s.official.Close()
@@ -205,6 +216,8 @@ func (a *App) clearSessionState(s *session) {
 	s.settings = lab.DefaultSettings()
 	s.raw = nil
 	s.officialQuery = nil
+	s.cacheProvenance = nil
+	s.reportRevision++
 	s.fetched = ""
 	s.complete = false
 	s.warnings = []string{}
@@ -228,6 +241,7 @@ func (a *App) setCookie(w http.ResponseWriter, r *http.Request, id string) {
 }
 func (a *App) withSession(next func(http.ResponseWriter, *http.Request, *session)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		a.cancelPackagesBeforeMutation(r)
 		select {
 		case a.requests <- struct{}{}:
 			defer func() { <-a.requests }()
@@ -261,7 +275,7 @@ func (a *App) withSession(next func(http.ResponseWriter, *http.Request, *session
 		// Native download links cannot send the generation header. They require
 		// an existing authenticated session and must never bootstrap a cookie
 		// that could overwrite another tab's newer session in a late response.
-		if s == nil && r.URL.Path == "/api/documents" {
+		if s == nil && (r.URL.Path == "/api/documents" || r.URL.Path == "/api/acquisition/packages/download") {
 			a.mu.Unlock()
 			a.fail(w, r, http.StatusUnauthorized, "login_required", "請先完成官方登入，再取得個人文件。")
 			return
@@ -537,7 +551,7 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, v any) error {
 	return nil
 }
 func (a *App) sessionView(s *session) map[string]any {
-	return map[string]any{"authenticated": s.mode == "official", "mode": s.mode, "settings": s.settings, "version": a.version, "csrf_token": s.csrf, "profile_key": s.subject}
+	return map[string]any{"authenticated": s.mode == "official", "mode": s.mode, "settings": s.settings, "version": a.version, "csrf_token": s.csrf, "profile_key": s.subject, "report_revision": s.reportRevision}
 }
 func (a *App) refreshSettings(ctx context.Context, s *session) error {
 	if s.scope != nil && s.scope.ctx.Err() != nil {
@@ -633,9 +647,7 @@ func (a *App) login(w http.ResponseWriter, r *http.Request, s *session) {
 	}
 	a.bindSubject(s, config.Subject(a.secret, in.Identity))
 	s.mode = "official"
-	s.raw = nil
-	s.fetched = ""
-	s.warnings = []string{}
+	s.resetReportAfterLogin()
 	if err := a.refreshSettings(r.Context(), s); err != nil {
 		a.clearSession(s)
 		a.fail(w, r, 500, "settings_read", "登入成功但個人設定無法讀取，請稍後重試。")
@@ -648,6 +660,22 @@ func (a *App) login(w http.ResponseWriter, r *http.Request, s *session) {
 	}
 	a.json(w, 200, a.sessionView(s))
 }
+
+// Only a successful upstream login reaches this transition. Drop any earlier
+// import/demo report and its accounting without closing the verified connector.
+func (s *session) resetReportAfterLogin() {
+	if s.memory != nil {
+		s.memory.releaseReports()
+	}
+	s.raw = nil
+	s.cacheProvenance = nil
+	s.officialQuery = nil
+	s.reportRevision++
+	s.complete = false
+	s.fetched = ""
+	s.warnings = []string{}
+}
+
 func (a *App) logout(w http.ResponseWriter, r *http.Request, s *session) {
 	if s.official != nil && s.mode == "official" {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)

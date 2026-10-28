@@ -53,3 +53,20 @@ caches and synthetic evidence are excluded from the executable/source archives
 except for the first-party test scripts and their source metadata.
 
 Medical reference citations are attribution and provenance, not an assertion that guideline organizations endorse this software. See `docs/clinical-reference.zh-TW.md`.
+
+## Public terminology data
+
+The catalog's procedure-name references use selected factual Chinese/English entries
+from **衛生福利部中央健康保險署，2026，醫療服務給付項目及支付標準（CSV）**,
+dataset [174450](https://data.gov.tw/dataset/174450), snapshot retrieved 2026-10-28.
+This open data is released under the **Open Government Data License, version 1.0**;
+reuse is subject to that license's terms and attribution requirements:
+https://data.gov.tw/license. The public snapshot SHA-256 is
+`92665007200afc24946e7f80b39e2e38470b8976ecf5c23b0cc0af86d8aa9342`.
+
+Healthbank's display glossary selects and explains names with additional primary
+hospital, professional-body and manufacturer references recorded in the catalog.
+Editorial translations and uncertainty notes are identified separately from literal
+official procedure labels. These references neither establish clinical equivalence
+nor imply endorsement. No official application bundle, personal account response or
+patient record is redistributed as MIT-licensed project material.

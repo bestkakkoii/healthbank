@@ -1,10 +1,10 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
-import type { ReportResponse, SupplementEntry, SupplementReport, SupplementField, SourceDiagnostic } from './api';
+import type { ReportResponse, SupplementEntry, SupplementReport, SupplementField, SourceDiagnostic, CacheProvenance, OfficialReportQuery } from './api';
 import type { AcquisitionState, DataCategory, DownloadedAttachment, HealthDataSnapshot } from './health-data';
 import { validAcquisitionQuery } from './health-data.ts';
 import { isObject } from './model.ts';
 import { parseStrictJSON } from './strict-json.ts';
-import { assertPortableReportSize, portableRows, PORTABLE_REPORT_SCHEMA } from './portable-report.ts';
+import { assertPortableReportSize, portableRows, PORTABLE_REPORT_SCHEMA, LEGACY_PORTABLE_REPORT_SCHEMA } from './portable-report.ts';
 import { SOURCE_DATE_ROLES, SOURCE_FIELD_ROLES, SOURCE_ORIGINS, SOURCE_DIAGNOSTIC_CODES } from './source-semantics.ts';
 
 export const DATASET_SCHEMA = 'healthbank.dataset.v2';
@@ -17,12 +17,13 @@ export const UNKNOWN_DATASET_PRODUCER: DatasetProducer = { application: 'Healthb
   clinical_catalog_id: 'unknown', clinical_catalog_revision: 'unknown', clinical_evidence_revision: 'unknown' };
 export const MAX_DATASET_BYTES = 128 * 1024 * 1024;
 export const MAX_ARCHIVE_ATTACHMENT_BYTES = 32 * 1024 * 1024;
+export const MAX_ARCHIVE_ATTACHMENTS = 10_000;
 const MAX_ENTRIES = 250_000;
 const MAX_CATEGORIES = 200;
 const MAX_FIELD_BYTES = 65_536;
 const encoder = new TextEncoder();
 export type PortableRow = ReturnType<typeof portableRows>[number];
-export type LaboratoryMetadata = Pick<ReportResponse, 'fetched_at' | 'complete' | 'warnings' | 'official_query'>;
+export type LaboratoryMetadata = Pick<ReportResponse, 'fetched_at' | 'complete' | 'warnings' | 'official_query' | 'cache_provenance'>;
 export interface ImportedDataset {
   exportedAt: string;
   producer: DatasetProducer | null;
@@ -112,48 +113,79 @@ function query(value: unknown): HealthDataSnapshot['query'] {
   if (!validAcquisitionQuery(result)) return invalid();
   return result;
 }
-function catalogItems(value: unknown): DataCategory[] {
+function catalogItems(value: unknown, modern = true): DataCategory[] {
   const seen = new Set<string>();
   return list(value, MAX_CATEGORIES).map(item => {
-    const v = object(item, ['id', 'label', 'group', 'range_mode', 'has_details']);
+    const v = object(item, ['id', 'label', 'group', 'range_mode', 'has_details', ...(modern ? ['label_en'] : [])]);
     const id = categoryID(v['id']);
     if (seen.has(id)) return invalid();
     seen.add(id);
     const range = v['range_mode'];
     if (range !== 'date_search' && range !== 'source') return invalid();
     return { id, label: text(v['label'], 500), group: text(v['group'], 500), range_mode: range,
+      ...(v['label_en'] === undefined ? {} : { label_en: text(v['label_en'], 500) }),
       ...(v['has_details'] === undefined ? {} : { has_details: boolean(v['has_details']) }) };
   });
 }
-function metadata(value: unknown): LaboratoryMetadata {
-  const v = object(value, ['schema', 'records', 'fetched_at', 'complete', 'warnings', 'official_query']);
+function assertCombinedCategoryLimit(catalog: DataCategory[], data: HealthDataSnapshot, files: readonly { category: string }[]): void {
+  // Import adds fallback labels for reports and retained files absent from the
+  // supplied catalog. Bound the resulting catalog on both paths, not just each
+  // independently valid input collection.
+  const ids = new Set([...catalog.map(item => item.id), ...Object.keys(data.reports), ...files.map(file => file.category)]);
+  if (ids.size > MAX_CATEGORIES) return invalid();
+}
+function officialQuery(value: unknown): OfficialReportQuery {
+  const q = object(value, ['mode', 'start_date', 'end_date', 'reported_count']);
+  const mode = q['mode'];
+  if (mode !== 'all_history' && mode !== 'custom') return invalid();
+  const range = query({ from: q['start_date'], to: q['end_date'] });
+  if (!range.from || !range.to) return invalid();
+  return { mode, start_date: range.from, end_date: range.to,
+    reported_count: q['reported_count'] === null ? null : integer(q['reported_count'], Number.MAX_SAFE_INTEGER) };
+}
+function cacheTimestamp(value: unknown, allowEmpty = false): string {
+  const result = text(value, 100);
+  if (allowEmpty && !result) return result;
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/.test(result) ||
+    !validAcquisitionQuery({ from: result.slice(0, 10), to: result.slice(0, 10) }) || !Number.isFinite(Date.parse(result))) return invalid();
+  return result;
+}
+function cacheProvenance(value: unknown): CacheProvenance {
+  const v = object(value, ['kind', 'saved_at', 'restored_at', 'source_fetched_at', 'source_complete', 'source_query']);
+  if (v['kind'] !== 'device_cache') return invalid();
+  return { kind: 'device_cache', saved_at: cacheTimestamp(v['saved_at']), restored_at: cacheTimestamp(v['restored_at']),
+    source_fetched_at: cacheTimestamp(v['source_fetched_at'], true), source_complete: boolean(v['source_complete']),
+    ...(v['source_query'] === undefined ? {} : { source_query: officialQuery(v['source_query']) }) };
+}
+function metadata(value: unknown, modern = true): LaboratoryMetadata {
+  const v = object(value, ['schema', 'records', 'fetched_at', 'complete', 'warnings', 'official_query', ...(modern ? ['cache_provenance'] : [])]);
   const result: LaboratoryMetadata = { fetched_at: text(v['fetched_at'], 100), complete: boolean(v['complete']),
     warnings: list(v['warnings'], 1000).map(warning => text(warning)) };
   if (v['official_query'] !== undefined) {
-    const q = object(v['official_query'], ['mode', 'start_date', 'end_date', 'reported_count']);
-    const mode = q['mode'];
-    if (mode !== 'all_history' && mode !== 'custom') return invalid();
-    const range = query({ from: q['start_date'], to: q['end_date'] });
-    if (!range.from || !range.to) return invalid();
-    result.official_query = { mode, start_date: range.from, end_date: range.to,
-      reported_count: q['reported_count'] === null ? null : integer(q['reported_count'], Number.MAX_SAFE_INTEGER) };
+    result.official_query = officialQuery(v['official_query']);
+  }
+  if (v['cache_provenance'] !== undefined) {
+    result.cache_provenance = cacheProvenance(v['cache_provenance']);
+    if (result.complete || result.official_query || result.fetched_at !== result.cache_provenance.source_fetched_at) return invalid();
   }
   return result;
 }
 const LAB_FIELDS = ['check_date', 'order_code', 'order_name', 'item_name', 'result', 'unit', 'reference', 'institution', 'visit_date', 'source', 'official_flag'];
-function laboratoryRows(value: unknown): PortableRow[] {
+function laboratoryRows(value: unknown, modern = true): PortableRow[] {
   return list(value, 50_000).map(item => {
-    const v = object(item, LAB_FIELDS);
+    const v = object(item, [...LAB_FIELDS, ...(modern ? ['upload_date', 'source_name'] : [])]);
     const row = { check_date: text(v['check_date']), order_code: text(v['order_code']), order_name: text(v['order_name']),
       item_name: text(v['item_name']), result: text(v['result']), unit: text(v['unit']), reference: text(v['reference']),
-      institution: text(v['institution']), visit_date: text(v['visit_date']), source: text(v['source']), official_flag: text(v['official_flag']) };
+      institution: text(v['institution']), visit_date: text(v['visit_date']), source: text(v['source']), official_flag: text(v['official_flag']),
+      ...(v['upload_date'] === undefined ? {} : { upload_date: text(v['upload_date']) }),
+      ...(v['source_name'] === undefined ? {} : { source_name: text(v['source_name']) }) };
     if (!row.item_name.trim()) return invalid();
     return row;
   });
 }
 function mime(value: unknown): string {
   const result = text(value, 100).toLowerCase().split(';')[0]?.trim() ?? '';
-  if (!['application/pdf', 'application/zip', 'application/octet-stream', 'application/dicom', 'text/plain', 'image/jpeg'].includes(result)) return invalid();
+  if (!['application/pdf', 'application/zip', 'application/octet-stream', 'application/dicom', 'text/plain', 'text/calendar', 'image/jpeg', 'image/png'].includes(result)) return invalid();
   return result;
 }
 function filename(value: unknown): string {
@@ -207,11 +239,14 @@ function snapshot(value: unknown, modern = true): HealthDataSnapshot {
   let entries = 0;
   function report(value: unknown): SupplementReport {
     const r = object(value, ['category', 'entries', 'coverage', 'fetched_at', 'start_date', 'end_date', 'complete',
-      ...(modern ? ['contract_revision', 'diagnostics'] : [])]);
+      ...(modern ? ['contract_revision', 'diagnostics', 'cache_provenance'] : [])]);
     const rows = list(r['entries'], 50_000);
     entries += rows.length;
     if (entries > MAX_ENTRIES) return invalid();
+    const cached = r['cache_provenance'] === undefined ? undefined : cacheProvenance(r['cache_provenance']);
+    if (cached && (boolean(r['complete']) || r['fetched_at'] !== cached.source_fetched_at || cached.source_query)) return invalid();
     return { category: text(r['category'], 150), entries: rows.map(row => entry(row, modern)), coverage: text(r['coverage']), fetched_at: text(r['fetched_at'], 100), complete: boolean(r['complete']),
+      ...(cached === undefined ? {} : { cache_provenance: cached }),
       ...(r['contract_revision'] === undefined ? {} : { contract_revision: fixedID(r['contract_revision']) }),
       ...(r['diagnostics'] === undefined ? {} : { diagnostics: diagnostics(r['diagnostics']) }),
       ...(r['start_date'] === undefined ? {} : { start_date: text(r['start_date'], 100) }),
@@ -279,15 +314,33 @@ async function sha256(bytes: Uint8Array): Promise<string> {
   return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
-function validateAttachment(bytes: Uint8Array, contentType: string): void {
-  const starts = (...prefix: number[]) => prefix.every((byte, index) => bytes[index] === byte);
-  if (contentType === 'application/pdf' && !starts(0x25, 0x50, 0x44, 0x46, 0x2d)) return invalid();
-  if (contentType === 'application/zip' && !(starts(0x50, 0x4b, 3, 4) || starts(0x50, 0x4b, 5, 6))) return invalid();
-  if (contentType === 'image/jpeg' && !starts(0xff, 0xd8, 0xff)) return invalid();
-  if (contentType === 'text/plain') {
-    try { new TextDecoder('utf-8', { fatal: true }).decode(bytes); }
-    catch { return invalid(); }
+export const archiveAttachmentMIME = (value: unknown): string => mime(value);
+export class ArchiveAttachmentValidator {
+  private readonly prefix = new Uint8Array(8);
+  private prefixLength = 0;
+  private readonly decoder: TextDecoder | null;
+  private readonly contentType: string;
+  constructor(contentType: string) {
+    this.contentType = mime(contentType);
+    this.decoder = ['text/plain', 'text/calendar'].includes(this.contentType) ? new TextDecoder('utf-8', { fatal: true }) : null;
   }
+  update(bytes: Uint8Array): void {
+    const count = Math.min(this.prefix.length - this.prefixLength, bytes.length);
+    this.prefix.set(bytes.subarray(0, count), this.prefixLength); this.prefixLength += count;
+    // Streaming validation also handles a UTF-8 sequence split across slices.
+    this.decoder?.decode(bytes, { stream: true });
+  }
+  finish(): void {
+    this.decoder?.decode();
+    const starts = (...prefix: number[]) => prefix.length <= this.prefixLength && prefix.every((byte, index) => this.prefix[index] === byte);
+    if (this.contentType === 'application/pdf' && !starts(0x25, 0x50, 0x44, 0x46, 0x2d)) return invalid();
+    if (this.contentType === 'application/zip' && !(starts(0x50, 0x4b, 3, 4) || starts(0x50, 0x4b, 5, 6))) return invalid();
+    if (this.contentType === 'image/jpeg' && !starts(0xff, 0xd8, 0xff)) return invalid();
+    if (this.contentType === 'image/png' && !starts(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return invalid();
+  }
+}
+function validateAttachment(bytes: Uint8Array, contentType: string): void {
+  const validator = new ArchiveAttachmentValidator(contentType); validator.update(bytes); validator.finish();
 }
 
 function portableSupplementReport(category: string, source: SupplementReport,
@@ -299,6 +352,7 @@ function portableSupplementReport(category: string, source: SupplementReport,
     ...(source.end_date === undefined ? {} : { end_date: source.end_date }),
     ...(source.contract_revision === undefined ? {} : { contract_revision: source.contract_revision }),
     ...(source.diagnostics === undefined ? {} : { diagnostics: source.diagnostics.map(item => ({ ...item })) }),
+    ...(source.cache_provenance === undefined ? {} : { cache_provenance: cacheProvenance(source.cache_provenance) }),
     entries: source.entries.map(row => ({ date: row.date, institution: row.institution, title: row.title, source: row.source,
       fields: row.fields.map(field => sourceField(field, true)),
       ...(row.date_role === undefined ? {} : { date_role: row.date_role }),
@@ -337,9 +391,12 @@ export function supplementReportJSON(report: SupplementReport): string {
   return output;
 }
 
-export async function exportDataset(report: ReportResponse, data: HealthDataSnapshot, files: DownloadedAttachment[], categories: DataCategory[], bom = false,
-  producedBy: DatasetProducer = UNKNOWN_DATASET_PRODUCER, importedFrom?: DatasetProducer): Promise<string> {
-  if (files.length > 10_000) return invalid();
+export interface DatasetPackageFile { category: string; id: string; archive_id: string }
+export interface DatasetPackageProjection { content: string; files: DatasetPackageFile[] }
+
+async function projectDataset(report: ReportResponse, data: HealthDataSnapshot, files: DownloadedAttachment[], categories: DataCategory[], bom = false,
+  producedBy: DatasetProducer = UNKNOWN_DATASET_PRODUCER, importedFrom?: DatasetProducer): Promise<DatasetPackageProjection> {
+  if (files.length > MAX_ARCHIVE_ATTACHMENTS) return invalid();
   const labRecords = laboratoryRows(portableRows(report.records));
   // This is the exact body sent to the laboratory importer on restore. Check
   // the same bound on both paths before producing an un-restorable archive.
@@ -378,7 +435,8 @@ export async function exportDataset(report: ReportResponse, data: HealthDataSnap
       size: file.bytes.length, sha256: await sha256(file.bytes), data_base64: base64(file.bytes) });
   }
   const reportMetadata: LaboratoryMetadata = { fetched_at: report.fetched_at, complete: report.complete,
-    warnings: report.warnings, ...(report.official_query === undefined ? {} : { official_query: report.official_query }) };
+    warnings: report.warnings, ...(report.official_query === undefined ? {} : { official_query: report.official_query }),
+    ...(report.cache_provenance === undefined ? {} : { cache_provenance: cacheProvenance(report.cache_provenance) }) };
   const document: DatasetDocument = { schema: DATASET_SCHEMA, exported_at: new Date().toISOString(), producer: producer(producedBy),
     ...(importedFrom === undefined ? {} : { imported_from: producer(importedFrom) }),
     laboratory: { schema: PORTABLE_REPORT_SCHEMA, records: labRecords, ...reportMetadata },
@@ -386,9 +444,33 @@ export async function exportDataset(report: ReportResponse, data: HealthDataSnap
   // Validate the source-only projection before writing, preserving every row or
   // refusing the whole export. In particular, never truncate a large dataset.
   snapshot(document.data); catalogItems(document.catalog); metadata(document.laboratory);
+  assertCombinedCategoryLimit(document.catalog, document.data, attachments);
   const output = `${bom ? '\uFEFF' : ''}${JSON.stringify(document)}\n`;
   if (encoder.encode(output).length > MAX_DATASET_BYTES) throw new Error('資料包超過 128 MiB；請先另存大型附件，再分次整理來源。沒有輸出截斷的檔案。');
-  return output;
+  const packageFiles: DatasetPackageFile[] = [];
+  for (const [key, archiveID] of handles) {
+    const parts: unknown = JSON.parse(key);
+    if (Array.isArray(parts) && parts.length === 3 && parts[1] === 'attachment' &&
+      typeof parts[0] === 'string' && typeof parts[2] === 'string') {
+      packageFiles.push({ category: parts[0], id: parts[2], archive_id: archiveID });
+    }
+  }
+  return { content: output, files: packageFiles };
+}
+
+export async function exportDataset(report: ReportResponse, data: HealthDataSnapshot, files: DownloadedAttachment[], categories: DataCategory[], bom = false,
+  producedBy: DatasetProducer = UNKNOWN_DATASET_PRODUCER, importedFrom?: DatasetProducer): Promise<string> {
+  return (await projectDataset(report, data, files, categories, bom, producedBy, importedFrom)).content;
+}
+
+// Live handles stay in the transient package request only. The downloadable
+// dataset uses the exact same local archive relationships as ordinary export.
+export async function exportDatasetPackage(report: ReportResponse, data: HealthDataSnapshot, categories: DataCategory[],
+  producedBy: DatasetProducer = UNKNOWN_DATASET_PRODUCER): Promise<DatasetPackageProjection> {
+  const projected = await projectDataset(report, data, [], categories, false, producedBy);
+  if (projected.files.some(file => !/^[a-f0-9]{48}$/.test(file.id)))
+    throw new Error('部分附件不屬於目前官方工作階段；請重新取得來源，或使用原本的資料包匯出。');
+  return projected;
 }
 
 export async function importDataset(bytes: Uint8Array): Promise<ImportedDataset> {
@@ -404,12 +486,13 @@ export async function importDataset(bytes: Uint8Array): Promise<ImportedDataset>
   const producedBy = modern ? producer(v['producer']) : null;
   const importedFrom = modern && v['imported_from'] !== undefined ? producer(v['imported_from']) : null;
   const lab = object(v['laboratory']);
-  if (lab['schema'] !== PORTABLE_REPORT_SCHEMA) return invalid();
-  const laboratoryMetadata = metadata(lab);
-  const laboratoryJSON = JSON.stringify({ schema: PORTABLE_REPORT_SCHEMA, records: laboratoryRows(lab['records']) });
+  const modernLaboratory = lab['schema'] === PORTABLE_REPORT_SCHEMA;
+  if (!modernLaboratory && lab['schema'] !== LEGACY_PORTABLE_REPORT_SCHEMA || !modern && modernLaboratory) return invalid();
+  const laboratoryMetadata = metadata(lab, modern);
+  const laboratoryJSON = JSON.stringify({ schema: lab['schema'], records: laboratoryRows(lab['records'], modernLaboratory) });
   assertPortableReportSize(laboratoryJSON);
   const data = snapshot(v['data'], modern);
-  const catalog = catalogItems(v['catalog']);
+  const catalog = catalogItems(v['catalog'], modern);
   const files: DownloadedAttachment[] = [];
   const references = new Map<string, { category: string; name: string; content_type: string }>();
   for (const [category, report] of Object.entries(data.reports)) {
@@ -423,7 +506,7 @@ export async function importDataset(bytes: Uint8Array): Promise<ImportedDataset>
   }
   let total = 0;
   const seen = new Set<string>();
-  for (const item of list(v['attachments'], 10_000)) {
+  for (const item of list(v['attachments'], MAX_ARCHIVE_ATTACHMENTS)) {
     const file = object(item, ['category', 'id', 'name', 'content_type', 'size', 'sha256', 'data_base64']);
     const id = reference(file['id']), category = categoryID(file['category']);
     const name = filename(file['name']), contentType = mime(file['content_type']);
@@ -439,6 +522,7 @@ export async function importDataset(bytes: Uint8Array): Promise<ImportedDataset>
     validateAttachment(decoded, contentType);
     files.push({ category, id, name, content_type: contentType, bytes: decoded });
   }
+  assertCombinedCategoryLimit(catalog, data, files);
   const known = new Set(catalog.map(category => category.id));
   for (const id of new Set([...Object.keys(data.reports), ...files.map(file => file.category)])) if (!known.has(id)) {
     catalog.push({ id, label: id, group: '資料包來源', range_mode: 'source', has_details: true });
@@ -448,5 +532,6 @@ export async function importDataset(bytes: Uint8Array): Promise<ImportedDataset>
 }
 
 export function datasetLaboratoryRows(dataset: ImportedDataset): PortableRow[] {
-  return laboratoryRows(object(parseStrictJSON(dataset.laboratoryJSON), ['schema', 'records'])['records']);
+  const document = object(parseStrictJSON(dataset.laboratoryJSON), ['schema', 'records']);
+  return laboratoryRows(document['records'], document['schema'] === PORTABLE_REPORT_SCHEMA);
 }

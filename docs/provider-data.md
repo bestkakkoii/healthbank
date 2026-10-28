@@ -3,8 +3,8 @@
 Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
 Reviewed **2026-10-28** (Asia/Taipei). This appendix records the additional
-provider connectors in `internal/nhi/provider.go`, `provider_specs.go` and
-`provider_extensions.go`.
+provider connectors in `internal/nhi/provider*.go` and their explicit source
+contracts in `internal/nhi/provider-contracts.json`.
 It extends the [session and laboratory protocol](nhi_protocol.md); it is not
 an official, supported public API specification or evidence of live account access.
 
@@ -12,9 +12,11 @@ an official, supported public API specification or evidence of live account acce
 
 The official service supplies authorized data. Healthbank organizes the returned
 records using its own search, timeline, comparison, retrieval progress and portable
-dataset. The connector does not reproduce the website's calendars, daily-entry
-workflow, administrative forms, notifications or risk calculators. Reading an
-existing self-entered record does not add a new official record.
+dataset. It reads existing calendar/reminder/notification records, questionnaire
+answers and stored assessment output as source data. It does not edit official
+calendars, submit daily entries, operate administrative forms, claim rewards or
+recompute source risk calculators. Reading an existing record does not add a new
+official record or validate an upstream clinical interpretation.
 
 Every request uses the existing fixed official HTTPS origin, per-person in-memory
 Cookie/JWT session, timeouts, typed errors and expiry handling. There is no generic
@@ -25,7 +27,10 @@ not the nearby add/update/delete operations present in the same bundles.
 ## Acquisition contract
 
 `GET /api/data/catalog` describes acquisition capability. The provider additions
-expose `id`, `label`, `group`, `range_mode` and `has_details`. The application uses
+expose `id`, `label`, `label_en`, `group`, `range_mode` and `has_details`, with
+exact-label field vocabulary and `terminology_basis=healthbank_editorial_translation`.
+English interface labels do not claim to be official API terminology or alter raw
+source values. The application uses
 the existing authenticated `GET /api/supplementary?category=...` response shape.
 An opaque, session/category-bound `detail_id` is passed back as `detail=...` to
 retrieve its associated record. No official row identifier is accepted from the
@@ -40,11 +45,22 @@ browser or exported as a reusable authentication credential.
   body-measurement, family-doctor and exercise-device lists discover source items;
   their details issue the explicit period search. A list alone is not completion
   of those detail searches.
+- `calendar_events` uses **1912-01-01 through 2200-12-31** when both dates are
+  empty so existing future appointments are not silently excluded. These are
+  application-accepted date bounds, not upstream retention promises. Explicit
+  dates are unchanged and the report records the actual requested interval.
 - Physiology and exercise-device reads include source raw records when provided,
   explicitly requested date-series rows,
   and any returned device-day indices. Device-day records have nested opaque
   references; the acquisition queue must continue through those references.
   Source indices carry `kind: source_index` and are not fabricated measurements.
+- Menstrual acquisition preserves the independent saved-period list and explicit
+  month/calendar reads. Each requested month is a source-index handle; full-detail
+  acquisition follows those handles and any returned day references. It does not
+  assume that the initial saved-period list contains every calendar entry. The
+  accepted 1912–2200 bound permits at most 3,468 months; broad requests may take
+  many sequential reads. Progress, cancellation and incomplete status remain
+  visible; no unsupported retention cutoff is imposed to skip older months.
 - The complete response body is bounded to 16 MiB per request, 50,000 records,
   and 65,536 bytes per projected scalar. Nested prescription refill arrays are
   capped at 1,000 entries. Exceeding a bound fails the affected operation instead
@@ -65,7 +81,7 @@ clinical detail reads do not copy the entire reference map for each historical r
 
 ## Versioned fields, date meanings and response-quality diagnostics
 
-`contract_revision: nhi-spa.2026-10-28.2` identifies the Healthbank projection;
+`contract_revision: nhi-spa.2026-10-28.3` identifies the Healthbank projection;
 it is not an official API version. Every allowlisted projected source field has
 a stable lowercase ASCII `code`, independent of its translated label. Known
 result, unit, reference, method, specimen and date fields have a `role`;
@@ -106,14 +122,22 @@ absence does not authorize retroactive inference of dates, origins or methods.
 
 ## Repeatable public-contract drift review
 
-`internal/nhi/provider-contracts.json` records the 38 provider projections,
+`internal/nhi/provider-contracts.json` records the current provider projections,
 observed list/detail roots, collection shapes, known field/unit declarations,
-source asset loci and 87 reviewed public chunk hashes. Go regression validation
+source asset loci and every one of the **215 current lazy chunks** plus **nine
+entry scripts** (224 distinct JavaScript assets). Go regression validation
 requires those projections to remain consistent with the implementation.
+The factual [source inventory](provider-source-inventory.json) retains each
+asset's classification and every observed HTTP call-site/operation decision;
+third-party bundle bodies and research extracts are not redistributed as product
+code. Root/field bindings and independent synthetic fixtures support the
+projection review; an endpoint count alone cannot establish field completeness.
 The read-only checker first reads the **current public entry document**, then
 parses its **current** app asset and chunk map without executing JavaScript.
-It retrieves the currently referenced watched files; an old immutable bundle
-remaining downloadable cannot hide a new map or changed contract.
+It checks the entire current lazy-module set and entry-script set, including
+added/removed modules, mutable helper files and the entry document's digest.
+An old immutable bundle remaining downloadable cannot hide a new map or changed
+contract. New modules remain a review requirement even if existing routes work.
 
 ```bash
 python3 -W error scripts/test_provider_contracts.py
@@ -127,9 +151,10 @@ medical APIs, use cookies, authenticate, execute scripts or update the registry.
 Exit 0 means the checked snapshot matched; exit 2 reports changed bytes/map;
 exit 3 reports unavailable or unrecognized evidence. Network failure is not a
 successful no-change check and does not automatically alter clinical rules.
-The online check on **2026-10-28 07:26:25 UTC** found the current
-`app.64b5ac08.js` and all **87** watched chunks unchanged against the reviewed
-snapshot. This is public-contract evidence, not real-account validation.
+The complete source graph was retrieved on **2026-10-28 08:49:29–08:49:46 UTC**.
+It contained `app.64b5ac08.js`, 215 lazy chunks and nine entry scripts; all 224
+distinct assets were read without executing them or calling personal APIs.
+The latest executable checker result is recorded in the verification document.
 
 ## Reference capacity and atomic refresh
 
@@ -156,10 +181,9 @@ The code preserves the observed path casing. `GET` is the default unless marked
 `POST`. Roots are exact observed source arrays/objects; parsing is case-insensitive
 only after rejecting conflicting case variants.
 
-These **38 provider categories** comprise seven `date_search` categories
-(`glucose`, `lipids`, `physiology`, `body_measurements`, `family_followup`,
-`family_health_followup`, `device_activity`) and 31 `source` categories. They are
-additional to the existing encounter, laboratory and document connectors. A
+The registry and public-source inventory record exact current category membership
+and each `date_search`/`source` capability. The following baseline and expansion
+tables accompany the existing encounter, laboratory and document connectors. A
 category count describes acquisition routes, not a count of available records or
 a statement that every authenticated person is eligible for each service.
 
@@ -203,6 +227,41 @@ a statement that every authenticated person is eligible for each service.
 | `device_activity` | POST `IHKEMASTER/SP_IHKE3099S05`, body `{ "c_parent_fun_code": "IHKE3207" }`, root `sp_IHKE3207S01` | Discovers only source-provided `IHKE3207S05?s=...` activity selectors, then reads period series and nested device-day records. |
 | `menstrual` | `ihke3208s01/SP_IHKE3208S06`, root `sP_IHKE3208S06` | Existing recorded periods; no cycle/fertility prediction or calendar mutation. |
 | `osteoporosis` | `ihke3411s01/page_load?s_type=&s_sort=A1`, root `sp_IHKE3411S01_data` | All source types, report details and source-available image attachments. |
+
+### Coverage expansion from the full public graph
+
+| Category or existing extension | Source contract | Preserved meaning |
+| --- | --- | --- |
+| `annual_overview` | `3302S01/page_load`, source year → `3302S02` / `3302S03` | Each returned year's counts/costs and outpatient/inpatient records; radiation is a source summary, not inferred personal dosimetry. |
+| `recent_visits` | `3301s02/page_load` | Independent western/Chinese/dental source snapshots and source-bound details; not assumed identical to the history query. |
+| Nested medical records | `3303s03/pageload`, `3303s04/pageload`, `3303s05/pageload` | Returned laboratory/image rows, history selectors, precise values and original date/context fields. |
+| Six care categories | `3504/3505/3507/3513/3516/3517` chart paths | All 40 observed fixed selectors acquired independently, including empty-table cases; raw source channels retain missing units. |
+| `source_disease_assessments` | POST `IHKE3723S01/Get_Disease_Data` | Existing assessments and nested supporting observations, reference bounds and source dates. |
+| `source_diabetes_assessment` | `ihke3518s01/page_load` | Existing source risk channels, text and DCSI items; no new source AI request or Healthbank calculation. |
+| `source_liver_risk`, `source_kidney_risk`, `source_cvd_risk` | Existing POST reads in `3502/3503/3506` | Source input, previous output and observations stay separate. Source defaults/display flags remain visible; no inferred clinical validity. |
+| `prenatal`, `child_preventive` | POST `3104S06` / `3104S07` | Actual top-level source arrays, original headings/check items/institutions; heading dates are not fabricated as structured event dates. |
+| `lifestyle_assessment` | Existing `3713` score/definition/answer reads | The source's two recent mixed-origin scores and available self-entered answers use their distinct source indices. |
+| `child_schedule` | `3703S01`, bound `3703S04`, stored `3104S52` | Saved child context, suggested vaccination windows and existing reminder text; not proof of vaccination. |
+| `health_coin_clinical` | Existing-consent `3714s06/s07/s08` reads | Actual check/vaccination/lifestyle results and separately stored questionnaire date; no joining, consent, reward claim or recalculation. |
+| `campaign_measurements` | `3799S01/page_load` and `3205S01` | Existing campaign snapshot plus all five linked measurement arrays; ambiguous `c_HbA1c` naming is preserved, not relabeled as confirmed HbA1c. |
+| `diet_source_totals`, `exercise_source_totals` | POST `3206S06` / `3207S07` | Separately returned source aggregates/series, not recomputed from visible record lists. |
+| `menstrual` day details | `3208S03` bound to returned source dates | Recorded source-day details; no cycle or fertility prediction. |
+| `menstrual` calendar | `3208S01` per requested month | Each month is independently read through a bounded source-index handle; repeated entries and original dates remain separate from the saved-period list. |
+| `family_doctor_consent_snapshot` | `IHKE3709S01/page_load` | Existing source status/metadata, with no consent change. |
+| `family_doctor` group context | POST `3720s01/SQL100` | Source-selected medical group information under the source's eligibility/status condition. |
+| `care_plans` embedded observations | `IHKE3213S01/page_load` | Source physiology/reference bounds, HbA1c and lipid snapshots beside enrollment records. |
+| `covid` timeline | `3410` initial and source-gated refresh read | Returned bilingual timeline channels and separate original/refreshed snapshots; no personal QR credential export. |
+| `osteoporosis` search | `3411s01/search?s_type=&s_sort=A1` | The separately returned all-type array is retained alongside the initial snapshot, not deduplicated by date. |
+| `mask_collections`, `rapid_test_collections` | `3702S01`, `3706s01/pageload` | Existing purchase/collection history; no reservation or purchase operation. |
+| `calendar_events` | POST `3103S01` and source-date `3103S03` | All returned date groups, event/type metadata and day details; source redirects are not followed. |
+| `stored_reminders` | `3104s01/page_load`, bound `3104S02` / `3306S02/getpushdata` | Existing general/custom/chronic reminders and exact stored times/text; no UI-generated fallback reminders. |
+| `notifications` | `3114s01/page_load` and the separate `3101` push snapshot | Literal source history and undated current message, without executable HTML or identity-list export. |
+
+Short module names in this table refer to the exact full paths, case and fields
+in the versioned registry. Each independently returned snapshot keeps separate
+keys; matching dates, columns or labels do not justify deleting rows. Source
+`NoData` and display flags remain source facts, not permission to silently drop
+independently returned stored scores.
 
 ## Details and record semantics
 

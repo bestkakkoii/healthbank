@@ -1,6 +1,7 @@
 // Copyright (c) 2026 bestkakkoii llc.
 // SPDX-License-Identifier: MIT
 import type { AnalysisPreferences } from './clinical-comparison';
+import type { PackageReceipt, PackageRequest, PreparationResult } from './full-acquisition';
 
 export type Level = 1 | 2 | 3 | 4 | 5;
 export type Theme = 'light' | 'dark' | 'system';
@@ -47,6 +48,14 @@ export interface Session {
   version: string;
   csrf_token?: string;
   profile_key?: string;
+  report_revision?: number;
+}
+
+export interface GradingContext {
+  kind: 'source_reference' | 'profile' | 'qualitative' | 'personal' | 'independent_alert';
+  rule_id: string;
+  label: string;
+  note: string;
 }
 
 export interface LabRecord {
@@ -60,6 +69,9 @@ export interface LabRecord {
   visit_date: string;
   raw_check_date?: string;
   raw_visit_date?: string;
+  upload_date?: string;
+  raw_upload_date?: string;
+  source_name?: string;
   order_code: string;
   order_name: string;
   result: string;
@@ -76,6 +88,7 @@ export interface LabRecord {
   value_kind: string;
   rule_source: string;
   official_flag?: string;
+  grading_contexts?: GradingContext[];
 }
 
 export interface MedicineOrder {
@@ -98,9 +111,14 @@ export interface DocumentAction {
 export interface DataCategory {
   id: string;
   label: string;
+  label_en?: string;
   group: string;
   range_mode: 'date_search' | 'source';
   has_details?: boolean;
+}
+export interface DataFieldTerm { label: string; label_en: string }
+export interface DataCatalogResponse {
+  categories: DataCategory[]; field_terms?: DataFieldTerm[]; terminology_basis?: 'healthbank_editorial_translation';
 }
 export type SourceDateRole = 'examination' | 'specimen_collection' | 'report' | 'encounter' | 'admission' | 'discharge' | 'claim_start' | 'claim_end' | 'prescription' | 'dispensing' | 'recorded' | 'uploaded' | 'valid_from' | 'valid_to' | 'period_start' | 'period_end' | 'unknown';
 export interface SupplementField {
@@ -132,6 +150,19 @@ export interface SupplementReport {
   start_date?: string; end_date?: string; complete: boolean;
   contract_revision?: string;
   diagnostics?: SourceDiagnostic[];
+  cache_provenance?: CacheProvenance;
+}
+export interface OfficialReportQuery {
+  mode: ReportQueryMode; start_date: string; end_date: string; reported_count: number | null;
+}
+export interface CacheProvenance {
+  kind: 'device_cache'; saved_at: string; restored_at: string; source_fetched_at: string;
+  source_complete: boolean; source_query?: OfficialReportQuery;
+}
+export interface CachedReportInput {
+  expected_profile_key: string; expected_report_revision: number; saved_at: string;
+  source_fetched_at: string; source_complete: boolean; source_query?: OfficialReportQuery;
+  document: unknown;
 }
 export interface ReportResponse {
   // Live API generation proof only; never part of a portable medical document.
@@ -140,12 +171,8 @@ export interface ReportResponse {
   fetched_at: string;
   complete: boolean;
   warnings: string[];
-  official_query?: {
-    mode: ReportQueryMode;
-    start_date: string;
-    end_date: string;
-    reported_count: number | null;
-  };
+  official_query?: OfficialReportQuery;
+  cache_provenance?: CacheProvenance;
 }
 
 export interface LiveReportResponse extends ReportResponse {
@@ -156,6 +183,9 @@ export interface CatalogItem {
   id: string;
   configuration_key: string;
   display_name: string;
+  display_name_en?: string;
+  terminology_note?: string;
+  terminology_sources?: string[];
   category: string;
   unit: string;
   reference_low: string | null;
@@ -193,6 +223,12 @@ export interface CatalogResponse {
   items: CatalogItem[];
   sources: Source[];
   provenance?: { catalog_id: string; catalog_revision: string; evidence_revision: string };
+  terminology_notice?: string;
+  source_name_glossary?: SourceNameTerminology[];
+}
+export interface SourceNameTerminology {
+  source_names: string[]; display_name: string; display_name_en: string; terminology_note?: string;
+  terminology_sources?: string[]; terminology_basis: 'primary_source_terms' | 'literal_source_translation';
 }
 
 export interface LoginInput {
@@ -244,7 +280,7 @@ export class ApiError extends Error {
 export function isSessionInvalidation(error: unknown): boolean {
   return error instanceof ApiError && (error.status === 401 ||
     error.status === 403 && error.code === 'csrf_mismatch' ||
-    error.status === 409 && error.code === 'session_changed' ||
+    error.status === 409 && ['session_changed', 'cache_profile_changed'].includes(error.code) ||
     error.status === 500 && error.code === 'session_rotate' ||
     error.code === 'invalid_report_session');
 }
@@ -347,8 +383,8 @@ async function requestReport(path: string, options: RequestInit = {}): Promise<L
   return { ...report, session_token: report.session_token };
 }
 
-async function fetchDataCatalog(signal?: AbortSignal): Promise<{ categories: DataCategory[] }> {
-  const result = await request<{ categories: unknown }>('/api/data/catalog', { signal: signal ?? null });
+async function fetchDataCatalog(signal?: AbortSignal): Promise<DataCatalogResponse> {
+  const result = await request<{ categories: unknown; field_terms?: unknown; terminology_basis?: unknown }>('/api/data/catalog', { signal: signal ?? null });
   if (!Array.isArray(result.categories) || result.categories.length === 0 || result.categories.length > 128)
     throw new ApiError('資料來源目錄格式不正確，請重新取得。', 'invalid_catalog', 200);
   const categories: DataCategory[] = [];
@@ -361,13 +397,127 @@ async function fetchDataCatalog(signal?: AbortSignal): Promise<{ categories: Dat
       !item.label.trim() || item.label.length > 240 || typeof item.group !== 'string' ||
       !item.group.trim() || item.group.length > 240 ||
       item.range_mode !== 'date_search' && item.range_mode !== 'source' ||
-      'has_details' in item && typeof item.has_details !== 'boolean')
+      'has_details' in item && typeof item.has_details !== 'boolean' ||
+      'label_en' in item && (typeof item.label_en !== 'string' || !item.label_en.trim() || item.label_en.length > 240))
       throw new ApiError('資料來源目錄格式不正確，請重新取得。', 'invalid_catalog', 200);
     seen.add(item.id);
     categories.push({ id: item.id, label: item.label, group: item.group, range_mode: item.range_mode,
+      ...('label_en' in item && typeof item.label_en === 'string' ? { label_en: item.label_en } : {}),
       ...('has_details' in item && typeof item.has_details === 'boolean' ? { has_details: item.has_details } : {}) });
   }
-  return { categories };
+  const terms: DataFieldTerm[] = [], labels = new Set<string>();
+  if (result.field_terms !== undefined) {
+    if (!Array.isArray(result.field_terms) || result.field_terms.length > 256 || result.terminology_basis !== 'healthbank_editorial_translation')
+      throw new ApiError('資料來源詞彙目錄格式不正確。', 'invalid_catalog', 200);
+    const values: unknown[] = result.field_terms;
+    for (const item of values) {
+      if (typeof item !== 'object' || item === null || !('label' in item) || !('label_en' in item) ||
+        typeof item.label !== 'string' || !item.label.trim() || item.label.length > 240 || labels.has(item.label) ||
+        typeof item.label_en !== 'string' || !item.label_en.trim() || item.label_en.length > 240)
+        throw new ApiError('資料來源詞彙目錄格式不正確。', 'invalid_catalog', 200);
+      labels.add(item.label); terms.push({ label: item.label, label_en: item.label_en });
+    }
+  }
+  if (result.terminology_basis !== undefined && result.terminology_basis !== 'healthbank_editorial_translation')
+    throw new ApiError('資料來源詞彙依據無法辨識。', 'invalid_catalog', 200);
+  return { categories, field_terms: terms,
+    ...(result.terminology_basis === undefined ? {} : { terminology_basis: 'healthbank_editorial_translation' }) };
+}
+
+function invalidAcquisitionResponse(): never {
+  throw new ApiError('完整取得服務回傳的狀態格式不正確；未宣稱檔案已完成。', 'invalid_response', 200);
+}
+
+function acquisitionObject(value: unknown): Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return invalidAcquisitionResponse();
+  return value as Record<string, unknown>;
+}
+
+function acquisitionCount(value: unknown, maximum: number): number {
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0 || value > maximum) return invalidAcquisitionResponse();
+  return value;
+}
+
+const packageStates = ['ready', 'streaming', 'completed', 'partial', 'failed', 'cancelled'] as const;
+function packageIdentity(value: Record<string, unknown>) {
+  const id = value['id'], expires = value['expires_at'];
+  const state = packageStates.find(item => item === value['state']);
+  if (typeof id !== 'string' || !/^[a-f0-9]{48}$/.test(id) || !state || typeof expires !== 'string' ||
+    !Number.isFinite(Date.parse(expires))) return invalidAcquisitionResponse();
+  return { id, state, expires_at: expires };
+}
+
+async function prepareDocument(category: string, id: string, signal?: AbortSignal): Promise<PreparationResult> {
+  const value = acquisitionObject(await request<unknown>('/api/documents/prepare', {
+    method: 'POST', body: JSON.stringify({ category, id }), signal: signal ?? null,
+  }));
+  const refresh = acquisitionObject(value['refresh']);
+  const refreshCategory = refresh['category'], detail = refresh['detail'], correlation = refresh['correlation'];
+  if (value['status'] !== 'requested' || typeof value['message'] !== 'string' || value['message'].length > 4000 ||
+    typeof refreshCategory !== 'string' || !/^[a-z][a-z0-9_]{0,63}$/.test(refreshCategory) ||
+    detail !== undefined && (typeof detail !== 'string' || !/^[a-f0-9]{48}$/.test(detail)) ||
+    correlation !== 'same_record' && correlation !== 'unavailable' ||
+    correlation === 'same_record' && (refreshCategory !== category || detail === undefined) ||
+    correlation === 'unavailable' && (refreshCategory !== 'official_files' || detail !== undefined)) return invalidAcquisitionResponse();
+  return { status: 'requested', message: value['message'], refresh: { category: refreshCategory, correlation,
+    ...(typeof detail === 'string' ? { detail } : {}) } };
+}
+
+async function createAcquisitionPackage(input: PackageRequest, signal?: AbortSignal): Promise<PackageReceipt> {
+  const { dataset, ...metadata } = input;
+  if (Boolean(dataset) === Boolean(metadata.external_dataset)) throw new Error('原始檔包必須指定一份完整資料包或已保存的外部資料包。');
+  const serialized = JSON.stringify(metadata);
+  // dataset is produced by the strict v2 exporter. Insert its JSON object
+  // directly rather than allocating another fully escaped medical string.
+  const body = dataset ? `${serialized.slice(0, -1)},"dataset":${dataset.trim()}}` : serialized;
+  const value = acquisitionObject(await request<unknown>('/api/acquisition/packages', { method: 'POST', body, signal: signal ?? null }));
+  const receipt = acquisitionPackageReceipt(value);
+  assertPackageReferences(receipt, input.files);
+  return receipt;
+}
+
+async function acquisitionPackageStatus(identifier: { id: string } | { plan: string; part: number }, signal?: AbortSignal): Promise<PackageReceipt> {
+  const query = 'id' in identifier ? new URLSearchParams({ id: identifier.id })
+    : new URLSearchParams({ plan: identifier.plan, part: String(identifier.part) });
+  const value = acquisitionObject(await request<unknown>(`/api/acquisition/packages/status?${query}`, { signal: signal ?? null }));
+  const receipt = acquisitionPackageReceipt(value);
+  if ('id' in identifier && receipt.id !== identifier.id) return invalidAcquisitionResponse();
+  return receipt;
+}
+
+export function assertPackageReferences(receipt: PackageReceipt, files: readonly { archive_id: string }[]): void {
+  if (receipt.total !== files.length || receipt.files.some((file, index) => file.archive_id !== files[index]?.archive_id))
+    invalidAcquisitionResponse();
+}
+
+function acquisitionPackageReceipt(value: Record<string, unknown>): PackageReceipt {
+  const identity = packageIdentity(value);
+  const total = acquisitionCount(value['total'], 1000), completed = acquisitionCount(value['completed'], total), failed = acquisitionCount(value['failed'], total);
+  if (completed + failed > total || !Array.isArray(value['files']) || value['files'].length !== total) return invalidAcquisitionResponse();
+  const fileStates = ['queued', 'streaming', 'completed', 'failed', 'cancelled', 'skipped'] as const;
+  const seen = new Set<string>();
+  const files = (value['files'] as unknown[]).map(item => {
+    const file = acquisitionObject(item), archiveID = file['archive_id'], digest = file['sha256'], code = file['code'];
+    const state = fileStates.find(item => item === file['state']);
+    if (typeof archiveID !== 'string' || !/^archive_[1-9][0-9]{0,8}$/.test(archiveID) || seen.has(archiveID) || !state ||
+      digest !== undefined && (typeof digest !== 'string' || !/^[a-f0-9]{64}$/.test(digest)) ||
+      state === 'completed' && digest === undefined ||
+      code !== undefined && (typeof code !== 'string' || !/^[A-Za-z0-9_]{1,100}$/.test(code))) return invalidAcquisitionResponse();
+    seen.add(archiveID);
+    return { archive_id: archiveID, state, bytes: acquisitionCount(file['bytes'], 500 * 1024 * 1024),
+      ...(typeof digest === 'string' ? { sha256: digest } : {}), ...(typeof code === 'string' ? { code } : {}) };
+  });
+  const digest = value['package_sha256'];
+  if (digest !== undefined && (typeof digest !== 'string' || !/^[a-f0-9]{64}$/.test(digest))) return invalidAcquisitionResponse();
+  if (files.filter(file => file.state === 'completed').length !== completed || files.filter(file => file.state === 'failed').length !== failed ||
+    identity.state === 'completed' && completed !== total ||
+    (identity.state === 'completed' || identity.state === 'partial') && (digest === undefined || value['package_bytes'] === undefined) ||
+    digest !== undefined && identity.state !== 'completed' && identity.state !== 'partial') return invalidAcquisitionResponse();
+  const bytes = acquisitionCount(value['bytes'], 8 * 1024 * 1024 * 1024);
+  if (bytes !== files.reduce((sum, file) => sum + file.bytes, 0)) return invalidAcquisitionResponse();
+  return { ...identity, total, completed, failed, bytes, files,
+    ...(typeof digest === 'string' ? { package_sha256: digest } : {}),
+    ...(value['package_bytes'] === undefined ? {} : { package_bytes: acquisitionCount(value['package_bytes'], 9 * 1024 * 1024 * 1024) }) };
 }
 
 export const api = {
@@ -377,10 +527,11 @@ export const api = {
       credentials: 'same-origin', cache: 'no-store', signal,
       headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
     }),
-  prepareDocument: (category: string, id: string, signal?: AbortSignal) =>
-    request<{ status: 'requested'; message: string }>('/api/documents/prepare', {
-      method: 'POST', body: JSON.stringify({ category, id }), signal: signal ?? null,
-    }),
+  prepareDocument,
+  createAcquisitionPackage,
+  acquisitionPackageStatus,
+  cancelAcquisitionPackage: (id: string, signal?: AbortSignal) => request<{ status: 'cancelled' }>(
+    `/api/acquisition/packages?${new URLSearchParams({ id })}`, { method: 'DELETE', signal: signal ?? null }),
   supplementary: (category: string, from: string, to: string, detail: string, signal: AbortSignal) =>
     request<SupplementReport>(`/api/supplementary?${new URLSearchParams({ category, from, to, detail })}`, { signal }),
   privacy: (signal?: AbortSignal) => request<PrivacyInfo>('/api/privacy', signal ? { signal } : {}),
@@ -394,6 +545,11 @@ export const api = {
     requestReport(`/api/reports?${new URLSearchParams({ from, to })}`, { signal: signal ?? null }),
   currentReports: (signal?: AbortSignal) =>
     requestReport('/api/reports/current', { signal: signal ?? null }),
+  restoreCachedReports: (input: CachedReportInput, signal?: AbortSignal) =>
+    requestReport('/api/reports/cache', { method: 'POST', body: JSON.stringify(input), signal: signal ?? null }),
+  clearCachedReports: (profileKey: string, scope: 'cache_only' | 'all_reports', signal?: AbortSignal) =>
+    request<{ status: 'cleared' }>('/api/reports/cache', { method: 'DELETE',
+      body: JSON.stringify({ expected_profile_key: profileKey, scope }), signal: signal ?? null }),
   importReports: (file: File) => {
     const body = new FormData();
     body.append('file', file);

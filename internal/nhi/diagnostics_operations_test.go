@@ -34,9 +34,14 @@ func TestSourceAndDocumentDiagnosticsUseFixedOperations(t *testing.T) {
 			}
 		}
 		if spec.info.HasDetails {
-			request, err := providerDetailRequest(category, providerReference{rowID: "synthetic", sourceType: "synthetic"})
-			if err != nil || operationForPath(request.path) == OperationUnknown {
+			requests, err := projectedProviderDetails(category)
+			if err != nil || len(requests) == 0 {
 				t.Fatalf("provider detail contract %s has no bounded diagnostic operation", category)
+			}
+			for _, request := range requests {
+				if operationForPath(request.Path) == OperationUnknown {
+					t.Fatalf("provider detail contract %s has no bounded diagnostic operation", category)
+				}
 			}
 		}
 	}
@@ -63,6 +68,7 @@ func TestDocumentWorkingReservationsDistinguishStreamingFromBuffered(t *testing.
 	}{
 		{"official_archive", 1 << 20}, {"official_pdf", 1 << 20}, {"dicom_archive", 1 << 20}, {"prescription_pdf", 1 << 20},
 		{"hospital_pdf", 64 << 20}, {"hospital_markup", 192 << 20}, {"imaging_jpeg", 192 << 20},
+		{"prescription_calendar", 64 << 20}, {"notification_calendar", 64 << 20}, {"self_paid_file", 192 << 20}, {"official_bundle", 192 << 20},
 	} {
 		s.documentReferences["synthetic-reference"] = documentReference{kind: tc.kind, category: "synthetic-category"}
 		if s.DocumentWorkingSet("synthetic-category", "synthetic-reference") != tc.bytes {

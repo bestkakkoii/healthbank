@@ -38,11 +38,27 @@ login route and to a newly generated public CAPTCHA URL each returned HTTP
 an environment/upstream availability limitation; it does not establish that
 the site is unavailable to all users.
 
-**No real credentials were supplied or submitted. An authenticated live login,
-account identity, report completeness and live logout have not been verified.**
-The implementation is verified against local synthetic protocol fixtures.
-The release must keep this distinction visible until a person completes a
-normal authorized sign-in on the deployed application.
+Those earlier build-environment checks used no real credentials. On 2026-10-28,
+the user completed an authorized sign-in in the official site's browser. Read-only
+inspection confirmed the official laboratory range controls, all displayed result
+pages, distinct date/source labels and several personal-data pages. A later resumed
+session also checked the medical overview, dental detail fields and language toggle,
+the medication list's expanded date range, and a subset of medication details.
+The medication default interval returned fewer rows than the explicit maximum-range
+query; its list and detail responses must remain separate acquisition steps. Source
+field wording and editorial English translations are separately attributed.
+No credentials,
+cookies, tokens or individual observations were transferred into this repository,
+synthetic fixtures or CI. The official browser session later returned to the sign-in
+screen during active reading, leaving additional medication details and remaining
+medical/examination pages unverified in that session. No timeout cause or exact
+official session lifetime was inferred from that observation.
+
+**Official-site browser inspection is not authenticated execution of Healthbank's
+Go connector.** The connector still requires its own authorized deployment acceptance
+for account identity, full-source retrieval and logout. Synthetic protocol fixtures,
+public-source review and live browser observations are separate evidence classes;
+none certifies complete lifetime history.
 
 ### REA-assisted source review
 
@@ -240,6 +256,12 @@ data; a broad normal filter cannot recover records the official account no
 longer provides. Wider-query server acceptance and actual personal history
 remain authenticated deployment verification items.
 
+The authorized official-browser inspection on 2026-10-28 accepted the application's
+1912-01-01 floor through the current Taiwan date in its visible filter and allowed
+reading every displayed result page. This confirms that UI path for the reviewed
+session only; it does not prove that all historical source records were returned,
+or authenticate the application's separate connector session.
+
 The complete search uses `s_type`, `s_date`, `e_date`, and `s_sort` only. Source
 is left empty to include A/B/C/D, and `A1` means newest inspection date first.
 There is no assay/category filter in the connector.
@@ -267,6 +289,14 @@ arrive between reads. An unavailable applicable total is `-1` internally and
 `null` in the application API, never fabricated from array length. Empty `[]`
 is valid only when it does not violate a known minimum; `null`, HTML,
 unrelated objects, malformed rows and changed schemas remain failures.
+
+RC11 also parses the initial row array strictly and verifies its multiset against
+the full search whenever the requested dates contain the complete default interval.
+Every original field value and duplicate occurrence must remain represented. Equal
+array lengths can otherwise hide a missing row replaced by another row. A mismatch
+is `INCOMPLETE_RESPONSE`, with a source-row inconsistency message and no misleading
+expected/received total pair. The application preserves the previous successful
+report; it does not merge, deduplicate or invent a reconciliation of two snapshots.
 
 Requests time out after 35 seconds each. JSON bodies are limited to 16 MiB,
 authentication responses to 64 KiB, and complete reports to 50,000 records.
@@ -307,12 +337,18 @@ happens in this package.
 | `hosP_ABBR` | `Institution` | Institution display name. |
 | `funC_DATE` | `VisitDate` | 就醫日期/入院日期; kept separate from inspection date. |
 | `orI_TYPE` | `Source` | Source category A/B/C/D. |
+| `orI_TYPE_NAME` | `SourceName` | Original full source label, retained separately from the source code. |
 | `assaY_UPLOAD_DATE` | `UploadDate` | Optional upload metadata; never used as inspection date. |
 | `assaY_MARK` | `OfficialFlag` | Original upstream flag; not a locally inferred risk grade. |
 
 Unknown extra fields are ignored. Empty item names are rejected to prevent
 silent schema changes from producing incorrect rows. Display code must render
 all strings as text, not as HTML.
+
+The application retains upload/source metadata through `lab.RawRecord`, normalized
+records, CSV, print and `healthbank.lab.v2` JSON/XML. Normalized `upload_date` never
+replaces examination/encounter dates; `raw_upload_date` preserves the original text.
+Version 1 remains strict and does not accept these newly introduced portable fields.
 
 ## Session lifetime
 
@@ -349,7 +385,8 @@ The tests exercise:
 - Accepted official success codes, bearer forwarding and token refresh.
 - An initial 50-record page followed by exactly 52 full-search records, with
   original order, no duplicated initial rows, exactly four search parameters
-  and a server-adjusted effective date propagated to the full query.
+  and explicit historical date bounds preserved despite a narrower source default.
+  The full search returns its array directly; no additional page parameter is invented.
 - Separate inspection/visit/upload dates and original qualitative value text.
 - Explicit incomplete-result, expired-session, bad-schema and HTTP failures.
 - No automatic replay of a failed manual CAPTCHA/login attempt.
@@ -358,17 +395,18 @@ The tests exercise:
 - Four API metadata/logout cases and eleven count-diagnostic validation cases
   in `internal/server/report_metadata_test.go`.
 
-## Current provider-workspace contract (rc.8)
+## Current provider-workspace contract (RC11 candidate)
 
 The official service supplies authenticated source data. Healthbank's own source
 catalog, acquisition scheduler, timeline and portable dataset are documented in
 [data-workspace.zh-TW.md](data-workspace.zh-TW.md). The fixed routes and public
-bundle hashes for 38 additional categories are in [provider-data.md](provider-data.md);
+bundle hashes and the complete current public-source inventory are in [provider-data.md](provider-data.md) and [provider-source-inventory.json](provider-source-inventory.json);
 original report retrieval and explicit file preparation are in
 [provider-documents.md](provider-documents.md).
 
-The catalog has 57 source/service capabilities, not 57 independent medical
-datasets. Empty application dates request the supported maximum range; sources
+The catalog counts source/service capabilities, not independent medical datasets.
+The versioned registry and inventory record its current exact membership.
+Empty application dates request the supported maximum range; sources
 without a date-search contract retain the actual available source window. The
 workspace retrieves selected lists first, then all reachable nested details, with
 bounded sequential requests, cancellation, resume and explicit capacity failures.
@@ -376,10 +414,44 @@ Source queries, date drafts and display filters are separate. No independent
 source total means completeness remains unverified.
 
 Original file preparation requires an explicit user operation and CSRF protection.
-Normal acquisition performs read-only list/detail requests. Original documents
+Normal acquisition performs read-only list/detail requests. The explicit full
+acquisition workflow can include one-shot preparation, bounded source refresh and
+streaming ZIP preservation with per-file and whole-package hashes. Missing job
+correlation remains explicit. Original documents
 are streamed or handled within stated memory limits; arbitrary browser-supplied
 upstream URLs and server file spooling are not accepted. Public source inspection
 and synthetic fixtures do not establish live account eligibility or availability.
+
+## Authenticated UI observations (2026-10-28, RC11 follow-up)
+
+These observations came from the official browser UI after user sign-in. They
+verify visible behavior, not the Go connector's real-account end-to-end path.
+No account values, identifiers, institutions, private URLs or screenshots are
+included in this record or synthetic fixtures.
+
+- `IHKE3407S01` is a latest-value lipid summary. Its LDL comparison opens
+  `IHKE3407S02` with code `09044C`. Choosing the explicit interval
+  `1912-01-01` through `2026-10-28` returned older chart observations than the
+  default three-year view. The source-window footer did not expand with the
+  query. Neither the summary nor that footer is a valid bound for truncating
+  requested history; a wider response still does not prove lifetime coverage.
+  A transient empty view during loading must not be recorded as an empty result.
+- `IHKE3301S06` recent hospitalization cards and the “105年起更多住院紀錄”
+  entry are distinct views. The latter opens `IHKE3309S01` and exposes older
+  records. `IHKE3309S02` separately labels admission/discharge, claim interval,
+  order execution dates, classifications/procedures and financial point totals.
+  Execution intervals do not establish medication duration or adherence.
+- `IHKE3408S01` / `IHKE3408S02` distinguish source channels and JPG/DICOM
+  availability. An explicit image preparation request reached “影像檔準備中”
+  and “已申請載入影像檔”; this is pending preparation, not verified file bytes.
+  Repeated-looking list entries must retain their individual source context.
+- `IHKE3801S01` exposes HTML/PDF/XML/JSON production, with a seven-day
+  production history. The JSON entry `ihke3804s01` requires a separate
+  production confirmation. That confirmation was not completed, so no official
+  bulk export, schema compatibility or original-file completeness is claimed.
+- A hospitalization discharge-summary “查看檔案” control was present, but
+  the attempted open did not yield a verifiable file in this session. Its
+  presence alone is not evidence of successful retrieval.
 
 ## Medical categories and detail references (rc.7 source baseline)
 

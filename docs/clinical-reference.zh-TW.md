@@ -2,7 +2,7 @@
 
 Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
-來源查核日期：2026-10-27；高 TG LDL 方法之資料另於 2026-10-28 核對（臺灣時間）。
+來源初次查核日期：2026-10-27；公式、啟用分類與適用條件、具名參考範本及中英文名稱另於 2026-10-28 重核（臺灣時間）。來源讀取限制保留於文末，不把索引核對寫成全文驗證。
 
 本文件說明目前程式實際採用的辨識、參考區間與提醒規則，供閱讀報表的使用者及維護者共同查核。內建目錄包含 **80 個項目定義：78 個檢驗／觀察項目，以及 2 個檢驗流程附註**。78 個觀察項目共用 **76 組設定**；數值、定性文字、半定量結果都可能是觀察項目，不表示每項都有五段數字門檻。尚未匯入報告時，就能查看及調整這 76 組內建設定。
 
@@ -21,6 +21,33 @@ Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 CKD-EPI 2021 的情境估算只在最後顯示時取整數，並標示公式與估算；計算過程與原院 eGFR 原文保留原精度。[NIDDK 的報告實務](https://www.niddk.nih.gov/research-funding/research-programs/kidney-clinical-research-epidemiology/laboratory/glomerular-filtration-rate-equations)於 2026-10-28 核對，其整數呈現建議不會反過來修改匯入的肌酸酐或既有原院結果。比較畫面可展開查看醫令、原單位、情境單位、明確換算與尚未確認的方法／檢體條件。
 
 機器可讀依據位於 `internal/lab/evidence-registry.json`：逐一連結實際規則、啟用範圍、族群與單位限制、來源定位、排除條件及合成邊界向量，並收錄九項具名範本與 CKD-EPI／Sampson 的獨立高精度向量。來源的原始版次與查核日期各自保存；登錄檔不會啟用目前未啟用的篩檢規則。`GET /api/catalog` 可取得原始目錄與依據登錄檔的 SHA-256 版本識別，讓資料包記錄當時使用的程式依據。雜湊表示輸入內容身分，不代表醫學認證或外部網站從未改版。
+
+### 中英文名稱與來源原文
+
+目錄提供 80 個既有項目的中英文顯示名稱；另外 128 組來源名稱詞彙，涵蓋 148 種逐字核對的拼寫，供未知動態項目、缺值列及流程附註顯示名稱。這些文字不增加檢驗結果、不合併識別、不啟用臨床規則，也不改寫原始項目、醫令名稱、結果、單位或日期。原始名稱與整理名稱可一起檢視、搜尋。
+
+名稱依據包括[健保醫療服務給付項目及支付標準的公開中英文名稱](https://data.gov.tw/dataset/174450)、[臺中榮總檢驗項目總表](https://www.vghtc.gov.tw/News_Content/2453/8102)及各具名醫學來源。健保名稱是給付／醫令詞彙，一個代碼可能對應不同實際結果；例如 `09016C` 不能把 ACR 改名成肌酸酐濃度。英文顯示名稱是 Healthbank 依來源整理的名稱，並非全部逐字出自健保署。單純狀態／組別的直譯另標示為來源文字翻譯，不宣稱另有醫學分類依據。
+
+純名稱補充只比對已核對的拼寫，保留大小寫差別，不以相似字、醫令代碼或翻譯猜測檢體與方法。`Albumin`、`Creatinine`、`PH`／`pH` 等單獨名稱不足以確認檢體；只有已核對的名稱、醫令與單位組合才進入原有臨床識別。共用 ACR／尿蛋白設定的英文名稱保持方法中性，各原始通道仍分開。血氣欄名未證實動脈或靜脈時使用「血氣」；只有來源明列 `Blood gas analysis-vein` 的組別保留「靜脈」。飯前 `AC` 也不單獨證明已達特定禁食時數。此輪沒有因名稱整理修改公式、數值門檻或原院旗標。
+
+`catalog.json` 保留每個名稱的來源定位、直譯／來源術語依據與限制；`GET /api/catalog` 提供 `display_name_en`、`terminology_note`、`terminology_sources` 及 `source_name_glossary`。一般醫療資料另有 Healthbank 編輯的分類／欄位英文詞彙；藥品、疾病分類與處置若已由來源提供中英文，原文完整保留，不由廣義藥品／申報／ICD 代碼猜造官方英文名稱。
+
+### 分級依據與尚未確認的適用條件
+
+每筆整理結果以 `grading_contexts` 明列實際採用的依據：原院參考、具名分類範本、定性結果、個人設定或獨立提醒。個人設定取代原先顯示基準時，原先範本不再冒充該顏色的依據；仍觸發的高 TG、低血糖及具名通報門檻另外列出。原始數值、原院旗標與數值門檻均不因此改變。
+
+| 依據 | 必須一起閱讀的限制 |
+| --- | --- |
+| 成人空腹 TG 範本 | 年齡與空腹狀態未由來源資料確認；這是該範本的數值對照。兒童分界與成人不同，非空腹的低階分界也不同，不把比較情境當作適用證明。來源：[NHLBI][S3]、[ACC][S4]。 |
+| KDIGO G 分類 | 須核對年齡、來源估算公式與慢性病程；單筆結果不確診 CKD，G1／G2 也不排除腎損傷。[KDIGO 2024][S1] 另列兒童與青少年的判讀考量。 |
+| KDIGO A 分類 | 保留定量／半定量來源；年齡、採檢條件及異常持續性尚未確認，不將一次分類當成慢性病程。來源：[KDIGO 2024][S1]。 |
+| 成人 PCR 歷史範本 | 150／500 mg/g 仍是 [KDIGO 2012][S2] 的歷史總蛋白分界；不是白蛋白尿 A 分期。[KDIGO 2024][S1] S193 明列兒童年齡相關差異，不能把這組成人範本當成兒童正常值。 |
+| ADA 低血糖數值提醒 | 不要求空腹；數值類別不證明糖尿病病史，也不推定需要他人協助的 ADA 臨床第 3 級事件。來源：[ADA 2026][S6]。 |
+| 臺北榮總通報門檻參考 | 是[該院公開政策][S11]的具名提醒，未確認原院方法及個別情境；不是原院危急值旗標，也不表示歷史結果就是目前急症。 |
+
+表格、卡片及圖表以短標籤標示所用依據，完整限制可在相應欄位／區段及明細閱讀；衍生的 CSV、SVG 與列印說明保留完整依據。`GET /api/catalog` 的規則另提供 `conditions`、`scope_label`、`applicability_note`，不再遺漏原有條件摘要。原始檢驗 JSON／XML 仍只帶來源欄位，重新匯入後由現行規則重建這些說明。
+
+儲存的年齡／性別與當頁生日都是獨立比較功能的輸入，沒有被提升為每筆歷史資料的已驗證人口資訊。程式不因設定一個模擬年齡就宣稱成人或兒童規則已適用，也沒有自行增加兒童門檻。
 
 ### 擴充醫療來源的判讀界線（rc.8）
 
@@ -69,9 +96,9 @@ CKD-EPI 2021 的情境估算只在最後顯示時取整數，並標示公式與�
 
 內建定義以醫令代碼、項目名稱與單位配對。項目名稱保留大小寫區別；單位僅整理常見空白、微升符號及上標表示法，不執行一般性的濃度換算。找不到已知配對時，會建立獨立的動態項目，並保留原院參考值；不因名稱看起來相似就套用另一項門檻。
 
-例如，尿液 `PH` 與靜脈血 `pH`、尿液 `Albumin` 與血清 `Albumin`、尿液鏡檢 `R.B.C.` 與血液 `RBC` 都是不同項目。`mg/L` 的尿白蛋白濃度不等於 `mg/g` 的 ACR，`mg/dL` 的隨機尿總蛋白也不等於 UPCR。[KDIGO 的方法對照表同樣說明這些測量方式不能直接視為等值。][S2]
+例如，已核對來源組合的尿液 `PH` 與血氣 `pH`、尿液 `Albumin` 與血液 `Albumin`、尿液鏡檢 `R.B.C.` 與血液 `RBC` 都是不同項目。`mg/L` 的尿白蛋白濃度不等於 `mg/g` 的 ACR，`mg/dL` 的隨機尿總蛋白也不等於 UPCR。[KDIGO 的方法對照表同樣說明這些測量方式不能直接視為等值。][S2]
 
-ACR 半定量與定量保留各自結果，但共用同一組 ACR 設定；`06012C` 的 `Protein` 與 `06003C` 的 `Protein(qualitative)` 共用尿蛋白定性設定，來源通道仍分開。`09015C`＋`Creatinine(健檢)`＋`mg/dL` 是血清肌酸酐的明確別名，不會因名稱含有 Creatinine 就合併尿肌酸酐或其他檢驗。其他已核對別名也必須同時符合醫令及單位，原始項目名稱不被改寫。
+ACR 半定量與定量保留各自結果，但共用同一組 ACR 設定；`06012C` 的 `Protein` 與 `06003C` 的 `Protein(qualitative)` 共用尿蛋白定性設定，來源通道仍分開。`09015C`＋`Creatinine(健檢)`＋`mg/dL` 是血液肌酸酐的明確別名，不會因名稱含有 Creatinine 就合併尿肌酸酐或其他檢驗。其他已核對別名也必須同時符合醫令及單位，原始項目名稱不被改寫。
 
 全部內建觀察項目的設定預先可見；額外的動態項目則要取得實際結果才加入。缺值不會替未知項目建立設定，流程附註也不提供數值門檻。顯示內建設定不表示使用者做過這些檢查，不會因此產生報告數值。
 
@@ -148,7 +175,7 @@ v1 沒有空腹狀態欄位可自動確認；尤其較低幾級的解讀，應�
 
 ### 5. 獨立的低血糖提醒
 
-目前用於三種已辨識且單位為 `mg/dL` 的項目：空腹血糖、空腹狀態未註明的血糖，以及飯後微血管血糖。不把尿糖加號視為血糖。依 [ADA Standards of Care 2026 第 6 節][S6]：
+目前用於三種已辨識且單位為 `mg/dL` 的項目：飯前血糖（來源標示 AC）、空腹狀態未註明的血糖，以及飯後微血管血糖。不把尿糖加號視為血糖。依 [ADA Standards of Care 2026 第 6 節][S6]：
 
 | 條件，mg/dL | ADA 數值類別 | v1 提醒 |
 | --- | --- | --- |
@@ -231,7 +258,7 @@ HbA1c 預設採本筆原院參考值，不把篩檢診斷界值當成個人治�
 
 - 定性規則只對已辨識的對應項目啟用。`Negative`、`Not Found`、`Normal`、`None` 可依該規則顯示 L1；`Positive`、`1+` 至 `4+`、`+` 至 `++++` 顯示 L3 提醒，不依加號數量推成 L4／L5。`Trace`、`±`、`+/-` 的可接受程度依方法而異，維持未判定並提醒核對原院說明，不自創 L2 分級；原始結果、參考文字與官方旗標仍保留。
 - 尿糖加號不是血糖濃度；SGLT2 類藥物可增加尿糖排泄，須保留用藥情境。[S9]
-- 靜脈血 `O2sat`、`PO2` 不是指尖 SpO2，也不能直接套用動脈血氧門檻。[S10] 這些項目仍以本筆原院參考資料顯示。
+- 血氣 `O2sat`、`PO2` 的欄名未單獨確認動脈或靜脈檢體；血氣氧飽和度不等同指尖 SpO2，不能在檢體未確認時直接套用動脈血氧門檻。[S10] 這些項目仍以本筆原院參考資料顯示。
 - 一般 CRP 不套用 hs-CRP 的心血管風險級距；總鈣不當成游離鈣；單一 NT-proBNP 或 hs Troponin I 不被轉成通用五級疾病嚴重度。
 - 白血球分類百分比不自動換成絕對計數，也不把總嗜中性球與分葉嗜中性球重複相加。
 - `Clear`、`Yellow` 等描述文字保留原文；沒有適用規則時維持未判定。血氣檢驗組別與是否人工閱片是附註，不是測量值。
@@ -262,88 +289,88 @@ v1 會以隨版本提供的目前規則，重新顯示工作階段中的歷史�
 
 規則縮寫：**R**＝逐筆原院參考值；**Q**＝對應項目的定性提醒；**U**＝無額外內建分類（若本筆有可解析原院數值區間，仍保留其參考狀態）；**M**＝流程附註。TG、ACR、PCR、eGFR 的條件見前文。`無單位` 是來源文字，不表示程式已確認量測本來就無因次。
 
-| 序 | 顯示名稱 | 醫令代碼 | 官方項目名稱與明確別名 | 來源單位 | v1 規則 |
-| --- | --- | --- | --- | --- | --- |
-| 1 | 尿白蛋白／肌酸酐比值（半定量） | `06012C` | `A/C ratio` | `mg/gCr` | ACR |
-| 2 | 尿白蛋白／肌酸酐比值（定量） | `09016C` | `ACR` | `mg/g` | ACR |
-| 3 | 丙胺酸轉胺酶 | `09026C` | `ALT` | `U/L` | R |
-| 4 | 尿白蛋白濃度（半定量） | `06012C` | `Albumin` | `mg/L` | R |
-| 5 | 血清白蛋白 | `09038C` | `Albumin` | `g/dL` | R |
-| 6 | 非典型淋巴球比例 | `08013C` | `Atypical-Lymphocyte` | `%` | U |
-| 7 | 靜脈血鹼剩餘 | `09041B` | `BE(B)` | `mmol/L` | U |
-| 8 | 血中尿素氮 | `09002C` | `BUN` | `mg/dL` | R |
-| 9 | 尿液細菌 | `06012C` | `Bacteria` | `無單位` | Q |
-| 10 | 帶狀嗜中性球比例 | `08013C` | `Band neutrophil` | `%` | R |
-| 11 | 嗜鹼性球比例 | `08013C` | `Basophil` | `%` | R |
-| 12 | 尿膽紅素 | `06012C` | `Bilirubin` | `無單位` | Q |
-| 13 | 靜脈血氣檢驗組別 | `09041B` | `Blood gas analysis-vein` | `無單位` | M |
-| 14 | 肌酸激酶 | `09032C` | `CK` | `U/L` | R |
-| 15 | C反應性蛋白 | `12015C` | `CRP` | `mg/dL` | R |
-| 16 | 總鈣 | `09011C` | `Calcium` | `mg/dL` | R＋具名榮總提醒 |
-| 17 | 尿液圓柱體 | `06012C` | `Cast` | `/LPF` | Q |
-| 18 | 氯 | `09023C` | `Chloride(Cl)` | `mmol/L` | R＋具名榮總提醒 |
-| 19 | 總膽固醇 | `09001C` | `Cholesterol` | `mg/dL` | R |
-| 20 | 尿液清澈度 | `06012C` | `Clarity` | `無單位` | U |
-| 21 | 尿液顏色 | `06012C` | `Color` | `無單位` | U |
-| 22 | 血清肌酸酐 | `09015C` | `Creatinine`／`Creatinine(健檢)` | `mg/dL` | R |
-| 23 | 隨機尿肌酸酐濃度 | `09016C` | `Creatinine-spot urine` | `mg/dL` | U |
-| 24 | 尿液結晶 | `06012C` | `Crystal` | `/HPF` | Q |
-| 25 | 嗜酸性球比例 | `08013C` | `Eosinophil` | `%` | R |
-| 26 | 尿液上皮細胞 | `06012C` | `Epithelial cell` | `/HPF` | R |
-| 27 | 尿糖 | `06012C` | `Glucose` | `無單位` | Q |
-| 28 | 空腹血糖 | `09005C` | `Glucose-AC(飯前)` | `mg/dL` | R＋獨立低血糖提醒 |
-| 29 | 靜脈血碳酸氫根 | `09041B` | `HCO3-act` | `mmol/L` | R |
-| 30 | 高密度脂蛋白膽固醇 | `09043C` | `HDL-Cholesterol` | `mg/dL` | R |
-| 31 | 血紅素 | `08011C` | `Hb` | `g/dL` | R＋具名榮總提醒 |
-| 32 | 糖化血色素 | `09006C` | `HbA1c` | `%` | R |
-| 33 | 血比容 | `08011C` | `Hct` | `%` | R＋具名榮總提醒 |
-| 34 | 尿酮體 | `06012C` | `Ketone` | `無單位` | Q |
-| 35 | 低密度脂蛋白膽固醇 | `09044C` | `LDL-Cholesterol` | `mg/dL` | R |
-| 36 | 尿白血球酯酶 | `06012C` | `Leukocyte esterase` | `無單位` | Q |
-| 37 | 淋巴球比例 | `08013C` | `Lymphocyte` | `%` | R |
-| 38 | 平均紅血球血紅素量 | `08011C` | `MCH` | `pg` | R |
-| 39 | 平均紅血球血紅素濃度 | `08011C` | `MCHC` | `g/dL` | R |
-| 40 | 平均紅血球容積 | `08011C` | `MCV` | `fL` | R |
-| 41 | 尿白蛋白濃度（定量） | `12111C` | `Microalbumin-urine` | `mg/L` | R |
-| 42 | 單核球比例 | `08013C` | `Monocyte` | `%` | R |
-| 43 | N端B型利鈉肽前驅物 | `12193C` | `NT-ProBNP` | `pg/mL` | R |
-| 44 | 嗜中性球比例 | `08013C` | `Neutrophil` | `%` | R |
-| 45 | 尿亞硝酸鹽 | `06012C` | `Nitrite` | `無單位` | Q |
-| 46 | 靜脈血氧飽和度 | `09041B` | `O2sat` | `%` | R |
-| 47 | 尿潛血 | `06012C` | `Occult Blood` | `無單位` | Q |
-| 48 | 靜脈血二氧化碳分壓 | `09041B` | `PCO2` | `mmHg` | R |
-| 49 | 尿液酸鹼值 | `06012C` | `PH` | `無單位` | R |
-| 50 | 靜脈血氧分壓 | `09041B` | `PO2` | `mmHg` | R |
-| 51 | 磷 | `09012C` | `Phosphorus` | `mg/dL` | R |
-| 52 | 血小板計數 | `08011C` | `Platelet count` | `x10^3/uL` | R＋具名榮總提醒 |
-| 53 | 鉀 | `09022C` | `Potassium(K)` | `mmol/L` | R＋具名榮總提醒 |
-| 54 | 尿蛋白試紙 | `06012C` | `Protein` | `無單位` | Q |
-| 55 | 尿液紅血球鏡檢 | `06012C` | `R.B.C.` | `/HPF` | R |
-| 56 | 紅血球計數 | `08011C` | `RBC` | `x10^6/uL` | R |
-| 57 | 紅血球分布寬度 | `08011C` | `RDW-CV` | `%` | R |
-| 58 | 分葉嗜中性球比例 | `08013C` | `Segment Neutrophil` | `%` | R |
-| 59 | 鈉 | `09021C` | `Sodium(Na)` | `mmol/L` | R＋具名榮總提醒 |
-| 60 | 尿液比重 | `06012C` | `Specific Gravity` | `無單位` | R |
-| 61 | 隨機尿總蛋白濃度 | `09040C` | `Total protein-spot urine` | `mg/dL` | U |
-| 62 | 三酸甘油脂 | `09004C` | `Triglyceride` | `mg/dL` | TG |
-| 63 | 尿蛋白／肌酸酐比值 | `09040C` | `UPCR` | `mg/g` | PCR |
-| 64 | 尿酸 | `09013C` | `Uric acid` | `mg/dL` | R |
-| 65 | 尿膽素原 | `06012C` | `Urobilinogen` | `無單位` | Q |
-| 66 | 尿液白血球鏡檢 | `06012C` | `W.B.C.` | `/HPF` | R |
-| 67 | 白血球計數 | `08011C` | `WBC` | `x10^3/uL` | R＋具名榮總提醒 |
-| 68 | 靜脈血總二氧化碳 | `09041B` | `ctCO2` | `mmol/L` | R |
-| 69 | 估算腎絲球過濾率 | `09015C` | `eGFR` | `無單位` | eGFR（須確認單位） |
-| 70 | 高敏感度心肌肌鈣蛋白I | `09099C` | `hs Troponin I` | `ng/L` | R |
-| 71 | 靜脈血酸鹼值 | `09041B` | `pH` | `無單位` | R |
-| 72 | 人工閱片狀態 | `08013C` | `是否人工閱片` | `無單位` | M |
-| 73 | 肌酸激酶 MB 同功酶活性 | `09071C` | `CK-MB` | `U/L` | R |
-| 74 | D-二聚體（計量制未註明） | `08079B` | `D-D diamer`／`D-Dimer`／`D-dimer`／`D dimer` | `ng/mL` | R |
-| 75 | 血糖（空腹狀態未註明） | `09005C` | `Glucose` | `mg/dL` | R＋獨立低血糖提醒 |
-| 76 | 飯後微血管血糖 | `09140C` | `Glucose-PC(飯後)-微血管採血法` | `mg/dL` | R＋獨立低血糖提醒 |
-| 77 | 同半胱胺酸 | `12151C` | `Homocysteine` | `umol/L` | R |
-| 78 | 完整副甲狀腺素（I-PTH） | `09122C` | `I-PTH`／`Intact PTH`／`PTH-i` | `pg/mL` | R |
-| 79 | 維生素 B12（總量） | `09129C` | `Vitamin B12`／`Vit. B12`／`Vitamin B-12` | `pg/mL` | R |
-| 80 | 尿蛋白定性 | `06003C` | `Protein(qualitative)`／`Protein (qualitative)` | `無單位` | Q |
+| 序 | 中文顯示名稱 | 英文顯示名稱（來源整理） | 醫令代碼 | 來源項目原文與已核對別名 | 來源單位 | v1 規則 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 尿白蛋白／肌酸酐比值（半定量） | Urine albumin-to-creatinine ratio (UACR) | `06012C` | `A/C ratio` | `mg/gCr` | ACR |
+| 2 | 尿白蛋白／肌酸酐比值（定量） | Urine albumin-to-creatinine ratio (UACR) | `09016C` | `ACR` | `mg/g` | ACR |
+| 3 | 丙胺酸轉胺酶 | Alanine aminotransferase (ALT) | `09026C` | `ALT` | `U/L` | R |
+| 4 | 尿白蛋白濃度（半定量） | Urine albumin concentration (semiquantitative) | `06012C` | `Albumin` | `mg/L` | R |
+| 5 | 血液白蛋白 | Blood albumin | `09038C` | `Albumin` | `g/dL` | R |
+| 6 | 非典型淋巴球比例 | Atypical lymphocytes (%) | `08013C` | `Atypical-Lymphocyte` | `%` | U |
+| 7 | 血氣鹼剩餘（血液模型 BE(B)） | Blood-gas base excess, blood model (BE(B)) | `09041B` | `BE(B)` | `mmol/L` | U |
+| 8 | 血中尿素氮 | Blood urea nitrogen (BUN) | `09002C` | `BUN` | `mg/dL` | R |
+| 9 | 尿液細菌 | Urine bacteria | `06012C` | `Bacteria` | `無單位` | Q |
+| 10 | 帶狀嗜中性球比例 | Band neutrophils (%) | `08013C` | `Band neutrophil` | `%` | R |
+| 11 | 嗜鹼性球比例 | Basophils (%) | `08013C` | `Basophil` | `%` | R |
+| 12 | 尿膽紅素 | Urine bilirubin | `06012C` | `Bilirubin` | `無單位` | Q |
+| 13 | 靜脈血氣檢驗組別 | Venous blood gas panel | `09041B` | `Blood gas analysis-vein` | `無單位` | M |
+| 14 | 肌酸激酶 | Creatine kinase (CK) | `09032C` | `CK` | `U/L` | R |
+| 15 | C反應性蛋白 | C-reactive protein (CRP) | `12015C` | `CRP` | `mg/dL` | R |
+| 16 | 總鈣 | Total calcium | `09011C` | `Calcium` | `mg/dL` | R＋具名榮總提醒 |
+| 17 | 尿液圓柱體 | Urinary casts | `06012C` | `Cast` | `/LPF` | Q |
+| 18 | 氯 | Chloride (Cl) | `09023C` | `Chloride(Cl)` | `mmol/L` | R＋具名榮總提醒 |
+| 19 | 總膽固醇 | Total cholesterol | `09001C` | `Cholesterol` | `mg/dL` | R |
+| 20 | 尿液清澈度 | Urine clarity | `06012C` | `Clarity` | `無單位` | U |
+| 21 | 尿液顏色 | Urine color | `06012C` | `Color` | `無單位` | U |
+| 22 | 血液肌酸酐 | Blood creatinine | `09015C` | `Creatinine`／`Creatinine(健檢)` | `mg/dL` | R |
+| 23 | 隨機尿肌酸酐濃度 | Spot urine creatinine concentration | `09016C` | `Creatinine-spot urine` | `mg/dL` | U |
+| 24 | 尿液結晶 | Urine crystals | `06012C` | `Crystal` | `/HPF` | Q |
+| 25 | 嗜酸性球比例 | Eosinophils (%) | `08013C` | `Eosinophil` | `%` | R |
+| 26 | 尿液上皮細胞 | Urine epithelial cells | `06012C` | `Epithelial cell` | `/HPF` | R |
+| 27 | 尿糖 | Urine glucose | `06012C` | `Glucose` | `無單位` | Q |
+| 28 | 飯前血糖（來源標示 AC） | Pre-meal blood glucose (source AC label) | `09005C` | `Glucose-AC(飯前)` | `mg/dL` | R＋獨立低血糖提醒 |
+| 29 | 血氣實際碳酸氫根 | Blood-gas actual bicarbonate (HCO3-act) | `09041B` | `HCO3-act` | `mmol/L` | R |
+| 30 | 高密度脂蛋白膽固醇 | High-density lipoprotein cholesterol (HDL-C) | `09043C` | `HDL-Cholesterol` | `mg/dL` | R |
+| 31 | 血紅素 | Hemoglobin (Hb) | `08011C` | `Hb` | `g/dL` | R＋具名榮總提醒 |
+| 32 | 糖化血色素 | Glycated hemoglobin (HbA1c) | `09006C` | `HbA1c` | `%` | R |
+| 33 | 血比容 | Hematocrit (Hct) | `08011C` | `Hct` | `%` | R＋具名榮總提醒 |
+| 34 | 尿酮體 | Urine ketones | `06012C` | `Ketone` | `無單位` | Q |
+| 35 | 低密度脂蛋白膽固醇 | Low-density lipoprotein cholesterol (LDL-C) | `09044C` | `LDL-Cholesterol` | `mg/dL` | R |
+| 36 | 尿白血球酯酶 | Urine leukocyte esterase | `06012C` | `Leukocyte esterase` | `無單位` | Q |
+| 37 | 淋巴球比例 | Lymphocytes (%) | `08013C` | `Lymphocyte` | `%` | R |
+| 38 | 平均紅血球血紅素量 | Mean corpuscular hemoglobin (MCH) | `08011C` | `MCH` | `pg` | R |
+| 39 | 平均紅血球血紅素濃度 | Mean corpuscular hemoglobin concentration (MCHC) | `08011C` | `MCHC` | `g/dL` | R |
+| 40 | 平均紅血球容積 | Mean corpuscular volume (MCV) | `08011C` | `MCV` | `fL` | R |
+| 41 | 尿白蛋白濃度（定量） | Urine albumin concentration (quantitative) | `12111C` | `Microalbumin-urine` | `mg/L` | R |
+| 42 | 單核球比例 | Monocytes (%) | `08013C` | `Monocyte` | `%` | R |
+| 43 | N端B型利鈉肽前驅物 | N-terminal pro-B-type natriuretic peptide (NT-proBNP) | `12193C` | `NT-ProBNP` | `pg/mL` | R |
+| 44 | 嗜中性球比例 | Neutrophils (%) | `08013C` | `Neutrophil` | `%` | R |
+| 45 | 尿亞硝酸鹽 | Urine nitrite | `06012C` | `Nitrite` | `無單位` | Q |
+| 46 | 血氣氧飽和度 | Blood-gas oxygen saturation (sO2) | `09041B` | `O2sat` | `%` | R |
+| 47 | 尿潛血 | Urine occult blood | `06012C` | `Occult Blood` | `無單位` | Q |
+| 48 | 血氣二氧化碳分壓 | Blood-gas carbon dioxide partial pressure (pCO2) | `09041B` | `PCO2` | `mmHg` | R |
+| 49 | 尿液酸鹼值 | Urine pH | `06012C` | `PH` | `無單位` | R |
+| 50 | 血氣氧分壓 | Blood-gas oxygen partial pressure (pO2) | `09041B` | `PO2` | `mmHg` | R |
+| 51 | 磷 | Phosphorus (P) | `09012C` | `Phosphorus` | `mg/dL` | R |
+| 52 | 血小板計數 | Platelet count (PLT) | `08011C` | `Platelet count` | `x10^3/uL` | R＋具名榮總提醒 |
+| 53 | 鉀 | Potassium (K) | `09022C` | `Potassium(K)` | `mmol/L` | R＋具名榮總提醒 |
+| 54 | 尿蛋白試紙 | Urine protein (qualitative) | `06012C` | `Protein` | `無單位` | Q |
+| 55 | 尿液紅血球鏡檢 | Urine red blood cells, microscopy | `06012C` | `R.B.C.` | `/HPF` | R |
+| 56 | 紅血球計數 | Red blood cell count (RBC) | `08011C` | `RBC` | `x10^6/uL` | R |
+| 57 | 紅血球分布寬度（變異係數） | Red cell distribution width, coefficient of variation (RDW-CV) | `08011C` | `RDW-CV` | `%` | R |
+| 58 | 分葉嗜中性球比例 | Segmented neutrophils (%) | `08013C` | `Segment Neutrophil` | `%` | R |
+| 59 | 鈉 | Sodium (Na) | `09021C` | `Sodium(Na)` | `mmol/L` | R＋具名榮總提醒 |
+| 60 | 尿液比重 | Urine specific gravity | `06012C` | `Specific Gravity` | `無單位` | R |
+| 61 | 隨機尿總蛋白濃度 | Spot urine total protein concentration | `09040C` | `Total protein-spot urine` | `mg/dL` | U |
+| 62 | 三酸甘油脂 | Triglycerides (TG) | `09004C` | `Triglyceride` | `mg/dL` | TG |
+| 63 | 尿蛋白／肌酸酐比值 | Urine protein-to-creatinine ratio (UPCR) | `09040C` | `UPCR` | `mg/g` | PCR |
+| 64 | 尿酸 | Uric acid | `09013C` | `Uric acid` | `mg/dL` | R |
+| 65 | 尿膽素原 | Urine urobilinogen | `06012C` | `Urobilinogen` | `無單位` | Q |
+| 66 | 尿液白血球鏡檢 | Urine white blood cells, microscopy | `06012C` | `W.B.C.` | `/HPF` | R |
+| 67 | 白血球計數 | White blood cell count (WBC) | `08011C` | `WBC` | `x10^3/uL` | R＋具名榮總提醒 |
+| 68 | 血氣總二氧化碳 | Blood-gas total carbon dioxide (ctCO2) | `09041B` | `ctCO2` | `mmol/L` | R |
+| 69 | 估算腎絲球過濾率 | Estimated glomerular filtration rate (eGFR) | `09015C` | `eGFR` | `無單位` | eGFR（須確認單位） |
+| 70 | 高敏感度心肌肌鈣蛋白I | High-sensitivity cardiac troponin I (hs-cTnI) | `09099C` | `hs Troponin I` | `ng/L` | R |
+| 71 | 血氣酸鹼值 | Blood-gas pH | `09041B` | `pH` | `無單位` | R |
+| 72 | 人工閱片狀態 | Manual slide review status | `08013C` | `是否人工閱片` | `無單位` | M |
+| 73 | 肌酸激酶 MB 同功酶活性 | Creatine kinase MB isoenzyme activity (CK-MB) | `09071C` | `CK-MB` | `U/L` | R |
+| 74 | D-二聚體（計量制未註明） | D-dimer (reporting convention unspecified) | `08079B` | `D-D diamer`／`D-Dimer`／`D-dimer`／`D dimer` | `ng/mL` | R |
+| 75 | 血糖（空腹狀態未註明） | Blood glucose (fasting status unspecified) | `09005C` | `Glucose` | `mg/dL` | R＋獨立低血糖提醒 |
+| 76 | 飯後微血管血糖 | Postprandial capillary blood glucose | `09140C` | `Glucose-PC(飯後)-微血管採血法` | `mg/dL` | R＋獨立低血糖提醒 |
+| 77 | 同半胱胺酸 | Total homocysteine | `12151C` | `Homocysteine` | `umol/L` | R |
+| 78 | 完整副甲狀腺素（I-PTH） | Intact parathyroid hormone (iPTH) | `09122C` | `I-PTH`／`Intact PTH`／`PTH-i` | `pg/mL` | R |
+| 79 | 維生素 B12（總量） | Total vitamin B12 | `09129C` | `Vitamin B12`／`Vit. B12`／`Vitamin B-12` | `pg/mL` | R |
+| 80 | 尿蛋白定性 | Urine protein (qualitative) | `06003C` | `Protein(qualitative)`／`Protein (qualitative)` | `無單位` | Q |
 
 ## 九、維護者核對事項
 
@@ -411,6 +438,6 @@ Copyright (c) 2026 bestkakkoii llc.
 
 ## 獨立年齡／性別情境比較
 
-現另提供血液肌酸酐、ALP、BUN、總鈣、尿酸、ALT、CK、無機磷、血清白蛋白九項具名範本比較，以及條件確認後的 CKD-EPI 2021 估算。
+現另提供血液肌酸酐、ALP、BUN、總鈣、尿酸、ALT、CK、無機磷、血液白蛋白九項具名範本比較，以及條件確認後的 CKD-EPI 2021 估算。
 這是與原始判讀分開的瀏覽器端功能，不改寫前述原院分級；完整來源、公式及尚未完成範圍見
 [計算契約](comparison-engine.md)。

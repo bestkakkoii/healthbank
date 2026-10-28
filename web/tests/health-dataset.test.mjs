@@ -1,7 +1,7 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { exportDataset, importDataset, supplementReportJSON, DATASET_SCHEMA, MAX_ARCHIVE_ATTACHMENT_BYTES } from '../src/health-dataset.ts';
+import { exportDataset, exportDatasetPackage, importDataset, supplementReportJSON, DATASET_SCHEMA, MAX_ARCHIVE_ATTACHMENT_BYTES } from '../src/health-dataset.ts';
 import { MAX_PORTABLE_REPORT_BYTES, portableReportJSON, portableReportXML } from '../src/portable-report.ts';
 
 const encoded = value => new TextEncoder().encode(value);
@@ -32,6 +32,60 @@ function fixture() {
   const files = [{ category: 'medicine', id: attachmentRef, name: '合成報告.txt', content_type: 'text/plain', bytes: encoded('合成中文附件\n原文不執行 <script>') }];
   return { lab, snapshot, files };
 }
+
+test('streaming package projection binds live attachment handles to the exact portable relationship without exporting capabilities', async () => {
+  const { lab, snapshot } = fixture();
+  const projection = await exportDatasetPackage(lab, snapshot, categories);
+  assert.equal(projection.files.length, 1);
+  assert.equal(projection.files[0].id, attachmentRef);
+  assert.equal(projection.files[0].category, 'medicine');
+  for (const value of [attachmentRef, actionRef, ref, nestedRef, lab.session_token]) assert.ok(!projection.content.includes(value));
+  const restored = await importDataset(encoded(projection.content));
+  const attachment = Object.values(restored.snapshot.details.medicine).flatMap(report => report.entries)
+    .flatMap(entry => entry.attachments ?? [])[0];
+  assert.equal(projection.files[0].archive_id, attachment.id);
+  assert.equal(restored.attachments.length, 0);
+  const importedProjection = restored.snapshot;
+  await assert.rejects(exportDatasetPackage(lab, importedProjection, categories), /不屬於目前官方工作階段/);
+});
+
+test('catalog capacity includes declared, report and retained orphan attachment categories on both import and export', async () => {
+  const laboratory = { records: [], fetched_at: '', complete: false, warnings: [] };
+  const declared = Array.from({ length: 198 }, (_, index) => ({ id: `synthetic_${index}`, label: `Synthetic source ${index}`,
+    group: 'Synthetic', range_mode: 'source', has_details: false }));
+  const snapshot = { reports: { synthetic_report: source([row(), row()], 'synthetic_report') },
+    details: {}, states: {}, query: { from: '', to: '' } };
+  // Retained downloads may outlive the source list that originally linked them.
+  const files = [{ category: 'synthetic_orphan', id: attachmentRef, name: 'synthetic.txt', content_type: 'text/plain', bytes: encoded('Synthetic retained original') }];
+  const content = await exportDataset(laboratory, snapshot, files, declared);
+  const restored = await importDataset(encoded(content));
+  assert.equal(restored.catalog.length, 200);
+  assert.deepEqual(restored.catalog.slice(-2).map(item => item.id), ['synthetic_report', 'synthetic_orphan']);
+  assert.equal(restored.snapshot.reports.synthetic_report.entries.length, 2);
+  assert.deepEqual(restored.attachments[0].bytes, files[0].bytes);
+  const roundTrip = await importDataset(encoded(await exportDataset(laboratory, restored.snapshot, restored.attachments, restored.catalog)));
+  assert.equal(roundTrip.catalog.length, 200);
+  assert.deepEqual(roundTrip.snapshot.reports.synthetic_report.entries, restored.snapshot.reports.synthetic_report.entries);
+
+  const extra = { id: 'synthetic_extra', label: 'Synthetic extra', group: 'Synthetic', range_mode: 'source', has_details: false };
+  await assert.rejects(exportDataset(laboratory, snapshot, files, [...declared, extra]));
+  const original = JSON.parse(content);
+  for (const mutate of [
+    value => { value.catalog.push(extra); },
+    value => { value.data.reports.synthetic_extra = source([], 'synthetic_extra'); },
+    value => { value.attachments.push({ ...value.attachments[0], id: 'archive_99999', category: 'synthetic_extra' }); },
+  ]) {
+    const changed = structuredClone(original); mutate(changed);
+    await assert.rejects(importDataset(encoded(JSON.stringify(changed))));
+  }
+
+  // Existing v1 archives retain their in-bound fallback behavior and limit.
+  const legacy = structuredClone(original);
+  legacy.schema = 'healthbank.dataset.v1'; legacy.laboratory.schema = 'healthbank.lab.v1'; delete legacy.producer;
+  assert.equal((await importDataset(encoded(JSON.stringify(legacy)))).catalog.length, 200);
+  legacy.catalog.push(extra);
+  await assert.rejects(importDataset(encoded(JSON.stringify(legacy))));
+});
 
 test('standalone source exports preserve rows and local relationships without live document capabilities', () => {
   const original = source([row({ key: 'synthetic-source-key', detail_id: ref,
@@ -75,6 +129,22 @@ test('complete dataset preserves duplicates, nested source relationships, exact 
   assert.deepEqual(result.snapshot.states.medicine.query, snapshot.states.medicine.query);
   assert.equal(result.snapshot.states.hospital.status, 'failed');
   assert.deepEqual({ lab, snapshot, files }, previous);
+});
+
+test('suggested refill calendars and PNG originals retain bytes without implying calendar import or medication adherence', async () => {
+  const { lab, snapshot } = fixture();
+  const calendar = encoded('BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:合成建議領藥日期（不是已領藥）\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n');
+  const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+  const files = [{ category: 'medicine', id: attachmentRef, name: '合成建議領藥日期.ics', content_type: 'text/calendar;charset=utf-8', bytes: calendar },
+    { category: 'medicine', id: 'e'.repeat(48), name: '合成原圖.png', content_type: 'image/png', bytes: png }];
+  snapshot.details.medicine[nestedRef].entries[0].attachments = files.map(file => ({ id: file.id, name: file.name, content_type: file.content_type }));
+  const restored = await importDataset(encoded(await exportDataset(lab, snapshot, files, categories)));
+  assert.deepEqual(restored.attachments.map(file => file.content_type), ['text/calendar', 'image/png']);
+  assert.deepEqual(restored.attachments.map(file => file.bytes), [calendar, png]);
+  for (const [index, bytes] of [[0, new Uint8Array([0xff])], [1, encoded('not a PNG')]]) {
+    const invalidFiles = files.map((file, ordinal) => ordinal === index ? { ...file, bytes } : file);
+    await assert.rejects(exportDataset(lab, snapshot, invalidFiles, categories));
+  }
 });
 
 test('export retains missing details and nonembedded attachment metadata without fabricating completeness', async () => {

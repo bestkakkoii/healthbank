@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "registry_id": "healthbank.nhi-public-contracts.v1",
-  "contract_revision": "nhi-spa.2026-10-28.2",
+  "contract_revision": "nhi-spa.2026-10-28.3",
   "copyright": "Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.",
   "origin": "https://myhealthbank.nhi.gov.tw",
   "entry_path": "/IHKE3000/",
-  "reviewed_snapshot": "2026-10-28 documented public bundles; no login or account data",
+  "reviewed_snapshot": "2026-10-28T08:49:46.969922+00:00 current public graph; static inspection, no login or personal API request",
   "boundary": "Hashes and source projection identify an observed public SPA contract. They do not prove supported API status, account eligibility, upstream historical completeness or live authentication.",
   "app_asset": {
     "file": "app.64b5ac08.js",
@@ -13,9 +13,189 @@
   },
   "assets": [
     {
+      "module": "IHKE3001s99_IDLE",
+      "file": "IHKE3001s99_IDLE.62514b1f.js",
+      "sha256": "e1488ad8ed2a8494b6b8cea3f43b8720d518e99f2f56d1f3a3845801798feb29"
+    },
+    {
+      "module": "IHKE3095S01",
+      "file": "IHKE3095S01.0b57216c.js",
+      "sha256": "4b1bbba915b0090b60c9951e2a944ba58b153e73e6d3d982f9f30127c0668e3f"
+    },
+    {
+      "module": "IHKE3095S01~IHKE3096S01~IHKE3097S01~IHKE3098S01~IHKE3099S01~IHKE3408S02~IHKE3411S02~IHKE3801S01",
+      "file": "IHKE3095S01~IHKE3096S01~IHKE3097S01~IHKE3098S01~IHKE3099S01~IHKE3408S02~IHKE3411S02~IHKE3801S01.22623ecc.js",
+      "sha256": "d6a05b419a9fbab6ccf058112ae42c2e61ae40f48632e5e46d457c2aff22a843"
+    },
+    {
+      "module": "IHKE3096S01",
+      "file": "IHKE3096S01.d2b1b3d1.js",
+      "sha256": "92d018b3cb3fafe6cc156c51dd6dd764d2553535a7e8d96de335d4b57ed67958"
+    },
+    {
+      "module": "IHKE3097S01",
+      "file": "IHKE3097S01.8e6c4f5f.js",
+      "sha256": "146b2aceb20035471c5044a5f46755b1b000d072cf0dcc1620073dfb9744b70d"
+    },
+    {
+      "module": "IHKE3097S01~IHKE3098S01",
+      "file": "IHKE3097S01~IHKE3098S01.398ab956.js",
+      "sha256": "f359b1c207621fe573d5f8255557320432647fb634f86f1aada485cb28e772a2"
+    },
+    {
+      "module": "IHKE3098S01",
+      "file": "IHKE3098S01.5246d2a9.js",
+      "sha256": "89389a203690367bf3de0363a64f356c55c8585318c197b22ad99a2a64fb4bef"
+    },
+    {
       "module": "IHKE3099S01",
       "file": "IHKE3099S01.195e6838.js",
       "sha256": "dea1f5e323cfb1ea1d4d033f34215b0ec12e3ee3cccef487abd7cb3854092ab1"
+    },
+    {
+      "module": "IHKE3099S02",
+      "file": "IHKE3099S02.62c3dedc.js",
+      "sha256": "af4c51d5aba05a31d84e86365c1477e8e71959ebbc61768be46bdc0ef6131ec3"
+    },
+    {
+      "module": "IHKE3099S03",
+      "file": "IHKE3099S03.31d90b7c.js",
+      "sha256": "d40d0f66062998513b8bfa1f08ccf528eb8d901935cc549dddd275a7cb13ccdd"
+    },
+    {
+      "module": "IHKE3099S04",
+      "file": "IHKE3099S04.f62f585f.js",
+      "sha256": "6f01b3d643c5bda3dfa38e4c6376d008ec72d4d0c59ce08c11bc1b2e4cb70be7"
+    },
+    {
+      "module": "IHKE3099S99",
+      "file": "IHKE3099S99.1abfa58e.js",
+      "sha256": "d9a233f07dbc6a90bae8b7350751c84151ccde73b23102b831e12081fda47b9d"
+    },
+    {
+      "module": "IHKE3101S00",
+      "file": "IHKE3101S00.20a3a775.js",
+      "sha256": "554259ee0126e0107632070f050c78cc3cb9abe967dc11c4b1134c3c59ae75f3"
+    },
+    {
+      "module": "IHKE3101S01",
+      "file": "IHKE3101S01.24b4a924.js",
+      "sha256": "7a17149f301890b01830ec3c73f60974a282af5a0dccf79821f196028931cef3"
+    },
+    {
+      "module": "IHKE3102S01",
+      "file": "IHKE3102S01.92ac935b.js",
+      "sha256": "edbf01e85af788458ba80db617f5e2d5043426f6064f7145e1df6176dcb3b171"
+    },
+    {
+      "module": "IHKE3102S02",
+      "file": "IHKE3102S02.93bc8960.js",
+      "sha256": "fb547844a40b506c766b3ca3c21b3c4a0760d63dd025fbcbfc1882e298feca6f"
+    },
+    {
+      "module": "IHKE3103S01",
+      "file": "IHKE3103S01.5532549b.js",
+      "sha256": "d563371297fef4fcebf5b29a0bd78d2bfae92ca32087965c28ec6c70620794d8"
+    },
+    {
+      "module": "IHKE3104S01",
+      "file": "IHKE3104S01.f06e7025.js",
+      "sha256": "fe7981923264e8c47d097b6465d6a7c774028fe2378cdd0922314922b54762d8"
+    },
+    {
+      "module": "IHKE3104S01~IHKE3202S01~IHKE3203S01~IHKE3307S02~IHKE3703S01~IHKE3703S02~IHKE3709S01~IHKE3709S02~VpnHostAgent",
+      "file": "IHKE3104S01~IHKE3202S01~IHKE3203S01~IHKE3307S02~IHKE3703S01~IHKE3703S02~IHKE3709S01~IHKE3709S02~VpnHostAgent.a44f2209.js",
+      "sha256": "5570081b45c058a91abaaa5aed180611eb7cb37db71d528e5a5572bb323cf432"
+    },
+    {
+      "module": "IHKE3104download",
+      "file": "IHKE3104download.7e722c8c.js",
+      "sha256": "b6e247cd6a4ea600b4eb33cee34deccb1d3a194d33ae670611c8c700967288f0"
+    },
+    {
+      "module": "IHKE3106S01",
+      "file": "IHKE3106S01.b3ced5db.js",
+      "sha256": "7fb8ca8b3a5c9e189125de61ce6ceaa92a0ec99eb1af485f48448fbf9e2671e6"
+    },
+    {
+      "module": "IHKE3107S01",
+      "file": "IHKE3107S01.1d8605a9.js",
+      "sha256": "3d41958084e447a51b02b12d1e279056983111493269d436a1e38b78aab22458"
+    },
+    {
+      "module": "IHKE3108S01",
+      "file": "IHKE3108S01.c01b3cde.js",
+      "sha256": "e8ba68dc7cd4ae7e022bc983b28b5baeff45793e2ed5d6acd6409af7d39e976a"
+    },
+    {
+      "module": "IHKE3109S01",
+      "file": "IHKE3109S01.5259da1a.js",
+      "sha256": "3c1a6e19b85874d0506457ffaf72f9711926666f29e1bc11e6c8b0fc54f7bcbe"
+    },
+    {
+      "module": "IHKE3110S01",
+      "file": "IHKE3110S01.56f79a68.js",
+      "sha256": "05f99050a5a6371956726cfceffb44700755ba459279ea4e370065f23db160e9"
+    },
+    {
+      "module": "IHKE3110S02",
+      "file": "IHKE3110S02.980a912e.js",
+      "sha256": "c6b08862bf09b94733c014de11b19160899b60ee248b1250fb7c215193697ff6"
+    },
+    {
+      "module": "IHKE3111S01",
+      "file": "IHKE3111S01.789a1e39.js",
+      "sha256": "bae3d4285c4c14691ca2f2c37c6d6ba8bc95033ac359792b681598b2ed295f66"
+    },
+    {
+      "module": "IHKE3112S01",
+      "file": "IHKE3112S01.edd70d1d.js",
+      "sha256": "101e6fa78530d7a56e966e42fcf546b6045f3039d0d50d60f870c0534c183ca7"
+    },
+    {
+      "module": "IHKE3113S01",
+      "file": "IHKE3113S01.09ac490b.js",
+      "sha256": "5de1f89ca4fa40dc1f2132b26625e59c6595ada3553858b5872ccfe04e655d7b"
+    },
+    {
+      "module": "IHKE3113S02",
+      "file": "IHKE3113S02.e8a27f7c.js",
+      "sha256": "ce3acb68a9a66f83e15b637040f475ce2f464146bf245b3e31c3a41df44c5426"
+    },
+    {
+      "module": "IHKE3114S01",
+      "file": "IHKE3114S01.e367541d.js",
+      "sha256": "b44a874d2bd81852834939c69637f141a10a0504c65f082301382a8ccf884dd5"
+    },
+    {
+      "module": "IHKE3115S01",
+      "file": "IHKE3115S01.be579f6a.js",
+      "sha256": "3ec6745a8319c63b4a35e4f4eddf4768b4f30e0718dd5ce04532eb430b151222"
+    },
+    {
+      "module": "IHKE3115S02",
+      "file": "IHKE3115S02.fd788a10.js",
+      "sha256": "4195500fb233b31dd79cb55b87e4340491baa189c5646181585f49dbed796c50"
+    },
+    {
+      "module": "IHKE3115S03",
+      "file": "IHKE3115S03.6e385131.js",
+      "sha256": "4173f58f6289ca0e5edf1b16223d28724e4b3b6a48f2ffbdece5bf730c5d17dc"
+    },
+    {
+      "module": "IHKE3116S01",
+      "file": "IHKE3116S01.dc8881bc.js",
+      "sha256": "680b02d020e274142308b62b8fd458d4328affe1d8e8af51d9e00f2bbdf1ddbb"
+    },
+    {
+      "module": "IHKE3118S01",
+      "file": "IHKE3118S01.3f6f041c.js",
+      "sha256": "f1cfdb6cde8475b90b4a805ccb6092f62f9408d2cb345109ccb7549ac6d0b0cd"
+    },
+    {
+      "module": "IHKE3201S01",
+      "file": "IHKE3201S01.e58a7726.js",
+      "sha256": "529c66a0778c95f9386d6133102b9fd1c38b8e1bcff6b4e60c16075f7c108bec"
     },
     {
       "module": "IHKE3202S01",
@@ -41,6 +221,16 @@
       "module": "IHKE3205S02",
       "file": "IHKE3205S02.4e3c4e04.js",
       "sha256": "cfee70c0eee6f4baa5e1b6410255f73d6fcbc4b94010df57e7b20dabf8b4a7bb"
+    },
+    {
+      "module": "IHKE3205S02~IHKE3205S04~IHKE3206S01~IHKE3207S02~IHKE3207S05~IHKE3406S01~IHKE3407S01~IHKE3407S02~IHKE~a2777c9f",
+      "file": "IHKE3205S02~IHKE3205S04~IHKE3206S01~IHKE3207S02~IHKE3207S05~IHKE3406S01~IHKE3407S01~IHKE3407S02~IHKE~a2777c9f.1438a494.js",
+      "sha256": "30029129480bf5a0bc954940b76f37e8e293c8fd60baadf4abab73a20c20011d"
+    },
+    {
+      "module": "IHKE3205S02~IHKE3207S05~IHKE3512S02~IHKE3713S03",
+      "file": "IHKE3205S02~IHKE3207S05~IHKE3512S02~IHKE3713S03.4e6321db.js",
+      "sha256": "fd4ff6119030c6de6de3fb94014f960110806a288df6a24d7fa2ade3f8006fe1"
     },
     {
       "module": "IHKE3205S04",
@@ -93,6 +283,11 @@
       "sha256": "7112f6aa027f4b9fb1ffa5cf27483007af503520c6a01087af189fb36746052b"
     },
     {
+      "module": "IHKE3212download",
+      "file": "IHKE3212download.9901b1d9.js",
+      "sha256": "c9421dc2ed0d1bd6ee7ee520b4fa9a4d0d132662a9b51ed58556f2290167e3d7"
+    },
+    {
       "module": "IHKE3213S01",
       "file": "IHKE3213S01.4e42c419.js",
       "sha256": "d3bd93f3e15afc4c4fd636979e89d86d243c0b85938b40aa345976d8af6adec3"
@@ -118,6 +313,56 @@
       "sha256": "9c34680bb080f4476dfa88894ccfca03af0b04b22320a675c67c4e5f3f1028fb"
     },
     {
+      "module": "IHKE3301S01",
+      "file": "IHKE3301S01.531b684d.js",
+      "sha256": "43eafb15a0ab5ff4b99e3f3668b36bcf732ac0fc4f313055091b078de435c71a"
+    },
+    {
+      "module": "IHKE3301S02",
+      "file": "IHKE3301S02.216e1ca5.js",
+      "sha256": "4386f93f2fcd7466151c2aafd14312a618e14c2cf015afaca8ee5830b5a77beb"
+    },
+    {
+      "module": "IHKE3301S03",
+      "file": "IHKE3301S03.cf95c0e1.js",
+      "sha256": "29c60ffaa2bd0ea9e50d70d33fa34a62e6204e774a76531b593142b5357fda20"
+    },
+    {
+      "module": "IHKE3301S04",
+      "file": "IHKE3301S04.e37063e2.js",
+      "sha256": "74d23bc05e80352d501bfc008bdac7dc41a83d2b2842bdaf6ded6971574b006f"
+    },
+    {
+      "module": "IHKE3301S05",
+      "file": "IHKE3301S05.ad7ff42e.js",
+      "sha256": "2a297e0b25d61f08add61532d30e277de43ff09d02a3eafb6fa71719cb53f509"
+    },
+    {
+      "module": "IHKE3301S06",
+      "file": "IHKE3301S06.d3c17df6.js",
+      "sha256": "0e8213254926f481967a38f192c239bd5a5954ef2cc6604c3f32c5d315f9d6d7"
+    },
+    {
+      "module": "IHKE3301S07",
+      "file": "IHKE3301S07.9b857a6a.js",
+      "sha256": "25d91119e9a70eaf963d158683d239c67c0d12dcc6ed9857953a7fe4e9e35d5a"
+    },
+    {
+      "module": "IHKE3302S01",
+      "file": "IHKE3302S01.763402d6.js",
+      "sha256": "84cd8b21c1c576694d818e07a78b969c80428b4caeee20b616fca442d79ca23b"
+    },
+    {
+      "module": "IHKE3302S02",
+      "file": "IHKE3302S02.5e43b218.js",
+      "sha256": "f74a5a9edc518e15a1809742edc6a0027f0d87bbd9a21c68608ee493fab22865"
+    },
+    {
+      "module": "IHKE3302S03",
+      "file": "IHKE3302S03.a8108656.js",
+      "sha256": "5d52b0594d01cb93e24979c1359040ba932b98da64db6407ad6c530356771ced"
+    },
+    {
       "module": "IHKE3303S01",
       "file": "IHKE3303S01.3d574db2.js",
       "sha256": "7a0eac5049c1d347f3569611a305947c872f2cca89833358295f1d476eca4073"
@@ -126,6 +371,21 @@
       "module": "IHKE3303S02",
       "file": "IHKE3303S02.07d29ff4.js",
       "sha256": "9e6bdb486644362840664f0d35fb4b921b107ef149b84bbc8ed3c80e365e1048"
+    },
+    {
+      "module": "IHKE3303S03",
+      "file": "IHKE3303S03.9d5cc8f6.js",
+      "sha256": "8f7eb7b1c1edabba9571ebfb4d9388fdf18290e73d22bdafbefeec90956d847f"
+    },
+    {
+      "module": "IHKE3303S04",
+      "file": "IHKE3303S04.150cfbe4.js",
+      "sha256": "46f4a860ae480fb704c9b4f5b3afa86a0b84e6ff6e9431b2eb0f469cfda83216"
+    },
+    {
+      "module": "IHKE3303S05",
+      "file": "IHKE3303S05.8a3ef35d.js",
+      "sha256": "cf60dc2cef9e6b783dad9ec2675a101da2035fc3423d06c18def09e296962c4a"
     },
     {
       "module": "IHKE3304S01",
@@ -186,6 +446,36 @@
       "module": "IHKE3309S02",
       "file": "IHKE3309S02.deb370e8.js",
       "sha256": "f09984c1c3f46a0dc3eecf58163f95718295abd0af7d6fea74665b3df51047d0"
+    },
+    {
+      "module": "IHKE3310S01",
+      "file": "IHKE3310S01.d0184a54.js",
+      "sha256": "cfe57ef75849c728964cb43e56e043ac3a40a107feecb8a154efac698e8fc845"
+    },
+    {
+      "module": "IHKE3401S01",
+      "file": "IHKE3401S01.5e1e50b3.js",
+      "sha256": "41e08eec749eab9d83d2699dc4b3301b415434999cf47a12e3821f008f269031"
+    },
+    {
+      "module": "IHKE3402S01",
+      "file": "IHKE3402S01.483e0f82.js",
+      "sha256": "d30f1f9c65bac23739b975915bf7da9cb2fa6355b9960315e96bdaa7331ab14c"
+    },
+    {
+      "module": "IHKE3403S01",
+      "file": "IHKE3403S01.34e867bc.js",
+      "sha256": "c99ffb7a81ae79875e239591b0d26f19f9cbcef1a70ecaedf08bcfa5c76faa71"
+    },
+    {
+      "module": "IHKE3403download",
+      "file": "IHKE3403download.e604b1cc.js",
+      "sha256": "b01a55f13cf3083b92dd4362be92cacf1cd63bfe7a26a82042ae229d9fbc2e73"
+    },
+    {
+      "module": "IHKE3404S01",
+      "file": "IHKE3404S01.721fbd3e.js",
+      "sha256": "b2ec0e6eb7a12acaada0021823d1d16b99077c6e76b2e5b1647d2d362ebc11d3"
     },
     {
       "module": "IHKE3404S02",
@@ -283,9 +573,29 @@
       "sha256": "7bdfa6d474b001f3d81c9c224361adc938ca5afcb538fce9cc85dd477f70068e"
     },
     {
+      "module": "IHKE3501S01",
+      "file": "IHKE3501S01.d8a6e049.js",
+      "sha256": "0de1db174f5910af63f120da5730897d712abc2e6cb2a0b3bd578671d9e03418"
+    },
+    {
+      "module": "IHKE3502S01",
+      "file": "IHKE3502S01.8cceae9e.js",
+      "sha256": "425276c380158a6b9bf86954bb045c335a21e71d2f59e8a89791a2a61af8a5f9"
+    },
+    {
+      "module": "IHKE3503S01",
+      "file": "IHKE3503S01.935990c5.js",
+      "sha256": "41441a3be82343ed01232498e42fca5f491a2265eb3588e6ea34934cc7af0a80"
+    },
+    {
       "module": "IHKE3504S01",
       "file": "IHKE3504S01.46f8fe96.js",
       "sha256": "236c3a7668b9116e2ac7223b3831d6dae0ac5579d7533aeba915eb18a89a06e4"
+    },
+    {
+      "module": "IHKE3504S02",
+      "file": "IHKE3504S02.24ac6f2a.js",
+      "sha256": "958593f724d0cb5bc0ba060943a3cfa704e0a350c551916b6f70faad442f5f43"
     },
     {
       "module": "IHKE3504S03",
@@ -298,14 +608,29 @@
       "sha256": "b3e529271e0c1145f4daa079c8e303b35735ffe6511755c75aade8f41d1d2c77"
     },
     {
+      "module": "IHKE3505S02",
+      "file": "IHKE3505S02.f234bfc2.js",
+      "sha256": "95ff2713a7436909340f39b84c29c8ad921cffcbb7bfa6a16168f883535850d2"
+    },
+    {
       "module": "IHKE3505S03",
       "file": "IHKE3505S03.cb77998a.js",
       "sha256": "c00f66f7cb901881bb4a5031d3de74d269f12ebf32d175bf521c23b88a5f5699"
     },
     {
+      "module": "IHKE3506S01",
+      "file": "IHKE3506S01.cbf6d113.js",
+      "sha256": "86ad00e6e11d4615e9c3b0a1d91d9c78c184c14bcac290b18a16427e8589854d"
+    },
+    {
       "module": "IHKE3507S01",
       "file": "IHKE3507S01.23bdf7f0.js",
       "sha256": "d1f369a25b49569ca35e76a7f8fa63d859285e28cbdaadf1627ac87bc9c47852"
+    },
+    {
+      "module": "IHKE3507S02",
+      "file": "IHKE3507S02.f6ca7945.js",
+      "sha256": "935e0b4f4973c1e45b19b400537d7450404094f9413fa9d6c8e21c506d18c845"
     },
     {
       "module": "IHKE3507S03",
@@ -328,6 +653,11 @@
       "sha256": "8a009b95ed32d9d774eab55cb9b85dcabf72872bc71e1ebfe648d01b65c2c346"
     },
     {
+      "module": "IHKE3513S02",
+      "file": "IHKE3513S02.11b8f47f.js",
+      "sha256": "4b1642f4e3d4f20c9faa446593dc1b6e2847728d528fb260a2f3d2ab62a9a0cc"
+    },
+    {
       "module": "IHKE3513S03",
       "file": "IHKE3513S03.9998993b.js",
       "sha256": "fc3e8c461efeb61525aea46921dd31aa34b6b06e65f712d4066b4217e8d4b87f"
@@ -336,6 +666,11 @@
       "module": "IHKE3514S01",
       "file": "IHKE3514S01.30153756.js",
       "sha256": "54e500b8e7ceaf968db46f00e3f9f32e99fb90f130647999dc38d70710abb6cd"
+    },
+    {
+      "module": "IHKE3515S01",
+      "file": "IHKE3515S01.21dda6e1.js",
+      "sha256": "fb6845cc41316daace49d9841000c08402dbdca8ebbbc144744d14ff6a9767ca"
     },
     {
       "module": "IHKE3516S01",
@@ -368,9 +703,219 @@
       "sha256": "49672dc9293088ca6dcc0b9b6521307247e03ba279c373f2648608e5ebebd4fb"
     },
     {
+      "module": "IHKE3518S01",
+      "file": "IHKE3518S01.e16f9ac3.js",
+      "sha256": "972c21b376afdac89a16c1b6fe37914af92aa9e7c38c56344d364182a2433e93"
+    },
+    {
+      "module": "IHKE3601S01",
+      "file": "IHKE3601S01.6d5c35bd.js",
+      "sha256": "8aff5f6abd17aa1d95df823a40a2b0900a333e127a2f05d2a417f85e564ce474"
+    },
+    {
+      "module": "IHKE3601S02",
+      "file": "IHKE3601S02.51285432.js",
+      "sha256": "8f7c878320ed9142259c883cae144e913eabb8c8296ec93a1b6904cb71992e59"
+    },
+    {
+      "module": "IHKE3701S01",
+      "file": "IHKE3701S01.e947f232.js",
+      "sha256": "6d7174866f141a73f1d5ca882110310c649a9e609c112d67b3349598f8a1048f"
+    },
+    {
+      "module": "IHKE3702S01",
+      "file": "IHKE3702S01.975cde15.js",
+      "sha256": "de2eef8f51b765e5c9f689b527b1e8d9c3c355462d1ce59263955e57fcaa84ca"
+    },
+    {
+      "module": "IHKE3703S01",
+      "file": "IHKE3703S01.7bc838e8.js",
+      "sha256": "9e7485780790d3256cfab93d0e3bc2ae07b1f3aff8babb2f1efad841475552cc"
+    },
+    {
+      "module": "IHKE3703S02",
+      "file": "IHKE3703S02.2ad05aed.js",
+      "sha256": "816eecc1c8509e4d8d9a633101093ddc25fb7d37c77c71f51bb5ee60bdd24ca1"
+    },
+    {
+      "module": "IHKE3704S01",
+      "file": "IHKE3704S01.33480f54.js",
+      "sha256": "65c4435bc9bdc170e4b3b871cffec4c884cf1b0f6dc6cf2c494caa504d40d50d"
+    },
+    {
+      "module": "IHKE3704S02",
+      "file": "IHKE3704S02.d894a0ee.js",
+      "sha256": "863ea0932e8c4ff40adccc44b560214a257dfa19d7cb9b7598253e6ec8427f63"
+    },
+    {
+      "module": "IHKE3704S03",
+      "file": "IHKE3704S03.37f87684.js",
+      "sha256": "152d39554ecbbd5b570572170d8da127a0076270b2577e688aee1a74cda14c5a"
+    },
+    {
+      "module": "IHKE3705S01",
+      "file": "IHKE3705S01.df3eb947.js",
+      "sha256": "2e989d007bb28b72384ee7fc3b93e7dc511e7a27da40210ca1bc347cdc009ee9"
+    },
+    {
+      "module": "IHKE3705S02",
+      "file": "IHKE3705S02.9fbc9000.js",
+      "sha256": "6e5e895d6525b909c3c8a5937a7a031e6860c8dc27101e2af783cb5b94e5ed68"
+    },
+    {
+      "module": "IHKE3706S01",
+      "file": "IHKE3706S01.ac312075.js",
+      "sha256": "dcc35b8ce7de28b9339fd39792b5158b09a9a550ee680957d2d0575194fd0b41"
+    },
+    {
+      "module": "IHKE3707S01",
+      "file": "IHKE3707S01.4964fb22.js",
+      "sha256": "c8b35cd525dc1f7774ae053c321ab14e88ab48e39bc20e187cdadd477323bb09"
+    },
+    {
+      "module": "IHKE3707S02",
+      "file": "IHKE3707S02.7d577dd8.js",
+      "sha256": "c07c59ce6e4af7db57d8c66b19bad1c32d09d97b94b9c2422a252fb68001afcd"
+    },
+    {
+      "module": "IHKE3708S01",
+      "file": "IHKE3708S01.e61ecd25.js",
+      "sha256": "0e990d2cbe10dde5325f2abf858f430edff97672f370a285c711b5fae48065d8"
+    },
+    {
+      "module": "IHKE3708S02",
+      "file": "IHKE3708S02.125fbaa1.js",
+      "sha256": "42d912381ee8b8279ed80cfa8bf1a71c85105a4a20d515c141e18dc588872e4f"
+    },
+    {
+      "module": "IHKE3709S01",
+      "file": "IHKE3709S01.75133dc7.js",
+      "sha256": "afa234b267da3da1d1e937e622e7db606bd5710eca366575fade1235e7418ce4"
+    },
+    {
+      "module": "IHKE3709S02",
+      "file": "IHKE3709S02.76af7259.js",
+      "sha256": "359761573c3d47b8e305ef0392e652bb76f2e68c1eb66bfe21d9c539b0bf30db"
+    },
+    {
+      "module": "IHKE3710S01",
+      "file": "IHKE3710S01.f1a0f11a.js",
+      "sha256": "2ccfe31319df3c86ac9f911b99601162f446a36970c434664401c6c836523577"
+    },
+    {
+      "module": "IHKE3710S02",
+      "file": "IHKE3710S02.31201ed0.js",
+      "sha256": "65b31ed812f8c8ff7194dc22ebc4e53963462ac58bdb7e7a726f5709c0184366"
+    },
+    {
+      "module": "IHKE3710S03",
+      "file": "IHKE3710S03.fb31b1f1.js",
+      "sha256": "306415cf0a86bf151f2dff28a0024bac9f9830fe0ff441173481c0db4be165dd"
+    },
+    {
+      "module": "IHKE3710S91",
+      "file": "IHKE3710S91.b026d35e.js",
+      "sha256": "0b926aefb831561c139e5ddd6b84001228cb5f8a2be6c10fb2cafd71ef2bce52"
+    },
+    {
+      "module": "IHKE3710S92",
+      "file": "IHKE3710S92.a302f016.js",
+      "sha256": "41b7e98ce589c653646156f857d9fc6833dec2ce4c6f9fdab45334788543d339"
+    },
+    {
+      "module": "IHKE3710S93",
+      "file": "IHKE3710S93.4d2cdff7.js",
+      "sha256": "8a7d2f391025fe495de01c80c763956b5c626c2a5963433b1ca2fd8c95b7d07d"
+    },
+    {
       "module": "IHKE3712S01",
       "file": "IHKE3712S01.2e601c04.js",
       "sha256": "a5bbe1cd15a204129fe5df627309c3fe9097ecc73c57944064628ab52eb10584"
+    },
+    {
+      "module": "IHKE3712S02",
+      "file": "IHKE3712S02.db31627f.js",
+      "sha256": "3e8b91f62fbb172cb4e9ec858fd921cbf874295493fb09bb720d6e551c169ee3"
+    },
+    {
+      "module": "IHKE3713S01",
+      "file": "IHKE3713S01.67c4d54d.js",
+      "sha256": "4de618c0b0625e11821c0550054e93959b322a167e3062fddd6b79cc021a4f54"
+    },
+    {
+      "module": "IHKE3713S02",
+      "file": "IHKE3713S02.f5c8b9d9.js",
+      "sha256": "d2945c582b9d483ecc129324fc313468b185534a24dfde59ea3bd7c54f858087"
+    },
+    {
+      "module": "IHKE3713S03",
+      "file": "IHKE3713S03.0936e0a8.js",
+      "sha256": "6041de3ec6dc3d749f8fac3ef0551e6e3160e3494bf19908da2cbe8ced2a2ce1"
+    },
+    {
+      "module": "IHKE3713S04",
+      "file": "IHKE3713S04.5a333147.js",
+      "sha256": "4d3968de134d368924bfdfa599211583eabe1b1ffc11f988925f1e6e02a4673d"
+    },
+    {
+      "module": "IHKE3714S01",
+      "file": "IHKE3714S01.640f9624.js",
+      "sha256": "1637c7608106f900f9318788ba940d00b16384977cbd6840501d419132fbac02"
+    },
+    {
+      "module": "IHKE3714S01Redirect",
+      "file": "IHKE3714S01Redirect.67833b2a.js",
+      "sha256": "8b2ddc9d4c5ecf05cd4eac7d57cdd5b54aae1861e4d04d4ea32b2cdaa37ede23"
+    },
+    {
+      "module": "IHKE3714S02",
+      "file": "IHKE3714S02.d9995a97.js",
+      "sha256": "4a21f5b7bd38cbe451140aeca0f306450d12e8677a0225e54d2cecb7680acdbe"
+    },
+    {
+      "module": "IHKE3714S05",
+      "file": "IHKE3714S05.13cebd12.js",
+      "sha256": "2b482343014fb56f4b5c7f5b0d28a0678c35963c17fff2366e83ac83a49fd9ae"
+    },
+    {
+      "module": "IHKE3714S06",
+      "file": "IHKE3714S06.95102b45.js",
+      "sha256": "c65f00a3fe67de357846fb04088e3a1972d206576c93f15d7b495453244b52e2"
+    },
+    {
+      "module": "IHKE3714S07",
+      "file": "IHKE3714S07.05c50ea5.js",
+      "sha256": "9d5011ffefce350efd11ed2ed170dce4d0d0103cc9c48b842a4278686bccf31b"
+    },
+    {
+      "module": "IHKE3714S08",
+      "file": "IHKE3714S08.92ed43db.js",
+      "sha256": "3b87e8b6c82c13827d9554cbd196e426ea3060de2164c77725c5ad33c37ffb36"
+    },
+    {
+      "module": "IHKE3714S10",
+      "file": "IHKE3714S10.bfbf4952.js",
+      "sha256": "b21bab78ba20ed88d60884f8585f5858021332f324ee006ecb25b3ea18132b0c"
+    },
+    {
+      "module": "IHKE3714S11",
+      "file": "IHKE3714S11.3a7a4e9e.js",
+      "sha256": "11f3b932ca93f1dc991ec80b8c09bd971a06dc0126bd88d9b52a6d84f3398423"
+    },
+    {
+      "module": "IHKE3714S12",
+      "file": "IHKE3714S12.f27ade6f.js",
+      "sha256": "0b1e4c7a5dcd7ae7dc85195fae738190c41fdd79fc79d2307c5c762adaab3b9b"
+    },
+    {
+      "module": "IHKE3714S13",
+      "file": "IHKE3714S13.0aab76e8.js",
+      "sha256": "eba02b08971e644567cc06412c3bf686c3aad718f64a8b6cc4affe9cc96a8258"
+    },
+    {
+      "module": "IHKE3715S91",
+      "file": "IHKE3715S91.f107baae.js",
+      "sha256": "2ac31793c0cdfabf5df6accbb9e8e2cb66f5571847d458fc468633f03d663f29"
     },
     {
       "module": "IHKE3720S01",
@@ -383,9 +928,59 @@
       "sha256": "6cdccca01c038eb59257cd237c2de1f2b67e135093e3af9ff6bf01986aa8a0ce"
     },
     {
+      "module": "IHKE3721S02",
+      "file": "IHKE3721S02.b79cfb26.js",
+      "sha256": "b889091ec2e8f72153161c67356183e8b46f468fb74fbfe00b55966d439a7d96"
+    },
+    {
       "module": "IHKE3721S03",
       "file": "IHKE3721S03.90898f2c.js",
       "sha256": "ea3343bf60923a83987f302f6e11031f3857687e203fe9ff024e48d9d74b44c2"
+    },
+    {
+      "module": "IHKE3722S01",
+      "file": "IHKE3722S01.dc1a7ad3.js",
+      "sha256": "62cd718668575a06171934e6a22bea67c82ca04151fe295b695416bbbd84240f"
+    },
+    {
+      "module": "IHKE3723S01",
+      "file": "IHKE3723S01.ff893659.js",
+      "sha256": "17653c8d069f9399c7dc928f6a2d069bcccbf7dd4147a21a3e40333b1ca9823f"
+    },
+    {
+      "module": "IHKE3723S02",
+      "file": "IHKE3723S02.e229853c.js",
+      "sha256": "686d7e8cf4f8a7061e6f44e63b7edd827d0f25907ae94d2c3d5b4de294779ba3"
+    },
+    {
+      "module": "IHKE3724S01",
+      "file": "IHKE3724S01.4ada92f4.js",
+      "sha256": "edef3464d2028a55072dde4c7fe72399481cad0ff8359a9b4068c80cceb6abe5"
+    },
+    {
+      "module": "IHKE3799S01",
+      "file": "IHKE3799S01.6f06cd40.js",
+      "sha256": "275b86f51da16c970d11ec4248972263b09de7fc45ef8a15598e87531bd2be46"
+    },
+    {
+      "module": "IHKE3799S02",
+      "file": "IHKE3799S02.dc495124.js",
+      "sha256": "741f72346f79781e4d3838e09f4eb09f1b660790b0f86293925e6086e45619a7"
+    },
+    {
+      "module": "IHKE3799S03",
+      "file": "IHKE3799S03.64772c43.js",
+      "sha256": "f695b24c13209e0b9c2c59d408157a41f1a88e181600fed5e6eaa28a524e1338"
+    },
+    {
+      "module": "IHKE3799S04",
+      "file": "IHKE3799S04.7adcb8ce.js",
+      "sha256": "a9ececd1311e1c6171511ba2d83a466e7cbc5d01e935e3c7b8baaedd9f8e1b55"
+    },
+    {
+      "module": "IHKE3799S05",
+      "file": "IHKE3799S05.9a5da175.js",
+      "sha256": "690d0db09d416558f67059a7e50747d150b04934d888fc57f11cf02e575a3f42"
     },
     {
       "module": "IHKE3800download",
@@ -433,6 +1028,46 @@
       "sha256": "ba073173be6a658d4652536db90a1fd895a450a6451ce2bb139ac5870b388b77"
     },
     {
+      "module": "IHKE8122S01",
+      "file": "IHKE8122S01.40808e0f.js",
+      "sha256": "8be6f6aadff5a8ae333cf765eba10b062e8be8e5329d770644ea957b6956cd18"
+    },
+    {
+      "module": "IHKE8129S01",
+      "file": "IHKE8129S01.5054fed0.js",
+      "sha256": "741002aba62c32b63292266aba64c7b883bdb9ef06f3407d158b359543e647dd"
+    },
+    {
+      "module": "QRCODE",
+      "file": "QRCODE.93280d50.js",
+      "sha256": "1d4c65bd11ca4668c80567e59a6611ded3750caef93822065f07b5e2ec149195"
+    },
+    {
+      "module": "VpnHostAgent",
+      "file": "VpnHostAgent.9efc5082.js",
+      "sha256": "292eca0b286b9701a5bf8ea98b449e74cb34884aa5c8e35bcd568fd2ca2882d6"
+    },
+    {
+      "module": "emptymaster",
+      "file": "emptymaster.aef83749.js",
+      "sha256": "a6a4d7274734f3193df5d009f2452b3b0020e11ffdaabd3fc30934bf67c73d02"
+    },
+    {
+      "module": "fmMaster",
+      "file": "fmMaster.6cf977cf.js",
+      "sha256": "8ecce4b30b739b0eb3cc23f85bf2c1081c574e1e8895530ba8b6d5b1c75197ed"
+    },
+    {
+      "module": "fmMaster~master",
+      "file": "fmMaster~master.80e0b168.js",
+      "sha256": "3bdbdf6108160110e6c76d5307417c9227913cffe55dc323bdc68ae49c8e472f"
+    },
+    {
+      "module": "loginmaster",
+      "file": "loginmaster.ac7936f2.js",
+      "sha256": "a7a5530605e4cd7da0cf0b496a745e38f43fffcf2aa75fa35acc8561ae8bf138"
+    },
+    {
       "module": "master",
       "file": "master.59cf95f2.js",
       "sha256": "cbaee1317f8d6ac1264e52d7d32881a0f0ea08c68582e4de70838df342f6332c"
@@ -446,6 +1081,11 @@
       "module": "showXML",
       "file": "showXML.90ff2238.js",
       "sha256": "c9a968efec8f6a3c10c7f00042c1f66f77eac9749bd3e911359d1ed15b182353"
+    },
+    {
+      "module": "testlogin",
+      "file": "testlogin.c5b160b7.js",
+      "sha256": "62f4c6dec169b82b86712c67e72f7f04152d59fde4aeb4f04f24ffce3517255b"
     }
   ],
   "contracts": [
@@ -470,9 +1110,11 @@
                 "allerg_SYMPTON_OTH",
                 "upload_FLAG",
                 "upload_D",
-                "upload_D2"
+                "upload_D2",
+                "source"
               ],
               "units": [
+                "",
                 "",
                 "",
                 "",
@@ -501,9 +1143,11 @@
                 "allerg_SYMPTON_OTH",
                 "upload_FLAG",
                 "upload_D",
-                "upload_D2"
+                "upload_D2",
+                "source"
               ],
               "units": [
+                "",
                 "",
                 "",
                 "",
@@ -520,7 +1164,289 @@
       "details": [],
       "source_assets": [
         "IHKE3202S01.6ccd65a9.js"
-      ]
+      ],
+      "source_window": "讀取官方目前提供的全部回傳陣列；此來源未提供日期搜尋或獨立總數，不宣稱全部終身歷史。院所登錄與自行記錄分開標示，登錄日期不等於發作日期。"
+    },
+    {
+      "id": "annual_overview",
+      "range_mode": "source",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3302s01/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "maindata",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "year",
+                "cnt",
+                "o_cnt",
+                "part_AMT",
+                "part_AMT_BASIC",
+                "part_AMT_DRUG",
+                "part_AMT_ASSAY",
+                "appl_DOT",
+                "drug_DOT",
+                "assay_AMIN",
+                "other_DOT",
+                "o_part_AMT",
+                "o_appl_DOT",
+                "o_drug_DOT",
+                "o_amin_DOT",
+                "o_other_DOT",
+                "radi_MSV"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "mSv"
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/ihke3302s02/SP_IHKE3302S02",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3302S01_Data",
+              "shape": "array",
+              "date_field": "func_DATE",
+              "end_date_field": "",
+              "fields": [
+                "main_tit",
+                "hosp_ABBR",
+                "ori_TYPE",
+                "func_SEQ_NO",
+                "cure_path",
+                "icd9cm_CODE_CNAME",
+                "op_CODE_CNAME",
+                "ori_type_cname",
+                "ori_TYPE_NAME",
+                "in_DATE",
+                "out_DATE",
+                "func_DATE",
+                "cure_E_DATE",
+                "appl_S_DATE",
+                "appl_E_DATE",
+                "part_AMT",
+                "part_AMT_BASIC",
+                "part_AMT_DRUG",
+                "part_AMT_ASSAY",
+                "appl_DOT",
+                "exp_DOT",
+                "drug_DOT",
+                "dsvc_DOT",
+                "diag_DOT",
+                "met_DOT",
+                "cure_DOT",
+                "assay_AMIN",
+                "room_DOT",
+                "meal_DOT",
+                "amin_DOT",
+                "rado_DOT",
+                "thrp_DOT",
+                "op_DOT",
+                "phsc_DOT",
+                "blod_DOT",
+                "hd_DOT",
+                "ane_DOT",
+                "nrtp_DOT",
+                "injt_DOT",
+                "baby_DOT",
+                "pay_PRICE",
+                "show_PRICE",
+                "show_pay_PRICE",
+                "hosP_DATA_TYPE_NAME"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "元",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3302s03/SP_IHKE3302S03",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3302S02_Data",
+              "shape": "array",
+              "date_field": "in_DATE",
+              "end_date_field": "out_DATE",
+              "fields": [
+                "main_tit",
+                "hosp_ABBR",
+                "ori_TYPE",
+                "func_SEQ_NO",
+                "cure_path",
+                "icd9cm_CODE_CNAME",
+                "op_CODE_CNAME",
+                "ori_type_cname",
+                "ori_TYPE_NAME",
+                "in_DATE",
+                "out_DATE",
+                "func_DATE",
+                "cure_E_DATE",
+                "appl_S_DATE",
+                "appl_E_DATE",
+                "part_AMT",
+                "part_AMT_BASIC",
+                "part_AMT_DRUG",
+                "part_AMT_ASSAY",
+                "appl_DOT",
+                "exp_DOT",
+                "drug_DOT",
+                "dsvc_DOT",
+                "diag_DOT",
+                "met_DOT",
+                "cure_DOT",
+                "assay_AMIN",
+                "room_DOT",
+                "meal_DOT",
+                "amin_DOT",
+                "rado_DOT",
+                "thrp_DOT",
+                "op_DOT",
+                "phsc_DOT",
+                "blod_DOT",
+                "hd_DOT",
+                "ane_DOT",
+                "nrtp_DOT",
+                "injt_DOT",
+                "baby_DOT",
+                "pay_PRICE",
+                "show_PRICE",
+                "show_pay_PRICE",
+                "hosP_DATA_TYPE_NAME"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "元",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3302S01.763402d6.js",
+        "IHKE3302S02.5e43b218.js",
+        "IHKE3302S03.a8108656.js",
+        "IHKE3303S02.07d29ff4.js",
+        "IHKE3304S02.4ead7523.js",
+        "IHKE3305S02.ff9f2963.js",
+        "IHKE3309S02.deb370e8.js",
+        "IHKE3310S01.d0184a54.js"
+      ],
+      "source_window": "讀取來源本次提供的全部資料列；公開頁面沒有日期搜尋或獨立總數，不能保證全部終身歷史。年度統計保留來源數值，不由已取得明細加總替代；輻射參考值不是個人實測劑量或本站危害評估。"
     },
     {
       "id": "body_measurements",
@@ -555,6 +1481,22 @@
                 ""
               ],
               "optional": false
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "sdate",
+                "edate"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": true,
+              "metadata": true
             }
           ]
         }
@@ -605,7 +1547,400 @@
       "source_assets": [
         "IHKE3512S01.936037f9.js",
         "IHKE3512S02.37443700.js"
-      ]
+      ],
+      "source_window": "清單保留來源專區項目與最近摘要，各項明細搜尋所選完整期間；院所、自行輸入及預防保健等來源保留分別，不強制合併或推定診斷。無獨立總數。"
+    },
+    {
+      "id": "calendar_events",
+      "range_mode": "date_search",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3103s01/IHKE3103S01",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "RecordData",
+              "shape": "object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "[date]",
+                "[date].year",
+                "[date].month",
+                "[date].day",
+                "[date].weekName",
+                "[date].data[].REC_TYPE",
+                "[date].data[].REC_TYPE_NAME",
+                "[date].data[].REC_CON",
+                "[date].data[].ORI_TYPE"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "RecordTypeData",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "REC_TYPE",
+                "REC_TYPE_NAME",
+                "TypeName",
+                "Editable"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3103s01/IHKE3103S03",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "SearchDate"
+              ],
+              "units": [
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "RecordData",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "REC_TYPE",
+                "REC_TYPE_NAME",
+                "REC_CON",
+                "ORI_TYPE"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "RecordTypeData",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "REC_TYPE",
+                "REC_TYPE_NAME",
+                "TypeName",
+                "Editable"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/ihke3103s01/IHKE3103S03",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "SearchDate"
+              ],
+              "units": [
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "RecordData",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "REC_TYPE",
+                "REC_TYPE_NAME",
+                "REC_CON",
+                "ORI_TYPE"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "RecordTypeData",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "REC_TYPE",
+                "REC_TYPE_NAME",
+                "TypeName",
+                "Editable"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3103S01.5532549b.js"
+      ],
+      "source_window": "保留來源行事曆的每個回傳日期、所有類別、同日多筆內容及當日明細；不只讀目前月份，也不把記事當成已完成就醫或服用。未指定日期時查詢應用程式接受的 1912-01-01 至 2200-12-31，包含未來已排定內容；此範圍不是官方保存年限或完整性保證。"
+    },
+    {
+      "id": "campaign_measurements",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/IHKE3799S01/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "c_CREATE_DATE",
+                "c_WAISTLINE",
+                "c_WAISTLINE_R",
+                "c_WAISTLINE_D",
+                "c_WAISTLINE_S",
+                "c_SBP",
+                "c_SBP_R",
+                "c_DBP",
+                "c_DBP_R",
+                "c_HbA1c",
+                "c_HbA1c_R",
+                "c_HbA1c_D",
+                "c_HbA1c_S",
+                "c_TG",
+                "c_TG_R",
+                "c_TG_D",
+                "c_TG_S",
+                "c_HDL",
+                "c_HDL_R",
+                "c_HDL_D",
+                "c_HDL_S",
+                "c_BP_D",
+                "c_BP_S"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3205s01/SP_IHKE3205S01",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3205S01",
+              "shape": "array",
+              "date_field": "creatE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "code",
+                "codE_NAME",
+                "creatE_DATE",
+                "value",
+                "uniT_DATA",
+                "abnormal_Status"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "sP_IHKE3205S07",
+              "shape": "array",
+              "date_field": "creatE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "code",
+                "codE_NAME",
+                "creatE_DATE",
+                "value",
+                "uniT_DATA",
+                "abnormal_Status"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "sP_IHKE3205S04",
+              "shape": "array",
+              "date_field": "creatE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "code",
+                "codE_NAME",
+                "creatE_DATE",
+                "value",
+                "uniT_DATA",
+                "abnormal_Status"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "data_112",
+              "shape": "array",
+              "date_field": "creatE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "code",
+                "codE_NAME",
+                "creatE_DATE",
+                "value",
+                "uniT_DATA",
+                "abnormal_Status"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "data_113",
+              "shape": "array",
+              "date_field": "creatE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "code",
+                "codE_NAME",
+                "creatE_DATE",
+                "value",
+                "uniT_DATA",
+                "abnormal_Status"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "blood_Pressurep_Date"
+              ],
+              "units": [
+                ""
+              ],
+              "optional": true
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3205S01.73832712.js",
+        "IHKE3799S01.6f06cd40.js",
+        "IHKE3799S05.9a5da175.js"
+      ],
+      "source_window": "保留官方活動頁既有量測、來源日期與旗標，以及該頁連結的生理量測摘要。活動快照不等於完整歷史；來源血糖欄位名稱與顯示名稱不同時保留原識別，未自行判讀。"
     },
     {
       "id": "care_plans",
@@ -634,6 +1969,61 @@
                 ""
               ],
               "optional": false
+            },
+            {
+              "root": "physiology",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "code_name",
+                "value",
+                "unit_data",
+                "consult_min_value",
+                "consult_max_value"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "bloodsugar",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "assaY_VALUE"
+              ],
+              "units": [
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "booldlipid",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "curE_CNAME",
+                "assaY_VALUE",
+                "uniT_DATA",
+                "consult",
+                "ordeR_CODE"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
             }
           ]
         }
@@ -641,7 +2031,8 @@
       "details": [],
       "source_assets": [
         "IHKE3213S01.4e42c419.js"
-      ]
+      ],
+      "source_window": "讀取官方目前提供的全部回傳陣列；此來源未提供日期搜尋或獨立總數，不宣稱全部終身歷史。另保留照護計畫頁內嵌的生理量測、HbA1c 與血脂摘要及來源參考值；沒有原始採檢日期的摘要不推造日期，也不套用官網前端自行計算的顏色判讀。"
     },
     {
       "id": "catastrophic",
@@ -675,7 +2066,169 @@
       "details": [],
       "source_assets": [
         "IHKE3209S01.b24d9c4d.js"
-      ]
+      ],
+      "source_window": "讀取官方目前提供的全部回傳陣列；此來源未提供日期搜尋或獨立總數，不宣稱全部終身歷史。官方頁面註明不包括重大傷病第六類；證明效期不等於疾病起訖。"
+    },
+    {
+      "id": "child_preventive",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3104s01/IHKE3104S07",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "Title",
+                "HOSP_ABBR",
+                "CheckItem"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3104S01.f06e7025.js"
+      ],
+      "source_window": "讀取官方兒童預防保健實際回傳清單；保留來源標題、院所及檢查項目。未提供任意日期查詢或獨立總數。"
+    },
+    {
+      "id": "child_schedule",
+      "range_mode": "source",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3703s01/SP_IHKE3703S01",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3703S01",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "chilD_NAME",
+                "chilD_BIRTH"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3703s04/SP_IHKE3703S04",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "sP_IHKE3703S04",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "chilD_NAME",
+                "chilD_BIRTH",
+                "suggesT_DATE_S",
+                "suggesT_DATE_E",
+                "p1_CODE_CNAME",
+                "p1_CODE_ENAME",
+                "vaC_CODE",
+                "vaC_DATE",
+                "pusH_DATE"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3703s04/SP_IHKE3104S52",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "notifyDate",
+                "notifyMessage"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/ihke3703s04/SP_IHKE3703S04",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "sP_IHKE3703S04",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "chilD_NAME",
+                "chilD_BIRTH",
+                "suggesT_DATE_S",
+                "suggesT_DATE_E",
+                "p1_CODE_CNAME",
+                "p1_CODE_ENAME",
+                "vaC_CODE",
+                "vaC_DATE",
+                "pusH_DATE"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3703S01.7bc838e8.js",
+        "IHKE3703S02.2ad05aed.js"
+      ],
+      "source_window": "依來源已存兒童資料逐筆讀取建議接種期間及既有通知。這是來源建議時程，不是實際接種紀錄；姓名／暱稱與出生日期僅用於區分所選兒童。"
     },
     {
       "id": "ckd_care",
@@ -741,12 +2294,182 @@
               "optional": false
             }
           ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3505s03/SP_IHKE3505S03",
+          "method": "POST",
+          "fixed_selector": "03",
+          "sections": [
+            {
+              "root": "sP_IHKE3505S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3505s03/SP_IHKE3505S03",
+          "method": "POST",
+          "fixed_selector": "04",
+          "sections": [
+            {
+              "root": "sP_IHKE3505S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3505s03/SP_IHKE3505S03",
+          "method": "POST",
+          "fixed_selector": "05",
+          "sections": [
+            {
+              "root": "sP_IHKE3505S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3505s03/SP_IHKE3505S03",
+          "method": "POST",
+          "fixed_selector": "06",
+          "sections": [
+            {
+              "root": "sP_IHKE3505S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3505s03/SP_IHKE3505S03",
+          "method": "POST",
+          "fixed_selector": "07",
+          "sections": [
+            {
+              "root": "sP_IHKE3505S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3505s03/SP_IHKE3505S03",
+          "method": "POST",
+          "fixed_selector": "08",
+          "sections": [
+            {
+              "root": "sP_IHKE3505S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3505s03/SP_IHKE3505S03",
+          "method": "POST",
+          "fixed_selector": "09",
+          "sections": [
+            {
+              "root": "sP_IHKE3505S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
         }
       ],
       "source_assets": [
         "IHKE3505S01.6ea6a451.js",
+        "IHKE3505S02.f234bfc2.js",
         "IHKE3505S03.cb77998a.js"
-      ]
+      ],
+      "source_window": "讀取官方目前提供的全部回傳陣列；此來源未提供日期搜尋或獨立總數，不宣稱全部終身歷史。另有收案項目明細；照護階段／收案不視為 Healthbank 診斷。"
     },
     {
       "id": "cochlear",
@@ -798,15 +2521,19 @@
             {
               "root": "maindata03",
               "shape": "array",
-              "date_field": "exe_S_DATE",
+              "date_field": "c_exe_S_DATE",
               "end_date_field": "",
               "fields": [
                 "met_C_NAME",
                 "exe_S_DATE",
                 "met_SPEC",
-                "ear_MARK"
+                "ear_MARK",
+                "c_exe_S_DATE",
+                "c_ear_MARK"
               ],
               "units": [
+                "",
+                "",
                 "",
                 "",
                 "",
@@ -820,7 +2547,8 @@
       "details": [],
       "source_assets": [
         "IHKE3211S01.2aa8a3a2.js"
-      ]
+      ],
+      "source_window": "讀取官方目前提供的全部回傳陣列；此來源未提供日期搜尋或獨立總數，不宣稱全部終身歷史。"
     },
     {
       "id": "copd_care",
@@ -845,6 +2573,22 @@
                 ""
               ],
               "optional": false
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "sdate",
+                "edate"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": true,
+              "metadata": true
             }
           ]
         }
@@ -886,12 +2630,124 @@
               "optional": false
             }
           ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3513s02/get_highchar_val",
+          "method": "POST",
+          "fixed_selector": "03",
+          "sections": [
+            {
+              "root": "sp_IHKE3513S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3513s02/get_highchar_val",
+          "method": "POST",
+          "fixed_selector": "04",
+          "sections": [
+            {
+              "root": "sp_IHKE3513S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3513s02/get_highchar_val",
+          "method": "POST",
+          "fixed_selector": "05",
+          "sections": [
+            {
+              "root": "sp_IHKE3513S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3513s02/get_highchar_val",
+          "method": "POST",
+          "fixed_selector": "06",
+          "sections": [
+            {
+              "root": "sp_IHKE3513S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3513s02/get_highchar_val",
+          "method": "POST",
+          "fixed_selector": "07",
+          "sections": [
+            {
+              "root": "sp_IHKE3513S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
         }
       ],
       "source_assets": [
         "IHKE3513S01.d8bc1c84.js",
+        "IHKE3513S02.11b8f47f.js",
         "IHKE3513S03.9998993b.js"
-      ]
+      ],
+      "source_window": "讀取官方目前提供的全部回傳陣列；此來源未提供日期搜尋或獨立總數，不宣稱全部終身歷史。另有收案項目明細；照護階段／收案不視為 Healthbank 診斷。"
     },
     {
       "id": "covid",
@@ -928,9 +2784,25 @@
                 "inspect_MODE",
                 "assay_METHOD",
                 "inspect_RESULT",
-                "lab_UNIT_NAME"
+                "lab_UNIT_NAME",
+                "source_NAME",
+                "real_INSPECT_DATE_EN",
+                "recv_DATE_EN",
+                "inoculate_D_en",
+                "sample_DATE_EN",
+                "confirm_DATE_EN",
+                "assay_ITEM_NAME_EN",
+                "assay_VALUE_EN"
               ],
               "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
                 "",
                 "",
                 "",
@@ -981,9 +2853,25 @@
                 "inspect_MODE",
                 "assay_METHOD",
                 "inspect_RESULT",
-                "lab_UNIT_NAME"
+                "lab_UNIT_NAME",
+                "source_NAME",
+                "real_INSPECT_DATE_EN",
+                "recv_DATE_EN",
+                "inoculate_D_en",
+                "sample_DATE_EN",
+                "confirm_DATE_EN",
+                "assay_ITEM_NAME_EN",
+                "assay_VALUE_EN"
               ],
               "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
                 "",
                 "",
                 "",
@@ -1034,9 +2922,25 @@
                 "inspect_MODE",
                 "assay_METHOD",
                 "inspect_RESULT",
-                "lab_UNIT_NAME"
+                "lab_UNIT_NAME",
+                "source_NAME",
+                "real_INSPECT_DATE_EN",
+                "recv_DATE_EN",
+                "inoculate_D_en",
+                "sample_DATE_EN",
+                "confirm_DATE_EN",
+                "assay_ITEM_NAME_EN",
+                "assay_VALUE_EN"
               ],
               "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
                 "",
                 "",
                 "",
@@ -1087,9 +2991,25 @@
                 "inspect_MODE",
                 "assay_METHOD",
                 "inspect_RESULT",
-                "lab_UNIT_NAME"
+                "lab_UNIT_NAME",
+                "source_NAME",
+                "real_INSPECT_DATE_EN",
+                "recv_DATE_EN",
+                "inoculate_D_en",
+                "sample_DATE_EN",
+                "confirm_DATE_EN",
+                "assay_ITEM_NAME_EN",
+                "assay_VALUE_EN"
               ],
               "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
                 "",
                 "",
                 "",
@@ -1140,9 +3060,25 @@
                 "inspect_MODE",
                 "assay_METHOD",
                 "inspect_RESULT",
-                "lab_UNIT_NAME"
+                "lab_UNIT_NAME",
+                "source_NAME",
+                "real_INSPECT_DATE_EN",
+                "recv_DATE_EN",
+                "inoculate_D_en",
+                "sample_DATE_EN",
+                "confirm_DATE_EN",
+                "assay_ITEM_NAME_EN",
+                "assay_VALUE_EN"
               ],
               "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
                 "",
                 "",
                 "",
@@ -1166,6 +3102,138 @@
                 ""
               ],
               "optional": false
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "reload",
+                "count_tw",
+                "count_tw_all",
+                "count_en",
+                "now_tw",
+                "now_en"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": true
+            },
+            {
+              "root": "sp_IHKE3410S06",
+              "shape": "array",
+              "date_field": "real_INSPECT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "assay_VALUE[]",
+                "assay_VALUE_EN[]"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/IHKE3410S01/reload_Vaccine",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sp_IHKE3410S05",
+              "shape": "array",
+              "date_field": "inoculate_D",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "order_CODE",
+                "order_NAME",
+                "assay_ITEM_NAME",
+                "assay_VALUE",
+                "unit_DATA",
+                "consult_VALUE",
+                "consult",
+                "ori_TYPE_NAME",
+                "ori_TYPE",
+                "source_FROM",
+                "code_cname",
+                "inoculate_D",
+                "sample_DATE",
+                "confirm_DATE",
+                "recv_DATE",
+                "assay_DISEA",
+                "inspect_MODE",
+                "assay_METHOD",
+                "inspect_RESULT",
+                "lab_UNIT_NAME",
+                "source_NAME",
+                "real_INSPECT_DATE_EN",
+                "recv_DATE_EN",
+                "inoculate_D_en",
+                "sample_DATE_EN",
+                "confirm_DATE_EN",
+                "assay_ITEM_NAME_EN",
+                "assay_VALUE_EN"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "sp_IHKE3410S06",
+              "shape": "array",
+              "date_field": "real_INSPECT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "assay_VALUE[]",
+                "assay_VALUE_EN[]"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
             }
           ]
         }
@@ -1173,7 +3241,8 @@
       "details": [],
       "source_assets": [
         "IHKE3410S01.96611c9c.js"
-      ]
+      ],
+      "source_window": "保留來源檢驗、接種、個案研判及時間軸逐項原文。只有來源明確回傳 reload=true 時，依官網 12 秒等待後讀取一次接種更新並另存該次回應；不重複輪詢、不產生證明或轉出個人 QR 識別。來源未提供任意日期或完整總數。"
     },
     {
       "id": "device_activity",
@@ -1201,6 +3270,83 @@
         }
       ],
       "details": [
+        {
+          "path": "/api/ihke3000/ihke3207s05/page_load",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "sP_IHKE3205S04",
+              "shape": "array",
+              "date_field": "create_DATE",
+              "end_date_field": "",
+              "fields": [
+                "code",
+                "create_DATE",
+                "time",
+                "value",
+                "unit_DATA",
+                "txt_DATE",
+                "abnormal_Status"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": true
+            },
+            {
+              "root": "devicelist",
+              "shape": "array",
+              "date_field": "cdate",
+              "end_date_field": "",
+              "fields": [
+                "cdate",
+                "value",
+                "act_os"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": true
+            },
+            {
+              "root": "sP_IHKE3205S03",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "codE_NAME",
+                "uniT_DATA"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": true
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "act_os"
+              ],
+              "units": [
+                ""
+              ],
+              "optional": true,
+              "metadata": true
+            }
+          ]
+        },
         {
           "path": "/api/ihke3000/ihke3205s02/SP_IHKE3205S08",
           "method": "POST",
@@ -1292,15 +3438,31 @@
                 "cdate",
                 "value",
                 "code",
-                "unit_DATA"
+                "unit_DATA",
+                "act_os"
               ],
               "units": [
+                "",
                 "",
                 "",
                 "",
                 ""
               ],
               "optional": false
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "cdate"
+              ],
+              "units": [
+                ""
+              ],
+              "optional": true,
+              "metadata": true
             }
           ]
         }
@@ -1308,8 +3470,10 @@
       "source_assets": [
         "IHKE3205S01.73832712.js",
         "IHKE3205S02.4e3c4e04.js",
-        "IHKE3205S04.d96d0d1a.js"
-      ]
+        "IHKE3205S04.d96d0d1a.js",
+        "IHKE3207S05.ca63f283.js"
+      ],
+      "source_window": "依官方選單實際提供的行動運動項目讀取資料，各項明細查詢所選期間；官方可能限制可提供月份。沒有來源入口不等於沒有運動資料，不在瀏覽器直接存取手機健康資料。"
     },
     {
       "id": "diabetes_care",
@@ -1381,12 +3545,206 @@
               "optional": false
             }
           ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3504s03/SP_IHKE3504S03",
+          "method": "POST",
+          "fixed_selector": "03",
+          "sections": [
+            {
+              "root": "sP_IHKE3504S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3504s03/SP_IHKE3504S03",
+          "method": "POST",
+          "fixed_selector": "04",
+          "sections": [
+            {
+              "root": "sP_IHKE3504S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3504s03/SP_IHKE3504S03",
+          "method": "POST",
+          "fixed_selector": "05",
+          "sections": [
+            {
+              "root": "sP_IHKE3504S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3504s03/SP_IHKE3504S03",
+          "method": "POST",
+          "fixed_selector": "06",
+          "sections": [
+            {
+              "root": "sP_IHKE3504S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3504s03/SP_IHKE3504S03",
+          "method": "POST",
+          "fixed_selector": "07",
+          "sections": [
+            {
+              "root": "sP_IHKE3504S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3504s03/SP_IHKE3504S03",
+          "method": "POST",
+          "fixed_selector": "08",
+          "sections": [
+            {
+              "root": "sP_IHKE3504S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3504s03/SP_IHKE3504S03",
+          "method": "POST",
+          "fixed_selector": "09",
+          "sections": [
+            {
+              "root": "sP_IHKE3504S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3504s03/SP_IHKE3504S03",
+          "method": "POST",
+          "fixed_selector": "10",
+          "sections": [
+            {
+              "root": "sP_IHKE3504S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
         }
       ],
       "source_assets": [
         "IHKE3504S01.46f8fe96.js",
+        "IHKE3504S02.24ac6f2a.js",
         "IHKE3504S03.62771fcb.js"
-      ]
+      ],
+      "source_window": "讀取官方目前提供的全部回傳陣列；此來源未提供日期搜尋或獨立總數，不宣稱全部終身歷史。另有收案項目明細；照護階段／收案不視為 Healthbank 診斷。"
     },
     {
       "id": "diabetes_ckd_care",
@@ -1458,13 +3816,230 @@
               "optional": false
             }
           ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3516s03/SP_IHKE3516S03",
+          "method": "POST",
+          "fixed_selector": "03",
+          "sections": [
+            {
+              "root": "sP_IHKE3516S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3516s03/SP_IHKE3516S03",
+          "method": "POST",
+          "fixed_selector": "04",
+          "sections": [
+            {
+              "root": "sP_IHKE3516S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3516s03/SP_IHKE3516S03",
+          "method": "POST",
+          "fixed_selector": "05",
+          "sections": [
+            {
+              "root": "sP_IHKE3516S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3516s03/SP_IHKE3516S03",
+          "method": "POST",
+          "fixed_selector": "06",
+          "sections": [
+            {
+              "root": "sP_IHKE3516S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3516s03/SP_IHKE3516S03",
+          "method": "POST",
+          "fixed_selector": "07",
+          "sections": [
+            {
+              "root": "sP_IHKE3516S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3516s03/SP_IHKE3516S03",
+          "method": "POST",
+          "fixed_selector": "08",
+          "sections": [
+            {
+              "root": "sP_IHKE3516S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3516s03/SP_IHKE3516S03",
+          "method": "POST",
+          "fixed_selector": "09",
+          "sections": [
+            {
+              "root": "sP_IHKE3516S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3516s03/SP_IHKE3516S03",
+          "method": "POST",
+          "fixed_selector": "10",
+          "sections": [
+            {
+              "root": "sP_IHKE3516S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3516s03/SP_IHKE3516S03",
+          "method": "POST",
+          "fixed_selector": "11",
+          "sections": [
+            {
+              "root": "sP_IHKE3516S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
         }
       ],
       "source_assets": [
         "IHKE3516S01.c7c30eaf.js",
         "IHKE3516S02.cb47bb20.js",
         "IHKE3516S03.758f87ac.js"
-      ]
+      ],
+      "source_window": "讀取來源收案與追蹤紀錄；官方頁面標示近三年追蹤，未提供任意日期搜尋或獨立總數。來源階段不等於 Healthbank 診斷。"
     },
     {
       "id": "diet",
@@ -1535,7 +4110,41 @@
       ],
       "source_assets": [
         "IHKE3206S01.a6fa8842.js"
-      ]
+      ],
+      "source_window": "讀取官方目前提供的全部回傳陣列；此來源未提供日期搜尋或獨立總數，不宣稱全部終身歷史。只讀取已存在的自行紀錄，不要求打卡或新增官方資料。"
+    },
+    {
+      "id": "diet_source_totals",
+      "range_mode": "date_search",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3206s01/SP_IHKE3206S06",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "DateList[]",
+                "CalList[]"
+              ],
+              "units": [
+                "",
+                "kcal"
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3206S01.a6fa8842.js"
+      ],
+      "source_window": "對來源既有熱量彙總送出所選完整日期區間，保留 DateList 與 CalList 每一原始索引；不由明細自行加總替代，不當成精確營養攝取、熱量消耗或實際行為證明。無獨立歷史總數。"
     },
     {
       "id": "e_prescriptions",
@@ -1555,6 +4164,7 @@
                 "recipe_TYPE_name",
                 "func_DATE",
                 "func_TYPE_NAME",
+                "prsn_NAME",
                 "icd_CODE",
                 "icd_CODE_CNAME",
                 "drug_CNT",
@@ -1562,6 +4172,7 @@
                 "chr_SeqNo"
               ],
               "units": [
+                "",
                 "",
                 "",
                 "",
@@ -1574,6 +4185,25 @@
               "optional": false
             },
             {
+              "root": "main_data[].refillList",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "recipe_TIMES",
+                "rel_DATE_STR",
+                "recipe_MEMO",
+                "hosp_NAME"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": true
+            },
+            {
               "root": "hist_list",
               "shape": "array",
               "date_field": "func_DATE",
@@ -1582,6 +4212,7 @@
                 "recipe_TYPE_name",
                 "func_DATE",
                 "func_TYPE_NAME",
+                "prsn_NAME",
                 "icd_CODE",
                 "icd_CODE_CNAME",
                 "drug_CNT",
@@ -1596,9 +4227,29 @@
                 "",
                 "",
                 "",
+                "",
                 ""
               ],
               "optional": false
+            },
+            {
+              "root": "hist_list[].refillList",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "recipe_TIMES",
+                "rel_DATE_STR",
+                "recipe_MEMO",
+                "hosp_NAME"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": true
             }
           ]
         }
@@ -1617,6 +4268,7 @@
                 "recipe_TYPE_name",
                 "func_DATE",
                 "func_TYPE_NAME",
+                "prsn_NAME",
                 "icd_CODE",
                 "icd_CODE_CNAME",
                 "drug_CNT",
@@ -1631,9 +4283,29 @@
                 "",
                 "",
                 "",
+                "",
                 ""
               ],
               "optional": false
+            },
+            {
+              "root": "treatData.refillList",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "recipe_TIMES",
+                "rel_DATE_STR",
+                "recipe_MEMO",
+                "hosp_NAME"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": true
             },
             {
               "root": "list",
@@ -1676,7 +4348,8 @@
       "source_assets": [
         "IHKE3212S01.647a1fc8.js",
         "IHKE3212S02.6ed8b6f5.js"
-      ]
+      ],
+      "source_window": "讀取官方目前提供的全部回傳陣列；此來源未提供日期搜尋或獨立總數，不宣稱全部終身歷史。同時讀取近期與歷史區塊；已領藥與建議領藥期間分開，處方或領藥不證明實際服用。"
     },
     {
       "id": "exercise",
@@ -1755,7 +4428,41 @@
         "IHKE3207S01.c7276474.js",
         "IHKE3207S02.ecc284ce.js",
         "IHKE3207S05.ca63f283.js"
-      ]
+      ],
+      "source_window": "讀取官方目前提供的全部回傳陣列；此來源未提供日期搜尋或獨立總數，不宣稱全部終身歷史。只讀取既有紀錄與明細，不新增打卡或自行推定熱量。"
+    },
+    {
+      "id": "exercise_source_totals",
+      "range_mode": "date_search",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3207s02/SP_IHKE3207S07",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "DateList[]",
+                "CalList[]"
+              ],
+              "units": [
+                "",
+                "kcal"
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3207S02.ecc284ce.js"
+      ],
+      "source_window": "對來源既有熱量彙總送出所選完整日期區間，保留 DateList 與 CalList 每一原始索引；不由明細自行加總替代，不當成精確營養攝取、熱量消耗或實際行為證明。無獨立歷史總數。"
     },
     {
       "id": "family_doctor",
@@ -1789,14 +4496,51 @@
               "fields": [
                 "hosp_ABBR",
                 "prsn_NAME",
-                "tel"
+                "tel",
+                "memo"
               ],
               "units": [
+                "",
                 "",
                 "",
                 ""
               ],
               "optional": true
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "memo"
+              ],
+              "units": [
+                ""
+              ],
+              "optional": true,
+              "metadata": true
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3720s01/SQL100",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "area_code",
+                "area_code_name"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
             }
           ]
         }
@@ -1804,7 +4548,57 @@
       "details": [],
       "source_assets": [
         "IHKE3720S01.68eb7b6a.js"
-      ]
+      ],
+      "source_window": "讀取官方目前提供的全部回傳陣列；此來源未提供日期搜尋或獨立總數，不宣稱全部終身歷史。只讀取既有收案狀態及院所，不變更加入或同意設定。來源計畫狀態為 1／3 且有院所識別時，另讀取該院所所屬社區醫療群；不推定其他年度收案。"
+    },
+    {
+      "id": "family_doctor_consent_snapshot",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/IHKE3709S01/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "hosp_abbr",
+                "prsn_name",
+                "hosp_tel",
+                "agn_genus_name",
+                "cyear",
+                "cmonth",
+                "cday",
+                "isshowDR",
+                "showcontent",
+                "showmain"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3709S01.75133dc7.js"
+      ],
+      "source_window": "讀取來源本次提供的全部資料列；公開頁面沒有日期搜尋或獨立總數，不能保證全部終身歷史。保留該頁既有院所及狀態旗標；候選院所或表單可見不等於已簽署同意，也不替代實際收案紀錄。不讀取或提交使用者同意內容。"
     },
     {
       "id": "family_followup",
@@ -1824,15 +4618,71 @@
                 "assay_NAME",
                 "assay_ZH_NAME",
                 "next_CHK_DATE",
-                "chk_memo"
+                "chk_memo",
+                "sP_IHKE3721S04[].assaY_DATE",
+                "sP_IHKE3721S04[].assaY_NAME",
+                "sP_IHKE3721S04[].assaY_VALUE",
+                "sP_IHKE3721S04[].hosP_ABBR",
+                "sP_IHKE3721S04[].assaY_SOURCE_NAME"
               ],
               "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
                 "",
                 "",
                 "",
                 ""
               ],
               "optional": false
+            },
+            {
+              "root": "sP_IHKE3721S03",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "diseasE_STAGE_NAME",
+                "assaY_NAME",
+                "assaY_ZH_NAME",
+                "consulT_VALUE_MAX",
+                "consulT_VALUE_LOWER",
+                "uniT_DATA"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": true,
+              "metadata": true
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "hasillCategory",
+                "title",
+                "non_case_desc",
+                "memo[]",
+                "health_edu[]"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": true,
+              "metadata": true
             }
           ]
         }
@@ -1869,7 +4719,8 @@
       "source_assets": [
         "IHKE3721S01.7d20d235.js",
         "IHKE3721S03.90898f2c.js"
-      ]
+      ],
+      "source_window": "清單讀取來源追蹤項目，各項明細搜尋所選完整期間；來源建議與分類不是 Healthbank 自行提出的醫療建議。無獨立總數可核對。清單內嵌結果、來源分類與參考值、狀態及逐項說明另行保留；不假設與日期搜尋回應相同，不按清單位置推定同次採檢或套用來源前端的顏色判讀。"
     },
     {
       "id": "family_health_followup",
@@ -1889,9 +4740,21 @@
                 "assay_NAME",
                 "assay_ZH_NAME",
                 "next_CHK_DATE",
-                "chk_memo"
+                "chk_memo",
+                "sP_IHKE3726S04[].assaY_DATE",
+                "sP_IHKE3726S04[].assaY_NAME",
+                "sP_IHKE3726S04[].assaY_VALUE",
+                "sP_IHKE3726S04[].hosP_ABBR",
+                "sP_IHKE3726S04[].assaY_SOURCE_NAME",
+                "sP_IHKE3726S04[].c_ASSAY_VALUE"
               ],
               "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
                 "",
                 "",
                 "",
@@ -1908,15 +4771,97 @@
                 "assay_NAME",
                 "assay_ZH_NAME",
                 "next_CHK_DATE",
-                "chk_memo"
+                "chk_memo",
+                "sP_IHKE3726S04[].assaY_DATE",
+                "sP_IHKE3726S04[].assaY_NAME",
+                "sP_IHKE3726S04[].assaY_VALUE",
+                "sP_IHKE3726S04[].hosP_ABBR",
+                "sP_IHKE3726S04[].assaY_SOURCE_NAME",
+                "sP_IHKE3726S04[].c_ASSAY_VALUE"
               ],
               "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
                 "",
                 "",
                 "",
                 ""
               ],
               "optional": false
+            },
+            {
+              "root": "sP_IHKE3726S03",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "diseasE_STAGE_NAME",
+                "assaY_NAME",
+                "assaY_ZH_NAME",
+                "consulT_VALUE_MAX",
+                "consulT_VALUE_LOWER",
+                "uniT_DATA"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": true,
+              "metadata": true
+            },
+            {
+              "root": "bp_IHKE3726S03",
+              "shape": "object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "diseasE_STAGE_NAME",
+                "assaY_NAME",
+                "assaY_ZH_NAME",
+                "consulT_VALUE_MAX",
+                "consulT_VALUE_LOWER",
+                "uniT_DATA"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": true,
+              "metadata": true
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "hasillCategory",
+                "title",
+                "non_case_desc",
+                "memo[]",
+                "health_edu[]"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": true,
+              "metadata": true
             }
           ]
         }
@@ -1957,7 +4902,8 @@
       "source_assets": [
         "IHKE3721S01.7d20d235.js",
         "IHKE3721S03.90898f2c.js"
-      ]
+      ],
+      "source_window": "讀取來源健康與血壓追蹤項目，各項明細搜尋所選完整期間；保留來源值與通道，不套用網站風險分級或自行推定診斷。清單內嵌結果、來源分類與參考值、狀態及逐項說明另行保留；不假設與日期搜尋回應相同，不按清單位置推定同次採檢或套用來源前端的顏色判讀。血壓歷史使用來源固定 EBP 選項。"
     },
     {
       "id": "glucose",
@@ -2000,6 +4946,22 @@
                 ""
               ],
               "optional": false
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "remark_SDate",
+                "remark_EDate"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": true,
+              "metadata": true
             }
           ]
         }
@@ -2025,11 +4987,9 @@
                 "consult",
                 "ori_TYPE_NAME",
                 "ori_TYPE",
-                "source_FROM",
-                "assay_VALUE"
+                "source_FROM"
               ],
               "units": [
-                "",
                 "",
                 "",
                 "",
@@ -2049,7 +5009,468 @@
       ],
       "source_assets": [
         "IHKE3406S01.674eac69.js"
-      ]
+      ],
+      "source_window": "分別保留來源首頁表格與所選完整期間的 HbA1c 搜尋回應；不假設兩組資料相同。首頁可能使用來源提供期間，無獨立總數，不宣稱終身資料完整。不把專區名稱誤當包含所有血糖項目。"
+    },
+    {
+      "id": "health_coin_clinical",
+      "range_mode": "source",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3714s06/pageload",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "pointitemList",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "pointitemCode",
+                "pointitemName"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3714s08/pageload",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "pointList",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "pointitemName",
+                "checkDate",
+                "funcDate",
+                "inoculationDate",
+                "createDate",
+                "hospName",
+                "bloodPressResult",
+                "bloodPressResultDisp",
+                "s09005CDiag",
+                "s09005CDiagDisp",
+                "baDiag",
+                "baDiagDisp",
+                "rfDiag",
+                "rfDiagDisp",
+                "lfDiag",
+                "lfDiagDisp",
+                "metaSyndrResult",
+                "metaSyndrResultDisp",
+                "hbsag",
+                "hbsagDisp",
+                "antiHCV",
+                "antiHCVDisp",
+                "assayResult",
+                "assayResultDisp",
+                "diagnosisCodeDisp",
+                "cytopathicCodeDisp",
+                "vaccineName",
+                "sourceNameDisp",
+                "scale1",
+                "scale2",
+                "scale3",
+                "scale4",
+                "scale5",
+                "scaleTotal",
+                "scaleTitle",
+                "scaleDesc",
+                "status"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "pointitemName",
+                "checkDate",
+                "funcDate",
+                "inoculationDate",
+                "createDate",
+                "hospName",
+                "bloodPressResult",
+                "bloodPressResultDisp",
+                "s09005CDiag",
+                "s09005CDiagDisp",
+                "baDiag",
+                "baDiagDisp",
+                "rfDiag",
+                "rfDiagDisp",
+                "lfDiag",
+                "lfDiagDisp",
+                "metaSyndrResult",
+                "metaSyndrResultDisp",
+                "hbsag",
+                "hbsagDisp",
+                "antiHCV",
+                "antiHCVDisp",
+                "assayResult",
+                "assayResultDisp",
+                "diagnosisCodeDisp",
+                "cytopathicCodeDisp",
+                "vaccineName",
+                "sourceNameDisp",
+                "scale1",
+                "scale2",
+                "scale3",
+                "scale4",
+                "scale5",
+                "scaleTotal",
+                "scaleTitle",
+                "scaleDesc",
+                "status"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "detaildesc",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "text"
+              ],
+              "units": [
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "adviceList",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "codeCname"
+              ],
+              "units": [
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3714s07/pageload",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "lifestyleDate"
+              ],
+              "units": [
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/ihke3714s08/pageload",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "pointList",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "pointitemName",
+                "checkDate",
+                "funcDate",
+                "inoculationDate",
+                "createDate",
+                "hospName",
+                "bloodPressResult",
+                "bloodPressResultDisp",
+                "s09005CDiag",
+                "s09005CDiagDisp",
+                "baDiag",
+                "baDiagDisp",
+                "rfDiag",
+                "rfDiagDisp",
+                "lfDiag",
+                "lfDiagDisp",
+                "metaSyndrResult",
+                "metaSyndrResultDisp",
+                "hbsag",
+                "hbsagDisp",
+                "antiHCV",
+                "antiHCVDisp",
+                "assayResult",
+                "assayResultDisp",
+                "diagnosisCodeDisp",
+                "cytopathicCodeDisp",
+                "vaccineName",
+                "sourceNameDisp",
+                "scale1",
+                "scale2",
+                "scale3",
+                "scale4",
+                "scale5",
+                "scaleTotal",
+                "scaleTitle",
+                "scaleDesc",
+                "status"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "pointitemName",
+                "checkDate",
+                "funcDate",
+                "inoculationDate",
+                "createDate",
+                "hospName",
+                "bloodPressResult",
+                "bloodPressResultDisp",
+                "s09005CDiag",
+                "s09005CDiagDisp",
+                "baDiag",
+                "baDiagDisp",
+                "rfDiag",
+                "rfDiagDisp",
+                "lfDiag",
+                "lfDiagDisp",
+                "metaSyndrResult",
+                "metaSyndrResultDisp",
+                "hbsag",
+                "hbsagDisp",
+                "antiHCV",
+                "antiHCVDisp",
+                "assayResult",
+                "assayResultDisp",
+                "diagnosisCodeDisp",
+                "cytopathicCodeDisp",
+                "vaccineName",
+                "sourceNameDisp",
+                "scale1",
+                "scale2",
+                "scale3",
+                "scale4",
+                "scale5",
+                "scaleTotal",
+                "scaleTitle",
+                "scaleDesc",
+                "status"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "detaildesc",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "text"
+              ],
+              "units": [
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "adviceList",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "codeCname"
+              ],
+              "units": [
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3714S06.95102b45.js",
+        "IHKE3714S07.05c50ea5.js",
+        "IHKE3714S08.92ed43db.js",
+        "IHKE3714S10.bfbf4952.js"
+      ],
+      "source_window": "只在來源已有同意狀態下，讀取健康檢查、疫苗及生活型態項目與原始結果；保留來源可提供的期間。未加入活動、領取點數或替使用者同意資料提供。"
     },
     {
       "id": "hepatitis_care",
@@ -2113,12 +5534,62 @@
               "optional": false
             }
           ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3507s03/SP_IHKE3507S03",
+          "method": "POST",
+          "fixed_selector": "03",
+          "sections": [
+            {
+              "root": "sP_IHKE3507S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3507s03/SP_IHKE3507S03",
+          "method": "POST",
+          "fixed_selector": "04",
+          "sections": [
+            {
+              "root": "sP_IHKE3507S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
         }
       ],
       "source_assets": [
         "IHKE3507S01.23bdf7f0.js",
+        "IHKE3507S02.f6ca7945.js",
         "IHKE3507S03.d3bab70e.js"
-      ]
+      ],
+      "source_window": "讀取官方目前提供的全部回傳陣列；此來源未提供日期搜尋或獨立總數，不宣稱全部終身歷史。另有收案項目明細；照護階段／收案不視為 Healthbank 診斷。"
     },
     {
       "id": "hepatitis_test",
@@ -2168,7 +5639,8 @@
       "details": [],
       "source_assets": [
         "IHKE3514S01.30153756.js"
-      ]
+      ],
+      "source_window": "讀取官方目前提供的全部回傳陣列；此來源未提供日期搜尋或獨立總數，不宣稱全部終身歷史。"
     },
     {
       "id": "home_care",
@@ -2190,9 +5662,15 @@
                 "c_PHASE",
                 "c_MAIN_PRSN_HOSP_ABBR",
                 "c_NURSE_HOSP_ABBR",
-                "c_BRE_PRSN_HOSP_ABBR"
+                "c_BRE_PRSN_HOSP_ABBR",
+                "c_MAIN_PRSN_NAME",
+                "c_NURSE_NAME",
+                "c_BRE_PRSN_HOSP_NAME"
               ],
               "units": [
+                "",
+                "",
+                "",
                 "",
                 "",
                 "",
@@ -2208,7 +5686,8 @@
       "details": [],
       "source_assets": [
         "IHKE3712S01.2e601c04.js"
-      ]
+      ],
+      "source_window": "官方頁面標示近三年個案管理追蹤；無日期搜尋或獨立總數。"
     },
     {
       "id": "kinmen",
@@ -2222,7 +5701,7 @@
             {
               "root": "sP_IHKE3405S01_Data",
               "shape": "array",
-              "date_field": "",
+              "date_field": "funC_DATE",
               "end_date_field": "",
               "fields": [
                 "real_INSPECT_DATE",
@@ -2237,9 +5716,15 @@
                 "ori_TYPE",
                 "source_FROM",
                 "order_CNAME",
-                "group_NAME"
+                "group_NAME",
+                "funC_DATE",
+                "tel",
+                "assaY_MARK"
               ],
               "units": [
+                "",
+                "",
+                "",
                 "",
                 "",
                 "",
@@ -2262,7 +5747,181 @@
       "details": [],
       "source_assets": [
         "IHKE3405S01.eaad4192.js"
-      ]
+      ],
+      "source_window": "來源頁面標示最近一次健康檢查，是否提供取決於官方授權與帳號；未提供個別檢查日期時不推造。"
+    },
+    {
+      "id": "lifestyle_assessment",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/IHKE3713S01/SP_IHKE3713S01",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "codE_CNAME"
+              ],
+              "units": [
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/IHKE3713S01/SP_IHKE3713S08",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "field_type",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "code",
+                "text"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/IHKE3713S01/SP_IHKE3713S03",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "list1",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "ques.no",
+                "ques.text",
+                "ques.scoreText",
+                "ans[].no",
+                "ans[].text"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "list2",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "ques.no",
+                "ques.text",
+                "ques.scoreText",
+                "ans[].no",
+                "ans[].text"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/IHKE3713S01/SP_IHKE3713S07_V02",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "score_list",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "field_name",
+                "score"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "date",
+                "hnm"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/IHKE3713S01/SP_IHKE3713S06",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "ans_list",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "ques",
+                "ans"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "date"
+              ],
+              "units": [
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3713S01.67c4d54d.js",
+        "IHKE3713S02.f5c8b9d9.js",
+        "IHKE3713S03.0936e0a8.js",
+        "IHKE3713S04.5a333147.js"
+      ],
+      "source_window": "官方提供最近兩筆混合來源評估及其可查看的自行作答；分別保留院所、自行填寫、原始分數與答案。作答索引不等於評估索引，未自行加總或重新判讀分數。"
     },
     {
       "id": "lipids",
@@ -2309,6 +5968,62 @@
                 ""
               ],
               "optional": false
+            },
+            {
+              "root": "Remark_Date",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "sdate",
+                "edate"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": true,
+              "metadata": true
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3407s01/getyears",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "years",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "c",
+                "d",
+                "e"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": true,
+              "metadata": true
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "remark_SDate",
+                "remark_EDate"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": true,
+              "metadata": true
             }
           ]
         }
@@ -2334,11 +6049,9 @@
                 "consult",
                 "ori_TYPE_NAME",
                 "ori_TYPE",
-                "source_FROM",
-                "assay_VALUE"
+                "source_FROM"
               ],
               "units": [
-                "",
                 "",
                 "",
                 "",
@@ -2359,12 +6072,50 @@
       "source_assets": [
         "IHKE3407S01.5f2d9f07.js",
         "IHKE3407S02.17d29a96.js"
-      ]
+      ],
+      "source_window": "清單是來源專區項目與摘要；各項明細才送出所選完整期間。來源可能重疊，不強制合併檢驗或推定方法相容。"
+    },
+    {
+      "id": "mask_collections",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3702s01/SP_IHKE3702S01",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3702S01",
+              "shape": "array",
+              "date_field": "purchasE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "purchasE_DATE",
+                "paY_DATE",
+                "qty",
+                "childreN_QTY"
+              ],
+              "units": [
+                "",
+                "",
+                "片",
+                "片"
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3702S01.975cde15.js"
+      ],
+      "source_window": "讀取來源本次提供的全部資料列；公開頁面沒有日期搜尋或獨立總數，不能保證全部終身歷史。購買或配發不證明實際使用；日期依來源意義保留。"
     },
     {
       "id": "menstrual",
-      "range_mode": "source",
-      "has_details": false,
+      "range_mode": "date_search",
+      "has_details": true,
       "list": [
         {
           "path": "/api/ihke3000/ihke3208s01/SP_IHKE3208S06",
@@ -2390,10 +6141,56 @@
           ]
         }
       ],
-      "details": [],
+      "details": [
+        {
+          "path": "/api/ihke3000/ihke3208s01/SP_IHKE3208S01",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3208S01",
+              "shape": "array",
+              "date_field": "sdate",
+              "end_date_field": "edate",
+              "fields": [
+                "sdate",
+                "edate"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3208s01/SP_IHKE3208S03",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sP_IHKE3208S03",
+              "shape": "array",
+              "date_field": "sdate",
+              "end_date_field": "edate",
+              "fields": [
+                "sdate",
+                "edate",
+                "diffDay"
+              ],
+              "units": [
+                "",
+                "",
+                "日"
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
       "source_assets": [
         "IHKE3208S01.fdea6059.js"
-      ]
+      ],
+      "source_window": "讀取官方目前提供的全部回傳陣列；此來源未提供日期搜尋或獨立總數，不宣稱全部終身歷史。只保留來源清單的已記錄期間，不預測生理期、排卵或受孕。另列所選期間各月份的獨立月曆查詢入口，明細逐月讀取全部回傳起迄；來源期間清單本身沒有日期篩選，與月曆不假設相同。已回傳期間可另讀起日原始紀錄；月份入口不代表該月已有經期紀錄。"
     },
     {
       "id": "metabolic_care",
@@ -2465,13 +6262,285 @@
               "optional": false
             }
           ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3517s03/SP_IHKE3517S03",
+          "method": "POST",
+          "fixed_selector": "01",
+          "sections": [
+            {
+              "root": "sP_IHKE3517S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3517s03/SP_IHKE3517S03",
+          "method": "POST",
+          "fixed_selector": "02",
+          "sections": [
+            {
+              "root": "sP_IHKE3517S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3517s03/SP_IHKE3517S03",
+          "method": "POST",
+          "fixed_selector": "03",
+          "sections": [
+            {
+              "root": "sP_IHKE3517S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3517s03/SP_IHKE3517S03",
+          "method": "POST",
+          "fixed_selector": "04",
+          "sections": [
+            {
+              "root": "sP_IHKE3517S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3517s03/SP_IHKE3517S03",
+          "method": "POST",
+          "fixed_selector": "05",
+          "sections": [
+            {
+              "root": "sP_IHKE3517S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3517s03/SP_IHKE3517S03",
+          "method": "POST",
+          "fixed_selector": "06",
+          "sections": [
+            {
+              "root": "sP_IHKE3517S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3517s03/SP_IHKE3517S03",
+          "method": "POST",
+          "fixed_selector": "07",
+          "sections": [
+            {
+              "root": "sP_IHKE3517S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3517s03/SP_IHKE3517S03",
+          "method": "POST",
+          "fixed_selector": "08",
+          "sections": [
+            {
+              "root": "sP_IHKE3517S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3517s03/SP_IHKE3517S03",
+          "method": "POST",
+          "fixed_selector": "09",
+          "sections": [
+            {
+              "root": "sP_IHKE3517S03_Data",
+              "shape": "array",
+              "date_field": "casE_DATE",
+              "end_date_field": "",
+              "fields": [
+                "casE_DATE",
+                "valuE1",
+                "valuE2"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
         }
       ],
       "source_assets": [
         "IHKE3517S01.794f02ff.js",
         "IHKE3517S02.362e4ca8.js",
         "IHKE3517S03.da1169c3.js"
-      ]
+      ],
+      "source_window": "讀取來源收案與追蹤紀錄；官方頁面標示近三年追蹤，未提供任意日期搜尋或獨立總數。來源階段不等於 Healthbank 診斷。"
+    },
+    {
+      "id": "notifications",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3114s01/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "sp_IHKE3114S0501_list",
+              "shape": "array",
+              "date_field": "push_date",
+              "end_date_field": "",
+              "fields": [
+                "push_date",
+                "full_msg",
+                "show_Url"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3101s01/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "push_msg"
+              ],
+              "units": [
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3101S01.24b4a924.js",
+        "IHKE3114S01.e367541d.js"
+      ],
+      "source_window": "分別保留來源個別化推播清單與首頁提示欄位；兩者不假定相同。原始標記以文字呈現，不執行其中的連結或程式。推播日期不是就醫日期；首頁提示沒有來源日期，不代填取得時間。未提供任意日期查詢或獨立總數。"
     },
     {
       "id": "organ_wishes",
@@ -2503,7 +6572,8 @@
       "details": [],
       "source_assets": [
         "IHKE3204S01.a537a150.js"
-      ]
+      ],
+      "source_window": "僅讀取官方意願註記狀態；健保卡註記日期不是意願簽署日期，不能由此修改意願。"
     },
     {
       "id": "osteoporosis",
@@ -2517,6 +6587,61 @@
             {
               "root": "sp_IHKE3411S01_data",
               "shape": "array",
+              "date_field": "real_INSPECT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "real_INSPECT_DATE",
+                "order_CODE",
+                "order_NAME",
+                "assay_ITEM_NAME",
+                "assay_VALUE",
+                "unit_DATA",
+                "consult_VALUE",
+                "consult",
+                "ori_TYPE_NAME",
+                "ori_TYPE",
+                "source_FROM"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "c_sdate",
+                "c_edate"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": true,
+              "metadata": true
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3411s01/search",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_array",
               "date_field": "real_INSPECT_DATE",
               "end_date_field": "",
               "fields": [
@@ -2601,7 +6726,8 @@
         "IHKE3411S01.6e442f87.js",
         "IHKE3411S02.cc4529c5.js",
         "IHKE3411S03.4e01b861.js"
-      ]
+      ],
+      "source_window": "分別取得來源首頁與全部類型搜尋回應（s_type 為空、s_sort 為 A1），保留各自全部資料列及明細。不假設兩次回應相同；來源未提供任意日期搜尋或獨立總數。"
     },
     {
       "id": "physiology",
@@ -2657,11 +6783,108 @@
                 ""
               ],
               "optional": false
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "blood_Pressurep_Date"
+              ],
+              "units": [
+                ""
+              ],
+              "optional": true,
+              "metadata": true
             }
           ]
         }
       ],
       "details": [
+        {
+          "path": "/api/ihke3000/ihke3205s02/page_load",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "sP_IHKE3205S04",
+              "shape": "array",
+              "date_field": "create_DATE",
+              "end_date_field": "",
+              "fields": [
+                "code",
+                "create_DATE",
+                "time",
+                "value",
+                "unit_DATA",
+                "txt_DATE",
+                "abnormal_Status"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": true
+            },
+            {
+              "root": "devicelist",
+              "shape": "array",
+              "date_field": "cdate",
+              "end_date_field": "",
+              "fields": [
+                "cdate",
+                "value",
+                "act_os"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": true
+            },
+            {
+              "root": "sP_IHKE3205S03",
+              "shape": "array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "codE_NAME",
+                "uniT_DATA"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": true
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "act_os",
+                "act_os1",
+                "act_os2",
+                "act_os3"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": true,
+              "metadata": true
+            }
+          ]
+        },
         {
           "path": "/api/ihke3000/ihke3205s02/SP_IHKE3205S08",
           "method": "POST",
@@ -2753,10 +6976,62 @@
                 "cdate",
                 "value",
                 "code",
-                "unit_DATA"
+                "unit_DATA",
+                "act_os"
               ],
               "units": [
                 "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "cdate"
+              ],
+              "units": [
+                ""
+              ],
+              "optional": true,
+              "metadata": true
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3205S01.73832712.js",
+        "IHKE3205S02.4e3c4e04.js",
+        "IHKE3205S04.d96d0d1a.js"
+      ],
+      "source_window": "清單是來源項目與最近摘要；各項明細查詢所選完整期間。自行記錄與行動裝置來源未等同院所檢驗，官方行動資料可能僅近半年。"
+    },
+    {
+      "id": "prenatal",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3104s01/IHKE3104S06",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_array",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "Title",
+                "HOSP_ABBR",
+                "CheckItem"
+              ],
+              "units": [
                 "",
                 "",
                 ""
@@ -2766,11 +7041,582 @@
           ]
         }
       ],
+      "details": [],
       "source_assets": [
-        "IHKE3205S01.73832712.js",
-        "IHKE3205S02.4e3c4e04.js",
-        "IHKE3205S04.d96d0d1a.js"
-      ]
+        "IHKE3104S01.f06e7025.js"
+      ],
+      "source_window": "讀取官方產檢紀錄實際回傳清單；來源標題可能包含日期，未將標題拆成推測的檢查日期。不包含提醒設定，也不保證完整歷史。"
+    },
+    {
+      "id": "rapid_test_collections",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3706s01/pageload",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "ihke3706S01_maindata",
+              "shape": "array",
+              "date_field": "purchase_DATE",
+              "end_date_field": "",
+              "fields": [
+                "purchase_DATE",
+                "firm_NAME"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3706S01.ac312075.js"
+      ],
+      "source_window": "讀取來源本次提供的全部資料列；公開頁面沒有日期搜尋或獨立總數，不能保證全部終身歷史。來源免費領取旗標另列；購買／領取不等於已檢測或檢驗結果。"
+    },
+    {
+      "id": "recent_visits",
+      "range_mode": "source",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3301s02/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "western_data",
+              "shape": "array",
+              "date_field": "func_date",
+              "end_date_field": "",
+              "fields": [
+                "func_date",
+                "icd9cm_name",
+                "htype"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "chinese_data",
+              "shape": "array",
+              "date_field": "func_date",
+              "end_date_field": "",
+              "fields": [
+                "func_date",
+                "icd9cm_name",
+                "htype"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "dentist_data",
+              "shape": "array",
+              "date_field": "func_date",
+              "end_date_field": "",
+              "fields": [
+                "func_date",
+                "icd9cm_name",
+                "htype"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/ihke3303s02/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "ihke3303S02_main_data",
+              "shape": "array",
+              "date_field": "func_DATE",
+              "end_date_field": "",
+              "fields": [
+                "main_tit",
+                "hosp_ABBR",
+                "ori_TYPE",
+                "func_SEQ_NO",
+                "cure_path",
+                "icd9cm_CODE_CNAME",
+                "op_CODE_CNAME",
+                "ori_type_cname",
+                "ori_TYPE_NAME",
+                "in_DATE",
+                "out_DATE",
+                "func_DATE",
+                "cure_E_DATE",
+                "appl_S_DATE",
+                "appl_E_DATE",
+                "part_AMT",
+                "part_AMT_BASIC",
+                "part_AMT_DRUG",
+                "part_AMT_ASSAY",
+                "appl_DOT",
+                "exp_DOT",
+                "drug_DOT",
+                "dsvc_DOT",
+                "diag_DOT",
+                "met_DOT",
+                "cure_DOT",
+                "assay_AMIN",
+                "room_DOT",
+                "meal_DOT",
+                "amin_DOT",
+                "rado_DOT",
+                "thrp_DOT",
+                "op_DOT",
+                "phsc_DOT",
+                "blod_DOT",
+                "hd_DOT",
+                "ane_DOT",
+                "nrtp_DOT",
+                "injt_DOT",
+                "baby_DOT",
+                "pay_PRICE",
+                "show_PRICE",
+                "show_pay_PRICE"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "元",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "sp_IHKE3302S04_data",
+              "shape": "array",
+              "date_field": "@parent",
+              "end_date_field": "",
+              "fields": [
+                "order_code",
+                "drug_name",
+                "act",
+                "order_qty",
+                "order_drug_day"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "日"
+              ],
+              "optional": false
+            },
+            {
+              "root": "sp_IHKE3302S05",
+              "shape": "array",
+              "date_field": "@parent",
+              "end_date_field": "",
+              "fields": [
+                "order_code",
+                "cure_CNAME",
+                "cure_ENAME",
+                "order_qty",
+                "pay_PRICE",
+                "show_PRICE"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "元",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "sp_IHKE3302S07_data",
+              "shape": "array",
+              "date_field": "@parent",
+              "end_date_field": "",
+              "fields": [
+                "order_code",
+                "cure_CNAME",
+                "cure_ENAME",
+                "order_qty",
+                "pay_PRICE",
+                "show_PRICE"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "元",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3303s02/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "ihke3303S02_main_data",
+              "shape": "array",
+              "date_field": "func_DATE",
+              "end_date_field": "",
+              "fields": [
+                "main_tit",
+                "hosp_ABBR",
+                "ori_TYPE",
+                "func_SEQ_NO",
+                "cure_path",
+                "icd9cm_CODE_CNAME",
+                "op_CODE_CNAME",
+                "ori_type_cname",
+                "ori_TYPE_NAME",
+                "in_DATE",
+                "out_DATE",
+                "func_DATE",
+                "cure_E_DATE",
+                "appl_S_DATE",
+                "appl_E_DATE",
+                "part_AMT",
+                "part_AMT_BASIC",
+                "part_AMT_DRUG",
+                "part_AMT_ASSAY",
+                "appl_DOT",
+                "exp_DOT",
+                "drug_DOT",
+                "dsvc_DOT",
+                "diag_DOT",
+                "met_DOT",
+                "cure_DOT",
+                "assay_AMIN",
+                "room_DOT",
+                "meal_DOT",
+                "amin_DOT",
+                "rado_DOT",
+                "thrp_DOT",
+                "op_DOT",
+                "phsc_DOT",
+                "blod_DOT",
+                "hd_DOT",
+                "ane_DOT",
+                "nrtp_DOT",
+                "injt_DOT",
+                "baby_DOT",
+                "pay_PRICE",
+                "show_PRICE",
+                "show_pay_PRICE"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "元",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "sp_IHKE3302S04_data",
+              "shape": "array",
+              "date_field": "@parent",
+              "end_date_field": "",
+              "fields": [
+                "order_code",
+                "drug_name",
+                "act",
+                "order_qty",
+                "order_drug_day"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "日"
+              ],
+              "optional": false
+            },
+            {
+              "root": "sp_IHKE3302S05",
+              "shape": "array",
+              "date_field": "@parent",
+              "end_date_field": "",
+              "fields": [
+                "order_code",
+                "cure_CNAME",
+                "cure_ENAME",
+                "order_qty",
+                "pay_PRICE",
+                "show_PRICE"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "元",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3305s02/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "ihke3305S02_main_data",
+              "shape": "array",
+              "date_field": "func_DATE",
+              "end_date_field": "",
+              "fields": [
+                "main_tit",
+                "hosp_ABBR",
+                "ori_TYPE",
+                "func_SEQ_NO",
+                "cure_path",
+                "icd9cm_CODE_CNAME",
+                "op_CODE_CNAME",
+                "ori_type_cname",
+                "ori_TYPE_NAME",
+                "in_DATE",
+                "out_DATE",
+                "func_DATE",
+                "cure_E_DATE",
+                "appl_S_DATE",
+                "appl_E_DATE",
+                "part_AMT",
+                "part_AMT_BASIC",
+                "part_AMT_DRUG",
+                "part_AMT_ASSAY",
+                "appl_DOT",
+                "exp_DOT",
+                "drug_DOT",
+                "dsvc_DOT",
+                "diag_DOT",
+                "met_DOT",
+                "cure_DOT",
+                "assay_AMIN",
+                "room_DOT",
+                "meal_DOT",
+                "amin_DOT",
+                "rado_DOT",
+                "thrp_DOT",
+                "op_DOT",
+                "phsc_DOT",
+                "blod_DOT",
+                "hd_DOT",
+                "ane_DOT",
+                "nrtp_DOT",
+                "injt_DOT",
+                "baby_DOT",
+                "pay_PRICE",
+                "show_PRICE",
+                "show_pay_PRICE"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "元",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "sp_IHKE3305S06_data",
+              "shape": "array",
+              "date_field": "@parent",
+              "end_date_field": "",
+              "fields": [
+                "order_code",
+                "drug_name",
+                "act",
+                "order_qty",
+                "order_drug_day"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "日"
+              ],
+              "optional": false
+            },
+            {
+              "root": "sp_IHKE3305S07",
+              "shape": "array",
+              "date_field": "@parent",
+              "end_date_field": "",
+              "fields": [
+                "order_code",
+                "cure_CNAME",
+                "cure_ENAME",
+                "order_qty",
+                "pay_PRICE",
+                "show_PRICE",
+                "teethname"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "元",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3301S02.216e1ca5.js",
+        "IHKE3303S02.07d29ff4.js",
+        "IHKE3305S02.ff9f2963.js"
+      ],
+      "source_window": "分別保留官方近期西醫、中醫與牙醫摘要全部回傳列，並依來源類型開啟原始明細。不假設與歷史清單相同，也不代表全部年度。"
     },
     {
       "id": "screen_breast",
@@ -2807,6 +7653,24 @@
                 ""
               ],
               "optional": false
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "hasSaveData",
+                "hasWarningData",
+                "hasInvalidData"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": true,
+              "metadata": true
             }
           ]
         }
@@ -2820,7 +7684,8 @@
         "IHKE3404S06.f883a2cf.js",
         "IHKE3404S07.9698d7e5.js",
         "IHKE3404S08.4f024a4c.js"
-      ]
+      ],
+      "source_window": "官方頁面通常限最近三次篩檢；保留實際回傳紀錄，不冒充全年度或診斷。"
     },
     {
       "id": "screen_cervical",
@@ -2857,6 +7722,24 @@
                 ""
               ],
               "optional": false
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "hasSaveData",
+                "hasWarningData",
+                "hasInvalidData"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": true,
+              "metadata": true
             }
           ]
         }
@@ -2870,7 +7753,8 @@
         "IHKE3404S06.f883a2cf.js",
         "IHKE3404S07.9698d7e5.js",
         "IHKE3404S08.4f024a4c.js"
-      ]
+      ],
+      "source_window": "官方頁面通常限最近三次篩檢；保留實際回傳紀錄，不冒充全年度或診斷。"
     },
     {
       "id": "screen_colorectal",
@@ -2920,7 +7804,8 @@
         "IHKE3404S06.f883a2cf.js",
         "IHKE3404S07.9698d7e5.js",
         "IHKE3404S08.4f024a4c.js"
-      ]
+      ],
+      "source_window": "官方頁面通常限最近三次篩檢；保留實際回傳紀錄，不冒充全年度或診斷。"
     },
     {
       "id": "screen_hpsa",
@@ -2970,7 +7855,8 @@
         "IHKE3404S06.f883a2cf.js",
         "IHKE3404S07.9698d7e5.js",
         "IHKE3404S08.4f024a4c.js"
-      ]
+      ],
+      "source_window": "官方頁面通常限最近三次篩檢；保留實際回傳紀錄，不冒充全年度或診斷。"
     },
     {
       "id": "screen_hpv",
@@ -3007,6 +7893,24 @@
                 ""
               ],
               "optional": false
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "hasSaveData",
+                "hasWarningData",
+                "hasInvalidData"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": true,
+              "metadata": true
             }
           ]
         }
@@ -3020,7 +7924,8 @@
         "IHKE3404S06.f883a2cf.js",
         "IHKE3404S07.9698d7e5.js",
         "IHKE3404S08.4f024a4c.js"
-      ]
+      ],
+      "source_window": "官方頁面通常限最近三次篩檢；保留實際回傳紀錄，不冒充全年度或診斷。"
     },
     {
       "id": "screen_lung",
@@ -3057,6 +7962,24 @@
                 ""
               ],
               "optional": false
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "hasSaveData",
+                "hasWarningData",
+                "hasInvalidData"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": true,
+              "metadata": true
             }
           ]
         }
@@ -3070,7 +7993,8 @@
         "IHKE3404S06.f883a2cf.js",
         "IHKE3404S07.9698d7e5.js",
         "IHKE3404S08.4f024a4c.js"
-      ]
+      ],
+      "source_window": "官方頁面通常限最近三次篩檢；保留實際回傳紀錄，不冒充全年度或診斷。"
     },
     {
       "id": "screen_oral",
@@ -3107,6 +8031,24 @@
                 ""
               ],
               "optional": false
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "hasSaveData",
+                "hasWarningData",
+                "hasInvalidData"
+              ],
+              "units": [
+                "",
+                "",
+                ""
+              ],
+              "optional": true,
+              "metadata": true
             }
           ]
         }
@@ -3120,7 +8062,8 @@
         "IHKE3404S06.f883a2cf.js",
         "IHKE3404S07.9698d7e5.js",
         "IHKE3404S08.4f024a4c.js"
-      ]
+      ],
+      "source_window": "官方頁面通常限最近三次篩檢；保留實際回傳紀錄，不冒充全年度或診斷。"
     },
     {
       "id": "self_paid_material",
@@ -3191,7 +8134,8 @@
       "source_assets": [
         "IHKE3221S01.4424f5d8.js",
         "IHKE3221S02.6d51f2f5.js"
-      ]
+      ],
+      "source_window": "讀取官方目前提供的全部回傳陣列；此來源未提供日期搜尋或獨立總數，不宣稱全部終身歷史。"
     },
     {
       "id": "self_paid_medicine",
@@ -3286,7 +8230,647 @@
       "source_assets": [
         "IHKE3220S01.4a9c35f1.js",
         "IHKE3220S02.bd47083e.js"
-      ]
+      ],
+      "source_window": "讀取官方目前提供的全部回傳陣列；此來源未提供日期搜尋或獨立總數，不宣稱全部終身歷史。不是自行記錄的補充品或已服用紀錄。"
+    },
+    {
+      "id": "source_cvd_risk",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3506s01/IHKE3506S01",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "InitPersonalData",
+              "shape": "object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "Gender",
+                "AgeRange",
+                "SBP",
+                "TC",
+                "SMOKER",
+                "DIABETES",
+                "SBP_EXAM_DATE",
+                "SBP_HOSP_ABBR",
+                "SBP_SRC_NAME",
+                "TC_EXAM_DATE",
+                "TC_HOSP_ABBR",
+                "TC_SRC_NAME"
+              ],
+              "units": [
+                "",
+                "",
+                "mmHg",
+                "mg/dL",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "LastComputeResultData",
+              "shape": "object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "ComputeResultTitle",
+                "SEX",
+                "AGE_RANGE",
+                "SBP",
+                "TC",
+                "SMOKER",
+                "DIABETES"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "mmHg",
+                "mg/dL",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3506S01.cbf6d113.js"
+      ],
+      "source_window": "僅讀取官方已存輸入、上次評估及血壓／總膽固醇來源資訊；輸入可能經使用者修改，未重新計算或轉成 Healthbank 治療建議。"
+    },
+    {
+      "id": "source_diabetes_assessment",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3518s01/page_load",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "period",
+                "grade",
+                "p4p",
+                "ht",
+                "hl",
+                "ckd",
+                "dcsi",
+                "r1",
+                "r2",
+                "r3",
+                "r4",
+                "r5",
+                "r6",
+                "r7",
+                "pr1",
+                "pr2",
+                "pr3",
+                "pr4",
+                "pr5",
+                "pr6",
+                "keyobservationtitle",
+                "keyobservationcontent",
+                "actionplansshorttermtitle",
+                "actionplansshorttermcontent",
+                "actionplansmidtermtitle",
+                "actionplansmidtermcontent",
+                "complicationcaretitle",
+                "complicationcarecontent",
+                "closingencouragementtitle",
+                "closingencouragementcontent"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3518S01.e16f9ac3.js"
+      ],
+      "source_window": "讀取來源本次提供的全部資料列；公開頁面沒有日期搜尋或獨立總數，不能保證全部終身歷史。僅限來源試辦適用帳號的既有輸出；保留原始代碼與官方 AI 文字，不將缺值補為 0 或無，不產生診斷或治療建議。"
+    },
+    {
+      "id": "source_disease_assessments",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/IHKE3723S01/Get_Disease_Data",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "sP_IHKE3723S01_Data",
+              "shape": "array",
+              "date_field": "crT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "disease",
+                "diseasE_NAME",
+                "diseasE_STAGE",
+                "stage",
+                "stagE_DESC",
+                "crT_DATE",
+                "edU_INFO"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3723S01.ff893659.js",
+        "IHKE3723S02.e229853c.js"
+      ],
+      "source_window": "讀取來源本次提供的全部資料列；公開頁面沒有日期搜尋或獨立總數，不能保證全部終身歷史。保留來源分級及各筆關鍵檢驗原文；評估更新日期和檢驗日期分開，不計算新的風險。"
+    },
+    {
+      "id": "source_kidney_risk",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3503s01/IHKE3503S01",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "InitPersonalData",
+              "shape": "object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "EGFR",
+                "ACR",
+                "PCR",
+                "EGFR_EXAM_DATE",
+                "EGFR_HOSP_ABBR",
+                "EGFR_SRC_NAME",
+                "ACR_PCR_EXAM_DATE",
+                "ACR_PCR_HOSP_ABBR",
+                "ACR_SRC_NAME"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "LastComputeResultData",
+              "shape": "object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "ComputeResultStatus",
+                "ComputeResultTitle",
+                "ComputeResultDesc",
+                "EGFR",
+                "ACR",
+                "PCR"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3503S01.935990c5.js"
+      ],
+      "source_window": "僅讀取官方已存 eGFR、ACR、PCR 輸入與上次評估，以及可用的來源檢驗資訊；未重新計算或將來源分級視為新診斷。沒有歷史查詢參數。"
+    },
+    {
+      "id": "source_liver_risk",
+      "range_mode": "source",
+      "has_details": false,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3502s01/IHKE3502S01",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "Gender",
+                "AgeRange",
+                "LogingenderStr",
+                "AgeRangeStr",
+                "SGPTALT",
+                "HBeAg",
+                "NoData",
+                "AskUpdate",
+                "GenderScore",
+                "AgeScore",
+                "SGPTALTScore",
+                "HBeAgScore",
+                "TotalScore",
+                "FutureCancerRate",
+                "ShowPredictionArea"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "U/L",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "SGPTALTDetail",
+              "shape": "object",
+              "date_field": "REAL_INSPECT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "Title",
+                "ASSAY_VALUE",
+                "REAL_INSPECT_DATE",
+                "HOSP_ABBR",
+                "SRC_NAME"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "HBeAgDetail",
+              "shape": "object",
+              "date_field": "REAL_INSPECT_DATE",
+              "end_date_field": "",
+              "fields": [
+                "Title",
+                "ASSAY_VALUE",
+                "REAL_INSPECT_DATE",
+                "HOSP_ABBR",
+                "SRC_NAME"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [],
+      "source_assets": [
+        "IHKE3502S01.8cceae9e.js"
+      ],
+      "source_window": "僅讀取官方評估頁回傳的輸入、結果、無資料／顯示狀態及原檢驗資訊；回傳值可能包含來源預設值，不同欄位可能來自不同日期。保留來源原文，不重新計算、不確認其有效性或臨床適用性，也不代表 Healthbank 診斷。"
+    },
+    {
+      "id": "stored_reminders",
+      "range_mode": "source",
+      "has_details": true,
+      "list": [
+        {
+          "path": "/api/ihke3000/ihke3104s01/page_load",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "IntimateReminder",
+              "shape": "array",
+              "date_field": "PUSH_DATE",
+              "end_date_field": "",
+              "fields": [
+                "PUSH_TYPE",
+                "PUSH_TYPE_CH",
+                "PUSH_MSG",
+                "PUSH_MSG2",
+                "PUSH_DATE",
+                "HOSP_ABBR",
+                "ICD9CM_CODE",
+                "DISPLAY_CARD_STATUS",
+                "DISPLAY_ALERT_STATUS",
+                "PUSH_STATUS"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "SelfDetermination",
+              "shape": "array",
+              "date_field": "PUSH_DATE",
+              "end_date_field": "",
+              "fields": [
+                "PUSH_TYPE",
+                "PUSH_TYPE_CH",
+                "PUSH_MSG",
+                "PUSH_MSG2",
+                "PUSH_DATE",
+                "HOSP_ABBR",
+                "ICD9CM_CODE",
+                "DISPLAY_CARD_STATUS",
+                "DISPLAY_ALERT_STATUS",
+                "PUSH_STATUS"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "slowUseMedicineList",
+              "shape": "array",
+              "date_field": "sdate",
+              "end_date_field": "edate",
+              "fields": [
+                "icd9cm_CODE_CNAME",
+                "drug_CNAME",
+                "order_CODE",
+                "sdate",
+                "edate"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            },
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "",
+              "end_date_field": "",
+              "fields": [
+                "sys_NOTIFY"
+              ],
+              "units": [
+                ""
+              ],
+              "optional": true
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3104s01/IHKE3104S02",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "notifyDate",
+              "end_date_field": "",
+              "fields": [
+                "notifyDate",
+                "notifyMessage"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/IHKE3306S02/getpushdata",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "sdate",
+              "end_date_field": "edate",
+              "fields": [
+                "sdate",
+                "edate",
+                "hh1",
+                "mm1",
+                "hh2",
+                "mm2",
+                "hh3",
+                "mm3",
+                "hh4",
+                "mm4",
+                "push_msg"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "details": [
+        {
+          "path": "/api/ihke3000/ihke3104s01/IHKE3104S02",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "notifyDate",
+              "end_date_field": "",
+              "fields": [
+                "notifyDate",
+                "notifyMessage"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/ihke3104s01/IHKE3104S02",
+          "method": "POST",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "notifyDate",
+              "end_date_field": "",
+              "fields": [
+                "notifyDate",
+                "notifyMessage"
+              ],
+              "units": [
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        },
+        {
+          "path": "/api/ihke3000/IHKE3306S02/getpushdata",
+          "method": "GET",
+          "sections": [
+            {
+              "root": "",
+              "shape": "response_object",
+              "date_field": "sdate",
+              "end_date_field": "edate",
+              "fields": [
+                "sdate",
+                "edate",
+                "hh1",
+                "mm1",
+                "hh2",
+                "mm2",
+                "hh3",
+                "mm3",
+                "hh4",
+                "mm4",
+                "push_msg"
+              ],
+              "units": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "optional": false
+            }
+          ]
+        }
+      ],
+      "source_assets": [
+        "IHKE3104S01.f06e7025.js",
+        "IHKE3306S02.48917477.js"
+      ],
+      "source_window": "讀取來源一般、自訂及慢連箋提醒清單，並按來源已存識別取得原始通知內容與時段。提醒不代表已就醫、已領藥或實際服用；沒有已存識別時不補造日期、預設訊息或新提醒。來源沒有任意日期查詢或獨立總數。"
     },
     {
       "id": "vaccinations",
@@ -3343,7 +8927,8 @@
       "details": [],
       "source_assets": [
         "IHKE3203S01.6f76972a.js"
-      ]
+      ],
+      "source_window": "讀取官方目前提供的全部回傳陣列；此來源未提供日期搜尋或獨立總數，不宣稱全部終身歷史。官方接種資料可能有上傳時間差；自行記錄不是院所驗證。"
     }
   ],
   "semantic_policy": {
@@ -3357,6 +8942,73 @@
       "section_empty",
       "known_result_missing"
     ],
-    "source_registry_scope": "38 supplemental provider categories. The asset watch also covers reviewed login, laboratory, medical and document components; their focused Go fixtures remain the corresponding endpoint contract tests."
-  }
+    "source_registry_scope": "59 supplemental provider category projections with source windows, including both annual detail lists, top-level-array preventive reads and 40 separately acquired care-chart selectors. Every one of the 215 current lazy chunks is pinned for drift. Public asset coverage is not proof of account or lifetime data completeness; principal medical/document and nested custom projections have their separate source review and focused fixtures.",
+    "field_path_declarations": "Dotted and [] paths in custom-read declarations describe reviewed nested source fields; they are not copied as arbitrary public field codes.",
+    "chart_series": "Source care charts are acquired independently through fixed selectors and session-bound case references. Matching table fields are not treated as evidence of identical source rowsets. Raw values retain source precision; missing units stay missing."
+  },
+  "public_graph": {
+    "retrieved_at": "2026-10-28T08:49:46.969922+00:00",
+    "entry_sha256": "18455d1ff1b9c208ca945e175865bd775497e0bb3bfe70c4cfbe1775c7785f43",
+    "unique_js_assets": 224,
+    "lazy_chunks": 215,
+    "entry_scripts": 9,
+    "execution": "none",
+    "authentication": "none"
+  },
+  "entry_assets": [
+    {
+      "file": "jquery-3.min.js",
+      "path": "/IHKE3000/js/jquery-3.min.js",
+      "sha256": "ce9d07500ad91ec2b524c270764ec4c9a33e78320d8d374ec400ede488f6251b",
+      "bytes": 89503
+    },
+    {
+      "file": "IHKE3000.js",
+      "path": "/IHKE3000/js/IHKE3000.js",
+      "sha256": "47eb28debfd3b6df9a5ec9b7d5944fc53851710a834e87f3ce4d4890c0ec34b6",
+      "bytes": 5758
+    },
+    {
+      "file": "NHI.WEB.UC.js",
+      "path": "/IHKE3000/js/NHI.WEB.UC.js",
+      "sha256": "5539d0b86da14b603b0c58240dca4a9f01662844edbcbf3c178de994762a6c3a",
+      "bytes": 17878
+    },
+    {
+      "file": "NHI.Web.Transform.js",
+      "path": "/IHKE3000/js/NHI.Web.Transform.js",
+      "sha256": "6771bd2a66dfab9679077a1f5925c9bfed0c189172202c175b8960fcf7d1dbc4",
+      "bytes": 19048
+    },
+    {
+      "file": "NHI.Web.Checker.js",
+      "path": "/IHKE3000/js/NHI.Web.Checker.js",
+      "sha256": "8150d3b0afb7b5d8d729b8ca5c85f0a6b1ea9203e249502bf046e8ed49edf823",
+      "bytes": 40627
+    },
+    {
+      "file": "html5-qrcode.min.js",
+      "path": "/IHKE3000/js/html5-qrcode.min.js",
+      "sha256": "19f20903d3a280106c8be6f6ad17f564556b5d144da0b5c90ff4d1654618d261",
+      "bytes": 345913
+    },
+    {
+      "file": "jquery.qrcode.min.js",
+      "path": "/IHKE3000/js/jquery.qrcode.min.js",
+      "sha256": "d0b13b3337dc0a4118c0647e861a4906026662e7db1e685c0850576c7e7b5938",
+      "bytes": 14023
+    },
+    {
+      "file": "chunk-vendors.5ebb76d6.js",
+      "path": "/IHKE3000/js/chunk-vendors.5ebb76d6.js",
+      "sha256": "a508bcee3dbbaacbd8a653baf361c32ddaf3f5040eda4af8a31da7ce522d9a8b",
+      "bytes": 483480
+    },
+    {
+      "file": "app.64b5ac08.js",
+      "path": "/IHKE3000/js/app.64b5ac08.js",
+      "sha256": "4bb9558b37a75f0e04532be86a4f39f968e77bdf96335e122c2c5df5dbf3d6b7",
+      "bytes": 42168
+    }
+  ]
 }

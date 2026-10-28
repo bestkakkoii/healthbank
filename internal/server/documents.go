@@ -96,8 +96,7 @@ func (a *App) prepareDocument(w http.ResponseWriter, r *http.Request, s *session
 		a.fail(w, r, 400, "invalid_document", "文件產製請求格式不正確。")
 		return
 	}
-	_, exportCategory := nhi.OfficialExportCategory(input.Category)
-	if !validDocumentReference(input.ID) || (input.Category != "imaging" && input.Category != "osteoporosis" && !exportCategory) {
+	if !validDocumentReference(input.ID) || !nhi.DocumentPreparationCategory(input.Category) {
 		a.fail(w, r, 400, "invalid_document", "請由目前資料明細提出檔案產製請求。")
 		return
 	}

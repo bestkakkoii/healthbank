@@ -3,6 +3,7 @@
 package nhi
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
@@ -35,8 +36,18 @@ type DocumentAction struct {
 }
 
 type DocumentRequestResult struct {
-	Status  string `json:"status"`
-	Message string `json:"message"`
+	Status  string                 `json:"status"`
+	Message string                 `json:"message"`
+	Refresh DocumentRequestRefresh `json:"refresh"`
+}
+
+// DocumentRequestRefresh identifies an observed read path, never an invented
+// upstream job receipt. JPEG state belongs to its original record; the public
+// DICOM/export add responses do not establish a matching download-job sequence.
+type DocumentRequestRefresh struct {
+	Category    string `json:"category"`
+	Detail      string `json:"detail,omitempty"`
+	Correlation string `json:"correlation"`
 }
 
 type documentReference struct {
@@ -46,8 +57,8 @@ type documentReference struct {
 }
 
 type officialFileReference struct {
-	sequence, format, date string
-	image                  bool
+	sequence, format, date, bundleDate string
+	image                              bool
 }
 
 func documentToken() (string, error) {
@@ -110,6 +121,12 @@ func documentFilename(name, contentType string) string {
 		extension = ".zip"
 	case "text/plain":
 		extension = ".txt"
+	case "text/calendar":
+		extension = ".ics"
+	case "image/jpeg":
+		extension = ".jpg"
+	case "image/png":
+		extension = ".png"
 	}
 	var safe strings.Builder
 	for _, r := range name {
@@ -143,6 +160,12 @@ func (s *Session) FetchImagingDetail(ctx context.Context, reference string) (Sup
 	if err := s.supplementReady(ctx); err != nil {
 		return report, err
 	}
+	return s.fetchImagingDetail(ctx, "imaging", reference, ref)
+}
+
+func (s *Session) fetchImagingDetail(ctx context.Context, category, reference string, ref westernReference) (SupplementReport, error) {
+	report := SupplementReport{ContractRevision: ProviderContractRevision, Category: category + "_detail", Entries: []SupplementEntry{}, Complete: false,
+		Coverage: "保留來源影像／病理報告原文及影像狀態；來源明細關係不證明同次採檢，JPEG 與 DICOM 不代替醫師閱片。"}
 	rows, err := s.supplementRequest(ctx, http.MethodGet, "/api/ihke3000/IHKE3408S02/page_load", url.Values{"crid": {ref.rowID}, "ctype": {ref.sourceType}}, nil, "ihke3408S02_main_data")
 	if err != nil {
 		return report, err
@@ -174,7 +197,7 @@ func (s *Session) FetchImagingDetail(ctx context.Context, reference string) (Sup
 			return report, changedError()
 		}
 		entry.Fields = appendImageStatus(entry.Fields, status)
-		base := documentReference{category: "imaging", parent: reference, rowID: ref.rowID, sourceType: ref.sourceType, sequence: sequence}
+		base := documentReference{category: category, parent: reference, rowID: ref.rowID, sourceType: ref.sourceType, sequence: sequence}
 		if status == "1" && usableDocumentID(sequence) && originalSize != "-" {
 			base.kind = "imaging_jpeg"
 			attachment, err := addDocumentReference(refs, base, "官方 JPEG 影像組（ZIP）", "application/zip")
@@ -208,7 +231,7 @@ func (s *Session) FetchImagingDetail(ctx context.Context, reference string) (Sup
 	if err := validateSupplementReport(report); err != nil {
 		return report, err
 	}
-	if err := s.replaceDocumentReferences("imaging", reference, refs); err != nil {
+	if err := s.replaceDocumentReferences(category, reference, refs); err != nil {
 		return report, err
 	}
 	report.FetchedAt = time.Now().UTC().Format(time.RFC3339Nano)
@@ -258,12 +281,28 @@ func hospitalDocuments(row wireRow, ref medicalReference, parent string, refs ma
 	return attachments, nil
 }
 
+// DocumentPreparationCategory is shared by the HTTP admission layer and the
+// connector, so nested imaging owners do not lose their valid source actions.
+// A permitted category alone never authorizes a job: the exact action handle
+// must still belong to this session/category and is consumed before submission.
+func DocumentPreparationCategory(category string) bool {
+	switch category {
+	case "imaging", "osteoporosis", "western", "annual_overview", "recent_visits":
+		return true
+	}
+	if RecentMedicalCategory(category) {
+		return true // an exact nested action handle is still required below
+	}
+	_, ok := OfficialExportCategory(category)
+	return ok
+}
+
 func (s *Session) PrepareDocument(ctx context.Context, category, reference string) (DocumentRequestResult, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	ref, ok := s.documentReferences[reference]
-	exportFormat, exportOK := OfficialExportCategory(category)
-	if !ok || ref.category != category || (category != "imaging" && category != "osteoporosis" && !exportOK) || (ref.kind != "prepare_jpeg" && ref.kind != "prepare_dicom" && ref.kind != "prepare_export") {
+	exportFormat, _ := OfficialExportCategory(category)
+	if !ok || ref.category != category || !DocumentPreparationCategory(category) || (ref.kind != "prepare_jpeg" && ref.kind != "prepare_dicom" && ref.kind != "prepare_export") {
 		return DocumentRequestResult{}, failure("INVALID_INPUT", "產製識別已失效，請重新取得此筆影像的狀態。")
 	}
 	if err := s.supplementReady(ctx); err != nil {
@@ -310,7 +349,14 @@ func (s *Session) PrepareDocument(ctx context.Context, category, reference strin
 	if ref.kind == "prepare_export" {
 		message = "已向官方提出原始檔產製請求，請稍後更新「官方已產製原始檔」清單。官方原始格式與 Healthbank 可攜資料包分開保存。"
 	}
-	return DocumentRequestResult{Status: "requested", Message: message}, nil
+	refresh := DocumentRequestRefresh{Category: "official_files", Correlation: "unavailable"}
+	if ref.kind == "prepare_jpeg" {
+		refresh.Category = category
+		if ref.parent != "" {
+			refresh.Detail, refresh.Correlation = ref.parent, "same_record"
+		}
+	}
+	return DocumentRequestResult{Status: "requested", Message: message, Refresh: refresh}, nil
 }
 
 func documentObject(body []byte) (wireRow, error) {
@@ -327,6 +373,29 @@ func documentObject(body []byte) (wireRow, error) {
 // Called with the connector mutex already held by FetchProviderDetail. The
 // provider owns record projection; this function only binds observed artifacts.
 func (s *Session) attachProviderDocuments(category, reference string, ref providerReference, object wireRow, report *SupplementReport) error {
+	if category == "child_schedule" {
+		rows, err := supplementRows(object["sp_ihke3703s04"], "")
+		if err != nil || len(rows) > len(report.Entries) {
+			return changedError()
+		}
+		refs := make(map[string]documentReference)
+		for index, row := range rows {
+			reminderDate, err := rowText(row, "pusH_DATE")
+			if err != nil {
+				return err
+			}
+			if reminderDate == "" {
+				continue // The source offers ICS only for an already dated stored reminder.
+			}
+			if err := appendNotificationCalendar(&report.Entries[index], row, "pusH_SEQ_NO", category, reference, refs); err != nil {
+				return err
+			}
+		}
+		if err := validateSupplementReport(*report); err != nil {
+			return err
+		}
+		return s.replaceDocumentReferences(category, reference, refs)
+	}
 	if category != "e_prescriptions" && category != "osteoporosis" {
 		return nil
 	}
@@ -340,6 +409,13 @@ func (s *Session) attachProviderDocuments(category, reference string, ref provid
 			return err
 		}
 		report.Entries[0].Attachments = append(report.Entries[0].Attachments, attachment)
+		for _, times := range ref.refillTimes {
+			attachment, err := addDocumentReference(refs, documentReference{category: category, parent: reference, kind: "prescription_calendar", rowID: ref.rowID, sourceType: ref.sourceType, sequence: times}, "官方第"+times+"聯建議領藥行事曆（非已領或已服用）", "text/calendar;charset=utf-8")
+			if err != nil {
+				return err
+			}
+			report.Entries[0].Attachments = append(report.Entries[0].Attachments, attachment)
+		}
 	} else {
 		rows, err := supplementRows(object["ihke3411s02_main_data"], "")
 		if err != nil || len(rows) != len(report.Entries) {
@@ -375,7 +451,102 @@ func (s *Session) attachProviderDocuments(category, reference string, ref provid
 			}
 		}
 	}
+	if err := validateSupplementReport(*report); err != nil {
+		return err
+	}
 	return s.replaceDocumentReferences(category, reference, refs)
+}
+
+func appendNotificationCalendar(entry *SupplementEntry, row wireRow, field, category, parent string, refs map[string]documentReference) error {
+	sequence, err := rowText(row, field)
+	if err != nil {
+		return err
+	}
+	if sequence == "" {
+		return nil
+	}
+	if !usableDocumentID(sequence) {
+		return changedError()
+	}
+	attachment, err := addDocumentReference(refs, documentReference{category: category, parent: parent, kind: "notification_calendar", sequence: sequence}, "官方已存提醒行事曆（非已就醫或已接種證明）", "text/calendar;charset=utf-8")
+	if err != nil {
+		return err
+	}
+	entry.Attachments = append(entry.Attachments, attachment)
+	return nil
+}
+
+func providerPrescriptionCalendarTimes(row wireRow) ([]string, error) {
+	raw, present := row["refilllist"]
+	if !present || bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
+		return nil, nil
+	}
+	rows, err := supplementRows(raw, "")
+	if err != nil || len(rows) > 1000 {
+		return nil, changedError()
+	}
+	var result []string
+	for _, row := range rows {
+		date, err := rowText(row, "rel_DATE_STR")
+		if err != nil {
+			return nil, err
+		}
+		if date != "" {
+			continue // The public UI exposes ICS only for suggested refill windows.
+		}
+		times, err := rowText(row, "recipe_TIMES")
+		if err != nil || !usableDocumentID(times) {
+			return nil, changedError()
+		}
+		if len(result) >= 499 { // plus the prescription PDF under the same entry
+			return nil, failure("RESPONSE_TOO_LARGE", "來源處方行事曆數量過多，未回傳不完整附件。")
+		}
+		result = append(result, times)
+	}
+	return result, nil
+}
+
+func selfPaidDocuments(object wireRow, sequence, parent string, report *SupplementReport) (map[string]documentReference, error) {
+	refs := make(map[string]documentReference)
+	raw, present := object["reportdatadownloadlist"]
+	if !present {
+		return refs, sourceSectionDiagnostic(report, "self_paid", "ReportDataDownloadList", nil, false, true, 0)
+	}
+	rows, err := supplementRows(raw, "")
+	if err != nil {
+		return nil, err
+	}
+	if err := sourceSectionDiagnostic(report, "self_paid", "ReportDataDownloadList", raw, true, true, len(rows)); err != nil {
+		return nil, err
+	}
+	for index, row := range rows {
+		fileID, err := rowText(row, "FILE_SEQ")
+		if err != nil || !usableDocumentID(sequence) || !usableDocumentID(fileID) {
+			return nil, changedError()
+		}
+		fields, err := appendKnownFields(row, []fieldSpec{{"RANK_SEQ", "來源報告排序（原文）", ""}})
+		if err != nil {
+			return nil, err
+		}
+		attachment, err := addDocumentReference(refs, documentReference{category: "self_paid", parent: parent, kind: "self_paid_file", rowID: sequence, sequence: fileID}, "官方自費健檢原始附件", "application/octet-stream")
+		if err != nil {
+			return nil, err
+		}
+		date, e1 := rowText(object, "REAL_INSPECT_DATE")
+		institution, e2 := rowText(object, "HOSP_NAME")
+		if e1 != nil || e2 != nil {
+			return nil, changedError()
+		}
+		entry := SupplementEntry{Key: medicalKey("self_paid", sequence, "ReportDataDownloadList", index), Kind: "document", Date: date, Institution: institution, Title: "自費健檢原始附件", Source: "健康存摺／院所或使用者上傳自費健檢", Origin: "mixed", ContractID: sourceContractID("self_paid", "ReportDataDownloadList"), Fields: fields, Attachments: []Attachment{attachment}}
+		if date != "" {
+			entry.DateRole = "examination"
+		}
+		report.Entries = append(report.Entries, entry)
+		if len(report.Entries) > MaxReportRecords {
+			return nil, failure("RESPONSE_TOO_LARGE", "自費健檢附件數量過多，未回傳不完整資料。")
+		}
+	}
+	return refs, nil
 }
 
 func (s *Session) FetchOfficialFiles(ctx context.Context) (SupplementReport, error) {
@@ -396,7 +567,8 @@ func (s *Session) FetchOfficialFiles(ctx context.Context) (SupplementReport, err
 		format, e2 := rowText(row, "title")
 		date, e3 := rowText(row, "txt_DATE")
 		flag, e4 := rowText(row, "flag")
-		if e1 != nil || e2 != nil || e3 != nil || e4 != nil || !usableDocumentID(sequence) || format == "" {
+		bundleDate, e5 := rowText(row, "file_txt_DATE")
+		if e1 != nil || e2 != nil || e3 != nil || e4 != nil || e5 != nil || !usableDocumentID(sequence) || format == "" || bundleDate != "" && !usableDocumentID(bundleDate) {
 			return report, changedError()
 		}
 		fields, err := appendKnownFields(row, []fieldSpec{{"title", "官方格式名稱", ""}, {"status", "官方產製狀態", ""}, {"txt_DATE", "提出日期（非檢查日期）", ""}})
@@ -407,7 +579,7 @@ func (s *Session) FetchOfficialFiles(ctx context.Context) (SupplementReport, err
 		if err != nil {
 			return report, err
 		}
-		refs[key] = officialFileReference{sequence: sequence, format: format, date: date, image: flag == "5"}
+		refs[key] = officialFileReference{sequence: sequence, format: format, date: date, bundleDate: bundleDate, image: flag == "5"}
 		report.Entries = append(report.Entries, SupplementEntry{Key: medicalKey("official_files", sequence, "list", index), Kind: "document", Title: "官方產製 " + format,
 			Date: date, DateRole: "recorded", Origin: "official_summary", ContractID: sourceContractID("official_files", "list"), Source: "官方下載服務／提出日期", Fields: fields, DetailID: key})
 	}
@@ -505,6 +677,13 @@ func (s *Session) FetchOfficialFileDetail(ctx context.Context, reference string)
 			return report, err
 		}
 		entry.Attachments = []Attachment{attachment}
+		if ref.bundleDate != "" && !ref.image {
+			bundle, err := addDocumentReference(refs, documentReference{category: "official_files", parent: reference, kind: "official_bundle", sequence: ref.sequence, format: ref.format, date: ref.bundleDate}, "官方整筆產製原始檔", "application/octet-stream")
+			if err != nil {
+				return report, err
+			}
+			entry.Attachments = append(entry.Attachments, bundle)
+		}
 	}
 	report.Entries = append(report.Entries, entry)
 	if err := validateSupplementReport(report); err != nil {

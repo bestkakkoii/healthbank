@@ -1,5 +1,5 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
-import { useEffect, useRef, useState, type SubmitEvent, type DragEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type SubmitEvent, type DragEvent } from 'react';
 import {
   api,
   isSessionInvalidation,
@@ -27,6 +27,8 @@ import {
   type RuleBand,
 } from './model';
 import { Alert, Icon, LevelBadge, Loading, Modal } from './ui';
+import { createTerminologyIndex, groupTerminology, recordTerminology, type TerminologyDisplay } from './terminology-display';
+import { recordGradingContexts } from './grading-context';
 
 import {
   forgetAllRememberedUsers, forgetRememberedUser, maskedIdentity,
@@ -191,7 +193,7 @@ export function LoginDialog({
         </span>
         <div>
           <b>衛生福利部中央健康保險署</b>
-          <span>健康存摺 · 其他檢驗資料</span>
+          <span>健康存摺 · 健康資料服務</span>
         </div>
         <a
           href="https://myhealthbank.nhi.gov.tw/IHKE3000/IHKE3099S01"
@@ -441,6 +443,35 @@ export function ImportDialog({
   );
 }
 
+function TerminologyNotes({ display, catalog }: { display: TerminologyDisplay; catalog: CatalogResponse }) {
+  const sources = catalog.sources.filter(source => display.sourceIds.includes(source.id));
+  if (display.basis === 'raw') return null;
+  return (
+    <section className="detail-notes">
+      {display.note && <p>{display.note}</p>}
+      {(sources.length > 0 || catalog.terminology_notice) && (
+        <details>
+          <summary>名稱來源與整理方式</summary>
+          {catalog.terminology_notice && <p className="helper-text">{catalog.terminology_notice}</p>}
+          {sources.length > 0 && (
+            <ul className="source-list">
+              {sources.map(source => (
+                <li key={source.id}>
+                  {source.url ? (
+                    <a href={source.url} target="_blank" rel="noreferrer">
+                      {source.title}{source.edition ? ` · ${source.edition}` : ''}<Icon name="external" size={15} />
+                    </a>
+                  ) : <span>{source.title}{source.edition ? ` · ${source.edition}` : ''}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </details>
+      )}
+    </section>
+  );
+}
+
 export function DetailDialog({
   record,
   catalog,
@@ -456,17 +487,19 @@ export function DetailDialog({
   onTrend: () => void;
   onConfigure: () => void;
 }) {
-  const item = catalog.items.find(
-    (i) => i.id === record.item_id || i.configuration_key === record.configuration_key,
-  );
+  const terminology = useMemo(() => createTerminologyIndex(catalog), [catalog]);
+  const display = recordTerminology(record, terminology);
+  const item = terminology.byKey.get(record.configuration_key) ?? terminology.byID.get(record.item_id);
   const sources = catalog.sources.filter((s) => item?.sources.includes(s.id));
+  const gradingContexts = recordGradingContexts(record);
   return (
     <Modal
-      title={record.display_name || record.item_name}
+      title={display.name}
       subtitle={`${record.item_name} · ${categoryLabel(record.category)}`}
       onClose={onClose}
       wide
     >
+      {display.englishName && <p className="terminology-english" lang="en">{display.englishName}</p>}
       <div className="detail-result">
         <div>
           <span>檢查結果</span>
@@ -477,6 +510,10 @@ export function DetailDialog({
         </div>
         <LevelBadge level={record.level} />
       </div>
+      {gradingContexts.length > 0 && <section className="detail-notes grading-context-details" aria-label="分級依據與適用限制">
+        <h3>分級依據與適用限制</h3>
+        {gradingContexts.map(context => <p key={context.key}><strong>{context.label}</strong>：{context.note}</p>)}
+      </section>}
       <div className="source-flag">
         <Icon name="info" />
         <b>{sourceFlag(record.reference_status)}</b>
@@ -491,6 +528,18 @@ export function DetailDialog({
         </Alert>
       )}
       <dl className="detail-grid">
+        <div className="detail-wide">
+          <dt>原始檢驗名稱</dt>
+          <dd>{record.item_name || '未提供'}</dd>
+        </div>
+        <div>
+          <dt>原始單位</dt>
+          <dd>{record.unit || '未提供'}</dd>
+        </div>
+        <div>
+          <dt>原院旗標原文</dt>
+          <dd>{record.official_flag || '未提供'}</dd>
+        </div>
         <div>
           <dt>檢查日期</dt>
           <dd>{dateLabel(record.exam_date)}{record.raw_check_date !== undefined && record.raw_check_date !== record.exam_date &&
@@ -501,6 +550,13 @@ export function DetailDialog({
           <dd>{dateLabel(record.visit_date)}{record.raw_visit_date !== undefined && record.raw_visit_date !== record.visit_date &&
             <small>來源原文：{record.raw_visit_date || '未提供'}</small>}</dd>
         </div>
+        {(record.upload_date !== undefined || record.raw_upload_date !== undefined) && (
+          <div>
+            <dt>上傳日期</dt>
+            <dd>{dateLabel(record.upload_date ?? '')}{record.raw_upload_date !== undefined && record.raw_upload_date !== record.upload_date &&
+              <small>來源原文：{record.raw_upload_date || '未提供'}</small>}</dd>
+          </div>
+        )}
         <div>
           <dt>醫事機構</dt>
           <dd>{record.institution || '未提供'}</dd>
@@ -509,6 +565,12 @@ export function DetailDialog({
           <dt>資料來源</dt>
           <dd>{record.source || '未提供'}</dd>
         </div>
+        {record.source_name !== undefined && (
+          <div>
+            <dt>來源名稱</dt>
+            <dd>{record.source_name || '未提供'}</dd>
+          </div>
+        )}
         <div>
           <dt>醫令代碼</dt>
           <dd>{record.order_code || '未提供'}</dd>
@@ -526,6 +588,7 @@ export function DetailDialog({
           <dd>{record.rule_source || '未提供可適用的分級依據'}</dd>
         </div>
       </dl>
+      <TerminologyNotes display={display} catalog={catalog} />
       {item?.description && (
         <section className="detail-notes">
           <h3>項目說明</h3>
@@ -551,7 +614,7 @@ export function DetailDialog({
         </section>
       )}
       <p className="helper-text">
-        顏色依目前適用規則與個人設定呈現。原始結果與原院標記始終保留；單一檢驗值不代表完整診斷。
+        顏色依列出的來源範本或個人設定呈現，未確認的適用條件另行標明。原始結果與原院標記始終保留；單一檢驗值不代表完整診斷。
       </p>
       <div className="dialog-actions">
         <button className="button secondary" onClick={onConfigure} disabled={!canConfigure}>
@@ -608,9 +671,8 @@ function DefaultRuleSummary({
   catalog: CatalogResponse;
 }) {
   const item = catalog.items.find(
-    (item) =>
-      item.id === group.records[0]?.item_id || item.configuration_key === group.configurationKey,
-  );
+    (item) => item.configuration_key === group.configurationKey,
+  ) ?? catalog.items.find(item => item.id === group.records[0]?.item_id);
   if (!item) return null;
   const rule = rulePreview(item.default_rule);
   const alerts = item.alert_rules.map(rulePreview).filter((rule) => rule.bands.length > 0);
@@ -627,6 +689,9 @@ function DefaultRuleSummary({
       <summary>預設規則、獨立警示與參考來源</summary>
       <div>
         <p>{item.description}</p>
+        {rule.scopeLabel && <p><strong>{rule.scopeLabel}</strong></p>}
+        {rule.applicabilityNote && <p>{rule.applicabilityNote}</p>}
+        {rule.conditions.length > 0 && <details><summary>來源適用條件摘要</summary><ul>{rule.conditions.map(condition => <li key={condition}>{condition}</li>)}</ul></details>}
         {rule.description && rule.description !== item.description && <p>{rule.description}</p>}
         {rule.kind === 'reference_interval' && (
           <p>預設採各筆原院參考值：區間內顯示 L1，超出顯示 L3，資料不足顯示未判定。</p>
@@ -665,9 +730,12 @@ function DefaultRuleSummary({
         {alerts.length > 0 && (
           <section className="independent-alerts">
             <h3>獨立警示（個人設定不會降低）</h3>
-            <p>僅在檢體、單位與適用條件可確認時套用；歷史數值的警示不代表目前已發生急症。</p>
+            <p>先核對來源項目與單位，再比對具名門檻；人口、方法及採檢條件未經確認的部分會明列。歷史數值的警示不代表目前已發生急症。</p>
             {alerts.map((alert, index) => (
               <div key={index}>
+                {alert.scopeLabel && <p><strong>{alert.scopeLabel}</strong></p>}
+                {alert.applicabilityNote && <p>{alert.applicabilityNote}</p>}
+                {alert.conditions.length > 0 && <details><summary>來源適用條件摘要</summary><ul>{alert.conditions.map(condition => <li key={condition}>{condition}</li>)}</ul></details>}
                 {alert.description && <p>{alert.description}</p>}
                 <p>適用單位：{alert.unit || group.unit}</p>
                 <RuleBandsTable bands={alert.bands} />
@@ -710,6 +778,8 @@ export function BaselineDialog({
   onClose: () => void;
   persisted: boolean;
 }) {
+  const terminology = useMemo(() => createTerminologyIndex(catalog), [catalog]);
+  const display = groupTerminology(group, terminology);
   const latest = group.records[0];
   const actualValues = group.records.filter((record) => record.value_kind !== 'missing');
   const catalogItem = catalog.items.find(
@@ -787,6 +857,7 @@ export function BaselineDialog({
       wide
       busy={busy}
     >
+      {display.englishName && <p className="terminology-english" lang="en">{display.englishName}</p>}
       <div className="baseline-source">
         <span>最近一次原院參考值</span>
         <b>
@@ -806,6 +877,7 @@ export function BaselineDialog({
           ? '設定會同步至您登入的其他裝置。'
           : '目前未經官網登入，設定只在本次使用階段生效。'}
       </p>
+      <TerminologyNotes display={display} catalog={catalog} />
       <DefaultRuleSummary group={group} catalog={catalog} />
       <p className="baseline-mode">
         {override?.enabled

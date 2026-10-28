@@ -122,6 +122,9 @@ var adultFields = []fieldSpec{
 	{"urinE_PROTEIN_TEXT", "尿蛋白（原文）", "正負值或mg/dL"}, {"metA_SYNDR_RESULT_TEXT", "代謝症候群判讀", ""},
 	{"sgot", "AST", "IU/L"}, {"sgpt", "ALT", "IU/L"}, {"lF_DIAG_RESULT_TEXT", "肝功能判讀", ""},
 	{"hbsaG_TEXT", "HBsAg", ""}, {"hbV_RESULT_TEXT", "B型肝炎判讀", ""}, {"antI_HCV_TEXT", "Anti-HCV", ""}, {"hcV_RESULT_TEXT", "C型肝炎判讀", ""},
+	{"bloD_PRESS_RESULT", "來源血壓判讀代碼", ""}, {"bA_DIAG_RESULT", "來源血脂判讀代碼", ""}, {"s_09005C_DIAG_RESULT", "來源血糖判讀代碼", ""},
+	{"rF_DIAG_RESULT", "來源腎功能判讀代碼", ""}, {"urinE_UA_DIAG_RESULT", "來源尿酸判讀代碼", ""}, {"metA_SYNDR_RESULT", "來源代謝症候群判讀代碼", ""}, {"lF_DIAG_RESULT", "來源肝功能判讀代碼", ""},
+	{"hbsag", "來源 HBsAg 原始代碼", ""}, {"hbV_RESULT", "來源 B 型肝炎判讀代碼", ""}, {"antI_HCV", "來源 Anti-HCV 原始代碼", ""}, {"hcV_RESULT", "來源 C 型肝炎判讀代碼", ""}, {"tel", "來源院所電話", ""},
 }
 
 type wireRow map[string]json.RawMessage
@@ -201,12 +204,41 @@ func supplementRows(body []byte, root string, observedNull ...*bool) ([]wireRow,
 func appendKnownFields(row wireRow, specs []fieldSpec) ([]SupplementField, error) {
 	fields := make([]SupplementField, 0, len(specs))
 	for _, spec := range specs {
-		value, err := rowText(row, spec.key)
+		code, label := strings.ToLower(spec.key), spec.label
+		raw := bytes.TrimSpace(row[code])
+		var value string
+		var err error
+		switch {
+		case code == "memo" && len(raw) > 0 && raw[0] == '[':
+			var notes []json.RawMessage
+			if decodeJSON(raw, &notes) != nil || notes == nil || len(notes) > MaxReportRecords {
+				return nil, changedError()
+			}
+			for _, rawNote := range notes {
+				var note string
+				part := bytes.TrimSpace(rawNote)
+				if len(part) == 0 || part[0] != '"' || json.Unmarshal(part, &note) != nil || len(note) > maxSourceTextBytes {
+					return nil, changedError()
+				}
+				fields = append(fields, SupplementField{Name: label, Value: note, Code: code})
+			}
+			continue
+		case (code == "show_price" || code == "show_pay_price") && (bytes.Equal(raw, []byte("true")) || bytes.Equal(raw, []byte("false"))):
+			value = string(raw) // Only these reviewed display flags accept booleans.
+		case code == "cure_path" && len(raw) > 0 && raw[0] == '[':
+			var parts []wireText
+			if decodeJSON(raw, &parts) != nil || parts == nil || len(parts) > MaxReportRecords {
+				return nil, changedError()
+			}
+			value, label = string(raw), spec.label+"（來源陣列 JSON）"
+		default:
+			value, err = rowText(row, spec.key)
+		}
 		if err != nil {
 			return nil, err
 		}
 		if value != "" {
-			field := SupplementField{Name: spec.label, Value: value, Unit: spec.unit, Code: strings.ToLower(spec.key)}
+			field := SupplementField{Name: label, Value: value, Unit: spec.unit, Code: code}
 			field.Role = sourceFieldRole(field.Code)
 			if spec.unit != "" {
 				field.UnitBasis = "public_contract"
@@ -271,7 +303,11 @@ func (s *Session) FetchSupplement(ctx context.Context, category string, query Qu
 	if err := s.supplementReady(ctx); err != nil {
 		return report, err
 	}
+	if RecentMedicalCategory(category) {
+		return s.fetchRecentSupplement(ctx, category)
+	}
 	var rows []wireRow
+	var rowScopes []string
 	var err error
 	switch category {
 	case "adult":
@@ -281,11 +317,38 @@ func (s *Session) FetchSupplement(ctx context.Context, category string, query Qu
 		report.Coverage = "自費健檢清單，可能含本人輸入及未完成資料；點開才讀取明細，不代表院所驗證或全部歷史。"
 		rows, err = s.supplementRequest(ctx, http.MethodPost, "/api/ihke3000/ihke3403s01/IHKE3403S01", nil, nil, "", &report)
 	case "imaging":
-		report.Coverage = "影像／病理報告清單；沿用官方全部類型搜尋，未提供日期查詢或獨立總數。報告全文及影像須另行取得，影像產製由使用者明確提出。"
+		report.Coverage = "影像／病理報告清單；分別保留官方首頁與全部類型搜尋回應，不假設兩次回應相同。未提供日期查詢或獨立總數。報告全文及影像須另行取得，影像產製由使用者明確提出。"
 		params := url.Values{"s_type": {""}, "s_sort": {"A1"}}
-		_, err = s.supplementRequest(ctx, http.MethodGet, "/api/ihke3000/ihke3408s01/page_load", params, nil, "sp_IHKE3408S01_data")
-		if err == nil {
-			rows, err = s.supplementRequest(ctx, http.MethodGet, "/api/ihke3000/ihke3408s01/search", params, nil, "", &report)
+		path := "/api/ihke3000/ihke3408s01/page_load"
+		var object wireRow
+		object, err = s.providerRead(ctx, providerRequest{path: path, method: http.MethodGet, params: params})
+		if err != nil {
+			return report, err
+		}
+		var present bool
+		rows, present, err = providerSectionRows(object, providerSection{root: "sp_IHKE3408S01_data"})
+		if err != nil || !present {
+			return report, changedError()
+		}
+		if err := sourceSectionDiagnostic(&report, category, "homepage", object["sp_ihke3408s01_data"], true, false, len(rows)); err != nil {
+			return report, err
+		}
+		for range rows {
+			rowScopes = append(rowScopes, "homepage")
+		}
+		if section, observed := medicalAvailabilitySection(category); observed {
+			if err := appendProviderMetadata(&report, object, path, category, section, providerReference{}); err != nil {
+				return report, err
+			}
+		}
+		var searched []wireRow
+		searched, err = s.supplementRequest(ctx, http.MethodGet, "/api/ihke3000/ihke3408s01/search", params, nil, "", &report)
+		if err != nil {
+			return report, err
+		}
+		rows = append(rows, searched...)
+		for range searched {
+			rowScopes = append(rowScopes, "search")
 		}
 	default:
 		report.Coverage = spec.coverage
@@ -345,8 +408,13 @@ func (s *Session) FetchSupplement(ctx context.Context, category string, query Qu
 	references := map[string]string{}
 	westernRefs := map[string]westernReference{}
 	imagingRefs := map[string]westernReference{}
-	for _, row := range rows {
+	for rowIndex, row := range rows {
 		entry := SupplementEntry{Title: spec.title, Source: "官方回傳", Fields: []SupplementField{}, ContractID: sourceContractID(category, "list"), Origin: "unknown"}
+		if category == "imaging" {
+			entry.ContractID = sourceContractID(category, rowScopes[rowIndex])
+			entry.Source += "／" + rowScopes[rowIndex]
+			entry.Key = medicalKey(category, rowScopes[rowIndex], "list", rowIndex)
+		}
 		entry.Date, err = rowText(row, "firsT_DIAG_DATE", "real_INSPECT_DATE", "funC_DATE")
 		if err != nil {
 			return report, err
@@ -382,6 +450,9 @@ func (s *Session) FetchSupplement(ctx context.Context, category string, query Qu
 			entry.Fields, err = appendKnownFields(row, fields)
 			if category == "imaging" {
 				entry.Title = "影像／病理報告索引"
+				var metadata []SupplementField
+				metadata, err = appendKnownFields(row, []fieldSpec{{"jpg_STATUS", "來源 JPEG 產製狀態（原文）", ""}, {"img_ORI_SIZE", "來源影像原始大小顯示值（原文）", ""}})
+				entry.Fields = append(entry.Fields, metadata...)
 			}
 		}
 		if err != nil {
@@ -484,6 +555,7 @@ func (s *Session) FetchSelfPaidDetail(ctx context.Context, reference string) (Su
 		return report, err
 	}
 	found := false
+	resultFields := []fieldSpec{{"ASSAY_VALUE", "結果（原文）", ""}, {"UNIT_DATA", "單位（原文）", ""}, {"CONSULT_VALUE", "參考值（原文）", ""}, {"INSPECT_RESULT", "文字報告", ""}, {"ORDER_CODE", "醫令代碼", ""}, {"LEVEL_01", "來源第一層分類代碼（原文）", ""}, {"LEVEL_02", "來源第二層分類代碼（原文）", ""}}
 	for _, section := range []string{"OrdinaryInspection", "NumericalData", "ReportData"} {
 		raw, present := object[section]
 		if !present {
@@ -508,38 +580,77 @@ func (s *Session) FetchSelfPaidDetail(ctx context.Context, reference string) (Su
 			names = append(names, name)
 		}
 		sort.Strings(names)
+		rowCount, missingResults := 0, 0
 		for _, name := range names {
 			items, parseErr := supplementRows(groups[name], "")
 			if parseErr != nil {
 				return report, parseErr
 			}
-			for _, item := range items {
+			for index, item := range items {
+				rowCount++
 				title, parseErr := rowText(item, "ASSAY_ITEM_NAME")
 				if parseErr != nil {
 					return report, parseErr
 				}
-				fields, parseErr := appendKnownFields(item, []fieldSpec{{"ASSAY_VALUE", "結果（原文）", ""}, {"UNIT_DATA", "單位（原文）", ""}, {"CONSULT_VALUE", "參考值（原文）", ""}, {"INSPECT_RESULT", "文字報告", ""}, {"ORDER_CODE", "醫令代碼", ""}})
+				fields, parseErr := appendKnownFields(item, resultFields)
 				if parseErr != nil {
 					return report, parseErr
 				}
 				if title == "" && len(fields) == 0 {
-					continue
+					_, known := item["assay_item_name"]
+					for _, field := range resultFields {
+						_, present := item[strings.ToLower(field.key)]
+						known = known || present
+					}
+					if !known {
+						return report, changedError()
+					}
 				}
+				level, parseErr := rowText(item, "LEVEL_02")
+				if parseErr != nil {
+					return report, parseErr
+				}
+				kind := ""
+				if section == "NumericalData" && level == "000" {
+					kind = "source_heading" // Explicit source heading row, not a missing observation.
+				}
+				if kind != "source_heading" && sourceResultMissing("self_paid", resultFields, fields) {
+					missingResults++
+				}
+				fields = append(fields, SupplementField{Name: "來源群組（原文）", Value: name})
 				dateRole := ""
 				if date != "" {
 					dateRole = "examination"
 				}
-				report.Entries = append(report.Entries, SupplementEntry{Date: date, DateRole: dateRole, Origin: "mixed", ContractID: sourceContractID("self_paid", section), Institution: institution, Title: title, Source: "自費健檢／" + section, Fields: fields})
+				report.Entries = append(report.Entries, SupplementEntry{Key: medicalKey("self_paid", seq, section+"\x00"+name, index), Kind: kind, Date: date, DateRole: dateRole, Origin: "mixed", ContractID: sourceContractID("self_paid", section), Institution: institution, Title: title, Source: "自費健檢／" + section, Fields: fields})
 				if len(report.Entries) > MaxReportRecords {
 					return report, failure("RESPONSE_TOO_LARGE", "自費健檢明細過多，未載入不完整資料。")
 				}
 			}
 		}
+		if err := sourceSectionDiagnostic(&report, "self_paid", section, raw, true, false, rowCount); err != nil {
+			return report, err
+		}
+		if missingResults > 0 {
+			if err := addSourceDiagnostic(&report, "known_result_missing", sourceContractID("self_paid", section), &missingResults); err != nil {
+				return report, err
+			}
+		}
+	}
+	if _, present := row["reportdatadownloadlist"]; present {
+		found = true
 	}
 	if !found {
 		return report, changedError()
 	}
+	documents, err := selfPaidDocuments(row, seq, reference, &report)
+	if err != nil {
+		return report, err
+	}
 	if err := validateSupplementReport(report); err != nil {
+		return report, err
+	}
+	if err := s.replaceDocumentReferences("self_paid", reference, documents); err != nil {
 		return report, err
 	}
 	report.FetchedAt = time.Now().UTC().Format(time.RFC3339)

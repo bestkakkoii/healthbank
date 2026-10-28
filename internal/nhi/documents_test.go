@@ -87,7 +87,7 @@ func TestImagingDetailOriginalTextDocumentsAndExplicitPreparation(t *testing.T) 
 	})
 	s.token, s.tokenObtainedAt = "synthetic", time.Now()
 	list, err := s.FetchSupplement(context.Background(), "imaging", Query{})
-	if err != nil || len(list.Entries) != 1 || len(list.Entries[0].DetailID) != 48 {
+	if err != nil || len(list.Entries) != 2 || len(list.Entries[0].DetailID) != 48 || list.Entries[0].ContractID == list.Entries[1].ContractID || list.Entries[0].DetailID == list.Entries[1].DetailID {
 		t.Fatalf("missing imaging detail reference: %v", err)
 	}
 	detail, err := s.FetchImagingDetail(context.Background(), list.Entries[0].DetailID)

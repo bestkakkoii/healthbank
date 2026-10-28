@@ -30,6 +30,8 @@ type providerReference struct {
 	dateRole                                                           string
 	parentReference                                                    string
 	query                                                              Query
+	refillTimes                                                        []string
+	children                                                           []string
 }
 
 type providerSection struct {
@@ -39,6 +41,7 @@ type providerSection struct {
 	keyed                                                   bool
 	detail                                                  bool
 	optional                                                bool
+	metadata                                                bool
 }
 
 type providerRequest struct {
@@ -47,6 +50,9 @@ type providerRequest struct {
 	params   url.Values
 	payload  any
 	sections []providerSection
+	// Custom readers explicitly pin a top-level array without weakening the
+	// ordinary providerRead object contract.
+	responseArray bool
 }
 
 type providerSpec struct {
@@ -200,13 +206,19 @@ func providerNoData(category string, object wireRow) (bool, error) {
 			return false, changedError()
 		}
 	}
-	if category == "home_care" {
+	if category == "home_care" || category == "source_diabetes_assessment" {
 		raw, ok := object["hasdata"]
-		var present bool
-		if !ok || json.Unmarshal(raw, &present) != nil {
+		if !ok {
 			return false, changedError()
 		}
-		return !present, nil
+		switch string(bytes.TrimSpace(raw)) {
+		case "false":
+			return true, nil
+		case "true":
+			return false, nil
+		default:
+			return false, changedError()
+		}
 	}
 	if category == "family_followup" || category == "family_health_followup" {
 		if raw, ok := object["hasillcategory"]; ok {
@@ -230,6 +242,15 @@ func (s *Session) providerAppend(report *SupplementReport, object wireRow, reque
 	}
 	seen := false
 	for _, section := range request.sections {
+		if section.metadata {
+			before := len(report.Entries)
+			if err := appendProviderMetadata(report, object, request.path, category, section, inherited); err != nil {
+				return err
+			}
+			_, present := object[strings.ToLower(section.root)]
+			seen = seen || len(report.Entries) > before || (section.root != "" && present)
+			continue
+		}
 		rows, present, err := providerSectionRows(object, section)
 		if err != nil {
 			return err
@@ -263,6 +284,12 @@ func (s *Session) providerAppend(report *SupplementReport, object wireRow, reque
 				entry.Kind = "source_index"
 			}
 			providerEntryMetadata(&entry, category, section, inherited)
+			if category == "recent_visits" {
+				entry.Kind = "encounter"
+			}
+			if err := appendProviderCoverageFields(report, &entry, category, row); err != nil {
+				return err
+			}
 			if entry.Kind != "source_index" && strings.ToLower(section.date) != "inoculate_d" && sourceResultMissing(category, section.fields, entry.Fields) {
 				missingResults++
 			}
@@ -353,8 +380,14 @@ func (s *Session) FetchProvider(ctx context.Context, category string, query Quer
 	report.Coverage = spec.coverage
 	resolved := query
 	if spec.info.RangeMode == "date_search" {
+		// A calendar can contain future appointments. An omitted range uses
+		// the application's explicit supported bounds, not today's date or
+		// the source UI's currently displayed month. Custom bounds stay intact.
+		if category == "calendar_events" && query.StartDate == "" && query.EndDate == "" {
+			resolved = Query{StartDate: AllHistoryStartDate, EndDate: "2200-12-31"}
+		}
 		var err error
-		resolved, _, err = resolveQuery(query, time.Now())
+		resolved, _, err = resolveQuery(resolved, time.Now())
 		if err != nil {
 			return report, err
 		}
@@ -364,16 +397,46 @@ func (s *Session) FetchProvider(ctx context.Context, category string, query Quer
 		return report, err
 	}
 	refs := map[string]providerReference{}
-	for _, request := range spec.requests {
+	documents := map[string]documentReference{}
+	handled, err := s.providerPersonalFetch(ctx, &report, category, refs)
+	if err != nil {
+		return report, err
+	}
+	if !handled {
+		handled, err = s.providerCommunicationsFetch(ctx, &report, category, resolved, refs, documents)
+		if err != nil {
+			return report, err
+		}
+	}
+	if !handled {
+		handled, err = s.providerFamilyFollowupCoverageFetch(ctx, &report, category, resolved, refs)
+		if err != nil {
+			return report, err
+		}
+	}
+	if !handled {
+		handled, err = s.providerCoverageFetch(ctx, &report, category, resolved, refs)
+		if err != nil {
+			return report, err
+		}
+	}
+	requests := spec.requests
+	if handled {
+		requests = nil
+	}
+	for _, request := range requests {
 		object, err := s.providerRead(ctx, request)
 		if err != nil {
 			return report, err
 		}
 		if category == "glucose" {
-			// The initial page is discovery/default data only. Query even if it
-			// returns no recent rows, so older observations remain reachable.
+			// The homepage table and date-search chart are independent source
+			// responses. Preserve both, even when either returns no rows.
 			if _, present := object["sp_ihke3406s01_data"]; !present {
 				return report, changedError()
+			}
+			if err := s.providerAppend(&report, object, request, category, nil, providerReference{}); err != nil {
+				return report, s.annotateResponseError(err)
 			}
 			request, err = providerDetailRequest(category, providerReference{rowID: "09006C", title: "糖化血色素（HbA1c）", query: resolved})
 			if err != nil {
@@ -399,24 +462,83 @@ func (s *Session) FetchProvider(ctx context.Context, category string, query Quer
 		refs[reference] = providerReference{rowID: "10568", title: "血壓與心率", query: resolved}
 		report.Entries = append(report.Entries, SupplementEntry{Key: medicalKey(category, "10568", "source_index", 0), Kind: "source_index", ContractID: sourceContractID(category, "source_index"), Origin: "mixed", Title: "血壓與心率資料索引", Source: "健康存摺／生理量測資料入口", Fields: []SupplementField{{Name: "資料索引", Value: "取得明細後才包含實際量測紀錄。"}}, DetailID: reference})
 	}
+	if category == "menstrual" {
+		if err := appendProviderMenstrualMonths(&report, resolved, refs); err != nil {
+			return report, err
+		}
+	}
 	if err := validateSupplementReport(report); err != nil {
 		return report, err
 	}
-	if err := s.reserveCategoryReferences("provider/"+category, referenceMapSize(refs, providerReferenceSize), category); err != nil {
+	if err := s.commitProviderListReferences(category, refs, documents); err != nil {
 		return report, err
+	}
+	report.FetchedAt = time.Now().UTC().Format(time.RFC3339)
+	return report, nil
+}
+
+// A list may expose both detail and download handles. Validate and admit the
+// complete replacement before retiring either previous capability group.
+func (s *Session) commitProviderListReferences(category string, refs map[string]providerReference, documents map[string]documentReference) error {
+	count, size := s.remainingDocumentReferences(category, "", true, documents)
+	if count > MaxReportRecords {
+		return failure("RESPONSE_TOO_LARGE", "本次文件識別數量已達上限，請重新取得所需類別。")
+	}
+	changes := map[string]int64{"provider/" + category: referenceMapSize(refs, providerReferenceSize), "documents": size}
+	if category == "annual_overview" || category == "recent_visits" {
+		changes["medical/"+category] = 0
+	}
+	if err := s.reserveReferenceGroups(changes); err != nil {
+		return err
+	}
+	s.clearDocumentCategory(category)
+	if category == "annual_overview" || category == "recent_visits" {
+		delete(s.medicalReferences, category)
+	}
+	if len(documents) > 0 && s.documentReferences == nil {
+		s.documentReferences = make(map[string]documentReference)
+	}
+	for id, ref := range documents {
+		s.documentReferences[id] = ref
 	}
 	if s.providerReferences == nil {
 		s.providerReferences = map[string]map[string]providerReference{}
 	}
 	s.providerReferences[category] = refs
-	report.FetchedAt = time.Now().UTC().Format(time.RFC3339)
-	return report, nil
+	return nil
 }
 
 func providerMakeReference(category string, row wireRow, entry SupplementEntry, query Query) (providerReference, error) {
 	ref := providerReference{date: entry.Date, dateRole: entry.DateRole, institution: entry.Institution, title: entry.Title, originKey: entry.Key, query: query}
 	var err error
 	switch category {
+	case "menstrual":
+		ref.rowID, err = providerMenstrualDate(entry.Date)
+	case "recent_visits":
+		ref.rowID, err = rowText(row, "row_id")
+		if err == nil {
+			ref.sourceType, err = rowText(row, "ori_type")
+		}
+		var sourceKind string
+		if err == nil {
+			sourceKind, err = rowText(row, "htype")
+		}
+		switch sourceKind {
+		case "西醫":
+			ref.kind = "western"
+		case "中醫":
+			ref.kind = "chinese"
+		case "牙醫":
+			ref.kind = "dental"
+		default:
+			ref.rowID = "" // the source supplies no detail route for this label
+		}
+		if ref.sourceType == "" {
+			ref.rowID = ""
+		}
+	case "annual_overview":
+		ref.rowID, err = rowText(row, "year")
+		ref.kind = "annual_year"
 	case "e_prescriptions":
 		ref.rowID, err = rowText(row, "treat_NUM")
 		if err == nil {
@@ -424,6 +546,9 @@ func providerMakeReference(category string, row wireRow, entry SupplementEntry, 
 		}
 		if ref.rowID != "" && ref.sourceType == "" {
 			return ref, changedError()
+		}
+		if err == nil && ref.sourceType == "C" {
+			ref.refillTimes, err = providerPrescriptionCalendarTimes(row)
 		}
 	case "physiology":
 		ref.rowID, err = rowText(row, "code")
@@ -483,23 +608,31 @@ func providerRefills(entry *SupplementEntry, row wireRow) error {
 			return err
 		}
 		label := "第" + number + "聯"
+		if number != "" {
+			entry.Fields = append(entry.Fields, SupplementField{Name: label + "來源聯次（原文）", Value: number, Code: "recipe_times"})
+		}
+		window, err := rowText(item, "recipe_MEMO")
+		if err != nil {
+			return err
+		}
+		institution, err := rowText(item, "hosp_NAME")
+		if err != nil {
+			return err
+		}
+		if number == "" && date == "" && window == "" && institution == "" {
+			return changedError()
+		}
 		if date != "" {
 			entry.Fields = append(entry.Fields, SupplementField{Name: label + "來源已領藥日期", Value: date, Code: "rel_date_str", Role: "date"})
-			institution, err := rowText(item, "hosp_NAME")
-			if err != nil {
-				return err
-			}
-			if institution != "" {
-				entry.Fields = append(entry.Fields, SupplementField{Name: label + "領藥院所", Value: institution})
-			}
-		} else {
-			window, err := rowText(item, "recipe_MEMO")
-			if err != nil {
-				return err
-			}
-			if window != "" {
-				entry.Fields = append(entry.Fields, SupplementField{Name: label + "來源建議領藥期間（非已領）", Value: window})
-			}
+		}
+		if institution != "" {
+			entry.Fields = append(entry.Fields, SupplementField{Name: label + "來源領藥院所（未推定完成）", Value: institution, Code: "hosp_name"})
+		}
+		if window != "" {
+			entry.Fields = append(entry.Fields, SupplementField{Name: label + "來源建議領藥期間（非已領）", Value: window, Code: "recipe_memo"})
+		}
+		if date == "" && window == "" {
+			entry.Fields = append(entry.Fields, SupplementField{Name: label + "來源欄位狀態", Value: "來源未提供領藥日期或建議區間；未推定已領藥或實際服用。"})
 		}
 	}
 	return nil
@@ -514,7 +647,41 @@ func (s *Session) FetchProviderDetail(ctx context.Context, category, reference s
 	}
 	ref, ok := s.providerReferences[category][reference]
 	if !ok {
+		if category == "annual_overview" || category == "recent_visits" {
+			if child, exists := s.medicalReferences[category][reference]; exists && child.kind != "annual_year" {
+				return s.fetchMedicalDetail(ctx, category, reference, child)
+			}
+		}
 		return report, failure("INVALID_INPUT", "明細識別已失效，請重新取得目前類別清單。")
+	}
+	if category == "annual_overview" {
+		return s.fetchAnnualProviderDetail(ctx, reference, ref, report)
+	}
+	if category == "recent_visits" {
+		return s.fetchMedicalDetail(ctx, category, reference, medicalReference{category: ref.kind, rowID: ref.rowID, sourceType: ref.sourceType, date: ref.date, institution: ref.institution})
+	}
+	if category == "menstrual" && ref.kind == "menstrual_month" {
+		return s.fetchProviderMenstrualMonth(ctx, reference, ref, report)
+	}
+	if handled, err := s.providerPersonalDetail(ctx, &report, category, reference, ref); handled {
+		if err != nil {
+			return report, err
+		}
+		if err := validateSupplementReport(report); err != nil {
+			return report, err
+		}
+		report.FetchedAt = time.Now().UTC().Format(time.RFC3339Nano)
+		return report, nil
+	}
+	if handled, err := s.providerCommunicationsDetail(ctx, &report, category, reference, ref); handled {
+		if err != nil {
+			return report, err
+		}
+		if err := validateSupplementReport(report); err != nil {
+			return report, err
+		}
+		report.FetchedAt = time.Now().UTC().Format(time.RFC3339Nano)
+		return report, nil
 	}
 	request, err := providerDetailRequest(category, ref)
 	if err != nil {
@@ -544,6 +711,16 @@ func (s *Session) FetchProviderDetail(ctx context.Context, category, reference s
 	}
 	if err := s.providerAppend(&report, object, request, category, nil, ref); err != nil {
 		return report, s.annotateResponseError(err)
+	}
+	if ref.kind == "care_chart" {
+		report.Coverage = "來源照護圖表的全部回傳資料列，保留每筆原始日期與數值；不假定與明細表相同，不轉成浮點數或推定缺少單位。來源未提供日期搜尋或獨立總數。"
+		for index := range report.Entries {
+			report.Entries[index].Kind, report.Entries[index].Origin = "source_summary", "official_summary"
+		}
+	}
+	careChildren, err := appendProviderCareChartIndices(&report, category, reference, ref)
+	if err != nil {
+		return report, err
 	}
 	if category == "e_prescriptions" || category == "self_paid_medicine" {
 		for i := range report.Entries {
@@ -579,6 +756,9 @@ func (s *Session) FetchProviderDetail(ctx context.Context, category, reference s
 		return report, err
 	}
 	if err := s.attachProviderDocuments(category, reference, ref, object, &report); err != nil {
+		return report, err
+	}
+	if err := s.commitProviderCareChartReferences(category, reference, ref, careChildren); err != nil {
 		return report, err
 	}
 	if refreshChildren {
@@ -620,7 +800,7 @@ func providerStageChildRefresh(current map[string]providerReference, parent stri
 	return staged
 }
 
-func (s *Session) providerPhysiologyRaw(ctx context.Context, report *SupplementReport, category, parent string, ref providerReference, refs map[string]providerReference) error {
+func providerPhysiologyRawRequest(category string, ref providerReference) providerRequest {
 	fields := []fieldSpec{{"code", "來源量測項目代碼", ""}, {"create_DATE", "量測日期（原文）", ""}, {"time", "時段（原文）", ""}, {"value", "來源量測值（原文）", ""}, {"unit_DATA", "單位（原文）", ""}, {"txt_DATE", "來源編輯時間（原文，非量測日期）", ""}, {"abnormal_Status", "來源旗標（原文）", ""}}
 	payload := map[string]string{"cCode": ref.rowID}
 	request := providerRequest{path: "/api/ihke3000/ihke3205s02/page_load", method: http.MethodPost, payload: payload, sections: []providerSection{providerSectionSpec("sP_IHKE3205S04", ref.title+"原始紀錄", "健康存摺／生理量測原始紀錄（可含自行記錄）", "create_DATE", fields)}}
@@ -630,12 +810,29 @@ func (s *Session) providerPhysiologyRaw(ctx context.Context, report *SupplementR
 		payload["cEDate"] = strings.ReplaceAll(ref.query.EndDate, "-", "")
 		request.sections[0].source = "健康存摺／行動裝置運動原始紀錄"
 	}
+	device := providerSectionSpec("devicelist", ref.title+"行動裝置日期索引", "健康存摺／行動裝置資料來源", "cdate", []fieldSpec{{"cdate", "來源日期（原文）", ""}, {"value", "來源摘要（原文）", ""}, {"act_os", "來源裝置平台代碼（未推定平台）", ""}})
+	metadata := providerSectionSpec("sP_IHKE3205S03", ref.title+"來源項目與單位說明", "健康存摺／量測項目來源定義（非量測結果）", "", []fieldSpec{{"codE_NAME", "來源量測項目名稱", ""}, {"uniT_DATA", "來源項目單位（未自動套用其他紀錄）", ""}})
+	request.sections[0].optional, device.optional = true, true
+	metadata.optional = true
+	platformFields := []fieldSpec{{"act_os", "來源裝置平台代碼（未推定平台）", ""}}
+	if category == "physiology" {
+		platformFields = append(platformFields, fieldSpec{"act_os1", "來源第一裝置可用性旗標", ""}, fieldSpec{"act_os2", "來源第二裝置可用性旗標", ""}, fieldSpec{"act_os3", "來源第三裝置可用性旗標", ""})
+	}
+	platform := providerMetadataSection("", ref.title+"來源裝置平台資訊", "健康存摺／裝置來源原始代碼與可用性旗標", platformFields)
+	request.sections = append(request.sections, device, metadata, platform)
+	return request
+}
+
+func (s *Session) providerPhysiologyRaw(ctx context.Context, report *SupplementReport, category, parent string, ref providerReference, refs map[string]providerReference) error {
+	request := providerPhysiologyRawRequest(category, ref)
 	object, err := s.providerRead(ctx, request)
 	if err != nil {
 		return err
 	}
 	if _, present := object["sp_ihke3205s04"]; present {
-		if err := s.providerAppend(report, object, request, category, nil, ref); err != nil {
+		rawRequest := request
+		rawRequest.sections = request.sections[:1]
+		if err := s.providerAppend(report, object, rawRequest, category, nil, ref); err != nil {
 			return err
 		}
 	} else {
@@ -650,7 +847,7 @@ func (s *Session) providerPhysiologyRaw(ctx context.Context, report *SupplementR
 			return changedError()
 		}
 	}
-	device := providerSectionSpec("devicelist", ref.title+"行動裝置日期索引", "健康存摺／行動裝置資料來源", "cdate", []fieldSpec{{"cdate", "來源日期（原文）", ""}, {"value", "來源摘要（原文）", ""}})
+	device := request.sections[1]
 	rows, present, err := providerSectionRows(object, device)
 	if err != nil {
 		return err
@@ -689,7 +886,20 @@ func (s *Session) providerPhysiologyRaw(ctx context.Context, report *SupplementR
 			return failure("RESPONSE_TOO_LARGE", "量測資料過多，未回傳不完整明細。")
 		}
 	}
-	return nil
+	metadata := request
+	metadata.sections = request.sections[2:3]
+	if _, present := object["sp_ihke3205s03"]; present {
+		start := len(report.Entries)
+		if err := s.providerAppend(report, object, metadata, category, nil, ref); err != nil {
+			return err
+		}
+		for index := start; index < len(report.Entries); index++ {
+			report.Entries[index].Kind = "source_metadata"
+		}
+	} else if err := sourceSectionDiagnostic(report, category, "sP_IHKE3205S03", nil, false, true, 0); err != nil {
+		return err
+	}
+	return appendProviderMetadata(report, object, request.path, category, request.sections[3], ref)
 }
 
 func providerVerifyDetailIdentity(category string, object wireRow, ref providerReference) error {

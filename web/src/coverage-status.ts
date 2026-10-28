@@ -1,7 +1,8 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
 import type { LabRecord, ReportResponse, SessionMode } from './api';
+import { cacheProvenanceText } from './cache-provenance.ts';
 
-export type LaboratoryCoverageKind = 'unqueried' | 'matched' | 'mismatch' | 'missing' | 'unverified' | 'imported' | 'synthetic';
+export type LaboratoryCoverageKind = 'unqueried' | 'matched' | 'mismatch' | 'missing' | 'unverified' | 'imported' | 'synthetic' | 'cached';
 
 export interface LaboratoryCoverageStatus {
   kind: LaboratoryCoverageKind;
@@ -13,7 +14,7 @@ export interface LaboratoryCoverageStatus {
 
 /** A count match describes one submitted interval, never lifetime completeness. */
 export function laboratoryCoverageStatus(
-  report: Pick<ReportResponse, 'records' | 'fetched_at' | 'complete' | 'official_query'>,
+  report: Pick<ReportResponse, 'records' | 'fetched_at' | 'complete' | 'official_query' | 'cache_provenance'>,
   mode: SessionMode,
 ): LaboratoryCoverageStatus {
   const returnedCount = report.records.length;
@@ -24,6 +25,7 @@ export function laboratoryCoverageStatus(
   const status = (kind: LaboratoryCoverageKind, summary: string): LaboratoryCoverageStatus =>
     ({ kind, summary, returnedCount, reportedCount, difference });
   if (mode === 'demo') return status('synthetic', `合成示範 ${returnedCount} 筆；不是官方個人資料，也不代表完成官方筆數核對。`);
+  if (report.cache_provenance) return status('cached', `保留 ${returnedCount} 筆。${cacheProvenanceText(report.cache_provenance)}`);
   if (mode === 'import') {
     const historical = reportedCount === null ? `匯入資料保留 ${returnedCount} 筆` :
       `檔案記載官方回報 ${reportedCount} 筆、保留 ${returnedCount} 筆${difference === 0 ? '（筆數相同）' : '（筆數不一致）'}`;

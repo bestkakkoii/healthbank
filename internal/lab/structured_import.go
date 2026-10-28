@@ -17,6 +17,7 @@ import (
 // Portable reports contain only original laboratory fields. They are not identity
 // proof, and neither serialized grades nor derived calculations are trusted.
 const portableSchema = "healthbank.lab.v1"
+const portableSchemaV2 = "healthbank.lab.v2"
 
 var portableWarning = []string{"匯入檔案不代表官方完整歷史；僅重新整理檔案內的原始檢驗欄位，不驗證檔案所屬身分。"}
 var portableFields = map[string]bool{
@@ -37,6 +38,16 @@ type portableRow struct {
 	VisitDate    string `json:"visit_date"`
 	Source       string `json:"source"`
 	OfficialFlag string `json:"official_flag"`
+	UploadDate   string `json:"upload_date,omitempty"`
+	SourceName   string `json:"source_name,omitempty"`
+}
+
+func validPortableSchema(schema string) bool {
+	return schema == portableSchema || schema == portableSchemaV2
+}
+
+func portableFieldAllowed(schema, name string) bool {
+	return portableFields[name] || schema == portableSchemaV2 && (name == "upload_date" || name == "source_name")
 }
 
 func (v portableRow) raw() RawRecord {
@@ -51,7 +62,7 @@ func validatePortable(rows []portableRow) ([]RawRecord, []string, error) {
 		if strings.TrimSpace(row.ItemName) == "" {
 			return nil, nil, errors.New("檢驗項目名稱缺漏；未匯入部分結果。")
 		}
-		for _, text := range []string{row.CheckDate, row.OrderCode, row.OrderName, row.ItemName, row.Result, row.Unit, row.Reference, row.Institution, row.VisitDate, row.Source, row.OfficialFlag} {
+		for _, text := range []string{row.CheckDate, row.OrderCode, row.OrderName, row.ItemName, row.Result, row.Unit, row.Reference, row.Institution, row.VisitDate, row.Source, row.OfficialFlag, row.UploadDate, row.SourceName} {
 			if len(text) > maxCellBytes || !utf8.ValidString(text) {
 				return nil, nil, errors.New("檢驗欄位過長或不是有效UTF-8。")
 			}
@@ -81,11 +92,11 @@ func parsePortableJSON(data []byte) ([]RawRecord, []string, error) {
 	// otherwise accepts case aliases and null strings as unchanged zero values.
 	var document map[string]json.RawMessage
 	if err := json.Unmarshal(data, &document); err != nil || len(document) != 2 || document["schema"] == nil || document["records"] == nil {
-		return nil, nil, errors.New("未辨識的JSON格式。僅支援Healthbank可攜報表 healthbank.lab.v1；不是通用SDK／FHIR匯入器。")
+		return nil, nil, errors.New("未辨識的JSON格式。僅支援Healthbank可攜報表 healthbank.lab.v1／v2；不是通用SDK／FHIR匯入器。")
 	}
 	var schema string
 	var rows []map[string]json.RawMessage
-	if err := json.Unmarshal(document["schema"], &schema); err != nil || schema != portableSchema {
+	if err := json.Unmarshal(document["schema"], &schema); err != nil || !validPortableSchema(schema) {
 		return nil, nil, errors.New("未辨識的JSON報表版本。")
 	}
 	if err := json.Unmarshal(document["records"], &rows); err != nil || rows == nil || len(rows) > maxImportedRows {
@@ -93,7 +104,7 @@ func parsePortableJSON(data []byte) ([]RawRecord, []string, error) {
 	}
 	for _, row := range rows {
 		for name, value := range row {
-			if !portableFields[name] || len(value) == 0 || value[0] != '"' {
+			if !portableFieldAllowed(schema, name) || len(value) == 0 || value[0] != '"' {
 				return nil, nil, errors.New("JSON檢驗欄位必須使用已定義名稱與原始文字，不能為null。")
 			}
 		}
@@ -111,6 +122,7 @@ func parsePortableXML(data []byte) ([]RawRecord, []string, error) {
 	decoder := xml.NewDecoder(bytes.NewReader(bytes.TrimPrefix(data, []byte{0xef, 0xbb, 0xbf})))
 	depth := 0
 	rootSeen := false
+	schema := ""
 	rows := []portableRow{}
 	fields := map[string]string{}
 	field := ""
@@ -137,17 +149,18 @@ func parsePortableXML(data []byte) ([]RawRecord, []string, error) {
 			}
 			switch depth {
 			case 1:
-				if rootSeen || t.Name.Local != "healthbank_report" || len(t.Attr) != 1 || t.Attr[0].Name.Local != "schema" || t.Attr[0].Name.Space != "" || t.Attr[0].Value != portableSchema {
+				if rootSeen || t.Name.Local != "healthbank_report" || len(t.Attr) != 1 || t.Attr[0].Name.Local != "schema" || t.Attr[0].Name.Space != "" || !validPortableSchema(t.Attr[0].Value) {
 					return nil, nil, errors.New("未辨識的XML格式；僅支援Healthbank可攜報表。")
 				}
 				rootSeen = true
+				schema = t.Attr[0].Value
 			case 2:
 				if t.Name.Local != "record" || len(t.Attr) != 0 {
 					return nil, nil, errors.New("XML報表結構不正確。")
 				}
 				fields = map[string]string{}
 			case 3:
-				if !portableFields[t.Name.Local] || len(t.Attr) != 0 {
+				if !portableFieldAllowed(schema, t.Name.Local) || len(t.Attr) != 0 {
 					return nil, nil, errors.New("XML包含不支援的檢驗欄位。")
 				}
 				if _, ok := fields[t.Name.Local]; ok {
@@ -175,7 +188,7 @@ func parsePortableXML(data []byte) ([]RawRecord, []string, error) {
 				if len(rows) >= maxImportedRows {
 					return nil, nil, errors.New("匯入檢驗筆數超過上限。")
 				}
-				rows = append(rows, portableRow{CheckDate: fields["check_date"], OrderCode: fields["order_code"], OrderName: fields["order_name"], ItemName: fields["item_name"], Result: fields["result"], Unit: fields["unit"], Reference: fields["reference"], Institution: fields["institution"], VisitDate: fields["visit_date"], Source: fields["source"], OfficialFlag: fields["official_flag"]})
+				rows = append(rows, portableRow{CheckDate: fields["check_date"], OrderCode: fields["order_code"], OrderName: fields["order_name"], ItemName: fields["item_name"], Result: fields["result"], Unit: fields["unit"], Reference: fields["reference"], Institution: fields["institution"], VisitDate: fields["visit_date"], Source: fields["source"], OfficialFlag: fields["official_flag"], UploadDate: fields["upload_date"], SourceName: fields["source_name"]})
 			}
 			depth--
 		}

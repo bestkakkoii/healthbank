@@ -4,7 +4,6 @@ package nhi
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -25,7 +24,12 @@ type medicalSection struct {
 	key, kind, title string
 	fields           []fieldSpec
 }
-type medicalReference struct{ category, rowID, sourceType, date, endDate, institution string }
+type medicalReference struct {
+	category, rowID, sourceType, date, endDate, institution string
+	kind, orderCode                                         string
+	sourceTitle                                             string
+	children                                                []string
+}
 
 type MedicineOrder struct {
 	Code     string `json:"code"`
@@ -35,7 +39,7 @@ type MedicineOrder struct {
 }
 
 var medicationFields = []fieldSpec{{"order_code", "藥品代碼", ""}, {"drug_name", "藥品名稱（原文）", ""}, {"act", "藥品藥理分類（原文）", ""}, {"order_qty", "藥品用量（原文，單位未確認）", ""}, {"order_drug_day", "給藥日數", "日"}}
-var orderFields = []fieldSpec{{"order_code", "醫令代碼", ""}, {"cure_CNAME", "醫令名稱", ""}, {"cure_ENAME", "醫令英文名稱", ""}, {"order_qty", "醫囑總量（原文）", ""}}
+var orderFields = []fieldSpec{{"order_code", "醫令代碼", ""}, {"cure_CNAME", "醫令名稱", ""}, {"cure_ENAME", "醫令英文名稱", ""}, {"order_qty", "醫囑總量（原文）", ""}, {"pay_PRICE", "來源特別預算（非健保預算，保留來源顯示旗標）", "元"}, {"show_PRICE", "來源特別預算顯示旗標（原文）", ""}}
 var medicalSpecs = map[string]medicalSpec{
 	"medicine": {"/api/ihke3000/ihke3306s01/page_load", "sp_IHKE3306S01_data", "/api/ihke3000/ihke3306s01/search", "/api/ihke3000/IHKE3306S02/page_load", "ihke3306S02_main_data", "用藥紀錄", []medicalSection{{"sp_IHKE3306S03_data_list", "medicine", "藥品醫囑", medicationFields}}},
 	// The chronic list has no date-search endpoint in the observed official SPA.
@@ -51,11 +55,23 @@ func MedicalCategory(category string) bool { _, ok := medicalSpecs[category]; re
 
 var medicalHeaderFields = []fieldSpec{
 	{"main_tit", "官方明細標題（原文）", ""},
+	{"hosp_ABBR", "來源醫事機構（原文）", ""},
+	{"ori_TYPE", "資料來源（ori_TYPE 原文）", ""},
+	{"func_SEQ_NO", "健保卡就醫序號（來源原文，非卡號）", ""},
+	{"cure_path", "來源牙位篩選內容（原文，未推定治療）", ""},
 	{"icd9cm_CODE_CNAME", "疾病分類（非診斷確認）", ""}, {"op_CODE_CNAME", "手術／處置名稱（原文）", ""},
 	{"ori_type_cname", "資料來源類型（原文）", ""}, {"ori_TYPE_NAME", "就醫／調劑類別（原文）", ""},
 	{"in_DATE", "入院日期（原文）", ""}, {"out_DATE", "出院日期（原文）", ""},
 	{"func_DATE", "就醫／調劑日期（原文，依來源類別）", ""}, {"cure_E_DATE", "來源另列就醫日期（非給藥迄日）", ""},
 	{"appl_S_DATE", "申報起日（原文，非入院日期）", ""}, {"appl_E_DATE", "申報迄日（原文，非出院日期）", ""},
+	{"part_AMT", "來源部分負擔", ""}, {"part_AMT_BASIC", "來源基本部分負擔", ""}, {"part_AMT_DRUG", "來源藥品部分負擔", ""}, {"part_AMT_ASSAY", "來源檢驗檢查部分負擔", ""},
+	{"appl_DOT", "來源申請點數", ""}, {"exp_DOT", "來源醫療費用點數", ""}, {"drug_DOT", "來源藥費點數", ""}, {"dsvc_DOT", "來源藥事服務費點數", ""},
+	{"diag_DOT", "來源診察費點數", ""}, {"met_DOT", "來源特殊材料費點數", ""}, {"cure_DOT", "來源診療費點數（含檢查）", ""}, {"assay_AMIN", "來源檢查費點數", ""},
+	{"room_DOT", "來源病房費點數", ""}, {"meal_DOT", "來源管灌膳食費點數", ""}, {"amin_DOT", "來源住院檢查費點數", ""}, {"rado_DOT", "來源放射線診療費點數", ""},
+	{"thrp_DOT", "來源治療處置費點數", ""}, {"op_DOT", "來源手術費點數", ""}, {"phsc_DOT", "來源復健治療費點數", ""}, {"blod_DOT", "來源血液血漿費點數", ""},
+	{"hd_DOT", "來源血液透析費點數", ""}, {"ane_DOT", "來源麻醉費點數", ""}, {"nrtp_DOT", "來源精神科治療費點數", ""}, {"injt_DOT", "來源注射技術費點數", ""}, {"baby_DOT", "來源嬰兒費點數", ""},
+	{"pay_PRICE", "來源特別預算（非健保預算）", "元"},
+	{"show_PRICE", "來源特別預算顯示旗標（原文）", ""}, {"show_pay_PRICE", "來源住院特別預算顯示旗標（原文）", ""},
 }
 
 // The key is only for linking rows already returned in this transient session.
@@ -91,65 +107,36 @@ func (s *Session) FetchMedical(ctx context.Context, category string, query Query
 	if err := s.supplementReady(ctx); err != nil {
 		return report, err
 	}
-	var sourceReport []*SupplementReport
-	if spec.searchPath == "" {
-		sourceReport = append(sourceReport, &report)
-	}
-	rows, err := s.supplementRequest(ctx, http.MethodGet, spec.listPath, params, nil, spec.listRoot, sourceReport...)
+	request := providerRequest{path: spec.listPath, method: http.MethodGet, params: params}
+	object, err := s.providerRead(ctx, request)
 	if err != nil {
 		return report, err
+	}
+	rows, present, err := providerSectionRows(object, providerSection{root: spec.listRoot})
+	if err != nil || !present {
+		return report, changedError()
+	}
+	if err := sourceSectionDiagnostic(&report, category, spec.listRoot, object[strings.ToLower(spec.listRoot)], true, false, len(rows)); err != nil {
+		return report, err
+	}
+	refs := make(map[string]medicalReference, len(rows))
+	if err := appendMedicalListRows(&report, category, "homepage", spec, rows, refs); err != nil {
+		return report, err
+	}
+	if section, observed := medicalAvailabilitySection(category); observed {
+		if err := appendProviderMetadata(&report, object, spec.listPath, category, section, providerReference{}); err != nil {
+			return report, err
+		}
 	}
 	if spec.searchPath != "" {
 		rows, err = s.supplementRequest(ctx, http.MethodGet, spec.searchPath, params, nil, "", &report)
 		if err != nil {
 			return report, err
 		}
-	}
-	refs := make(map[string]medicalReference, len(rows))
-	for index, row := range rows {
-		rowID, e := rowText(row, "row_ID")
-		if e != nil {
-			return report, e
+		if err := appendMedicalListRows(&report, category, "search", spec, rows, refs); err != nil {
+			return report, err
 		}
-		sourceType, e := rowText(row, "ori_TYPE")
-		if e != nil {
-			return report, e
-		}
-		dateField := "func_DATE"
-		if category == "hospital" {
-			dateField = "in_DATE"
-		}
-		date, e := rowText(row, dateField)
-		if e != nil {
-			return report, e
-		}
-		end, e := rowText(row, "out_DATE")
-		if e != nil {
-			return report, e
-		}
-		institution, e := rowText(row, "hosp_ABBR")
-		if e != nil {
-			return report, e
-		}
-		fields, e := appendKnownFields(row, medicalHeaderFields)
-		if e != nil {
-			return report, e
-		}
-		if date == "" && institution == "" && len(fields) == 0 {
-			return report, changedError()
-		}
-		entry := SupplementEntry{Date: date, EndDate: end, Institution: institution, Title: spec.title, Source: "官方" + spec.title, Kind: "encounter", Fields: fields}
-		medicalEntryMetadata(&entry, category, "list", false)
-		if rowID != "" && sourceType != "" {
-			entry.Key = medicalKey(sourceType, rowID, category, index)
-			random := make([]byte, 24)
-			if _, err := rand.Read(random); err != nil {
-				return report, failure("INITIALIZATION_FAILED", "無法建立明細識別。")
-			}
-			entry.DetailID = hex.EncodeToString(random)
-			refs[entry.DetailID] = medicalReference{category, rowID, sourceType, date, end, institution}
-		}
-		report.Entries = append(report.Entries, entry)
+		report.Coverage += "來源首頁與搜尋回應分開保留，不假設兩次回應列數相同或將重複外觀當成同一事件。"
 	}
 	if err := validateSupplementReport(report); err != nil {
 		return report, err
@@ -170,8 +157,7 @@ func (s *Session) FetchMedicalDetail(ctx context.Context, category, reference st
 	defer s.mu.Unlock()
 	report := SupplementReport{ContractRevision: ProviderContractRevision, Category: category + "_detail", Entries: []SupplementEntry{}, Complete: false,
 		Coverage: "官方醫囑原文，不等同實際服用。未提供成分、單位、頻次時不推算日劑量；疾病分類不等於確診。"}
-	spec, ok := medicalSpecs[category]
-	if !ok {
+	if !MedicalCategory(category) {
 		return report, failure("INVALID_INPUT", "不支援此醫療資料類別。")
 	}
 	if err := s.supplementReady(ctx); err != nil {
@@ -181,6 +167,27 @@ func (s *Session) FetchMedicalDetail(ctx context.Context, category, reference st
 	if !ok || ref.category != category {
 		return report, failure("INVALID_INPUT", "明細識別已失效或不屬於此類別，請重新取得清單。")
 	}
+	return s.fetchMedicalDetail(ctx, category, reference, ref)
+}
+
+// The caller holds the connector mutex and has validated the exact opaque
+// reference. Annual overview children use the same record contract while their
+// handles and documents remain confined to the annual-overview category.
+func (s *Session) fetchMedicalDetail(ctx context.Context, owner, reference string, ref medicalReference) (SupplementReport, error) {
+	category := ref.category
+	report := SupplementReport{ContractRevision: ProviderContractRevision, Category: owner + "_detail", Entries: []SupplementEntry{}, Complete: false,
+		Coverage: "官方醫療資料原文；既有疾病分類不是 Healthbank 診斷，醫囑或已領紀錄不等於實際服用。保留來源關係，不推定不同紀錄為同次採檢。"}
+	if ref.kind != "" {
+		return s.fetchMedicalSubdetail(ctx, owner, reference, ref, report)
+	}
+	spec, ok := medicalSpecs[category]
+	if !ok {
+		return report, failure("INVALID_INPUT", "不支援此醫療明細類別。")
+	}
+	title := spec.title
+	if ref.sourceTitle != "" {
+		title = ref.sourceTitle
+	}
 	rows, err := s.supplementRequest(ctx, http.MethodGet, spec.detailPath, url.Values{"crid": {ref.rowID}, "ctype": {ref.sourceType}}, nil, spec.detailRoot)
 	if err != nil {
 		return report, err
@@ -189,6 +196,7 @@ func (s *Session) FetchMedicalDetail(ctx context.Context, category, reference st
 		return report, failure("UPSTREAM_CHANGED", "官方未回傳此筆明細；未將空回應當成成功。")
 	}
 	documents := make(map[string]documentReference)
+	children := make(map[string]medicalReference)
 	for rowIndex, row := range rows {
 		returned, e := rowText(row, "rowid")
 		if e != nil || returned != ref.rowID {
@@ -198,7 +206,7 @@ func (s *Session) FetchMedicalDetail(ctx context.Context, category, reference st
 		if e != nil {
 			return report, e
 		}
-		source := "官方" + spec.title
+		source := "官方" + title
 		// The public medicine/chronic detail view calls func_DATE the dispensing
 		// date only when type_name_isr is true. A missing or unrecognized flag
 		// does not establish dispensing, actual use, or the treatment start date.
@@ -214,7 +222,7 @@ func (s *Session) FetchMedicalDetail(ctx context.Context, category, reference st
 		if len(report.Entries) >= MaxReportRecords {
 			return report, failure("RESPONSE_TOO_LARGE", "明細數量過多，未回傳不完整資料。")
 		}
-		header := SupplementEntry{Key: medicalKey(ref.sourceType, ref.rowID, "header", rowIndex), Date: ref.date, EndDate: ref.endDate, Institution: ref.institution, Title: spec.title + "明細", Source: source, Kind: "encounter", Fields: fields}
+		header := SupplementEntry{Key: medicalKey(ref.sourceType, ref.rowID, "header", rowIndex), Date: ref.date, EndDate: ref.endDate, Institution: ref.institution, Title: title + "明細", Source: source, Kind: "encounter", Fields: fields}
 		medicalEntryMetadata(&header, category, "header", dispensed)
 		if category == "hospital" {
 			header.Attachments, e = hospitalDocuments(row, ref, reference, documents)
@@ -222,11 +230,17 @@ func (s *Session) FetchMedicalDetail(ctx context.Context, category, reference st
 				return report, e
 			}
 		}
+		if category == "western" {
+			if err := bindMedicalLaboratory(&header, row, "show_medical", "", ref, children); err != nil {
+				return report, err
+			}
+		}
 		report.Entries = append(report.Entries, header)
-		for _, section := range spec.sections {
+		for _, section := range medicalDetailSections(category, spec) {
 			raw, exists := row[strings.ToLower(section.key)]
 			if !exists {
-				if err := sourceSectionDiagnostic(&report, category, section.key, nil, false, false, 0); err != nil {
+				optional := section.key == "icdcode_data" || section.key == "opcode_data"
+				if err := sourceSectionDiagnostic(&report, category, section.key, nil, false, optional, 0); err != nil {
 					return report, err
 				}
 				continue
@@ -246,7 +260,9 @@ func (s *Session) FetchMedicalDetail(ctx context.Context, category, reference st
 				if len(fields) == 0 {
 					return report, changedError()
 				}
-				entry := SupplementEntry{Key: medicalKey(ref.sourceType, ref.rowID, section.key, index), Date: ref.date, Institution: ref.institution, Title: section.title, Source: source, Kind: section.kind, Fields: fields}
+				// A source detail may return multiple parent rows for the same
+				// bound record. Preserve each nested occurrence independently.
+				entry := SupplementEntry{Key: medicalKey(ref.sourceType, ref.rowID, fmt.Sprintf("%s\x00%d", section.key, rowIndex), index), Date: ref.date, Institution: ref.institution, Title: section.title, Source: source, Kind: section.kind, Fields: fields}
 				medicalEntryMetadata(&entry, category, section.key, dispensed)
 				if category == "procedure" || category == "hospital" {
 					entry.Date, e = rowText(item, "exe_S_DATE")
@@ -291,6 +307,11 @@ func (s *Session) FetchMedicalDetail(ctx context.Context, category, reference st
 					}
 					entry.Medicine = &MedicineOrder{Code: code, Name: name, Quantity: quantity, Days: days}
 				}
+				if category == "western" && section.key == "sp_IHKE3302S07_data" {
+					if err := bindMedicalLaboratory(&entry, item, "show_link", "order_CODE", ref, children); err != nil {
+						return report, err
+					}
+				}
 				report.Entries = append(report.Entries, entry)
 				if len(report.Entries) > MaxReportRecords {
 					return report, failure("RESPONSE_TOO_LARGE", "明細數量過多，未回傳不完整資料。")
@@ -301,7 +322,7 @@ func (s *Session) FetchMedicalDetail(ctx context.Context, category, reference st
 	if err := validateSupplementReport(report); err != nil {
 		return report, err
 	}
-	if err := s.replaceDocumentReferences(category, reference, documents); err != nil {
+	if err := s.commitMedicalDetailReferences(owner, reference, ref, children, documents); err != nil {
 		return report, err
 	}
 	report.FetchedAt = time.Now().UTC().Format(time.RFC3339Nano)

@@ -5,9 +5,11 @@ import type { DataCategory, DownloadedAttachment, HealthDataSnapshot } from './h
 import { categoryCoverage } from './health-data';
 import { exportDataset, importDataset, MAX_DATASET_BYTES, type ImportedDataset, type DatasetProducer } from './health-dataset';
 import { DatasetComparison } from './DatasetComparison';
+import { CollectionTools } from './CollectionTools';
+import type { CollectionRestoration } from './collection-restoration';
 import { downloadText } from './model';
 
-export function DatasetTools({ report, snapshot, attachments, catalog, producer, importedFrom, disabled, onImport }: {
+export function DatasetTools({ report, snapshot, attachments, catalog, producer, importedFrom, disabled, collection, onImport, onCollectionChange }: {
   report: ReportResponse;
   snapshot: HealthDataSnapshot;
   attachments: DownloadedAttachment[];
@@ -15,7 +17,9 @@ export function DatasetTools({ report, snapshot, attachments, catalog, producer,
   producer: DatasetProducer;
   importedFrom: DatasetProducer | null;
   disabled: boolean;
-  onImport: (dataset: ImportedDataset) => Promise<void>;
+  collection: CollectionRestoration | null;
+  onImport: (dataset: ImportedDataset, collection?: CollectionRestoration) => Promise<void>;
+  onCollectionChange: (collection: CollectionRestoration | null) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -76,6 +80,7 @@ export function DatasetTools({ report, snapshot, attachments, catalog, producer,
       <p className="helper-text">本次產生版本：{producer.version}；連接器：{producer.connector_revision}。{importedFrom ? `匯入來源版本：${importedFrom.version}。` : ''}</p>
     </details>
     {attachments.length > 0 && <details><summary>已加入的原始附件（{attachments.length}）</summary><ul>{attachments.map(file => <li key={`${file.category}:${file.id}`}><button className="text-button" type="button" onClick={() => downloadAttachment(file)}>{file.name}</button> · {Math.ceil(file.bytes.length / 1024)} KiB</li>)}</ul></details>}
+    <CollectionTools initial={collection} disabled={disabled || busy} onImport={onImport} onChange={onCollectionChange} />
     <DatasetComparison disabled={disabled || busy} />
     {message && <p role="status">{message}</p>}
     {error && <p className="error-text" role="alert">{error}</p>}

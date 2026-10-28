@@ -3,7 +3,7 @@
   "registry_id": "healthbank.clinical-evidence.v1",
   "copyright": "Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.",
   "catalog_id": "healthbank_lab_defaults_tw",
-  "catalog_sha256": "8e0ec3c2a0753826ac0a9e02e1e25474ffee406bcc12e6a585114ea380dcb3d5",
+  "catalog_sha256": "ed3e43ef2a4a84f2bd18f98f96c1671ed8eeed76b46a89dbd9b18b8d722f7841",
   "scope": "Reviewable links between implemented interpretation rules, applicability, source loci and synthetic regression vectors. This registry is not a clinical certification or evidence of live-account data.",
   "maintenance": {
     "rule_changes_require": [
@@ -327,20 +327,25 @@
       "unit": "",
       "verified_unit_aliases": [],
       "exclusions": [
-        "Missing or unverified units cannot inherit numeric rule eligibility.",
+        "Only the reference bounds supplied with this same observation are compared. This does not establish specimen/method/population applicability or authorize any external unit-dependent profile.",
         "Colors encode this application display policy; no diagnosis, treatment recommendation or cross-analyte severity equivalence."
       ],
       "source_loci": [
         {
           "source_id": "provided_report_reference",
-          "locator": "Use only as a named laboratory profile; live report reference wins."
+          "locator": "The current observation original reference field, retained separately from public named preview templates; no public template silently fills absent bounds."
         }
       ],
       "test_vectors": [],
       "regression_files": [
         "internal/lab/grade_test.go",
-        "internal/lab/catalog_integrity_test.go"
-      ]
+        "internal/lab/catalog_integrity_test.go",
+        "internal/lab/grading_context_test.go"
+      ],
+      "display_scope": {
+        "label": "原院參考",
+        "applicability_note": "依本筆原院參考上下限對照；本應用未獨立驗證其人口、檢體及方法適用性，區間內不等於排除疾病。"
+      }
     },
     {
       "id": "qualitative_reference",
@@ -367,20 +372,25 @@
       "unit": "",
       "verified_unit_aliases": [],
       "exclusions": [
-        "Missing or unverified units cannot inherit numeric rule eligibility.",
+        "Only the recognized item and reviewed qualitative tokens are classified. No concentration, quantitative method or universal meaning of Trace is inferred.",
         "Colors encode this application display policy; no diagnosis, treatment recommendation or cross-analyte severity equivalence."
       ],
       "source_loci": [
         {
           "source_id": "songshan_manual",
-          "locator": "Named rule in the referenced institutional source; see docs/clinical-reference.zh-TW.md"
+          "locator": "SOP-AA06 v1.1, section 2.2, urine examination table on printed pages 3–4/15 (PDF pages 5–6): Negative/Normal/Not found and method-dependent Negative–Trace wording. Application colors are not source severity grades."
         }
       ],
       "test_vectors": [],
       "regression_files": [
         "internal/lab/grade_test.go",
-        "internal/lab/catalog_integrity_test.go"
-      ]
+        "internal/lab/catalog_integrity_test.go",
+        "internal/lab/grading_context_test.go"
+      ],
+      "display_scope": {
+        "label": "定性結果範本（方法待核對）",
+        "applicability_note": "只標示已知陰性／陽性文字與半定量反應，方法及採檢條件未由程式確認；加號數量不代表疾病嚴重度，Trace／± 不直接指定異常級別。"
+      }
     },
     {
       "id": "unclassified",
@@ -436,15 +446,15 @@
       "source_loci": [
         {
           "source_id": "nhlbi_triglycerides",
-          "locator": "Named rule in the referenced institutional source; see docs/clinical-reference.zh-TW.md"
+          "locator": "Adult blood triglyceride level categories; fasting/nonfasting distinction and separate child/adolescent thresholds."
         },
         {
           "source_id": "acc_hypertriglyceridemia",
-          "locator": "Named rule in the referenced institutional source; see docs/clinical-reference.zh-TW.md"
+          "locator": "2021 consensus summary, triglyceride definitions: fasting/nonfasting lower thresholds, severe >=500 mg/dL and especially >=1000 mg/dL."
         },
         {
           "source_id": "acc_triglycerides_current",
-          "locator": "Named rule in the referenced institutional source; see docs/clinical-reference.zh-TW.md"
+          "locator": "2026-06-09 symptomatic severe-hypertriglyceridemia case and discussion; no claim of automatic admission or a diagnosis from every historical high value."
         }
       ],
       "test_vectors": [
@@ -471,8 +481,13 @@
       ],
       "regression_files": [
         "internal/lab/grade_test.go",
-        "internal/lab/catalog_integrity_test.go"
-      ]
+        "internal/lab/catalog_integrity_test.go",
+        "internal/lab/grading_context_test.go"
+      ],
+      "display_scope": {
+        "label": "成人空腹 TG 範本（條件未確認）",
+        "applicability_note": "此色為成人空腹三酸甘油脂分界的數值對照；本筆年齡與空腹狀態未確認，不代表個人已符合適用條件。顯著升高的獨立提醒仍保留，不由此診斷遺傳疾病或胰臟炎。"
+      }
     },
     {
       "id": "egfr_categories",
@@ -483,7 +498,7 @@
       "alert_item_ids": [],
       "activation": "default_or_alert",
       "population": [
-        "Verify source unit and equation. Do not infer CKD chronicity from one value."
+        "Verify source unit, estimating equation and age applicability. G categories alone do not diagnose CKD; do not infer chronicity from one value."
       ],
       "unit": "mL/min/1.73m2",
       "verified_unit_aliases": [],
@@ -496,7 +511,7 @@
       "source_loci": [
         {
           "source_id": "kdigo_ckd",
-          "locator": "Tables2–3; chronicity practice points; Figure48 referral criteria"
+          "locator": "KDIGO 2024 Tables 2–3 (S137), chronicity practice points, and pediatric Practice Point 1.2.3.5 (S186)."
         }
       ],
       "test_vectors": [
@@ -527,8 +542,13 @@
       ],
       "regression_files": [
         "internal/lab/grade_test.go",
-        "internal/lab/catalog_integrity_test.go"
-      ]
+        "internal/lab/catalog_integrity_test.go",
+        "internal/lab/grading_context_test.go"
+      ],
+      "display_scope": {
+        "label": "KDIGO G 範本（條件未確認）",
+        "applicability_note": "依 KDIGO G 類別對照已提供單位的數值；本筆年齡、來源估算公式與慢性病程未確認。兒童須另依年齡與適用公式判讀；單筆結果不診斷慢性腎臟病，G1／G2 也不排除腎損傷。"
+      }
     },
     {
       "id": "acr_categories",
@@ -540,7 +560,7 @@
       "alert_item_ids": [],
       "activation": "default_or_alert",
       "population": [
-        "Use the original report specimen/method/population context; no demographics are inferred."
+        "Named albuminuria categories only; age, collection conditions, assay equivalence and persistence are not verified from an imported result."
       ],
       "unit": "mg/g",
       "verified_unit_aliases": [
@@ -555,7 +575,7 @@
       "source_loci": [
         {
           "source_id": "kdigo_ckd",
-          "locator": "Tables2–3; chronicity practice points; Figure48 referral criteria"
+          "locator": "KDIGO 2024 Table 3 (S137); collection/transient-result considerations and pediatric Practice Point 1.3.1.4 (S192–S193)."
         }
       ],
       "test_vectors": [
@@ -582,8 +602,13 @@
       ],
       "regression_files": [
         "internal/lab/grade_test.go",
-        "internal/lab/catalog_integrity_test.go"
-      ]
+        "internal/lab/catalog_integrity_test.go",
+        "internal/lab/grading_context_test.go"
+      ],
+      "display_scope": {
+        "label": "KDIGO A 範本（條件未確認）",
+        "applicability_note": "依 KDIGO 白蛋白尿 A 類別對照原始比值，保留定量／半定量方法差異；本筆年齡、採檢條件與異常持續性未確認，不由一次結果診斷慢性腎臟病。"
+      }
     },
     {
       "id": "pcr_categories",
@@ -594,7 +619,7 @@
       "alert_item_ids": [],
       "activation": "default_or_alert",
       "population": [
-        "Use the original report specimen/method/population context; no demographics are inferred."
+        "Historical adult total-protein profile; pediatric reference limits differ. Age and collection conditions are not inferred from comparison scenarios."
       ],
       "unit": "mg/g",
       "verified_unit_aliases": [],
@@ -607,7 +632,11 @@
       "source_loci": [
         {
           "source_id": "kdigo_pcr_table",
-          "locator": "Named rule in the referenced institutional source; see docs/clinical-reference.zh-TW.md"
+          "locator": "Table 7: historical total-protein PCR categories and approximate cross-method correspondence; age/sex/diet caveat."
+        },
+        {
+          "source_id": "kdigo_ckd",
+          "locator": "KDIGO 2024 pediatric Practice Point 1.3.1.4 and age-dependent proteinuria interpretation, S192–S193. Numerical historical PCR bands remain from KDIGO 2012."
         }
       ],
       "test_vectors": [
@@ -634,8 +663,13 @@
       ],
       "regression_files": [
         "internal/lab/grade_test.go",
-        "internal/lab/catalog_integrity_test.go"
-      ]
+        "internal/lab/catalog_integrity_test.go",
+        "internal/lab/grading_context_test.go"
+      ],
+      "display_scope": {
+        "label": "成人 PCR 歷史範本（條件未確認）",
+        "applicability_note": "依 KDIGO 2012 歷史總蛋白比值分界作成人範本對照；本筆年齡與採檢條件未確認，兒童正常範圍不同。此分類不是白蛋白尿 A 分期，也不是個人風險程度。"
+      }
     },
     {
       "id": "fasting_glucose_screening",
@@ -656,11 +690,11 @@
       "source_loci": [
         {
           "source_id": "cdc_glycemia",
-          "locator": "Named rule in the referenced institutional source; see docs/clinical-reference.zh-TW.md"
+          "locator": "Types of tests: fasting blood sugar test, overnight fasting and 100/126 mg/dL screening boundaries. The application profile remains inactive."
         },
         {
           "source_id": "ada_hypoglycemia",
-          "locator": "Named rule in the referenced institutional source; see docs/clinical-reference.zh-TW.md"
+          "locator": "Standards of Care 2026, section 6, Table 6.4: hypoglycemia <70 and <54 mg/dL; source clinical level 3 is an assistance-defined event, not a numerical band."
         }
       ],
       "test_vectors": [
@@ -683,8 +717,13 @@
       ],
       "regression_files": [
         "internal/lab/grade_test.go",
-        "internal/lab/catalog_integrity_test.go"
-      ]
+        "internal/lab/catalog_integrity_test.go",
+        "internal/lab/grading_context_test.go"
+      ],
+      "display_scope": {
+        "label": "空腹血糖篩檢範本（預設未啟用）",
+        "applicability_note": "須確認空腹與篩檢適用情境；不以一次結果確診，也不將已治療的糖尿病重新分類。"
+      }
     },
     {
       "id": "hba1c_screening",
@@ -705,7 +744,7 @@
       "source_loci": [
         {
           "source_id": "cdc_glycemia",
-          "locator": "Named rule in the referenced institutional source; see docs/clinical-reference.zh-TW.md"
+          "locator": "Types of tests: A1C test, 5.7% and 6.5% screening boundaries. The application profile remains inactive."
         }
       ],
       "test_vectors": [
@@ -724,8 +763,13 @@
       ],
       "regression_files": [
         "internal/lab/grade_test.go",
-        "internal/lab/catalog_integrity_test.go"
-      ]
+        "internal/lab/catalog_integrity_test.go",
+        "internal/lab/grading_context_test.go"
+      ],
+      "display_scope": {
+        "label": "糖化血色素篩檢範本（預設未啟用）",
+        "applicability_note": "須核對檢測方法、紅血球壽命與篩檢適用情境；篩檢界值不是個人治療目標，也不重新分類已治療的糖尿病。"
+      }
     },
     {
       "id": "blood_glucose_low_alerts",
@@ -749,7 +793,7 @@
       "source_loci": [
         {
           "source_id": "ada_hypoglycemia",
-          "locator": "Named rule in the referenced institutional source; see docs/clinical-reference.zh-TW.md"
+          "locator": "Standards of Care 2026, section 6, Table 6.4: level 1 >=54 and <70 mg/dL, level 2 <54 mg/dL; clinical level 3 requires event context."
         }
       ],
       "test_vectors": [
@@ -772,8 +816,13 @@
       ],
       "regression_files": [
         "internal/lab/grade_test.go",
-        "internal/lab/catalog_integrity_test.go"
-      ]
+        "internal/lab/catalog_integrity_test.go",
+        "internal/lab/grading_context_test.go"
+      ],
+      "display_scope": {
+        "label": "ADA 低血糖數值提醒",
+        "applicability_note": "依 ADA 低血糖數值類別加上獨立提醒，不要求空腹；未據此判斷糖尿病病史或目前症狀。ADA 臨床第 3 級需他人協助等事件資訊，不能由數值推定。"
+      }
     },
     {
       "id": "vgh_alert_serum_potassium",
@@ -797,7 +846,7 @@
       "source_loci": [
         {
           "source_id": "vgh_notifications",
-          "locator": "Unconditioned thresholds only, explicitly named application alerts; not an originating-lab flag or Taiwan-wide calibrated severity scale."
+          "locator": "2025-12-12 published notification table, Potassium row: only the explicitly unconditioned thresholds implemented in catalog.rules; age/ward/specialty exceptions are not inferred."
         }
       ],
       "test_vectors": [
@@ -824,8 +873,13 @@
       ],
       "regression_files": [
         "internal/lab/grade_test.go",
-        "internal/lab/catalog_integrity_test.go"
-      ]
+        "internal/lab/catalog_integrity_test.go",
+        "internal/lab/grading_context_test.go"
+      ],
+      "display_scope": {
+        "label": "臺北榮總通報門檻參考",
+        "applicability_note": "這是依臺北榮總公開通報政策加上的具名提醒；原院方法與個別臨床情境未由程式確認，並非原院危急值旗標或通用危險等級，歷史值不表示目前急症。"
+      }
     },
     {
       "id": "vgh_alert_serum_total_calcium",
@@ -849,7 +903,7 @@
       "source_loci": [
         {
           "source_id": "vgh_notifications",
-          "locator": "Unconditioned thresholds only, explicitly named application alerts; not an originating-lab flag or Taiwan-wide calibrated severity scale."
+          "locator": "2025-12-12 published notification table, Calcium (total) row: only the explicitly unconditioned thresholds implemented in catalog.rules; age/ward/specialty exceptions are not inferred."
         }
       ],
       "test_vectors": [
@@ -872,8 +926,13 @@
       ],
       "regression_files": [
         "internal/lab/grade_test.go",
-        "internal/lab/catalog_integrity_test.go"
-      ]
+        "internal/lab/catalog_integrity_test.go",
+        "internal/lab/grading_context_test.go"
+      ],
+      "display_scope": {
+        "label": "臺北榮總通報門檻參考",
+        "applicability_note": "這是依臺北榮總公開通報政策加上的具名提醒；原院方法與個別臨床情境未由程式確認，並非原院危急值旗標或通用危險等級，歷史值不表示目前急症。"
+      }
     },
     {
       "id": "vgh_alert_serum_sodium",
@@ -897,7 +956,7 @@
       "source_loci": [
         {
           "source_id": "vgh_notifications",
-          "locator": "Unconditioned thresholds only, explicitly named application alerts; not an originating-lab flag or Taiwan-wide calibrated severity scale."
+          "locator": "2025-12-12 published notification table, Sodium row: only the explicitly unconditioned thresholds implemented in catalog.rules; age/ward/specialty exceptions are not inferred."
         }
       ],
       "test_vectors": [
@@ -916,8 +975,13 @@
       ],
       "regression_files": [
         "internal/lab/grade_test.go",
-        "internal/lab/catalog_integrity_test.go"
-      ]
+        "internal/lab/catalog_integrity_test.go",
+        "internal/lab/grading_context_test.go"
+      ],
+      "display_scope": {
+        "label": "臺北榮總通報門檻參考",
+        "applicability_note": "這是依臺北榮總公開通報政策加上的具名提醒；原院方法與個別臨床情境未由程式確認，並非原院危急值旗標或通用危險等級，歷史值不表示目前急症。"
+      }
     },
     {
       "id": "vgh_alert_serum_chloride",
@@ -941,7 +1005,7 @@
       "source_loci": [
         {
           "source_id": "vgh_notifications",
-          "locator": "Unconditioned thresholds only, explicitly named application alerts; not an originating-lab flag or Taiwan-wide calibrated severity scale."
+          "locator": "2025-12-12 published notification table, Chloride row: only the explicitly unconditioned thresholds implemented in catalog.rules; age/ward/specialty exceptions are not inferred."
         }
       ],
       "test_vectors": [
@@ -960,8 +1024,13 @@
       ],
       "regression_files": [
         "internal/lab/grade_test.go",
-        "internal/lab/catalog_integrity_test.go"
-      ]
+        "internal/lab/catalog_integrity_test.go",
+        "internal/lab/grading_context_test.go"
+      ],
+      "display_scope": {
+        "label": "臺北榮總通報門檻參考",
+        "applicability_note": "這是依臺北榮總公開通報政策加上的具名提醒；原院方法與個別臨床情境未由程式確認，並非原院危急值旗標或通用危險等級，歷史值不表示目前急症。"
+      }
     },
     {
       "id": "vgh_alert_blood_hemoglobin",
@@ -985,7 +1054,7 @@
       "source_loci": [
         {
           "source_id": "vgh_notifications",
-          "locator": "Unconditioned thresholds only, explicitly named application alerts; not an originating-lab flag or Taiwan-wide calibrated severity scale."
+          "locator": "2025-12-12 published notification table, Hemoglobin row: only the explicitly unconditioned thresholds implemented in catalog.rules; age/ward/specialty exceptions are not inferred."
         }
       ],
       "test_vectors": [
@@ -1000,8 +1069,13 @@
       ],
       "regression_files": [
         "internal/lab/grade_test.go",
-        "internal/lab/catalog_integrity_test.go"
-      ]
+        "internal/lab/catalog_integrity_test.go",
+        "internal/lab/grading_context_test.go"
+      ],
+      "display_scope": {
+        "label": "臺北榮總通報門檻參考",
+        "applicability_note": "這是依臺北榮總公開通報政策加上的具名提醒；原院方法與個別臨床情境未由程式確認，並非原院危急值旗標或通用危險等級，歷史值不表示目前急症。"
+      }
     },
     {
       "id": "vgh_alert_blood_hematocrit",
@@ -1025,7 +1099,7 @@
       "source_loci": [
         {
           "source_id": "vgh_notifications",
-          "locator": "Unconditioned thresholds only, explicitly named application alerts; not an originating-lab flag or Taiwan-wide calibrated severity scale."
+          "locator": "2025-12-12 published notification table, Hematocrit row: only the explicitly unconditioned thresholds implemented in catalog.rules; age/ward/specialty exceptions are not inferred."
         }
       ],
       "test_vectors": [
@@ -1048,8 +1122,13 @@
       ],
       "regression_files": [
         "internal/lab/grade_test.go",
-        "internal/lab/catalog_integrity_test.go"
-      ]
+        "internal/lab/catalog_integrity_test.go",
+        "internal/lab/grading_context_test.go"
+      ],
+      "display_scope": {
+        "label": "臺北榮總通報門檻參考",
+        "applicability_note": "這是依臺北榮總公開通報政策加上的具名提醒；原院方法與個別臨床情境未由程式確認，並非原院危急值旗標或通用危險等級，歷史值不表示目前急症。"
+      }
     },
     {
       "id": "vgh_alert_blood_platelet_count",
@@ -1073,7 +1152,7 @@
       "source_loci": [
         {
           "source_id": "vgh_notifications",
-          "locator": "Unconditioned thresholds only, explicitly named application alerts; not an originating-lab flag or Taiwan-wide calibrated severity scale."
+          "locator": "2025-12-12 published notification table, Platelet row: only the explicitly unconditioned thresholds implemented in catalog.rules; age/ward/specialty exceptions are not inferred."
         }
       ],
       "test_vectors": [
@@ -1088,8 +1167,13 @@
       ],
       "regression_files": [
         "internal/lab/grade_test.go",
-        "internal/lab/catalog_integrity_test.go"
-      ]
+        "internal/lab/catalog_integrity_test.go",
+        "internal/lab/grading_context_test.go"
+      ],
+      "display_scope": {
+        "label": "臺北榮總通報門檻參考",
+        "applicability_note": "這是依臺北榮總公開通報政策加上的具名提醒；原院方法與個別臨床情境未由程式確認，並非原院危急值旗標或通用危險等級，歷史值不表示目前急症。"
+      }
     },
     {
       "id": "vgh_alert_blood_wbc_count",
@@ -1113,7 +1197,7 @@
       "source_loci": [
         {
           "source_id": "vgh_notifications",
-          "locator": "Unconditioned thresholds only, explicitly named application alerts; not an originating-lab flag or Taiwan-wide calibrated severity scale."
+          "locator": "2025-12-12 published notification table, WBC row: only the explicitly unconditioned thresholds implemented in catalog.rules; age/ward/specialty exceptions are not inferred."
         }
       ],
       "test_vectors": [
@@ -1136,8 +1220,13 @@
       ],
       "regression_files": [
         "internal/lab/grade_test.go",
-        "internal/lab/catalog_integrity_test.go"
-      ]
+        "internal/lab/catalog_integrity_test.go",
+        "internal/lab/grading_context_test.go"
+      ],
+      "display_scope": {
+        "label": "臺北榮總通報門檻參考",
+        "applicability_note": "這是依臺北榮總公開通報政策加上的具名提醒；原院方法與個別臨床情境未由程式確認，並非原院危急值旗標或通用危險等級，歷史值不表示目前急症。"
+      }
     }
   ],
   "calculations": [
@@ -1159,7 +1248,8 @@
       "exclusions": [
         "Unconfirmed conditions, missing sex/age, nonpositive or nonfinite creatinine, nonexact result.",
         "No automated pregnancy, acute kidney injury or unusual muscle-mass assessment.",
-        "No replacement of reported eGFR; no automatic original method verification."
+        "No replacement of reported eGFR; no automatic original method verification.",
+        "Confirmation is bound to the content-derived selected observation ID; a same-session replacement row requires confirmation again."
       ],
       "test_vectors": [
         {
@@ -1213,7 +1303,8 @@
       ],
       "vector_provenance": "Independent Python Decimal precision 70 reference values from RC9; never generated by the JavaScript function under test.",
       "regression_files": [
-        "web/tests/clinical-comparison.test.mjs"
+        "web/tests/clinical-comparison.test.mjs",
+        "web/tests/browser/clinical-confirmation-acceptance.mjs"
       ]
     },
     {
@@ -1256,7 +1347,15 @@
       "vector_provenance": "Independent Python Decimal precision 60 reference values from RC9.",
       "regression_files": [
         "web/tests/lipid-high-tg.test.mjs"
-      ]
+      ],
+      "primary_equation_review": {
+        "reviewed_date": "2026-10-28",
+        "article": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7240357/",
+        "locator": "Results, Equation 2 (LDL-C); distinct from VLDL-C Equation 1.",
+        "image_url": "https://cdn.ncbi.nlm.nih.gov/pmc/blobs/ef8f/7240357/cb36a4e99383/jamacardiol-5-540-ieb.jpg",
+        "image_sha256": "9a890a6f4dfcc4282a0737ace069af86902fe8aa4666aa910a6a35f49132fe42",
+        "coefficients_unchanged": true
+      }
     }
   ],
   "unit_policy": {
@@ -1514,12 +1613,67 @@
     }
   ],
   "implementation_files": {
-    "internal/lab/grade.go": "f0d00addec6660e265d9edb7927c77222086694e4c862b6202690ee4d53fadc1",
+    "internal/lab/grade.go": "ad6ca98644220a5ff930813759a74ceb2d077d7b9a541cd9bd1226ec10ad4596",
     "internal/lab/value.go": "e701d3351f1bf424ce0241f275dc08bd49ace6d9a2f098b7ee96cfc997c29f3d",
     "internal/lab/units.go": "132224ca004adc9b31b6d7816bce669377f872e447646247cf1f60032ddf3966",
     "web/src/clinical-comparison.ts": "5d8c88b9bbde9cac00df62b9b15d38f5b5ec160967d7ad151fdd1e6296d87381",
     "web/src/unit-normalization.ts": "8b5485b1703732b40be32584b1ea057b2d23af5ec8f4f551f75d5d3d9812f092",
     "web/src/lipid-analysis.ts": "6db0d8d47569119f22e3ffb73011c840c34268004d043065fcf131e1d0f2cd87",
-    "web/src/analysis-summary.ts": "80adcffea8e50fdbba97e43d9607218d23279b5995eee9491c8cb747c88c35f6"
+    "web/src/analysis-summary.ts": "80adcffea8e50fdbba97e43d9607218d23279b5995eee9491c8cb747c88c35f6",
+    "internal/lab/catalog.go": "5837c13036ce6c55d4b675946b9fc1ea375058dcf9ee7a588ce384c76bb367cc",
+    "internal/lab/terminology.go": "308d605d1855d230bc3cffe45884c75d99c41fc5c5bac065424f0f09d060559a",
+    "internal/lab/model.go": "af3bf0cf6aa87788ee2b4dccd6394cf466f54b50987a05052f50fd646bfeaa4a",
+    "internal/lab/grading_context.go": "b31515d70267a6fd1d955c872413ed40302ba96ca3035205c6389955a61e7a3d",
+    "web/src/grading-context.ts": "60c6124a8408c9ded423667cb8fb7e95b37b6ddb2cfbf810fb7cce00207db8de",
+    "web/src/ClinicalComparison.tsx": "735eec4973302608bf81e21e4f60b8d6b6514f086082904b0918bbc78e273193"
+  },
+  "terminology": {
+    "verified_date": "2026-10-28",
+    "scope": "Display metadata only; no new clinical rules, source identity matching, rule eligibility, specimen inference or unit conversions.",
+    "source_locations": "catalog.json items[].terminology_source_loci and source_name_glossary[].terminology_source_loci; exact source spelling, attribution and translation basis are retained there.",
+    "primary_procedure_snapshot": "Public NHI dataset 174450, names only; exact upstream CSV SHA-256 is pinned in catalog.sources.nhi_procedure_names.",
+    "ambiguity_guards": [
+      "Payment/procedure code cannot override the reported analyte name.",
+      "Generic blood-gas fields do not establish arterial or venous collection.",
+      "Glossary matches are exact and case-sensitive, and never enter Catalog.match.",
+      "Display enrichment leaves raw names, result precision, units, dates, dynamic keys and clinical rules unchanged.",
+      "Shared ACR and qualitative urine-protein settings use method-neutral English labels.",
+      "Literal source-label translations have an explicit note and make no external medical authority claim."
+    ],
+    "regression_tests": [
+      "TestTerminologyPreservesRawRecordsIdentitiesAndRules",
+      "TestTerminologyKeepsBillingProceduresSeparateFromAnalytes",
+      "TestTerminologyDoesNotInferBloodGasSpecimen",
+      "TestTerminologyRetainsLegacyConflictLabels",
+      "TestEmbeddedTerminologyHasExplicitAttributionAndSharedKeyMeaning",
+      "TestTerminologyCatalogExposesNamesWithoutInventingMeasurements",
+      "TestTerminologyKeepsSpecimenAndFastingUncertainty"
+    ],
+    "public_display_contract": "CatalogResponse.source_name_glossary exposes attributed exact-source-name metadata for missing-only and nonmeasurement rows without creating observations or settings; public arrays are copied.",
+    "normalization_metadata_review": "The same reviewed Normalize delta retains a separate normalized/raw upload date and raw source label; neither substitutes for examination/visit dates nor changes clinical matching."
+  },
+  "grading_context_contract": {
+    "reviewed_date": "2026-10-28",
+    "record_field": "grading_contexts",
+    "kinds": [
+      "source_reference",
+      "profile",
+      "qualitative",
+      "personal",
+      "independent_alert"
+    ],
+    "actual_basis_only": true,
+    "personal_override_replaces_base_context": true,
+    "triggered_independent_alerts_remain": true,
+    "scenario_age_sex_are_not_verified_patient_facts": true,
+    "raw_portable_observations_exclude_computed_contexts": true,
+    "numeric_boundaries_unchanged": true,
+    "regression_files": [
+      "internal/lab/grading_context_test.go",
+      "web/tests/grading-context.test.mjs",
+      "web/tests/browser/clinical-confirmation-acceptance.mjs",
+      "web/tests/grading-context-exports.test.mjs",
+      "web/tests/browser/grading-context-acceptance.mjs"
+    ]
   }
 }

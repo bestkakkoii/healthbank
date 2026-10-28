@@ -33,6 +33,9 @@ release_documents=(
   docs/provider-data.md
   docs/provider-documents.md
   docs/data-workspace.zh-TW.md
+  docs/archive-restoration.zh-TW.md
+  docs/device-health-cache.zh-TW.md
+  docs/provider-source-inventory.json
   docs/browser-acceptance.md
   docs/verification.zh-TW.md
   docs/quality-audit.zh-TW.md
@@ -42,6 +45,7 @@ release_documents=(
 release_document_assets=(
   docs/assets/healthbank-banner.svg
   docs/screenshots/history-comparison.jpg
+  web/tests/browser/toolchain.json
 )
 
 command -v "$go_command" >/dev/null

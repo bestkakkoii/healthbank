@@ -5,6 +5,8 @@ import { referenceForRecord } from './clinical-comparison';
 import { DifferenceSummary } from './DifferenceSummary';
 import { createDatePosition, dateTime, trendGeometry, type DateScale } from './trend-model';
 import { nextChartPointIndex } from './chart-navigation';
+import { gradingContextLabel, gradingContextText, summarizeGradingContexts } from './grading-context';
+import { GradingContextLabel, GradingContextNotes } from './GradingContextNotes';
 import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ItemOverride, LabRecord } from './api';
 import {
@@ -38,11 +40,11 @@ function textWidth(text: string, size: number): number {
   return width;
 }
 
-function wrapChartText(text: string, width: number, size: number): string[] {
+function wrapChartText(text: string, width: number, size: number, measure = (value: string) => textWidth(value, size)): string[] {
   const lines: string[] = [];
   let line = '';
   for (const { segment: character } of graphemes.segment(text)) {
-    if (line && textWidth(line + character, size) > width) {
+    if (line && measure(line + character) > width) {
       const space = line.lastIndexOf(' ');
       if (space > line.length / 2) {
         lines.push(line.slice(0, space));
@@ -101,6 +103,7 @@ export function TrendChart({
   const geometry = useMemo(() => trendGeometry(group.records), [group.records]);
   const dated = sorted.filter((record) => Number.isFinite(day(record.exam_date)));
   const exact = dated.filter(isExact);
+  const plottedContexts = summarizeGradingContexts(exact);
   const hasPoints = exact.length > 0;
   const pointFocusIndex = Math.max(0, exact.findIndex(record => record.id === pointFocusId));
   const recordPageKey = `${group.id}:${group.records.length}:${group.records[0]?.id ?? ''}:${group.records.at(-1)?.id ?? ''}`;
@@ -314,7 +317,39 @@ export function TrendChart({
     });
     copy.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     copy.setAttribute('width', String(width));
-    copy.setAttribute('height', String(height));
+    const legendSize = Math.max(14, fontSize * 0.9);
+    const labelStyle = getComputedStyle(element.querySelector('.axis-label') ?? element);
+    const probe = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    probe.setAttribute('font-size', String(legendSize)); probe.setAttribute('font-family', labelStyle.fontFamily);
+    probe.setAttribute('font-weight', labelStyle.fontWeight); probe.setAttribute('text-anchor', 'start');
+    probe.setAttribute('visibility', 'hidden'); probe.setAttribute('aria-hidden', 'true');
+    // Actual SVG shaping differs between engines and available CJK fonts. Keep
+    // the complete qualification text and wrap using the font being exported.
+    element.append(probe);
+    let qualificationLines: string[];
+    try {
+      qualificationLines = plottedContexts.flatMap(context => wrapChartText(`${context.label}：${context.note}`, Math.max(1, width - 24), legendSize, value => {
+        probe.textContent = value;
+        const box = probe.getBBox();
+        return Math.max(probe.getComputedTextLength(), box.x + box.width) - Math.min(0, box.x);
+      }));
+    } finally { probe.remove(); }
+    const exportHeight = qualificationLines.length ? Math.ceil(height + 18 + qualificationLines.length * legendSize * 1.5) : height;
+    copy.setAttribute('height', String(exportHeight));
+    copy.setAttribute('viewBox', `0 0 ${width} ${exportHeight}`);
+    copy.querySelector('.chart-background')?.setAttribute('height', String(exportHeight));
+    if (qualificationLines.length) {
+      const legend = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      legend.setAttribute('aria-label', '分級依據與適用限制');
+      qualificationLines.forEach((line, index) => {
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', '12'); text.setAttribute('y', String(height + 12 + legendSize + index * legendSize * 1.5));
+        text.setAttribute('font-size', String(legendSize)); text.setAttribute('font-family', labelStyle.fontFamily);
+        text.setAttribute('font-weight', labelStyle.fontWeight);
+        text.setAttribute('fill', labelStyle.fill); text.textContent = line; legend.append(text);
+      });
+      copy.append(legend);
+    }
     copy.style.background = getComputedStyle(document.documentElement)
       .getPropertyValue('--surface')
       .trim();
@@ -328,7 +363,8 @@ export function TrendChart({
   return (
     <section className="trend-section">
       <DifferenceSummary group={group} />
-      <p className="helper-text">{referenceLegend}；色點仍保留原院／獨立警示。</p>
+      <p className="helper-text">{referenceLegend}；參考帶與分級不同。色點依每筆列出的原院／規則／個人基準，獨立提醒與原院旗標保留。</p>
+      <GradingContextNotes records={group.records} />
       {sharedDate && <p role="status">同步日期 {dateLabel(sharedDate)}：{synchronized.length ? synchronized.map(record => `${record.result} ${record.unit}`).join('；') : '此項當日未取得精確值'}</p>}
       <div className="chart-toolbar">
         <div className="chart-description">
@@ -394,7 +430,7 @@ export function TrendChart({
               <desc id={descriptionId}>
                 {exact.length} 筆確切數值，單位 {group.unit}，日期從 {dateLabel(dated[0]?.exam_date ?? '')}{' '}
                 至 {dateLabel(dated.at(-1)?.exam_date ?? '')}。{useLog ? '縱軸使用對數刻度。' : ''}{scale === 'ordinal' ? '橫軸日期等距，不表示實際時間間隔。' : '橫軸依實際時間間隔。'}
-                所有結果亦列於下方可操作的明細表。
+                所有結果亦列於下方可操作的明細表。分級依據與適用限制：{plottedContexts.map(context => `${context.label}：${context.note}`).join('；')}
               </desc>
               <rect width={width} height={height} className="chart-background" />
               {titleLines.map((line, index) => (
@@ -500,7 +536,7 @@ export function TrendChart({
                     className="chart-point-target"
                     tabIndex={index === pointFocusIndex ? 0 : -1}
                     role="button"
-                    aria-label={`第 ${index + 1}／${exact.length} 筆，${dateLabel(record.exam_date)}，${record.result} ${record.unit}，${record.institution || ''}，開啟明細`}
+                    aria-label={`第 ${index + 1}／${exact.length} 筆，${dateLabel(record.exam_date)}，${record.result} ${record.unit}，${record.institution || ''}，${gradingContextLabel(record)}，開啟明細`}
                     aria-describedby={keyboardHelpId}
                     onFocus={() => { setPointFocusId(record.id); setActiveId(record.id); analysis?.setSelectedDate(record.exam_date); }}
                     onBlur={() => setActiveId(null)}
@@ -527,7 +563,7 @@ export function TrendChart({
                   >
                     <title>
                       {dateLabel(record.exam_date)} · {record.result} {record.unit} ·{' '}
-                      {record.institution}
+                      {record.institution} · {gradingContextText(record)}
                     </title>
                   </circle>
                 </g>
@@ -553,6 +589,7 @@ export function TrendChart({
                   {active.result} <small>{group.unit}</small>
                 </strong>
                 <LevelBadge level={active.level} />
+                <GradingContextLabel record={active} />
                 <span>{active.institution}</span>
               </>
             ) : (
@@ -614,6 +651,7 @@ export function TrendChart({
                   </td>
                   <td>
                     <ScenarioBadge record={record} /><LevelBadge level={record.level} compact />
+                    <GradingContextLabel record={record} />
                   </td>
                   <td>{referenceLabel(record)}</td>
                   <td>{record.institution || '未提供'}</td>

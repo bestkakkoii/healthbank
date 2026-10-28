@@ -22,6 +22,7 @@ var providerResultFields = []fieldSpec{
 
 var providerPrescriptionFields = []fieldSpec{
 	{"recipe_TYPE_name", "處方類型（原文）", ""}, {"func_DATE", "就醫日期（原文）", ""}, {"func_TYPE_NAME", "科別", ""},
+	{"prsn_NAME", "來源開立處方醫師姓名", ""},
 	{"icd_CODE", "疾病分類代碼（非診斷確認）", ""}, {"icd_CODE_CNAME", "疾病分類（非診斷確認）", ""},
 	{"drug_CNT", "藥品品項數", ""}, {"part_MARK", "部分負擔註記", ""}, {"chr_SeqNo", "處方可調劑次數（原文）", ""},
 }
@@ -62,7 +63,7 @@ func buildProviderSpecs() map[string]providerSpec {
 		return providerRequest{path: path, sections: sections}
 	}
 	sourceCoverage := "讀取官方目前提供的全部回傳陣列；此來源未提供日期搜尋或獨立總數，不宣稱全部終身歷史。"
-	allergyFields := []fieldSpec{{"drug_NAME", "過敏內容", ""}, {"allerg_SEVERITY_LEVEL", "嚴重程度（原文）", ""}, {"sympton_NAME", "過敏症狀", ""}, {"allerg_SYMPTON_OTH", "其他症狀說明", ""}, {"upload_FLAG", "收載方式（原文）", ""}, {"upload_D", "來源登錄／上傳日期（原文）", ""}, {"upload_D2", "自行記錄日期（原文）", ""}}
+	allergyFields := []fieldSpec{{"drug_NAME", "過敏內容", ""}, {"allerg_SEVERITY_LEVEL", "嚴重程度（原文）", ""}, {"sympton_NAME", "過敏症狀", ""}, {"allerg_SYMPTON_OTH", "其他症狀說明", ""}, {"upload_FLAG", "收載方式（原文）", ""}, {"upload_D", "來源登錄／上傳日期（原文）", ""}, {"upload_D2", "自行記錄日期（原文）", ""}, {"source", "來源登錄者／資料來源（原文）", ""}}
 	add("allergies", "過敏紀錄", "個人醫療紀錄", sourceCoverage+"院所登錄與自行記錄分開標示，登錄日期不等於發作日期。",
 		get("/api/ihke3000/ihke3202s01/SP_IHKE3202S01", providerSectionSpec("sP_IHKE3202S01", "過敏紀錄", "健保署／院所登錄", "upload_D", allergyFields)),
 		get("/api/ihke3000/ihke3202s01/SP_IHKE3202S04", providerSectionSpec("sP_IHKE3202S04", "過敏自行記錄", "健康存摺／自行記錄", "upload_D2", allergyFields)))
@@ -76,8 +77,9 @@ func buildProviderSpecs() map[string]providerSpec {
 	catastrophic.end = "valid_E_DATE"
 	add("catastrophic", "重大傷病證明", "個人醫療紀錄", sourceCoverage+"官方頁面註明不包括重大傷病第六類；證明效期不等於疾病起訖。", get("/api/ihke3000/ihke3209s01/SP_IHKE3209S01", catastrophic))
 	cochlearFields := []fieldSpec{{"met_C_NAME", "醫材名稱", ""}, {"exe_S_DATE", "手術日期（原文）", ""}, {"met_SPEC", "產品型號／規格（代碼）", ""}, {"ear_MARK", "左右耳註記（原文）", ""}}
+	cochlearSelfFields := append(append([]fieldSpec{}, cochlearFields...), fieldSpec{"c_exe_S_DATE", "自行記錄手術日期（原文）", ""}, fieldSpec{"c_ear_MARK", "自行記錄左右耳註記（原文）", ""})
 	add("cochlear", "人工電子耳", "個人醫療紀錄", sourceCoverage,
-		get("/api/ihke3000/ihke3211s01/page_load", providerSectionSpec("maindata01", "人工電子耳", "健保署／醫療費用申報", "exe_S_DATE", cochlearFields), providerSectionSpec("maindata02", "人工電子耳", "健康存摺／院所提供", "exe_S_DATE", cochlearFields), providerSectionSpec("maindata03", "人工電子耳自行記錄", "健康存摺／自行記錄", "exe_S_DATE", cochlearFields)))
+		get("/api/ihke3000/ihke3211s01/page_load", providerSectionSpec("maindata01", "人工電子耳", "健保署／醫療費用申報", "exe_S_DATE", cochlearFields), providerSectionSpec("maindata02", "人工電子耳", "健康存摺／院所提供", "exe_S_DATE", cochlearFields), providerSectionSpec("maindata03", "人工電子耳自行記錄", "健康存摺／自行記錄", "c_exe_S_DATE", cochlearSelfFields)))
 	eRecent := providerSectionSpec("main_data", "電子處方箋", "健康存摺／電子處方箋近期", "func_DATE", providerPrescriptionFields)
 	eRecent.detail = true
 	eHistory := eRecent
@@ -102,20 +104,29 @@ func buildProviderSpecs() map[string]providerSpec {
 		{"screen_hpv", "婦女 HPV 檢測", "/api/ihke3000/ihke3404s07/page_load", "sp_IHKE3404S07_Data"},
 		{"screen_hpsa", "胃幽門螺旋桿菌糞便抗原檢測", "/api/ihke3000/ihke3404s08/page_load", "sp_IHKE3404S08_Data"},
 	} {
-		add(row.id, row.title, "預防與篩檢", "官方頁面通常限最近三次篩檢；保留實際回傳紀錄，不冒充全年度或診斷。", get(row.path, providerSectionSpec(row.root, row.title, "健康存摺／國民健康署篩檢來源", "func_DATE", screenFields)))
+		sections := []providerSection{providerSectionSpec(row.root, row.title, "健康存摺／國民健康署篩檢來源", "func_DATE", screenFields)}
+		if row.id != "screen_colorectal" && row.id != "screen_hpsa" {
+			sections = append(sections, providerMetadataSection("", row.title+"來源摘要旗標", "健康存摺／篩檢來源摘要（未重算）", []fieldSpec{{"hasSaveData", "來源一般結果摘要旗標", ""}, {"hasWarningData", "來源警示結果摘要旗標", ""}, {"hasInvalidData", "來源未判定結果摘要旗標", ""}}))
+		}
+		add(row.id, row.title, "預防與篩檢", "官方頁面通常限最近三次篩檢；保留實際回傳紀錄，不冒充全年度或診斷。", get(row.path, sections...))
 	}
-	kinmen := providerSectionSpec("sP_IHKE3405S01_Data", "金門健康檢查", "健康存摺／金門健康檢查", "", append(append([]fieldSpec{}, providerResultFields...), fieldSpec{"order_CNAME", "檢查項目", ""}, fieldSpec{"group_NAME", "來源分類", ""}))
+	kinmen := providerSectionSpec("sP_IHKE3405S01_Data", "金門健康檢查", "健康存摺／金門健康檢查", "funC_DATE", append(append([]fieldSpec{}, providerResultFields...), fieldSpec{"order_CNAME", "檢查項目", ""}, fieldSpec{"group_NAME", "來源分類", ""}, fieldSpec{"funC_DATE", "來源健檢日期（原文）", ""}, fieldSpec{"tel", "來源院所電話", ""}, fieldSpec{"assaY_MARK", "來源原始結果旗標", ""}))
 	add("kinmen", "金門健康檢查", "預防與篩檢", "來源頁面標示最近一次健康檢查，是否提供取決於官方授權與帳號；未提供個別檢查日期時不推造。", get("/api/ihke3000/ihke3405s01/SP_IHKE3405S01", kinmen))
 	glucose := providerSectionSpec("sP_IHKE3406S01_Data", "糖化血色素（HbA1c）", "健康存摺／血糖檢驗專區", "real_INSPECT_DATE", providerResultFields)
-	add("glucose", "血糖專區 HbA1c 歷史", "檢驗與量測", "已對官方 HbA1c 搜尋送出所選完整期間；無獨立總數，不宣稱終身資料完整。不把專區名稱誤當包含所有血糖項目。", get("/api/ihke3000/ihke3406s01/SP_IHKE3406S01", glucose))
+	add("glucose", "血糖專區 HbA1c 歷史", "檢驗與量測", "分別保留來源首頁表格與所選完整期間的 HbA1c 搜尋回應；不假設兩組資料相同。首頁可能使用來源提供期間，無獨立總數，不宣稱終身資料完整。不把專區名稱誤當包含所有血糖項目。", get("/api/ihke3000/ihke3406s01/SP_IHKE3406S01", glucose, providerMetadataSection("", "血糖專區來源提供區間", "健康存摺／血糖專區來源提供區間（非個別檢查日期）", []fieldSpec{{"remark_SDate", "來源提供區間起日（原文）", ""}, {"remark_EDate", "來源提供區間迄日（原文）", ""}})))
 	lipid := providerSectionSpec("RecordList", "血脂檢驗", "健康存摺／血脂專區", "REAL_INSPECT_DATE", append(append([]fieldSpec{}, providerResultFields...), fieldSpec{"CURE_CNAME", "檢查項目", ""}, fieldSpec{"YN", "來源旗標（原文）", ""}))
 	lipid.titleField, lipid.detail = "CURE_CNAME", true
-	add("lipids", "血脂專區歷史", "檢驗與量測", "清單是來源專區項目與摘要；各項明細才送出所選完整期間。來源可能重疊，不強制合併檢驗或推定方法相容。", get("/api/ihke3000/ihke3407s01/SP_IHKE3407S01", lipid))
+	add("lipids", "血脂專區歷史", "檢驗與量測", "清單是來源專區項目與摘要；各項明細才送出所選完整期間。來源可能重疊，不強制合併檢驗或推定方法相容。", get("/api/ihke3000/ihke3407s01/SP_IHKE3407S01", lipid, providerMetadataSection("Remark_Date", "血脂專區來源提供區間", "健康存摺／血脂專區來源提供區間（非個別檢查日期）", []fieldSpec{{"sdate", "來源提供區間起日（原文）", ""}, {"edate", "來源提供區間迄日（原文）", ""}})))
+	lipidPeriods := providerMetadataSection("years", "血脂來源日期選項", "健康存摺／血脂歷史來源日期選項（非檢驗紀錄）", []fieldSpec{{"c", "來源期間選項文字", ""}, {"d", "來源期間選項起日（原文，未套用查詢）", ""}, {"e", "來源期間選項代碼", ""}})
+	lipidWindow := providerMetadataSection("", "血脂歷史來源提供區間", "健康存摺／血脂歷史 A／B 來源提供區間（非個別檢查日期）", []fieldSpec{{"remark_SDate", "來源提供區間起日（原文）", ""}, {"remark_EDate", "來源提供區間迄日（原文）", ""}})
+	lipidSpec := items["lipids"]
+	lipidSpec.requests = append(lipidSpec.requests, get("/api/ihke3000/ihke3407s01/getyears", lipidPeriods, lipidWindow))
+	items["lipids"] = lipidSpec
 	physioFields := []fieldSpec{{"code", "量測項目代碼", ""}, {"code_NAME", "量測項目", ""}, {"create_DATE", "量測日期（原文）", ""}, {"value", "來源量測值（原文）", ""}, {"unit_DATA", "單位（原文）", ""}, {"abnormal_Status", "來源旗標（原文）", ""}}
 	physio := providerSectionSpec("maindata", "生理量測項目", "健康存摺／生理量測（可含自行記錄）", "create_DATE", physioFields)
 	physio.titleField, physio.detail = "code_NAME", true
 	pressure := providerSectionSpec("maindata_10568", "血壓與心率項目", "健康存摺／生理量測（可含自行記錄）", "", physioFields)
-	add("physiology", "生理量測歷史", "檢驗與量測", "清單是來源項目與最近摘要；各項明細查詢所選完整期間。自行記錄與行動裝置來源未等同院所檢驗，官方行動資料可能僅近半年。", get("/api/ihke3000/ihke3205s01/page_load", physio, pressure))
+	add("physiology", "生理量測歷史", "檢驗與量測", "清單是來源項目與最近摘要；各項明細查詢所選完整期間。自行記錄與行動裝置來源未等同院所檢驗，官方行動資料可能僅近半年。", get("/api/ihke3000/ihke3205s01/page_load", physio, pressure, providerMetadataSection("", "生理量測來源更新時間", "健康存摺／生理量測來源摘要更新（非量測日期）", []fieldSpec{{"blood_Pressurep_Date", "來源摘要更新至（原文）", ""}})))
 	for _, id := range []string{"glucose", "lipids", "physiology"} {
 		spec := items[id]
 		spec.info.RangeMode = "date_search"
@@ -145,7 +156,7 @@ func buildProviderSpecs() map[string]providerSpec {
 	home.end, home.institution = "c_CLOSE_DATE", "c_HOSP_ABBR"
 	add("home_care", "居家醫療收案", "照護與追蹤", "官方頁面標示近三年個案管理追蹤；無日期搜尋或獨立總數。", get("/api/ihke3000/IHKE3712S01/page_load", home))
 	obesity := providerSectionSpec("maindata", "身體量測專區摘要", "健康存摺／多來源身體量測", "c_REAL_INSPECT_DATE", []fieldSpec{{"c_CURE_CNAME", "檢查項目", ""}, {"c_ASSAY_VALUE", "結果（原文）", ""}, {"c_UNIT_DATA", "單位（原文）", ""}, {"c_CONSULT_VALUE", "來源參考值", ""}, {"c_ORI_TYPE_NAME", "來源類型（原文）", ""}, {"c_REAL_INSPECT_DATE", "檢查日期（原文）", ""}})
-	add("body_measurements", "身體量測來源摘要", "檢驗與量測", "官方肥胖防治專區的最近結果摘要；保留來源區別，未複製官方風險計算或推定診斷。歷史生理資料另由生理量測取得。", get("/api/ihke3000/IHKE3512S01/page_load", obesity))
+	add("body_measurements", "身體量測來源摘要", "檢驗與量測", "官方肥胖防治專區的最近結果摘要；保留來源區別，未複製官方風險計算或推定診斷。歷史生理資料另由生理量測取得。", get("/api/ihke3000/IHKE3512S01/page_load", obesity, providerMetadataSection("", "身體量測來源提供區間", "健康存摺／身體量測來源提供區間（非個別檢查日期）", []fieldSpec{{"sdate", "來源提供區間起日（原文）", ""}, {"edate", "來源提供區間迄日（原文）", ""}})))
 	familyStatus := providerSectionSpec("sP_IHKE3720S01", "家庭醫師計畫狀態", "健康存摺／家庭醫師計畫", "", []fieldSpec{{"status", "來源計畫狀態代碼", ""}, {"curr_YEAR", "來源收案年度", ""}})
 	familyStatus.object = true
 	familyProvider := providerSectionSpec("sP_IHKE3720S02", "家庭醫師收案院所", "健康存摺／家庭醫師計畫", "", []fieldSpec{{"hosp_ABBR", "收案院所", ""}, {"prsn_NAME", "家庭醫師姓名", ""}, {"tel", "院所聯絡電話", ""}})
@@ -171,10 +182,18 @@ func buildProviderSpecs() map[string]providerSpec {
 	bone.detail = true
 	add("osteoporosis", "骨質疏鬆檢查", "檢驗與量測", "已向來源要求全部類型清單；讀取報告文字明細，不自行判定診斷。無獨立總數與全年度保證。", providerRequest{path: "/api/ihke3000/ihke3411s01/page_load", params: url.Values{"s_type": {""}, "s_sort": {"A1"}}, sections: []providerSection{bone}})
 	extendProviderSpecs(items)
+	extendCoverageProviderSpecs(items)
+	extendPersonalProviderSpecs(items)
+	extendCareCoverageSpecs(items)
+	extendResidualProviderSpecs(items)
+	extendCommunicationsProviderSpecs(items)
 	return items
 }
 
 func providerDetailRequest(category string, ref providerReference) (providerRequest, error) {
+	if ref.kind == "care_chart" {
+		return providerCareChartRequest(category, ref)
+	}
 	get := func(path string, params url.Values, sections ...providerSection) providerRequest {
 		return providerRequest{path: path, params: params, sections: sections}
 	}
@@ -182,6 +201,19 @@ func providerDetailRequest(category string, ref providerReference) (providerRequ
 		return providerRequest{path: path, method: http.MethodPost, payload: payload, sections: sections}
 	}
 	switch category {
+	case "calendar_events", "stored_reminders":
+		return communicationsProviderDetailRequest(category, ref)
+	case "menstrual":
+		if ref.kind == "menstrual_month" {
+			return providerMenstrualMonthRequest(ref), nil
+		}
+		return providerMenstrualDetailRequest(ref), nil
+	case "recent_visits":
+		return providerRecentDetailRequests()[0], nil
+	case "annual_overview":
+		return annualProviderRequests(ref)[0], nil
+	case "child_schedule", "health_coin_clinical":
+		return personalProviderRequests(category)[1], nil
 	case "e_prescriptions":
 		header := providerSectionSpec("treatData", "電子處方箋明細", "健康存摺／電子處方箋", "func_DATE", providerPrescriptionFields)
 		header.object = true
@@ -207,7 +239,12 @@ func providerDetailRequest(category string, ref providerReference) (providerRequ
 		if category == "glucose" {
 			path = "/api/ihke3000/ihke3406s02/SP_IHKE3406S02"
 		}
-		fields := append(append([]fieldSpec{}, providerResultFields...), fieldSpec{"assay_VALUE", "來源值（未自動套用摘要單位）", ""})
+		fields := append([]fieldSpec{}, providerResultFields...)
+		for index := range fields {
+			if fields[index].key == "assay_VALUE" {
+				fields[index].label = "來源值（未自動套用摘要單位）"
+			}
+		}
 		return post(path, map[string]string{"dCode": ref.rowID, "dStr": ref.query.StartDate, "dEnd": ref.query.EndDate}, providerSectionSpec("sP_IHKE3406S02_Data", ref.title, "健康存摺／"+providerSpecs[category].info.Label, "real_INSPECT_DATE", fields)), nil
 	case "family_followup":
 		fields := []fieldSpec{{"assay_DATE", "檢驗日期（原文）", ""}, {"assay_NAME", "來源檢驗名稱", ""}, {"assay_VALUE", "結果（原文）", ""}, {"assay_SOURCE_NAME", "來源類型（原文）", ""}, {"unit_DATA", "單位（原文）", ""}}
@@ -218,8 +255,8 @@ func providerDetailRequest(category string, ref providerReference) (providerRequ
 		return post("/api/ihke3000/ihke3207s02/SP_IHKE3207S04", map[string]string{"c_rowid": ref.rowID}, header, providerSectionSpec("oneRecordList", ref.title, "健康存摺／使用者自行記錄", "@parent", fields)), nil
 	case "physiology":
 		if ref.kind == "device_day" {
-			fields := []fieldSpec{{"cdate", "來源量測日期／時間（原文）", ""}, {"value", "行動裝置量測值（原文）", ""}, {"code", "來源量測項目代碼", ""}, {"unit_DATA", "單位（原文）", ""}}
-			return get("/api/ihke3000/ihke3205s04/pageload", url.Values{"code": {ref.rowID}, "cal_date": {ref.sourceType}}, providerSectionSpec("devicelist", ref.title+"行動裝置原始紀錄", "健康存摺／行動裝置資料來源", "cdate", fields)), nil
+			fields := []fieldSpec{{"cdate", "來源量測日期／時間（原文）", ""}, {"value", "行動裝置量測值（原文）", ""}, {"code", "來源量測項目代碼", ""}, {"unit_DATA", "單位（原文）", ""}, {"act_os", "來源裝置平台代碼（未推定平台）", ""}}
+			return get("/api/ihke3000/ihke3205s04/pageload", url.Values{"code": {ref.rowID}, "cal_date": {ref.sourceType}}, providerSectionSpec("devicelist", ref.title+"行動裝置原始紀錄", "健康存摺／行動裝置資料來源", "cdate", fields), providerMetadataSection("", "行動裝置來源日期標示", "健康存摺／行動裝置來源查詢日期標示", []fieldSpec{{"cdate", "來源日期標示（原文，未套用其他列）", ""}})), nil
 		}
 		code1, code2, code3 := ref.rowID, "", ""
 		if code1 == "10568" {
