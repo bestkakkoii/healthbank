@@ -422,6 +422,37 @@ are streamed or handled within stated memory limits; arbitrary browser-supplied
 upstream URLs and server file spooling are not accepted. Public source inspection
 and synthetic fixtures do not establish live account eligibility or availability.
 
+## Authenticated UI observations (2026-10-28, RC11 follow-up)
+
+These observations came from the official browser UI after user sign-in. They
+verify visible behavior, not the Go connector's real-account end-to-end path.
+No account values, identifiers, institutions, private URLs or screenshots are
+included in this record or synthetic fixtures.
+
+- `IHKE3407S01` is a latest-value lipid summary. Its LDL comparison opens
+  `IHKE3407S02` with code `09044C`. Choosing the explicit interval
+  `1912-01-01` through `2026-10-28` returned older chart observations than the
+  default three-year view. The source-window footer did not expand with the
+  query. Neither the summary nor that footer is a valid bound for truncating
+  requested history; a wider response still does not prove lifetime coverage.
+  A transient empty view during loading must not be recorded as an empty result.
+- `IHKE3301S06` recent hospitalization cards and the “105年起更多住院紀錄”
+  entry are distinct views. The latter opens `IHKE3309S01` and exposes older
+  records. `IHKE3309S02` separately labels admission/discharge, claim interval,
+  order execution dates, classifications/procedures and financial point totals.
+  Execution intervals do not establish medication duration or adherence.
+- `IHKE3408S01` / `IHKE3408S02` distinguish source channels and JPG/DICOM
+  availability. An explicit image preparation request reached “影像檔準備中”
+  and “已申請載入影像檔”; this is pending preparation, not verified file bytes.
+  Repeated-looking list entries must retain their individual source context.
+- `IHKE3801S01` exposes HTML/PDF/XML/JSON production, with a seven-day
+  production history. The JSON entry `ihke3804s01` requires a separate
+  production confirmation. That confirmation was not completed, so no official
+  bulk export, schema compatibility or original-file completeness is claimed.
+- A hospitalization discharge-summary “查看檔案” control was present, but
+  the attempted open did not yield a verifiable file in this session. Its
+  presence alone is not evidence of successful retrieval.
+
 ## Medical categories and detail references (rc.7 source baseline)
 
 On 2026-10-28 (Asia/Taipei), credentialless retrieval of the current public

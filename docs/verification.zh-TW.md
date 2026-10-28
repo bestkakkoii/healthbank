@@ -29,6 +29,41 @@ rc.7 已公開，主線／標籤提交為 `90736de309f6c5ba62ba2200b7e8f0e91c96c
 
 官方瀏覽器觀察、公開程式契約、Healthbank 合成整合測試及部署端真實登入是不同證據；前者不代替 Go 連接器的真實帳號驗收。本批完整靜態／模型／Go／race／MySQL／依賴／跨引擎／封裝 gates 與最後審查仍在整合，完成後另行更新，不沿用 RC10 的通過數字。
 
+### 2026-10-28 重新登入後的接續核對
+
+以 `4bc1c849484ce0ca840f7ac317e0e1ba54d74cb3` 的程式碼重新驗證；本次變更只補充文件。
+官網瀏覽器已確認 LDL `09044C` 的自訂最廣日期查詢可顯示預設三年摘要以外的歷史、
+近期住院卡片另有民國 105 年起完整列表，以及住院／醫囑日期與財務欄位的區別。
+影像載入申請只到「準備中」，不記為原始檔下載成功；出院摘要按鈕亦未取得可驗證檔案。
+JSON 入口及產製前提示已確認，但確認產製被執行環境的自動審核拒絕，等待明確授權，未重試或繞過。
+完整原始檔與其餘來源的真實帳號核對仍未結案。詳見 [協定觀察](nhi_protocol.md#authenticated-ui-observations-2026-10-28-rc11-follow-up)。
+
+| 本次重新執行 | 結果與限制 |
+| --- | --- |
+| 前端 | 嚴格 ESLint 通過、無診斷；TypeScript／正式建置及產物雜湊核對通過；Node 模型 164 項通過，0 失敗／略過。 |
+| Go 一般／race | 各 882 個測試／子測試通過事件，0 失敗；本機 `TestMySQLIntegration` 各略過 1 項，未提供隔離 DSN。不是 882 個獨立函式。 |
+| Go 靜態／模組 | gofmt 無未格式化檔案、go vet 通過；與 CI 相同的所有第一方套件 `staticcheck -checks=all ./cmd/... ./internal/...` 通過；go mod verify 通過。 |
+| 依賴公告／編譯 | npm audit 0 vulnerabilities；govulncheck 無已知漏洞，但 development Go 的標準庫版本比較限制仍存在。Linux amd64／arm64 編譯通過。 |
+| 封裝／來源檢查 | Python warnings-as-errors：封裝 13 項、發布 9 項、來源契約檢查器 9 項通過；59 類別／215 chunks 的 registry 離線檢查通過，未聲稱即時網路雜湊重查。 |
+
+本機釘選工具的首次 tar 解壓因容器 UID 映射失敗，使用 `TAR_OPTIONS=--no-same-owner` 後完成，未修改工具來源或雜湊。
+npm 繼承了不支援的大小寫 HTTP proxy 選項，移除這兩個無效選項後重新完成 lint／audit。
+首次將 Staticcheck 範圍寫為 `./...`，包含 npm 安裝的第三方 Go 範例並回報其 ST1000；
+改用倉庫 CI 原有的第一方範圍後通過，未修改或停用任何分析規則。
+
+實際編譯程式的 Chromium 156.0.8078.4 驗收完成 17 組，包含 CJK PDF、320 px 固定日期欄、
+完整取得／ZIP 還原、快取及臨床情境。切換 Firefox 157.0 後，第一個裝置快取測試於
+`browserContext.newPage` 發生 `Target crashed`；整個跨引擎 gate 因此失敗，WebKit 未完成。
+本機 `--setup --with-deps` 曾因容器 setgroups／UID 限制失敗，之後僅完成不安裝系統依賴的
+釘選瀏覽器／字型下載；目前沒有足夠證據把崩潰歸因為應用程式或特定依賴，未停用保護或放寬測試。
+驗收執行檔 SHA-256：`a9c08354a37765ecb328579f7940c86f2a1331ef9c37051ec4f2048973b4c6ce`。
+以上均使用合成資料；此雜湊不是正式發行包識別。
+
+原 [CI run 40684279633](https://github.com/bestkakkoii/healthbank/actions/runs/40684279633)
+第一次因 Node 壓縮檔下載逾時停止；第二次執行已完整成功。該次精確程式提交的前端、含隔離 MySQL 的 Go／race、
+靜態、依賴與雙架構編譯全部通過；實際瀏覽器 33 組通過（Chromium 17、Firefox 8、WebKit 8）。
+CI 的成功不抹去上述本機失敗，也不代替實體 iPhone 或真實官方連接器驗收。RC11 尚未因此自動發布。
+
 ## v1.0.3-rc.10 — 完整報表、來源語意與有界取得
 
 2026-10-28（臺灣時間），從已公開 RC9 的同一來源樹延續既有工作分支。
