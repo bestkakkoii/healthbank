@@ -44,6 +44,9 @@ func (a *App) documents(w http.ResponseWriter, r *http.Request, s *session) {
 	defer cancel()
 	started := false
 	err := s.official.DownloadDocument(ctx, category, reference, func(info nhi.DocumentInfo, reader io.Reader) error {
+		if s.scope != nil && s.scope.ctx.Err() != nil {
+			return errSubjectRevoked
+		}
 		// A long source archive must not inherit the shorter JSON write deadline.
 		// The whole transfer still has a bounded context and size, and cancellation
 		// closes the upstream response without creating a spool file.
@@ -105,13 +108,19 @@ func (a *App) prepareDocument(w http.ResponseWriter, r *http.Request, s *session
 		a.documentError(w, r, s, err)
 		return
 	}
+	if !a.requireCurrentSubject(w, r, s) {
+		return
+	}
 	a.json(w, http.StatusAccepted, result)
 }
 
 func (a *App) documentError(w http.ResponseWriter, r *http.Request, s *session, err error) {
+	if !a.requireCurrentSubject(w, r, s) {
+		return
+	}
 	var upstream *nhi.Error
 	if errors.As(err, &upstream) && upstream.Code == "SESSION_EXPIRED" {
-		s.clear()
+		a.clearSession(s)
 		if rotateErr := a.rotate(w, r, s); rotateErr != nil {
 			a.fail(w, r, 500, "session_rotate", "連線已結束，請重新整理頁面。")
 			return

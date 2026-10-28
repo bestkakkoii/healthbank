@@ -62,6 +62,11 @@ func (a *App) persistDiscovered(ctx context.Context, s *session) error {
 	if s.subject == "" {
 		return nil
 	}
+	unlock, err := a.lockSubject(ctx, s)
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	discovered := s.settings.Known
 	for attempt := 0; attempt < 3; attempt++ {
 		doc, err := a.store.Get(ctx, s.subject)
@@ -149,6 +154,9 @@ func (a *App) fetchReports(w http.ResponseWriter, r *http.Request, s *session) {
 		return
 	}
 	if err := a.refreshSettings(r.Context(), s); err != nil {
+		if !a.requireCurrentSubject(w, r, s) {
+			return
+		}
 		a.fail(w, r, 500, "settings_read", "無法讀取個人設定。")
 		return
 	}
@@ -156,15 +164,21 @@ func (a *App) fetchReports(w http.ResponseWriter, r *http.Request, s *session) {
 	defer cancel()
 	report, err := s.official.Fetch(ctx, nhi.Query{StartDate: from, EndDate: to})
 	if err != nil {
+		if !a.requireCurrentSubject(w, r, s) {
+			return
+		}
 		var upstream *nhi.Error
 		if errors.As(err, &upstream) && upstream.Code == "SESSION_EXPIRED" {
-			s.clear()
+			a.clearSession(s)
 			if rotateErr := a.rotate(w, r, s); rotateErr != nil {
 				a.fail(w, r, 500, "session_rotate", "連線已結束，請重新整理頁面。")
 				return
 			}
 		}
 		a.upstreamError(w, r, err)
+		return
+	}
+	if !a.requireCurrentSubject(w, r, s) {
 		return
 	}
 	s.setOfficialReport(report)
@@ -180,6 +194,9 @@ func (a *App) fetchReports(w http.ResponseWriter, r *http.Request, s *session) {
 }
 func (a *App) currentReports(w http.ResponseWriter, r *http.Request, s *session) {
 	if err := a.refreshSettings(r.Context(), s); err != nil {
+		if !a.requireCurrentSubject(w, r, s) {
+			return
+		}
 		a.fail(w, r, 500, "settings_read", "無法讀取個人設定。")
 		return
 	}
@@ -254,7 +271,7 @@ func (a *App) importReports(w http.ResponseWriter, r *http.Request, s *session) 
 	}
 	// An imported file has no verified ownership. Use an isolated temporary
 	// configuration instead of attaching it to the currently signed-in person.
-	s.clear()
+	a.clearSession(s)
 	s.mode = "import"
 	s.raw = rows
 	s.fetched = time.Now().UTC().Format(time.RFC3339)
@@ -268,6 +285,9 @@ func (a *App) importReports(w http.ResponseWriter, r *http.Request, s *session) 
 }
 func (a *App) catalogResponse(w http.ResponseWriter, r *http.Request, s *session) {
 	if err := a.refreshSettings(r.Context(), s); err != nil {
+		if !a.requireCurrentSubject(w, r, s) {
+			return
+		}
 		a.fail(w, r, 500, "settings_read", "無法讀取個人設定。")
 		return
 	}
@@ -288,6 +308,12 @@ func (a *App) catalogResponse(w http.ResponseWriter, r *http.Request, s *session
 	a.json(w, 200, out)
 }
 func (a *App) saveSettings(w http.ResponseWriter, r *http.Request, s *session) {
+	unlock, err := a.lockSubject(r.Context(), s)
+	if err != nil {
+		a.subjectAdmissionError(w, r, s)
+		return
+	}
+	defer unlock()
 	// Known definitions are server-owned. The browser cannot manufacture a
 	// profile or submit arbitrary JSON for persistent storage.
 	var input struct {

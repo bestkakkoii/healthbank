@@ -42,6 +42,7 @@ type session struct {
 	touched                  time.Time // protected by App.mu
 	csrf                     string
 	mode, subject, challenge string
+	scope                    *subjectScope // membership changes also hold App.mu
 	official                 *nhi.Session
 	settings                 lab.Settings
 	raw                      []lab.RawRecord
@@ -52,16 +53,16 @@ type session struct {
 	lastChallenge            time.Time
 }
 type App struct {
-	retentionGate sync.RWMutex // Settings deletion is rare and must invalidate all old-session writes.
-	mu            sync.Mutex
-	sessions      map[string]*session
-	store         *store.Store
-	catalog       *lab.Catalog
-	secret        []byte
-	version       string
-	mux           *http.ServeMux
-	stop          chan struct{}
-	done          chan struct{}
+	mu       sync.Mutex
+	sessions map[string]*session
+	subjects map[string]*subjectScope
+	store    *store.Store
+	catalog  *lab.Catalog
+	secret   []byte
+	version  string
+	mux      *http.ServeMux
+	stop     chan struct{}
+	done     chan struct{}
 }
 
 func New(db *store.Store, secret []byte, version string) (*App, error) {
@@ -69,7 +70,7 @@ func New(db *store.Store, secret []byte, version string) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	a := &App{sessions: map[string]*session{}, store: db, catalog: c, secret: secret, version: version, mux: http.NewServeMux(), stop: make(chan struct{}), done: make(chan struct{})}
+	a := &App{sessions: map[string]*session{}, subjects: map[string]*subjectScope{}, store: db, catalog: c, secret: secret, version: version, mux: http.NewServeMux(), stop: make(chan struct{}), done: make(chan struct{})}
 	a.mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
 		a.json(w, http.StatusOK, map[string]string{"status": "ok", "version": a.version})
 	})
@@ -144,7 +145,7 @@ func (a *App) cleanup() {
 			a.mu.Unlock()
 			for _, s := range expired {
 				s.mu.Lock()
-				s.clear()
+				a.clearSession(s)
 				s.mu.Unlock()
 			}
 		}
@@ -159,11 +160,12 @@ func (a *App) Close() {
 	a.mu.Unlock()
 	for _, s := range sessions {
 		s.mu.Lock()
-		s.clear()
+		a.clearSession(s)
 		s.mu.Unlock()
 	}
 }
-func (s *session) clear() {
+func (a *App) clearSession(s *session) {
+	a.releaseSubject(s)
 	if s.official != nil {
 		s.official.Close()
 	}
@@ -194,13 +196,6 @@ func (a *App) setCookie(w http.ResponseWriter, r *http.Request, id string) {
 }
 func (a *App) withSession(next func(http.ResponseWriter, *http.Request, *session)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodDelete && r.URL.Path == "/api/settings" {
-			a.retentionGate.Lock()
-			defer a.retentionGate.Unlock()
-		} else {
-			a.retentionGate.RLock()
-			defer a.retentionGate.RUnlock()
-		}
 		a.mu.Lock()
 		var s *session
 		var id string
@@ -213,7 +208,7 @@ func (a *App) withSession(next func(http.ResponseWriter, *http.Request, *session
 			delete(a.sessions, id)
 			expired := s
 			s = nil
-			go func() { expired.mu.Lock(); expired.clear(); expired.mu.Unlock() }()
+			go func() { expired.mu.Lock(); a.clearSession(expired); expired.mu.Unlock() }()
 		}
 		// A request sent before rotation can arrive after its cookie generation
 		// has been retired. Creating a replacement here would let that delayed
@@ -303,6 +298,16 @@ func (a *App) withSession(next func(http.ResponseWriter, *http.Request, *session
 				return
 			}
 		}
+		if !a.requireCurrentSubject(w, r, s) {
+			return
+		}
+		if s.scope != nil {
+			ctx, cancel := context.WithCancel(r.Context())
+			stop := context.AfterFunc(s.scope.ctx, cancel)
+			defer stop()
+			defer cancel()
+			r = r.WithContext(ctx)
+		}
 		next(w, r, s)
 	}
 }
@@ -316,6 +321,10 @@ func (a *App) rotate(w http.ResponseWriter, r *http.Request, s *session) error {
 		return err
 	}
 	a.mu.Lock()
+	if s.scope != nil && s.scope.ctx.Err() != nil {
+		a.mu.Unlock()
+		return errSubjectRevoked
+	}
 	for old, v := range a.sessions {
 		if v == s {
 			delete(a.sessions, old)
@@ -438,6 +447,9 @@ func (a *App) sessionView(s *session) map[string]any {
 	return map[string]any{"authenticated": s.mode == "official", "mode": s.mode, "settings": s.settings, "version": a.version, "csrf_token": s.csrf, "profile_key": s.subject}
 }
 func (a *App) refreshSettings(ctx context.Context, s *session) error {
+	if s.scope != nil && s.scope.ctx.Err() != nil {
+		return errSubjectRevoked
+	}
 	if s.subject == "" {
 		a.catalog.ReconcileSettings(&s.settings)
 		return nil
@@ -445,6 +457,9 @@ func (a *App) refreshSettings(ctx context.Context, s *session) error {
 	doc, err := a.store.Get(ctx, s.subject)
 	if err != nil {
 		return err
+	}
+	if s.scope != nil && s.scope.ctx.Err() != nil {
+		return errSubjectRevoked
 	}
 	next, err := lab.DecodeSettings(doc.Settings, doc.Revision)
 	if err != nil {
@@ -456,6 +471,9 @@ func (a *App) refreshSettings(ctx context.Context, s *session) error {
 }
 func (a *App) getSession(w http.ResponseWriter, r *http.Request, s *session) {
 	if err := a.refreshSettings(r.Context(), s); err != nil {
+		if !a.requireCurrentSubject(w, r, s) {
+			return
+		}
 		a.fail(w, r, 500, "settings_read", "無法讀取個人設定。")
 		return
 	}
@@ -509,18 +527,18 @@ func (a *App) login(w http.ResponseWriter, r *http.Request, s *session) {
 		a.upstreamError(w, r, err)
 		return
 	}
-	s.subject = config.Subject(a.secret, in.Identity)
+	a.bindSubject(s, config.Subject(a.secret, in.Identity))
 	s.mode = "official"
 	s.raw = nil
 	s.fetched = ""
 	s.warnings = []string{}
 	if err := a.refreshSettings(r.Context(), s); err != nil {
-		s.clear()
+		a.clearSession(s)
 		a.fail(w, r, 500, "settings_read", "登入成功但個人設定無法讀取，請稍後重試。")
 		return
 	}
 	if err := a.rotate(w, r, s); err != nil {
-		s.clear()
+		a.clearSession(s)
 		a.fail(w, r, 500, "session_rotate", "無法建立登入連線。")
 		return
 	}
@@ -539,7 +557,7 @@ func (a *App) logout(w http.ResponseWriter, r *http.Request, s *session) {
 		}
 		cancel()
 	}
-	s.clear()
+	a.clearSession(s)
 	if err := a.rotate(w, r, s); err != nil {
 		a.fail(w, r, 500, "session_rotate", "無法更新連線。")
 		return

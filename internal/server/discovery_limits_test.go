@@ -36,7 +36,7 @@ func TestDiscoveryCannotPersistDefinitionsRejectedByPortableSettings(t *testing.
 			s := app.sessions[browser.cookie.Value]
 			app.mu.Unlock()
 			s.mu.Lock()
-			s.subject = config.Subject(app.secret, "SYNTHETIC_DISCOVERY_BOUNDARY")
+			app.bindSubject(s, config.Subject(app.secret, "SYNTHETIC_DISCOVERY_BOUNDARY"))
 			s.mode, s.raw = "official", rows
 			app.catalog.Normalize(rows, &s.settings)
 			err := app.persistDiscovered(context.Background(), s)

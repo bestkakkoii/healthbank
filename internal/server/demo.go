@@ -11,7 +11,7 @@ import (
 )
 
 func (a *App) demo(w http.ResponseWriter, r *http.Request, s *session) {
-	s.clear()
+	a.clearSession(s)
 	s.mode = "demo"
 	s.complete = true
 	dates := []string{"2023-03-14", "2023-10-05", "2024-04-09", "2024-11-19", "2025-05-13", "2025-11-11", "2026-04-14", "2026-10-13"}
