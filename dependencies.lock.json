@@ -935,16 +935,17 @@
   },
   "frontend_dependency_audit": {
     "file": "web/dependency-audit.json",
-    "sha256": "39661deef881525e974dc2a0e8ce12f0f831a29c7052d1c24494a196b6c3a87f",
+    "sha256": "67643493279debc60c9fa55e53b004e9f3d0bfe8d9e7a9c07cef1e9e0c6636ac",
     "checked_at": "2026-10-27 09:34:53+08:00",
-    "package_lock_sha256": "ef7de992ab1a8df5f5f70ca9997a4338c5fcc183c6e1a2c9f7c94e050179101c",
-    "installed_instances": 145,
-    "unique_package_names": 141,
+    "package_lock_sha256": "c90cbc1a8af004195745b3296a53ab3c759c904b3e8fd83b8f7e5a91fc01096e",
+    "installed_instances": 147,
+    "unique_package_names": 143,
     "browser_runtime_instances": 3,
-    "build_lint_test_instances": 142,
+    "build_lint_test_instances": 144,
     "statuses": {
-      "latest-compatible": 55,
+      "latest-compatible": 56,
       "latest-published": 82,
+      "verified-official-stable": 1,
       "verified-upstream-source": 8
     },
     "unresolved_required_requirements": 0,
@@ -955,7 +956,9 @@
       "high": 0,
       "critical": 0,
       "total": 0
-    }
+    },
+    "targeted_refresh_at": "2026-10-28T15:41:12+08:00",
+    "scope": "Original checked_at and npm advisory counts remain historical; current two-package browser addition is documented in web/dependency-audit.json targeted_refreshes."
   },
   "frontend_direct_packages": [
     {
@@ -1017,6 +1020,17 @@
       "integrity": "sha512-RwMTC61u7hrG3ZJMkZQOK4JLJrKS8QtoTii63EmWvFXHqycY9FObBJQCbsLxSO8kjKhWE5kV1GC+Vb1g3RI0Zg==",
       "registry_url": "https://registry.npmjs.org/globals",
       "retained_reason": "Selected version is the highest published registry version, including prereleases, at the audit snapshot."
+    },
+    {
+      "name": "playwright",
+      "version": "1.64.1",
+      "role": "build-lint-test-only",
+      "resolved": "https://registry.npmjs.org/playwright/-/playwright-1.64.1.tgz",
+      "integrity": "sha512-HCrVhHr5QQuwYoswEUGTb7gGp522yflbv/ST8nF4sFWGuLjQCt17Q/EubpGGSNKYn1tsTCPZxqHhHCfVURu7UA==",
+      "registry_url": "https://registry.npmjs.org/playwright",
+      "upstream_repository": "https://github.com/microsoft/playwright",
+      "upstream_commit": "cfe490d941f992655948eee8fd4fd94e1c4234bf",
+      "retained_reason": "The verified current stable release and its exact supported Chromium revision form the tested CI baseline. The newer daily alpha is disclosed, not hidden by the project exact pin; adopting it would require a new browser/font/PDF baseline."
     },
     {
       "name": "react",
@@ -1095,6 +1109,21 @@
       "branch": "master",
       "commit": "b8eadc9f89e8f7ab0338eacda9f98a6caea76883",
       "role": "Local isolated MySQL test-server shared-library dependency; not linked into Healthbank."
+    },
+    "browser_acceptance": {
+      "checked_at": "2026-10-28T15:41:12+08:00",
+      "role": "Synthetic compiled-Go browser/PDF CI only; no production dependency or external scripts/fonts.",
+      "toolchain_file": "web/tests/browser/toolchain.json",
+      "toolchain_sha256": "99c21385e8cac506538971e7c783769fbd17b0233c917f4c11876361fb946a4f",
+      "playwright_version": "1.64.1",
+      "playwright_core_version": "1.64.1",
+      "chromium_version": "156.0.8078.4",
+      "chromium_revision": "1248",
+      "chromium_archive_sha256": "c3e50596aef52c58f8fda3c6b3411c33d34c88b177b3ed1c2243359fd3b8ba20",
+      "font_sha256": "dce08bd4fd91aa8aa76ed8fea4b694c2dfb8550f67871e326843212ddbeb88b4",
+      "command": "node scripts/browser-acceptance.mjs --binary <compiled-amd64> --evidence <synthetic-output>",
+      "setup_verification": "Exact npm packages installed; pinned official Chromium archive and CJK font/license hashes verified; real Chromium launch and CJK glyph selection passed.",
+      "system_dependencies": "Ubuntu24.04 browser libraries and Poppler; actual Poppler versions recorded in acceptance evidence, not represented as fully locked system packages."
     }
   },
   "verified_complete_at": "2026-10-27 09:34:53+08:00",

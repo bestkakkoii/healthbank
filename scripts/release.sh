@@ -33,6 +33,7 @@ release_documents=(
   docs/provider-data.md
   docs/provider-documents.md
   docs/data-workspace.zh-TW.md
+  docs/browser-acceptance.md
   docs/verification.zh-TW.md
   docs/quality-audit.zh-TW.md
   docs/deep-audit.zh-TW.md

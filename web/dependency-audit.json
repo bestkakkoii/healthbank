@@ -5,17 +5,18 @@
   "timezone": "Asia/Taipei",
   "checked_at_taipei": "2026-10-27 09:34:53+08:00",
   "node_version": "26.12.1",
-  "package_lock_sha256": "ef7de992ab1a8df5f5f70ca9997a4338c5fcc183c6e1a2c9f7c94e050179101c",
-  "scope": "Every installed dependency instance from package-lock.json; the project root and two linked source-directory definitions are not double-counted.",
+  "package_lock_sha256": "c90cbc1a8af004195745b3296a53ab3c759c904b3e8fd83b8f7e5a91fc01096e",
+  "scope": "Every installed dependency instance from package-lock.json, with targeted refreshes listed separately. The original checked_at and existing registry comparisons remain the historical full-registry audit; adding verified test tools is not a new full-graph latest-version audit. The project root and linked source-directory definitions are not double-counted.",
   "comparison_policy": "Official registry metadata includes prereleases. Compatibility honors incoming upstream semver ranges and Node engines. Project exact pins are displayed but excluded as compatibility constraints, so they cannot hide an available upgrade. Source-built packages are compared by upstream commit, not registry version number.",
   "summary": {
-    "installed_instances": 145,
-    "unique_package_names": 141,
+    "installed_instances": 147,
+    "unique_package_names": 143,
     "browser_runtime_instances": 3,
-    "build_lint_test_instances": 142,
+    "build_lint_test_instances": 144,
     "statuses": {
-      "latest-compatible": 55,
+      "latest-compatible": 56,
       "latest-published": 82,
+      "verified-official-stable": 1,
       "verified-upstream-source": 8
     }
   },
@@ -4118,6 +4119,71 @@
       "retained_reason": "Selected version is the highest published registry version, including prereleases, at the audit snapshot."
     },
     {
+      "path": "node_modules/playwright",
+      "name": "playwright",
+      "version": "1.64.1",
+      "direct": true,
+      "role": "build-lint-test-only",
+      "resolved": "https://registry.npmjs.org/playwright/-/playwright-1.64.1.tgz",
+      "integrity": "sha512-HCrVhHr5QQuwYoswEUGTb7gGp522yflbv/ST8nF4sFWGuLjQCt17Q/EubpGGSNKYn1tsTCPZxqHhHCfVURu7UA==",
+      "license": "Apache-2.0",
+      "registry_url": "https://registry.npmjs.org/playwright",
+      "latest_stable_tag": "1.64.1",
+      "latest_published_version": "1.65.0-alpha-2026-10-28",
+      "latest_compatible_version": "1.65.0-alpha-2026-10-28",
+      "current_satisfies_upstream_ranges": true,
+      "upstream_repository": "https://github.com/microsoft/playwright",
+      "upstream_commit": "cfe490d941f992655948eee8fd4fd94e1c4234bf",
+      "incoming_requirements": [
+        {
+          "parent": "project",
+          "parent_version": "1.0.3-rc.10",
+          "dependency_kind": "devDependencies",
+          "range": "1.64.1"
+        }
+      ],
+      "blockers_for_latest_published": [],
+      "status": "verified-official-stable",
+      "retained_reason": "The verified current stable release and its exact supported Chromium revision form the tested CI baseline. The newer daily alpha is disclosed, not hidden by the project exact pin; adopting it would require a new browser/font/PDF baseline.",
+      "checked_at": "2026-10-28T15:41:12+08:00"
+    },
+    {
+      "path": "node_modules/playwright-core",
+      "name": "playwright-core",
+      "version": "1.64.1",
+      "direct": false,
+      "role": "build-lint-test-only",
+      "resolved": "https://registry.npmjs.org/playwright-core/-/playwright-core-1.64.1.tgz",
+      "integrity": "sha512-BC4s8y6SEVA6Q1rSxZTto8hI1KUI3xXlHGZgvGqP4IqPdI/a6FX9H29IDNz7vKo9l21b6LfYosScPL6M3xxyDQ==",
+      "license": "Apache-2.0",
+      "registry_url": "https://registry.npmjs.org/playwright-core",
+      "latest_stable_tag": "1.64.1",
+      "latest_published_version": "1.65.0-alpha-2026-10-28",
+      "latest_compatible_version": "1.64.1",
+      "current_satisfies_upstream_ranges": true,
+      "upstream_repository": "https://github.com/microsoft/playwright",
+      "upstream_commit": "cfe490d941f992655948eee8fd4fd94e1c4234bf",
+      "incoming_requirements": [
+        {
+          "parent": "node_modules/playwright",
+          "parent_version": "1.64.1",
+          "dependency_kind": "dependencies",
+          "range": "1.64.1"
+        }
+      ],
+      "blockers_for_latest_published": [
+        {
+          "parent": "node_modules/playwright",
+          "parent_version": "1.64.1",
+          "dependency_kind": "dependencies",
+          "range": "1.64.1"
+        }
+      ],
+      "status": "latest-compatible",
+      "retained_reason": "Playwright 1.64.1 requires playwright-core exactly 1.64.1; substituting an alpha violates that upstream runtime requirement.",
+      "checked_at": "2026-10-28T15:41:12+08:00"
+    },
+    {
       "path": "node_modules/prelude-ls",
       "name": "prelude-ls",
       "version": "1.2.1",
@@ -4257,7 +4323,7 @@
       "latest_compatible_version": null,
       "current_satisfies_upstream_ranges": true,
       "upstream_repository": "https://github.com/facebook/react",
-      "upstream_commit": "fd51cb10dd154aee73e4e7948005c02968651c3d",
+      "upstream_commit": "e9df86ca6991b779ee50bc744ad8bbdeefa9bae6",
       "incoming_requirements": [
         {
           "parent": "project",
@@ -4274,7 +4340,15 @@
       ],
       "blockers_for_latest_published": [],
       "status": "verified-upstream-source",
-      "retained_reason": "Current official source commit is pinned; registry version labels cannot order this source snapshot."
+      "retained_reason": "Current official source commit is pinned; registry version labels cannot order this source snapshot.",
+      "source_reconciliation": {
+        "checked_at": "2026-10-28T15:39:44+08:00",
+        "previous": {
+          "upstream_commit": "fd51cb10dd154aee73e4e7948005c02968651c3d",
+          "integrity": "sha512-6wQuFs+VF1dfWG3cfHVt/idb5DcHJPf5vLHpktv+bXtv4a1OHXQtmwUNRWSOMtjgMTuWYI8v37/QCvmnxPnzrQ=="
+        },
+        "scope": "Offline correction to the already selected runtime source and package integrity in current locks; original registry comparison date remains historical."
+      }
     },
     {
       "path": "node_modules/react-dom",
@@ -4283,14 +4357,14 @@
       "direct": true,
       "role": "browser-runtime",
       "resolved": "file:vendor/react-dom-main.tgz",
-      "integrity": "sha512-OnygMU3FZLAaEPiDuIAs+CJknlz244X79ftN+0RUgzxvWiCJpLWlB+ruVl/MQCA//FTjW8MFJqbIjStVgStmsw==",
+      "integrity": "sha512-zi/OSjuVrtc6ioefKm8kKg18TJnqo4WNNTNvMwhYT1AnUYAL/s47KlfpVtbPimZt6u8flkfX2f/CPKMlOYXXFw==",
       "registry_url": "https://registry.npmjs.org/react-dom",
       "latest_stable_tag": "19.3.1",
       "latest_published_version": "19.3.1",
       "latest_compatible_version": null,
       "current_satisfies_upstream_ranges": true,
       "upstream_repository": "https://github.com/facebook/react",
-      "upstream_commit": "fd51cb10dd154aee73e4e7948005c02968651c3d",
+      "upstream_commit": "e9df86ca6991b779ee50bc744ad8bbdeefa9bae6",
       "incoming_requirements": [
         {
           "parent": "project",
@@ -4301,7 +4375,15 @@
       ],
       "blockers_for_latest_published": [],
       "status": "verified-upstream-source",
-      "retained_reason": "Current official source commit is pinned; registry version labels cannot order this source snapshot."
+      "retained_reason": "Current official source commit is pinned; registry version labels cannot order this source snapshot.",
+      "source_reconciliation": {
+        "checked_at": "2026-10-28T15:39:44+08:00",
+        "previous": {
+          "upstream_commit": "fd51cb10dd154aee73e4e7948005c02968651c3d",
+          "integrity": "sha512-OnygMU3FZLAaEPiDuIAs+CJknlz244X79ftN+0RUgzxvWiCJpLWlB+ruVl/MQCA//FTjW8MFJqbIjStVgStmsw=="
+        },
+        "scope": "Offline correction to the already selected runtime source and package integrity in current locks; original registry comparison date remains historical."
+      }
     },
     {
       "path": "node_modules/scheduler",
@@ -4317,7 +4399,7 @@
       "latest_compatible_version": null,
       "current_satisfies_upstream_ranges": true,
       "upstream_repository": "https://github.com/facebook/react",
-      "upstream_commit": "fd51cb10dd154aee73e4e7948005c02968651c3d",
+      "upstream_commit": "e9df86ca6991b779ee50bc744ad8bbdeefa9bae6",
       "incoming_requirements": [
         {
           "parent": "project",
@@ -4334,7 +4416,15 @@
       ],
       "blockers_for_latest_published": [],
       "status": "verified-upstream-source",
-      "retained_reason": "Current official source commit is pinned; registry version labels cannot order this source snapshot."
+      "retained_reason": "Current official source commit is pinned; registry version labels cannot order this source snapshot.",
+      "source_reconciliation": {
+        "checked_at": "2026-10-28T15:39:44+08:00",
+        "previous": {
+          "upstream_commit": "fd51cb10dd154aee73e4e7948005c02968651c3d",
+          "integrity": "sha512-490Z4bfyVHmO61cgHY0dYQvwJTukdXro0W5nq9+FqAo3hOMA4eddaCG0gwXQkY415qKZ3Yfvq8VDTMpFdAtEdg=="
+        },
+        "scope": "Offline correction to the already selected runtime source and package integrity in current locks; original registry comparison date remains historical."
+      }
     },
     {
       "path": "node_modules/semver",
@@ -4941,6 +5031,20 @@
       ],
       "status": "latest-compatible",
       "retained_reason": "A newer published version is excluded by the listed upstream dependency/peer ranges or Node.js engine requirement."
+    }
+  ],
+  "targeted_refreshes": [
+    {
+      "checked_at": "2026-10-28T15:41:12+08:00",
+      "scope": "Two test-only browser packages added; all installed versions/integrities reconciled offline against the current package lock. React source-provenance labels and React DOM integrity corrected to the already pinned runtime refresh. No other registry metadata was refreshed.",
+      "packages": [
+        "playwright",
+        "playwright-core"
+      ],
+      "retained_daily_alpha": "1.65.0-alpha-2026-10-28",
+      "retention_policy": "Use the current official Playwright stable and its matching reviewed Chromium for reproducible browser/PDF acceptance; expose the newer daily alpha instead of calling stable the highest published version.",
+      "toolchain_file": "web/tests/browser/toolchain.json",
+      "package_lock_sha256": "c90cbc1a8af004195745b3296a53ab3c759c904b3e8fd83b8f7e5a91fc01096e"
     }
   ]
 }

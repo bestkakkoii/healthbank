@@ -1,6 +1,6 @@
 {
   "name": "@bestkakkoii/healthbank-web",
-  "version": "1.0.3-rc.9",
+  "version": "1.0.3-rc.10",
   "private": true,
   "type": "module",
   "license": "MIT",
@@ -22,6 +22,7 @@
     "eslint": "file:vendor/eslint-main.tgz",
     "eslint-plugin-react-hooks": "7.1.1-canary-fd51cb10-20261026",
     "globals": "17.13.0",
+    "playwright": "1.64.1",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.2-alpha.1"
   }

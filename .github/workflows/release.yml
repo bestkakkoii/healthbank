@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
       contents: write # Publishing candidate releases requires write access; checkout credentials are not persisted.
@@ -90,6 +90,8 @@ jobs:
         run: |
           python3 -W error scripts/test_release.py
           python3 -W error scripts/test_publish_release.py
+          python3 -W error scripts/test_provider_contracts.py
+          python3 -W error scripts/check_provider_contracts.py
       - name: Check npm dependency advisories
         run: npm --prefix web audit --audit-level=low
       - name: Verify Go code
@@ -121,6 +123,33 @@ jobs:
           bash scripts/release.sh "$version"
           cd dist/releases
           sha256sum -c SHA256SUMS
+      - name: Install pinned test-only browser and Chinese font
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends poppler-utils unzip curl
+          node scripts/browser-acceptance.mjs --setup --with-deps
+          pdftotext -v
+          pdfinfo -v
+      - name: Verify the packaged executable in a real browser
+        env:
+          ARCHIVE_PREFIX: ${{ steps.package.outputs.archive_prefix }}
+        run: |
+          set -euo pipefail
+          browser_release_dir="$(mktemp -d "$RUNNER_TEMP/healthbank-browser-release.XXXXXX")"
+          trap 'rm -rf "$browser_release_dir"' EXIT
+          tar -xzf "dist/releases/${ARCHIVE_PREFIX}_linux_amd64.tar.gz" -C "$browser_release_dir"
+          node scripts/browser-acceptance.mjs --binary "$browser_release_dir/healthbank" --evidence "$RUNNER_TEMP/healthbank-browser-evidence"
+      - name: Retain synthetic browser and PDF evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # main, verified 2026-10-27
+        with:
+          name: healthbank-synthetic-browser-release
+          path: |
+            ${{ runner.temp }}/healthbank-browser-evidence/summary.json
+            ${{ runner.temp }}/healthbank-browser-evidence/**/*.png
+            ${{ runner.temp }}/healthbank-browser-evidence/**/*.pdf
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Upload build artifacts for review
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # main, verified 2026-10-27
