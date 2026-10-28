@@ -297,6 +297,9 @@ func validatePackageInput(input *packageInput) error {
 		// This endpoint transports an already validated client dataset unchanged;
 		// it does not import it, infer ownership, or write it into SQL.
 	} else {
+		// JSON null denotes an absent embedded dataset. Do not retain its raw
+		// token: len(RawMessage("null")) must never claim an included ZIP member.
+		input.Dataset = nil
 		file := input.ExternalDataset
 		if file.Name != "healthbank.dataset.v2.json" || file.Size < 1 ||
 			file.Size > maxExternalDataset || !packageDigestPattern.MatchString(file.SHA256) {
@@ -460,6 +463,17 @@ func (p *acquisitionPackage) view() packageStatus {
 	return result
 }
 
+func (p *acquisitionPackage) activeView() (packageStatus, bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.retired {
+		return packageStatus{}, false
+	}
+	result := p.status
+	result.Files = append([]packageFileStatus{}, p.status.Files...)
+	return result, true
+}
+
 // Status/cancel never wait behind the long transfer's session gate. Both prove
 // the current cookie generation and CSRF token against immutable receipt data.
 func (a *App) lookupPackage(w http.ResponseWriter, r *http.Request, proof bool) *acquisitionPackage {
@@ -520,7 +534,12 @@ func (a *App) acquisitionPackageStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if p := a.lookupPackage(w, r, true); p != nil {
-		a.json(w, http.StatusOK, p.view())
+		view, active := p.activeView()
+		if !active {
+			a.fail(w, r, 404, "package_unavailable", "此資料包已清除，請核對已保存的檔案。")
+			return
+		}
+		a.json(w, http.StatusOK, view)
 	}
 }
 func (a *App) cancelAcquisitionPackage(w http.ResponseWriter, r *http.Request) {

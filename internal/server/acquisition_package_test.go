@@ -187,7 +187,7 @@ func TestAcquisitionPackageValidationAndGenerationIsolation(t *testing.T) {
 func TestAcquisitionPackageExternalDatasetAndResourceRejection(t *testing.T) {
 	app, browser, s := packageTestBrowser(t)
 	input := syntheticPackageInput()
-	input.Dataset = nil
+	input.Dataset = json.RawMessage("null")
 	input.ExternalDataset = &externalPackageDataset{Name: "healthbank.dataset.v2.json", Size: 80 << 20, SHA256: strings.Repeat("c", 64)}
 	created := decodeResponse[packageStatus](t, browser.jsonRequest(t, http.MethodPost, "/api/acquisition/packages", input), http.StatusCreated)
 	response := browser.request(http.MethodGet, "/api/acquisition/packages/download?id="+created.ID, nil, "", "")
@@ -219,6 +219,13 @@ func TestAcquisitionPackageExternalDatasetAndResourceRejection(t *testing.T) {
 	app.budget.mu.Unlock()
 	if retained != 4096 {
 		t.Fatal("rejected package reserved bytes or existing receipt accounting changed")
+	}
+	app.mu.Lock()
+	p := app.packages[created.ID]
+	app.mu.Unlock()
+	p.retire()
+	if _, active := p.activeView(); active {
+		t.Fatal("a removed receipt can publish cleared files with its old nonzero totals")
 	}
 }
 
