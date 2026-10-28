@@ -160,3 +160,10 @@ func DefinitelyAbove(raw, threshold string) bool {
 	c := p.span.low.Cmp(limit)
 	return c > 0 || (c == 0 && !p.span.lowInc)
 }
+
+// DefinitelyAtLeast checks the lower bound without rounding or inventing a point.
+func DefinitelyAtLeast(raw, threshold string) bool {
+	p := parseValue(raw)
+	limit, ok := decimal(threshold)
+	return ok && numericKind(p) && p.span.low != nil && p.span.low.Cmp(limit) >= 0
+}

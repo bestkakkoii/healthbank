@@ -2,7 +2,7 @@
 
 Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
-Evidence checked: **2026-10-27**. This file distinguishes implemented rc.6 features, externally blocked live acceptance, and future source-dependent coverage. See [the real-environment acceptance checklist](acceptance.zh-TW.md).
+Implementation status reviewed: **2026-10-28**. Public-source research dates and immutable evidence remain recorded in the protocol and clinical-reference documents. This file distinguishes implemented rc.7 features, external live acceptance, and future source-dependent coverage. See [the real-environment acceptance checklist](acceptance.zh-TW.md).
 The goal is to help people understand longitudinal observations and prepare useful
 questions for their clinicians. The application does not establish diagnoses or
 recommend unsupervised treatment experiments.
@@ -17,7 +17,7 @@ pseudonymous subject linkage, not medical observations. See the [README](../READ
 [connector verification boundary](nhi_protocol.md) for implemented behaviour.
 
 Additional category connectors and **Healthbank-format** JSON/XML imports are
-released in **v1.0.3-rc.6** from publicly observed SPA contracts
+available since **v1.0.3-rc.6** from publicly observed SPA contracts
 and synthetic fixtures. They are **not authenticated-live verified**; third-party
 NHI JSON/XML/PDF formats, official SDK integration and account completeness are
 not implemented. Public documentation alone is not authentication evidence.
@@ -32,10 +32,10 @@ portal, daily task system or automatic treatment recommender.
 | --- | --- | --- |
 | P0 | Actual historical coverage | Verify requested periods, default filters, source selectors, pagination and independent counts against authorized live records. Synthetic protocol fixtures are not live completeness evidence. |
 | P0 | Private-device login convenience | Multi-user opt-in remembered ID/card fields; password-manager-native form; manual CAPTCHA. Offline component/storage tests exist; real browser managers and devices still require verification. |
-| P0 | Practical age/sex comparison | Two immediate scenarios with sourced creatinine/ALP templates and guarded CKD-EPI; original values and flags immutable. Whole-table context bands and opt-in demographics setting sync are implemented in rc.6; source-bound interval coverage remains intentionally limited, not a universal age/sex catalogue. |
-| P1 | Same-period comparisons, coordinated charts and simple export | Exact differences plus measurement interval; preserve same-date duplicates, source methods and missing-data semantics. No arbitrary causal or danger score. |
-| P1 | Additional official numeric results | First inspect preventive/self-paid examinations for actual extra results. Verify every authenticated contract and source overlap before integration. |
-| P2 | Optional prescribing/encounter/report context | Show source records alongside a selected date; no claim that prescriptions prove actual intake. Public-SPA based, whitelisted read-only category connectors are implemented with strict response handling and synthetic tests; real-account acceptance remains pending. |
+| P0 | Practical age/sex comparison | Two immediate scenarios with sourced intervals and guarded CKD-EPI; original values and flags immutable. Whole-table context bands and opt-in demographics setting sync are implemented in rc.6; source-bound interval coverage remains intentionally limited, not a universal age/sex catalogue. |
+| P1 | Time-series continuity and portable Unicode export | Corrected same-day duplicate breaking, time/date-index x-axis modes, display of multiple source values, UTF-8 JSON (optional BOM), original source preservation and regression cases. No unobserved measurement, interpolation, arbitrary causal or danger score. |
+| P1 | Additional official numeric results | Preventive/self-paid source fields are readable without automatic laboratory-series merging. Verify authenticated units, specimen, source overlap and completeness before extending normalization. |
+| P2 | Optional prescribing/encounter/report context | Listed medications, repeat prescriptions, Western/Chinese/dental encounters, surgeries and inpatient records have bounded source-bound read-only list/detail support, with synthetic contract tests. Per-drug prescription-days charts are present; neither records nor charts establish ingestion, dispensing, adherence, outcomes or live authenticated completeness. |
 | Optional | Personal products or medication notes | An optional device-local list with explicit save/export/import/delete and interval matching is implemented; no daily entry or medical notes in server settings. |
 
 Scientific research supplies internal constants, formula coefficients, eligibility
@@ -43,7 +43,7 @@ and invalid-calculation guards. It does not justify a knowledgebase or fabricate
 five-level categories. Clinical rules, exact versions and provenance are separate
 from UI presentation. No runtime or toolkit upgrade authorizes a new medical rule.
 
-## Official data candidates
+## Official data coverage and remaining candidates
 
 Unless stated otherwise, the following facts come from the freshly retrieved
 [official usage guide][guide]. Its immutable bundle evidence is recorded in
@@ -53,16 +53,17 @@ guaranteed retention or an application-enforced cutoff.
 | Dataset | Documented origin/window | Connector status |
 | --- | --- | --- |
 | Other laboratory results | Institutional uploads; generally recent three years, with the detailed guide ending coverage two days before login. | Existing connector; authenticated completeness unverified. |
-| Outpatient visits, medication and chronic prescriptions | Institutional claims/card uploads; generally recent three years. | Candidate; contract unverified. |
-| Hospitalization and procedures | Institutional claims/card uploads from ROC 105 (2016). | Candidate; contract unverified. |
-| Imaging/pathology reports | Institutional uploads; generally recent three years. | Candidate; report access does not establish DICOM/image access. |
+| Outpatient visits, medication and chronic prescriptions | Institutional claims/card uploads; generally recent three years. | Implemented bounded list/detail support for medication, chronic prescriptions and Western/Chinese/dental encounters; synthetic contracts verified, authenticated completeness unverified. The observed chronic-prescription route has no date-search endpoint. |
+| Hospitalization and procedures | Institutional claims/card uploads from ROC 105 (2016). | Implemented bounded list/detail support; admission/discharge dates remain distinct from claim dates. Authenticated completeness unverified. |
+| Imaging/pathology reports | Institutional uploads; generally recent three years. | Implemented report index only; no report text, original image or DICOM retrieval. Authenticated coverage unverified. |
 | Discharge summaries | Downloads announced by MOHW in [2015][discharge]. | Historical existence confirmed; current route/window unverified. |
 | Allergies | Institutional entries from ROC 104 (2015), plus separately entered personal records. | Candidate; provenance must remain distinct. |
-| Adult preventive examinations | Health Promotion Administration; reporting lag and manual-entry omissions are documented. | Candidate; contract unverified. |
+| Adult preventive examinations | Health Promotion Administration; reporting lag and manual-entry omissions are documented. | Implemented retrieval of the recent two examinations exposed by the observed page; original fields and units remain separate from normalized laboratory series. |
 | Cancer screening | HPA results from ROC 105 (2016). | Candidate; contract unverified. |
 | Vaccination | CDC-supplied records. | Candidate; contract unverified. |
-| Physiological measurements, food/exercise and self-paid examinations | Personal entries; the mobile app also supports health-data upload. | Candidate; no browser-to-Apple-Health capability established. |
-| HTML/PDF/XML/JSON downloads | Official download service. | HTML/ZIP imports exist; other schemas require validation. |
+| Self-paid examinations | Personal or institutional entries; provenance depends on the supplied record. | Implemented list/detail retrieval; fields are not automatically merged into laboratory series. Authenticated coverage unverified. |
+| Physiological measurements, food/exercise | Personal entries; the mobile app also supports health-data upload. | Candidate; no general connector or browser-to-Apple-Health integration established. |
+| HTML/PDF/XML/JSON downloads | Official download service. | Validated HTML/ZIP and Healthbank's own versioned JSON/XML imports exist; arbitrary official JSON/XML/PDF schemas require validation. |
 
 An absent result means “not returned”, not “never performed”. The guide describes
 aggregated information rather than a formal medical record. Claims diagnoses must
@@ -89,14 +90,14 @@ floor is not evidence that the official service holds lifetime records.
 
 ## Storage and integration decisions
 
-Durable medical notes, medication history and archives cannot be stored as settings.
-Keep new observations session-only or user-exported unless an explicit, separate
-opt-in medical-data design establishes ownership, deletion, backup and access rules.
-Preserve the current configuration-only SQL contract until that decision changes.
+Server persistence remains configuration-only. Official medical observations remain
+transient; optional personal medication/product notes may be explicitly saved in
+browser storage or exported by the user. These device-local records never enter
+the server settings contract.
 
 For each additional connector, verify authentication scope, date defaults, source
 filters, pagination/count semantics, detail records, amendments and session expiry.
-Use sanitized fixtures and distinguish empty, unavailable and incomplete results.
+Use wholly synthetic fixtures and distinguish empty, unavailable and incomplete results.
 Do not attach an imported report to a verified identity merely because its text matches.
 
 The [official SDK application route][sdk] requires staged review and integration

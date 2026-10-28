@@ -1,4 +1,4 @@
-﻿# NHI connector protocol and verification boundary
+# NHI connector protocol and verification boundary
 
 Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
@@ -358,6 +358,61 @@ The tests exercise:
 - Four API metadata/logout cases and eleven count-diagnostic validation cases
   in `internal/server/report_metadata_test.go`.
 
+## Medical categories and detail references (rc.7)
+
+On 2026-10-28 (Asia/Taipei), credentialless retrieval of the current public
+application manifest and fourteen medical list/detail bundles confirmed the
+source contracts below. Only inert public JavaScript was inspected; no login,
+patient data or hidden authenticated route was accessed. Each bundle is available
+under `https://myhealthbank.nhi.gov.tw/IHKE3000/js/` with the filename recorded below.
+
+| Application category | Source module / detail route | Date and field boundary |
+| --- | --- | --- |
+| Medication | IHKE3306S01 / IHKE3306S02 | `s_type=A` means all types. Preserve original quantities, days and `act` pharmacology classification. |
+| Chronic prescriptions | IHKE3307S01 / IHKE3306S02 | The observed list has no date-search endpoint; it cannot establish all-history coverage. |
+| Western encounters | IHKE3303S01 / ihke3303s02 | Keep medicines, non-medication orders and examination orders as distinct source sections. |
+| Chinese encounters | IHKE3304S01 / ihke3303s02 | Uses the observed shared detail route; do not infer herbal ingredients or dose equivalence. |
+| Dental encounters | IHKE3305S01 / ihke3305s02 | Keep medicine orders and non-medication/tooth-position fields distinct. |
+| Procedures | IHKE3308S01 / IHKE3308S02 | Use the original procedure execution date; no fallback to encounter date when absent. |
+| Hospitalization | IHKE3309S01 / IHKE3309S02 | `in_DATE`/`out_DATE` are admission/discharge, `appl_S_DATE`/`appl_E_DATE` are claim dates, and item execution dates remain separate. |
+
+The medicine/chronic detail view identifies `func_DATE` as dispensing only when
+`type_name_isr` is the boolean true. `cure_E_DATE` is the separately displayed visit
+date, not a medication stop date. Hospital orders without known quantity/day
+fields do not derive these values from their execution interval. Prescribing,
+dispensing and actual administration are separate facts.
+
+Lists preserve duplicates and replace their transient detail-reference map only
+on success. Random 48-character detail tokens are bound to the current connector
+session and category; raw upstream row identifiers are not accepted from the
+browser. Authentication reset, requery and expiry retire references. Both header
+and order entries count toward the response limit. An invalid top-level null,
+wrong returned row identity, unsupported detail category or oversized result fails
+explicitly rather than being reported as a complete empty history.
+
+The UI requests at most 24 detail records per explicit batch, sequentially, with
+cancellation. Partial successes remain visible on transient failures; HTTP 401
+clears the cached medical data and invokes the application-wide session-expiry
+handler. Neither source-contract tests nor a completed batch prove account
+completeness. All automated medical fixtures are wholly synthetic.
+
+| Public bundle | SHA-256 |
+| --- | --- |
+| `IHKE3303S01.3d574db2.js` | `7a0eac5049c1d347f3569611a305947c872f2cca89833358295f1d476eca4073` |
+| `IHKE3303S02.07d29ff4.js` | `9e6bdb486644362840664f0d35fb4b921b107ef149b84bbc8ed3c80e365e1048` |
+| `IHKE3304S01.7582cdc3.js` | `642a7e523f62431744563816a1d66bc5ec87f1de1f409e01550681991f38dfc0` |
+| `IHKE3304S02.4ead7523.js` | `dea2113e9b55c9456103379c31a6eeedf3e16925bd575a397f6d018596a141c8` |
+| `IHKE3305S01.1508dc2e.js` | `69d136daf309f60c86ad525cbdb487b0aa4a039497e43768a6a01d9b0d911689` |
+| `IHKE3305S02.ff9f2963.js` | `cba59ffa627aa81c80f27ad3ba6ead5c23453bd75fbcd6ba7892fb83edbc8136` |
+| `IHKE3306S01.88c16693.js` | `ef62d6a7f5ae6a62a97f31481c65bc6e7d94c187a4e33ef55ad481b9c38739ef` |
+| `IHKE3306S02.48917477.js` | `f37ebe84b5b907320af934e8fe09b1f4bb4a0446a8ed7dfa8bfc979e2fc93efe` |
+| `IHKE3307S01.73c5913c.js` | `1006181e144a523e0c05b76ecadce0d81d970e0e063762117d424ec384d5d4c4` |
+| `IHKE3307S02.d141e2ab.js` | `16e5f7fa031c43deec5685a5b73b56bb169a636ae6f6ed115d86684e94162b1a` |
+| `IHKE3308S01.8e1f92e5.js` | `9dea9913968f58c9d4fa192cf32227561fde71bceba843de23e6673d79b5043f` |
+| `IHKE3308S02.daccc485.js` | `1e093fa6d4465dd71fa34502117e0c8e8ad5695bfa0822d0774eb80f38f1861e` |
+| `IHKE3309S01.f158f613.js` | `e5e9a713ffd077c592075bb77032f43fa7fb03a68723b1dd9f4c58343cfeaabd` |
+| `IHKE3309S02.deb370e8.js` | `f09984c1c3f46a0dc3eecf58163f95718295abd0af7d6fea74665b3df51047d0` |
+
 ## Application dependency errors (v1.0.2)
 
 The application maps official dependency failures to HTTP 424 with safe
@@ -424,7 +479,9 @@ contract or new permission was submitted as part of this release.
 NHI's [public feature timeline](https://www.nhi.gov.tw/ch/lp-4142-1.html)
 lists HTML, PDF, XML and JSON downloads. This does not establish that every
 official export matches the supplied saved-page structure: bulk HTML requires
-its own format validation, and JSON/XML import is not implemented here.
+its own format validation. Arbitrary official NHI JSON/XML schemas are not
+supported. Healthbank's own versioned JSON/XML portable laboratory-report format
+is implemented separately.
 
 Copying a visitor's User-Agent would change one header; the Go connection
 would still originate from the server, use its transport and maintain its own

@@ -22,6 +22,10 @@ type SupplementField struct {
 	Unit  string `json:"unit,omitempty"`
 }
 type SupplementEntry struct {
+	Key         string            `json:"key,omitempty"`
+	Kind        string            `json:"kind,omitempty"`
+	EndDate     string            `json:"end_date,omitempty"`
+	Medicine    *MedicineOrder    `json:"medicine,omitempty"`
 	Date        string            `json:"date"`
 	Institution string            `json:"institution"`
 	Title       string            `json:"title"`
@@ -157,6 +161,12 @@ func (s *Session) supplementRequest(ctx context.Context, method, path string, pa
 		return nil, err
 	}
 	defer clear(body)
+	// A top-level null is not the observed list contract. Optional nested
+	// sections may be null, but an entire response must not silently erase a
+	// previously displayed list as though the official service returned [].
+	if bytes.Equal(bytes.TrimSpace(body), []byte("null")) {
+		return nil, s.annotateResponseError(changedError())
+	}
 	rows, err := supplementRows(body, root)
 	if err != nil {
 		s.invalidateOnAuthError(err)

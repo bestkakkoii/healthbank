@@ -8,21 +8,21 @@ Healthbank is a self-hosted Traditional Chinese laboratory-results viewer for ol
 
 Read README.md, docs/clinical-reference.zh-TW.md, docs/comparison-engine.md, docs/privacy.zh-TW.md, docs/nhi_protocol.md and docs/verification.zh-TW.md before changing behavior. Communicate user-facing work in Taiwan Traditional Chinese; technical collaboration may be English.
 
-Never persist medical observations, original identity/card numbers, passwords, official tokens/cookies, report HTML, or login histories. Only validated configuration documents and pseudonymous verified-subject keys belong in SQL. Keep the stable HMAC key outside SQL. Device-local ID/card memory is explicit and clearable. Imported files and demos never authenticate a person or attach to their persisted profile.
+Never persist medical observations, original identity/card numbers, passwords, official tokens/cookies, report HTML, or login histories on the server. Explicit device-local ID/card memory and optional personal medication/product notes are separate, clearable browser features; they never belong in server settings. User-requested downloads are managed by the user. Only validated configuration documents and pseudonymous verified-subject keys belong in SQL. Keep the stable HMAC key outside SQL. Imported files and demos never authenticate a person or attach to their persisted profile.
 
 ## Source layout and ownership
 
 - cmd/healthbank: CLI, startup, lifecycle, configuration migration.
 - internal/config: executable-relative paths, instance lock, random identity key, HMAC subject linkage.
-- internal/nhi: fixed-origin official HTTPS protocol. Manual CAPTCHA only; per-person memory-only cookie jars/JWT; safe error messages and bounded responses.
-- internal/lab: canonical mapping, exact rational intervals, clinical grading, HTML/ZIP importer, source catalog.
+- internal/nhi: fixed-origin official HTTPS protocol, bounded medical category lists/details and session-bound detail references. Manual CAPTCHA only; per-person memory-only cookie jars/JWT; safe error messages and bounded responses.
+- internal/lab: canonical mapping, exact rational intervals, clinical grading, HTML/ZIP and versioned Healthbank JSON/XML importers, source catalog.
 - internal/store: SQL dialects, schema migrations, optimistic revisions, portable settings snapshots.
 - internal/server: typed API, transient session/report memory, same-origin/CSRF checks.
 - internal/webui: embedded production assets.
 - web/src: accessible React/TypeScript interface. Native SVG charts avoid an extra charting runtime.
 - web/public: branded SVG/ICO favicon and Apple touch icon, copied into the embedded frontend by the build script.
 - scripts: source-pinned tool bootstrap, typed ESLint runner, strict frontend build/manifest verification, deterministic release archive packaging.
-- web/tests: focused synthetic data-model cases for CSV, lossless grouping, exact chart points, rule previews, and large-history chart domains.
+- web/tests: focused synthetic data-model cases for CSV/UTF-8 portable exports, lossless grouping, exact chart points, medication date/day gaps, lipid applicability, rule previews, and large-history chart domains.
 - web/dependency-audit.json: every resolved frontend dependency instance, incoming upstream ranges, latest compatible versions, and explicit retained constraints.
 
 ## Invariants
@@ -42,6 +42,8 @@ Never persist medical observations, original identity/card numbers, passwords, o
 12. All human-facing output retains bestkakkoii llc. copyright. Synthetic demonstrations must be conspicuously labelled.
 13. Comparison rows are inspection dates and columns are item identities. Annual mode groups dates without aggregating values; preserve every same-date observation within its own item cell. Print column batches must use the same lossless matrix. Compact portrait and short-landscape layouts scroll every column and annual label; desktop dates remain frozen. Scroll padding and page-arrow steps must reflect the actual CSS freezing state.
 14. Browser font preferences and in-app reading sizes up to 200% must retain usable controls and readable content. Keep overflow local to two-dimensional tables/charts, protect focus highlights, and do not equate desktop viewport checks with real iOS Dynamic Type or safe-area verification.
+15. Prescribing, confirmed dispensing, prescribed duration and actual medication use are different facts. Preserve source categories, classifications and dates; never infer daily dose or adherence from quantity/days. Unknown duration breaks comparisons. Preserve duplicate source events and expose every event through pagination.
+16. Lipid formula eligibility uses exact source decimals, matching item names/codes/units and explicit same-collection confirmation. TG above 800 mg/dL and known/suspected Type III exclude Sampson estimates; the optional result never overwrites institutional LDL. The original study and limitations are recorded in the clinical-reference document.
 
 ## Build and verification
 
@@ -65,13 +67,13 @@ The `diagnose-nhi` command uses the production connector without loading configu
 
 ## Release
 
-The source archive is explicitly allowlisted by scripts/release.py. Keep raw reports, upload directories, .tools, databases, identity.key, environment files and logs outside it. Build and verify the compiled frontend before Go embedding. Review and stage every new allowlisted source file; the archive selection is not limited to already tracked files. Use a clean commit and semantic version, set SOURCE_DATE_EPOCH to that commit timestamp, produce Linux amd64/arm64 tar.gz archives and SHA256SUMS, and include notices/licenses and deployment/clinical/verification documents. Local packaging does not authorize publication to GitHub or a user's server.
+The source archive is explicitly allowlisted by scripts/release.py, including RELEASE_CANDIDATE. Keep raw reports, upload directories, .tools, databases, identity.key, environment files and logs outside it. Binary archive staging rejects private/temporary paths and extracts at the root without a version directory. Build and verify the compiled frontend before Go embedding. Review and stage every new allowlisted source file; the archive selection is not limited to already tracked files. Use a clean commit and semantic version, set SOURCE_DATE_EPOCH to that commit timestamp, produce Linux amd64/arm64 tar.gz archives and SHA256SUMS, and include notices/licenses and deployment/clinical/verification documents. Run python3 -W error scripts/test_release.py. Local packaging does not authorize publication to GitHub or a user's server; preserve explicit session authorization when provided.
 
 ## Active maintenance policy
 
 User-facing reports use Taiwan Traditional Chinese. Agent delegation, coordination and
 handoffs use concise technical English; pass this policy to any newly delegated agent.
 Use the simplest sufficient representation and keep evidence/ownership explicit.
-No agent was delegated during this work batch. Static checks must stay strict; dynamic
+Record each maintenance batch's actual verification and ownership without carrying historical delegation claims into current status. Static checks must stay strict; dynamic
 tests should protect relevant risks, not inflate counts. Runtime exceptions and recovered
 failures must remain traceable without leaking credentials or health content.

@@ -4,9 +4,10 @@ package server
 import (
 	"context"
 	"errors"
-	"github.com/bestkakkoii/healthbank/internal/nhi"
 	"net/http"
 	"time"
+
+	"github.com/bestkakkoii/healthbank/internal/nhi"
 )
 
 func (a *App) supplementary(w http.ResponseWriter, r *http.Request, s *session) {
@@ -18,18 +19,24 @@ func (a *App) supplementary(w http.ResponseWriter, r *http.Request, s *session) 
 	defer cancel()
 	var report nhi.SupplementReport
 	var err error
+	category := r.URL.Query().Get("category")
 	if reference := r.URL.Query().Get("detail"); reference != "" {
 		if len(reference) != 48 {
-			a.fail(w, r, 400, "invalid_detail", "請由目前自費健檢清單開啟明細。")
+			a.fail(w, r, 400, "invalid_detail", "請由目前所選類別清單開啟明細。")
 			return
 		}
-		if r.URL.Query().Get("category") == "western" {
-			report, err = s.official.FetchWesternDetail(ctx, reference)
-		} else {
+		if nhi.MedicalCategory(category) {
+			report, err = s.official.FetchMedicalDetail(ctx, category, reference)
+		} else if category == "self_paid" {
 			report, err = s.official.FetchSelfPaidDetail(ctx, reference)
+		} else {
+			a.fail(w, r, 400, "invalid_detail", "此資料類別未提供明細，請由原清單開啟。")
+			return
 		}
+	} else if nhi.MedicalCategory(category) {
+		report, err = s.official.FetchMedical(ctx, category, nhi.Query{StartDate: r.URL.Query().Get("from"), EndDate: r.URL.Query().Get("to")})
 	} else {
-		report, err = s.official.FetchSupplement(ctx, r.URL.Query().Get("category"), nhi.Query{StartDate: r.URL.Query().Get("from"), EndDate: r.URL.Query().Get("to")})
+		report, err = s.official.FetchSupplement(ctx, category, nhi.Query{StartDate: r.URL.Query().Get("from"), EndDate: r.URL.Query().Get("to")})
 	}
 	if err != nil {
 		var upstream *nhi.Error

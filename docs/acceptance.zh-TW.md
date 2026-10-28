@@ -3,11 +3,12 @@
 Copyright © 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
 此文件只列出**開發者無法從 CI、合成資料或離線瀏覽器測試代替完成**的真實環境核對，並非另一份功能開發待辦清單。
+以下真實環境驗收不應阻擋已完成獨立開發、CI、編譯及封裝驗證的 RC 發布；它們不等於版本仍有可由 Agent 自主完成的開發待辦。
 
 ## 已交付
 
-- [v1.0.3-rc.6](https://github.com/bestkakkoii/healthbank/releases/tag/v1.0.3-rc.6) 已發布，包含 Linux amd64、arm64、來源包與 SHA256SUMS。
-- [發行流程](https://github.com/bestkakkoii/healthbank/actions/runs/40530418720) 與 [主線 CI](https://github.com/bestkakkoii/healthbank/actions/runs/40530418660) 成功。
+- 以 [GitHub Releases](https://github.com/bestkakkoii/healthbank/releases) 公開、具有 SHA256SUMS 的預覽版為準；使用者應核對目前下載的實際版號與發行說明。
+- 以所選發行標籤對應的 [CI／Release Actions](https://github.com/bestkakkoii/healthbank/actions) 是否成功判定測試與建置狀態；舊版 CI 結果不會驗證新版。
 - Linux 部署包**沒有多一層版本目錄**，解壓後直接看到 `healthbank`；前端內嵌，不需要在部署機安裝建置依賴。
 - 不含使用者的 `data/`、登入憑證、報告或個人健康資料。設定庫僅有假名化索引與有限配置，並非完全匿名；部署者仍需管理主機與第三方服務日誌。
 
@@ -15,8 +16,8 @@ Copyright © 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
 1. **部署：** 停止現有服務並自行備份**原本**的執行檔和 `data/`（包含 `identity.key`）；下載對應 CPU 的包與 SHA256SUMS，確認雜湊，解壓後只替換 `healthbank` 執行檔，保留原 `data/`。啟動後確認 `./healthbank --version` 與 `/api/health`。不要直接把整包覆蓋原目錄或對外公開 `data/`。
 2. **真實官方登入：** 使用者只在自己的網站、官方流程與瀏覽器輸入憑證及圖形驗證碼。確認第一次登入成功後，裝置記憶及瀏覽器密碼管理員能否如預期簡化後續操作。若官方登入失敗，只回報診斷階段／錯誤碼；不要提供密碼、卡號、Cookie、完整封包或驗證碼。
-3. **歷史完整性：** 在相同帳號與時間範圍，對照官方健康存摺的實際資料來源、筆數、最早與最晚日期，以及能否取得較舊年度。只要官方沒有提供可靠總數，就不能聲稱「全部終身紀錄」均已驗證。額外類別（用藥、健檢等）需對照實際官網明細，未回傳不代表沒有就診。
-4. **實體設備：** 用預計使用的手機／桌面瀏覽器檢查驗證碼、登入、切換帳號、年齡／性別情境、比較表橫向滑動、趨勢、CSV／JSON／XML 下載及列印。iPhone Safari 與原生密碼管理員行為必須在真實裝置驗收。
+3. **歷史完整性：** 在相同帳號與時間範圍，對照官方健康存摺的實際資料來源、筆數、最早與最晚日期，以及能否取得較舊年度。只要官方沒有提供可靠總數，就不能聲稱「全部終身紀錄」均已驗證。用藥、慢箋、西／中／牙醫就醫、手術、住院、成人／自費健檢及影像索引需對照實際官網明細，未回傳不代表沒有就診。慢箋目前沒有觀察到日期搜尋端點；影像索引不代表取得影像或報告全文。
+4. **實體設備：** 用預計使用的手機／桌面瀏覽器檢查驗證碼、登入、切換帳號、年齡／性別情境、比較表橫向滑動、趨勢、CSV／JSON／XML／SVG 下載及列印。iPhone Safari 與原生密碼管理員行為必須在真實裝置驗收。
 
 ## 回報缺陷時
 

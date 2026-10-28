@@ -93,15 +93,36 @@ class ReleaseArchiveTests(unittest.TestCase):
             base = Path(temporary)
             root = base / "source"
             write_fixture(root, "README.md", "synthetic readme\n")
+            write_fixture(root, "RELEASE_CANDIDATE", "v1.0.3-rc.7\n")
             write_fixture(root, "docs/example.md", "synthetic documentation\n")
             write_fixture(root, "data/settings.sqlite", "must stay private\n")
             write_fixture(root, "internal/identity.key", "must stay private\n")
+            write_fixture(root, "docs/.repair/transfer.json", "temporary work\n")
             destination = base / "source.tar.gz"
             package("source", root, destination, "healthbank_source")
             with tarfile.open(destination, "r:gz") as archive:
                 self.assertEqual(archive.getnames(), [
-                    "healthbank_source/README.md", "healthbank_source/docs/example.md",
+                    "healthbank_source/README.md", "healthbank_source/RELEASE_CANDIDATE",
+                    "healthbank_source/docs/example.md",
                 ])
+
+    def test_binary_rejects_private_and_temporary_inputs(self) -> None:
+        for name in ("data/settings.sqlite", "identity.key", ".env.production",
+                     "docs/report.db", "logs/server.log", ".repair/transfer.json"):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary:
+                base = Path(temporary)
+                root = base / "input"
+                write_fixture(root, "healthbank", "synthetic executable\n")
+                write_fixture(root, name, "synthetic forbidden content\n")
+                destination = base / "binary.tar.gz"
+                result = subprocess.run(
+                    [sys.executable, "-W", "error", str(SCRIPT), "binary", str(root),
+                     str(destination), str(EPOCH)],
+                    capture_output=True, text=True, check=False,
+                )
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("Private or temporary file", result.stderr)
+                self.assertFalse(destination.exists())
 
 
 if __name__ == "__main__":

@@ -5,11 +5,69 @@
 本文件按批次記錄實際執行的驗證；舊版結果不是新變更的驗收證據。部署目標與支援範圍見 README，
 工具及依賴來源集中在 `DEPENDENCIES.md`、`dependencies.lock.json`。各批次明列環境、命令、略過與阻礙。
 
-**最新交付狀態：** [v1.0.3-rc.6 已正式發布](https://github.com/bestkakkoii/healthbank/releases/tag/v1.0.3-rc.6)。
-[主線 CI](https://github.com/bestkakkoii/healthbank/actions/runs/40530418660) 與
-[發行流程](https://github.com/bestkakkoii/healthbank/actions/runs/40530418720) 均已成功。
+**發行與驗證狀態：** 每版是否真正公開，請核對 [Releases](https://github.com/bestkakkoii/healthbank/releases)；
+各版本的完整編譯、MySQL、競態與發行結果，請核對對應提交的 [Actions](https://github.com/bestkakkoii/healthbank/actions)。
+rc.6 的 [CI](https://github.com/bestkakkoii/healthbank/actions/runs/40530418660) 與 [Release](https://github.com/bestkakkoii/healthbank/actions/runs/40530418720) 均成功；這不等於 rc.7 已通過或已發布。
 真正無法用合成資料取代的外部驗收詳見 [交付驗收清單](acceptance.zh-TW.md)；未連入使用者主機，不代表正式站點已更新。
 
+
+## v1.0.3-rc.7 — 圖表／JSON／高 TG 與醫療紀錄回歸
+
+2026-10-28（臺灣時間），接續 `work/charts-medical-export` 既有提交，先核對遠端
+HEAD、既有 PR 與發行狀態；未從 main 重建或覆蓋工作分支。下列為本輪重新執行的結果，
+全部使用合成資料，沒有官方帳號、真實醫療報告或使用者 VPS。程式、測試、依賴與文件
+各階段獨立提交推送；最終發布仍以相同提交的 GitHub CI／Release 結果及實際下載為準。
+
+### 最終本機整合檢查
+
+| 檢查 | 實際結果與界限 |
+| --- | --- |
+| 嚴格前端 | 釘選 Node 26.12.1／npm 12.2.1；完整 typed ESLint 0 errors、0 warnings，未降低規則或新增抑制。嚴格原生 TypeScript、正式建置及來源／產物清單驗證通過。 |
+| 前端模型 | 40 項通過，0 失敗／略過；涵蓋同日多值、前段連線、密集日期、未知給藥日數斷點、民國／西元日期、完整藥品事件及 UTF-8/BOM。 |
+| 醫學邊界 | 原始十進位 TG 400／800 門檻、精確負 non-HDL 拒絕、三組獨立高精度 Sampson 係數向量、名稱／代碼／單位、同次採檢、Type III 排除及不合理估值拒絕通過。NCKU 肌酸酐來源方法重新查核為 Enzymatic method；未修改原院結果或 CKD-EPI 係數。 |
+| Go 完整與 race | `go test -count=1 -json ./...` 及完整 `-race` 各 329 個測試／子測試通過事件，0 失敗；各略過 1 個 `TestMySQLIntegration`，因本機未設定隔離 MySQL DSN。不能將略過稱為通過；CI／Release 另有 digest-pinned MySQL 服務。 |
+| Go 靜態與模組 | gofmt、`go vet ./...`、`go mod verify` 通過；使用釘選 `devel go1.28-41cb39b794bfe81144930746ccf72440a0382adb`，沒有偽造正式版本。 |
+| 相依掃描 | npm audit 0 已知漏洞。初次 govulncheck 發現 x/net 兩項匯入套件漏洞但無可達符號；針對更新至官方 master 同一提交的 v0.62.0 後，重新掃描沒有漏洞發現。開發版 Go 標準庫仍無法完整以正式語義版本比對；不宣稱整體零風險。 |
+| 封裝門檻 | 4 項封裝測試通過；驗證 amd64／arm64 根目錄平鋪、可執行權限、可重現壓縮、SHA256SUMS、保留既有合成 data／identity.key、來源版本設定及私密／暫存輸入拒絕。 |
+| 編譯 | Linux amd64（GOAMD64=v1）及 arm64（GOARM64=v8.0）、CGO_ENABLED=0 交叉編譯通過。正式發行包另由乾淨 GitHub 提交經完整 gate 重建。 |
+
+上述完整檢查在最後的 JSON/XML 匯入修正、來源方法標籤及 x/net 安全更新整合後重新執行。
+較早工作批次曾只完成 31 項模型測試，且本地 race 因逾時未完成；沒有把那次未完成結果列為通過。
+
+### 瀏覽器與實際 Go 應用
+
+使用官方 Chrome for Testing **156.0.8078.73** 的 Linux headless shell、實際 React 元件，
+並另啟動具有正式內嵌前端的 Go 驗收執行檔。全部資料為明示合成內容；桌面尺寸模擬不是實體 iPhone。
+
+| 操作 | 實際結果 |
+| --- | --- |
+| 真實下載與重新匯入 | 瀏覽器下載 UTF-8 JSON、BOM JSON、XML，經實際匯入對話框與 Go API 重新匯入；4 次請求均 HTTP 200、各保留 6 筆、其中同日 3 筆、中文院所／來源及原始 `>50` 不等式。修正對話框仍拒絕 JSON/XML 的實際缺陷。 |
+| CSV／SVG | 實際瀏覽器下載成功；核對 CSV UTF-8 BOM、SVG 中文及有限座標。未將不等式改為精確點。 |
+| 真實應用圖表 | 以應用自己的深色及 200% 字級控制，在 320×568、390×844、844×390、1280×900 下無整頁水平溢出；5 個精確點完整保留，重疊點可選取並開啟正確明細。 |
+| 藥品元件 | 4 種寬度 × 2 種字級 × 明暗模式共 16 組檢查通過；205 筆事件可經 3 頁全部到達，年份完整、未知日數不連線，橫向溢出只在可操作圖表區。 |
+| 補充資料生命週期 | 實際 React 元件搭配合成 API：清單／明細成功；HTTP 424 保留成功內容；HTTP 401 清除快取並呼叫全站失效處理；批次中途 401 清除先前部分結果；取消後的晚到回應不重新填入資料。 |
+| 瀏覽器診斷 | 已執行場景沒有瀏覽器程式錯誤，實際 Go 網頁沒有對外瀏覽器請求；驗收用 CJK 字型與瀏覽器工具沒有加入產品。 |
+
+本機瀏覽器驗收程式標示 `1.0.3-rc.7-qa`／`qa-uncommitted`，SHA-256 為
+`3c65164fcfb1c52f1eb384cd888adca34ca07873b8b29d2f57b59a9bd9db424c`，所測前端輸入雜湊
+`0cd193001732280184312d1373ded75fdd75b59b0bd0ba667db1980e603583d8`。
+它包含最後的對話框及來源方法修正，但早於隨後 x/net 的鎖定檔更新，不能冒充正式 Release 執行檔。
+鎖定檔變動後，舊前端清單正確拒絕驗證；最終整合重建與驗證後才進入封裝。
+
+第一次 npm 安裝曾因環境的非支援 `http-proxy` npm 設定出現警告；移除該錯誤環境設定後重新安裝與驗證無警告，
+沒有停用 ESLint 或其他診斷。原 Playwright 下載端傳回不可用 HTML，改由 Google 官方版本索引取得 Chrome；
+沒有把未執行的瀏覽器檢查當成通過，也沒有將驗收頁、瀏覽器或暫存研究資料加入產品。
+
+### 官方資料與發布界限
+
+十四份公開醫療清單／明細 bundle 已無憑證重新取得與核對；路徑、欄位語意及 SHA-256 見
+[官方協定](nhi_protocol.md)。七類主要醫療資料的合成測試覆蓋重複資料、明細綁定、日期、原始數量、
+藥理分類、空／錯誤回應、限量、逾時／登出與不快取。慢箋沒有觀察到日期搜尋；影像僅支援索引。
+
+最終 PR 必須通過完整 CI，包括真實隔離 MySQL、race、兩種 Linux 架構；主線 Release 工作流程會再次執行
+上述 gates，再產生三個壓縮包與 SHA256SUMS 並公開 RC。實際標籤、提交、CI 及下載校驗結果以本文件開頭的
+Releases／Actions 連結為準。真實官方登入／帳號完整性、實體 Safari、正式 VPS 與代理／CDN／OS 保存行為
+仍依 [實機驗收](acceptance.zh-TW.md) 處理；這些外部驗收不阻擋已驗證 RC 的獨立交付。
 
 ## v1.0.3-rc.6 已發行：情境連動／選配資料／可攜格式
 
