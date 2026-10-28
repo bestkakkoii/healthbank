@@ -5,6 +5,7 @@ import { acquireHealthData, MAX_DETAIL_REQUESTS_PER_RUN, type AcquisitionFailure
 import { emptyHealthData, healthDataEntryCount, type DataCategory, type HealthDataSnapshot } from './health-data';
 import { exportDataset, type DatasetProducer } from './health-dataset';
 import { downloadText } from './model';
+import { batchCollectionJSON, describeBatchDataset, newBatchCollection, summarizeBatch, updateBatchDescriptor, type BatchCollectionManifest } from './batch-collection';
 import { assertBatchAdvance, batchLaboratoryMatches, batchSummary, beginDateBatch, dateBatchStatus,
   missingBatchLaboratory, selectedDateCategories, splitDateBatches, stoppedDateBatch,
   type BatchPeriod, type BatchRange, type DateBatchPlan, type DateBatchSummary } from './date-batches';
@@ -32,6 +33,7 @@ export function AcquisitionBatches({ catalog, selectedCategories, includeLaborat
   const [to, setTo] = useState('');
   const [period, setPeriod] = useState<BatchPeriod>('year');
   const [state, setState] = useState<BatchState | null>(null);
+  const [collection, setCollection] = useState<BatchCollectionManifest | null>(null);
   const [batch, setBatch] = useState<HealthDataSnapshot>(emptyHealthData);
   const batchRef = useRef(batch);
   const [laboratory, setLaboratory] = useState<ReportResponse | null>(null);
@@ -125,6 +127,7 @@ export function AcquisitionBatches({ catalog, selectedCategories, includeLaborat
       const first = plan.ranges[0]; if (!first) return;
       const next = beginDateBatch(first, plan.categories);
       const nextState = { plan, index: 0, summaries: [] };
+      setCollection(newBatchCollection(plan, period));
       onBegin(plan.categories, plan.includeLaboratory);
       laboratoryRef.current = null; setLaboratory(null);
       publish(next, plan); setState(nextState); onActiveChange(true);
@@ -140,7 +143,11 @@ export function AcquisitionBatches({ catalog, selectedCategories, includeLaborat
       const content = await exportDataset(laboratory ?? missingBatchLaboratory(batch.query, state.plan.includeLaboratory),
         batch, [], catalog.filter(item => state.plan.categories.includes(item.id)), false, producer);
       if (generation !== lifecycle.current) return;
-      downloadText(content, `healthbank-batch-${batch.query.from}_${batch.query.to}.json`, 'application/json;charset=utf-8');
+      const name = `healthbank-batch-${batch.query.from}_${batch.query.to}.json`;
+      const descriptor = await describeBatchDataset(content, name, summarizeBatch(batch, state.plan, laboratory));
+      if (generation !== lifecycle.current) return;
+      setCollection(current => current ? updateBatchDescriptor(current, state.index + 1, descriptor) : null);
+      downloadText(content, name, 'application/json;charset=utf-8');
       setExported(true); setSavedAcknowledged(false);
       setMessage('已啟動本批資料包下載。請確認檔案已保存後勾選；瀏覽器無法代您確認磁碟上的檔案。');
     } catch (failure) { if (generation === lifecycle.current) setError(readableError(failure)); }
@@ -169,6 +176,23 @@ export function AcquisitionBatches({ catalog, selectedCategories, includeLaborat
     onActiveChange(false); setMessage('分批計畫已結束；目前這批已取得資料仍留在工作區，先前批次由您下載的檔案保存。');
   }
 
+  function acknowledgeSaved(value: boolean) {
+    setSavedAcknowledged(value);
+    if (!state) return;
+    setCollection(current => {
+      const descriptor = current?.batches[state.index]?.dataset;
+      return current && descriptor ? updateBatchDescriptor(current, state.index + 1, { ...descriptor, saved_acknowledged: value }) : current;
+    });
+  }
+
+  function saveCollection() {
+    if (!collection) return;
+    try {
+      downloadText(batchCollectionJSON(collection), `healthbank-batches-${collection.collection_id}-index.json`, 'application/json;charset=utf-8');
+      setMessage('已啟動分批索引下載。請與各批原始 JSON 一起保存；索引保留查詢期間、未匯出批次與完整性狀態，不能代替資料檔案。');
+    } catch (failure) { setError(readableError(failure)); }
+  }
+
   return <details className="health-data-management health-data-batches" open={state !== null || undefined}>
     <summary>按年／按月分批取得與保存</summary>
     <p className="helper-text">每批處理所選來源的清單及明細，只保留目前這批與先前批次的筆數摘要。來源沒有獨立總數時，完成本批仍不代表終身資料完整；重複原始紀錄不合併。</p>
@@ -193,11 +217,16 @@ export function AcquisitionBatches({ catalog, selectedCategories, includeLaborat
         <button type="button" className="button secondary" disabled={disabled || busy || saving} onClick={() => { void save(); }}>{saving ? '產生資料包中…' : '匯出本批資料包 v2'}</button>
         <button type="button" className="button quiet" disabled={busy || saving} onClick={finish}>結束分批計畫</button>
       </div>
-      <label className="checkbox-label"><input type="checkbox" checked={savedAcknowledged} disabled={!exported || busy || saving} onChange={event => setSavedAcknowledged(event.target.checked)} />我已確認本批資料包已保存</label>
+      <label className="checkbox-label"><input type="checkbox" checked={savedAcknowledged} disabled={!exported || busy || saving} onChange={event => acknowledgeSaved(event.target.checked)} />我已確認本批資料包已保存</label>
       <button type="button" className="button primary" disabled={disabled || busy || saving || !status?.acquired || !exported || !savedAcknowledged} onClick={advance}>{finalBatch ? '完成分批計畫' : '開始下一批並釋放這批資料'}</button>
       <p className="helper-text">資料包只包含本批成功取得的清單、明細與本批檢驗；未取得項目保留狀態。附件須另外保存，本流程不自動備份檔案。若未完成項目無法取得，可保存部分結果後結束計畫，改用較小期間。</p>
       {state.summaries.length > 0 && <details><summary>已確認保存的批次摘要（{state.summaries.length}）</summary><ul>{state.summaries.map(summary => <li key={summary.from}>{summary.from} 至 {summary.to}：{summary.sources} 個來源、{summary.entries} 筆來源紀錄、{summary.laboratory} 筆檢驗。</li>)}</ul></details>}
     </>}
+    {collection && <div className="batch-collection-export">
+      <p>分批保存索引：{collection.query.from} 至 {collection.query.to}；{collection.batches.filter(item => item.dataset).length}／{collection.batches.length} 批曾匯出，{collection.batches.filter(item => item.dataset?.saved_acknowledged).length} 批已確認保存。</p>
+      <button type="button" className="button secondary" disabled={busy || saving} onClick={saveCollection}>下載分批保存索引</button>
+      <p className="helper-text">請將這份索引與各批 JSON 一起保留。日後可在「保存／還原資料包」選取索引及各批檔案，逐批切換原始資料；不跨批去重，也不把不同查詢的完整性混在一起。每批重新匯出會更新該批索引，請重新保存索引。</p>
+    </div>}
     {message && <p role="status">{message}</p>}
     {error && <p className="error-text" role="alert">{error}</p>}
   </details>;

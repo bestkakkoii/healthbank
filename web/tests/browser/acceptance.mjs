@@ -414,6 +414,8 @@ export async function runBrowserAcceptance({ binary, evidenceDir }) {
     phase = 'explicit synthetic full-acquisition controller fixture';
     const { runFullAcquisitionAcceptance } = await import('./full-acquisition-acceptance.mjs');
     record('isolated synthetic full acquisition and original-file saving', await runFullAcquisitionAcceptance({ createContext, baseURL, evidenceDir, fixture, importLaboratory, session }));
+    const { runCollectionRestoreAcceptance } = await import('./collection-restore-acceptance.mjs');
+    record('batch and ZIP restoration with sticky mobile comparison dates', await runCollectionRestoreAcceptance({ createContext, baseURL, evidenceDir, fixture, importLaboratory, session }));
     assert.equal(result.page_errors, 0, 'No unhandled browser errors are allowed.');
     assert.deepEqual(result.prohibited_requests, [], 'No official acquisition/login or external browser requests are allowed.');
     result.passed = true;

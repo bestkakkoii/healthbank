@@ -17,6 +17,7 @@ export const UNKNOWN_DATASET_PRODUCER: DatasetProducer = { application: 'Healthb
   clinical_catalog_id: 'unknown', clinical_catalog_revision: 'unknown', clinical_evidence_revision: 'unknown' };
 export const MAX_DATASET_BYTES = 128 * 1024 * 1024;
 export const MAX_ARCHIVE_ATTACHMENT_BYTES = 32 * 1024 * 1024;
+export const MAX_ARCHIVE_ATTACHMENTS = 10_000;
 const MAX_ENTRIES = 250_000;
 const MAX_CATEGORIES = 200;
 const MAX_FIELD_BYTES = 65_536;
@@ -279,16 +280,33 @@ async function sha256(bytes: Uint8Array): Promise<string> {
   return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
-function validateAttachment(bytes: Uint8Array, contentType: string): void {
-  const starts = (...prefix: number[]) => prefix.every((byte, index) => bytes[index] === byte);
-  if (contentType === 'application/pdf' && !starts(0x25, 0x50, 0x44, 0x46, 0x2d)) return invalid();
-  if (contentType === 'application/zip' && !(starts(0x50, 0x4b, 3, 4) || starts(0x50, 0x4b, 5, 6))) return invalid();
-  if (contentType === 'image/jpeg' && !starts(0xff, 0xd8, 0xff)) return invalid();
-  if (contentType === 'image/png' && !starts(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return invalid();
-  if (contentType === 'text/plain' || contentType === 'text/calendar') {
-    try { new TextDecoder('utf-8', { fatal: true }).decode(bytes); }
-    catch { return invalid(); }
+export const archiveAttachmentMIME = (value: unknown): string => mime(value);
+export class ArchiveAttachmentValidator {
+  private readonly prefix = new Uint8Array(8);
+  private prefixLength = 0;
+  private readonly decoder: TextDecoder | null;
+  private readonly contentType: string;
+  constructor(contentType: string) {
+    this.contentType = mime(contentType);
+    this.decoder = ['text/plain', 'text/calendar'].includes(this.contentType) ? new TextDecoder('utf-8', { fatal: true }) : null;
   }
+  update(bytes: Uint8Array): void {
+    const count = Math.min(this.prefix.length - this.prefixLength, bytes.length);
+    this.prefix.set(bytes.subarray(0, count), this.prefixLength); this.prefixLength += count;
+    // Streaming validation also handles a UTF-8 sequence split across slices.
+    this.decoder?.decode(bytes, { stream: true });
+  }
+  finish(): void {
+    this.decoder?.decode();
+    const starts = (...prefix: number[]) => prefix.length <= this.prefixLength && prefix.every((byte, index) => this.prefix[index] === byte);
+    if (this.contentType === 'application/pdf' && !starts(0x25, 0x50, 0x44, 0x46, 0x2d)) return invalid();
+    if (this.contentType === 'application/zip' && !(starts(0x50, 0x4b, 3, 4) || starts(0x50, 0x4b, 5, 6))) return invalid();
+    if (this.contentType === 'image/jpeg' && !starts(0xff, 0xd8, 0xff)) return invalid();
+    if (this.contentType === 'image/png' && !starts(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return invalid();
+  }
+}
+function validateAttachment(bytes: Uint8Array, contentType: string): void {
+  const validator = new ArchiveAttachmentValidator(contentType); validator.update(bytes); validator.finish();
 }
 
 function portableSupplementReport(category: string, source: SupplementReport,
@@ -343,7 +361,7 @@ export interface DatasetPackageProjection { content: string; files: DatasetPacka
 
 async function projectDataset(report: ReportResponse, data: HealthDataSnapshot, files: DownloadedAttachment[], categories: DataCategory[], bom = false,
   producedBy: DatasetProducer = UNKNOWN_DATASET_PRODUCER, importedFrom?: DatasetProducer): Promise<DatasetPackageProjection> {
-  if (files.length > 10_000) return invalid();
+  if (files.length > MAX_ARCHIVE_ATTACHMENTS) return invalid();
   const labRecords = laboratoryRows(portableRows(report.records));
   // This is the exact body sent to the laboratory importer on restore. Check
   // the same bound on both paths before producing an un-restorable archive.
@@ -450,7 +468,7 @@ export async function importDataset(bytes: Uint8Array): Promise<ImportedDataset>
   }
   let total = 0;
   const seen = new Set<string>();
-  for (const item of list(v['attachments'], 10_000)) {
+  for (const item of list(v['attachments'], MAX_ARCHIVE_ATTACHMENTS)) {
     const file = object(item, ['category', 'id', 'name', 'content_type', 'size', 'sha256', 'data_base64']);
     const id = reference(file['id']), category = categoryID(file['category']);
     const name = filename(file['name']), contentType = mime(file['content_type']);

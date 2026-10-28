@@ -521,7 +521,7 @@ export function FullAcquisition({ catalog, selectedCategories, includeLaboratory
           <a className={`button primary${downloadDisabled ? ' disabled' : ''}`} href={`/api/acquisition/packages/download?${new URLSearchParams({ id: packageInfo.id })}`}
             download={partName(plan.id, part)} aria-disabled={downloadDisabled}
             onClick={event => { if (controller.current || downloadDisabled) event.preventDefault(); else void watchDownload(); }}>下載第 {part}／{bundle.groups.length} 部分 ZIP</a>
-          <p className="helper-text">原始下載由瀏覽器管理。伺服器傳輸完成不等於裝置已保存；請查看瀏覽器的下載結果後確認。資料包還原可使用 ZIP 中的 dataset.v2.json，或另存的完整資料 JSON。</p>
+          <p className="helper-text">原始下載由瀏覽器管理。伺服器傳輸完成不等於裝置已保存；請查看瀏覽器的下載結果後確認。可在「保存／還原資料包」直接選取 ZIP 還原，也可先解壓縮取出 healthbank.dataset.v2.json，或另存的完整資料 JSON。</p>
           {receipt && <p role="status">檔案結果：{receipt.completed} 成功、{receipt.failed} 失敗／共 {receipt.total}；{Math.ceil(receipt.bytes / 1024 / 1024)} MiB 已傳輸。</p>}
           {!busy && !receipt?.package_sha256 && <button type="button" className="button secondary" onClick={() => { void watchDownload(); }}>重新核對下載狀態</button>}
           <label className="checkbox-label"><input type="checkbox" checked={savedAcknowledged} disabled={busy || !receipt?.package_sha256} onChange={event => setSavedAcknowledged(event.target.checked)} />我已確認第 {part} 部分 ZIP 已保存</label>

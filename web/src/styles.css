@@ -2887,18 +2887,29 @@
 @layer responsive {
   @media (max-width: 780px), (max-height: 32rem) and (max-width: 70rem) {
     .comparison-scroll {
-      /* Compact layouts give the entire viewport to scrolling items, including the date. */
+      /* Keep the collection date visible while scrolling measurements on phones. */
       --comparison-date-width: clamp(84px, 26vw, 96px);
+      --comparison-item-width: min(13rem, max(96px, calc(var(--comparison-visible-width, 100vw) - var(--comparison-date-width) - 2px)));
       scroll-padding: 1rem;
+      scroll-padding-inline-start: calc(var(--comparison-date-width) + 1rem);
     }
     .comparison-screen .comparison-table .date-column {
-      position: static;
-      left: auto;
-      z-index: auto;
+      position: sticky;
+      left: 0;
+      z-index: 2;
       width: var(--comparison-date-width);
       min-width: var(--comparison-date-width);
       max-width: var(--comparison-date-width);
       padding-inline: 4px;
+    }
+    .comparison-screen .comparison-table thead .date-column {
+      z-index: 4;
+    }
+    .comparison-screen .comparison-table td,
+    .comparison-screen .comparison-table thead th:not(.date-column) {
+      min-width: var(--comparison-item-width);
+      width: var(--comparison-item-width);
+      max-width: var(--comparison-item-width);
     }
     .comparison-screen .comparison-year-title {
       position: static;

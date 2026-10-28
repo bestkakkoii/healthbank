@@ -31,6 +31,7 @@ import { AnalysisExport, MultiIndicator, LipidCalculation, PortableReportExport 
 import { PersonalRecords } from './PersonalRecords';
 import { SupplementaryData, CoverageSummary } from './SupplementaryData';
 import { DatasetTools } from './DatasetTools';
+import type { CollectionRestoration } from './collection-restoration';
 import { PrintReport } from './PrintReport';
 import { NativePrintReport } from './NativePrintReport';
 import { laboratoryCoverageStatus, laboratoryDateSummary } from './coverage-status';
@@ -167,6 +168,7 @@ export default function App() {
   const [importedDataCatalog, setImportedDataCatalog] = useState<DataCategory[]>([]);
   const [importedLaboratoryMetadata, setImportedLaboratoryMetadata] = useState<LaboratoryMetadata | null>(null);
   const [importedDatasetProducer, setImportedDatasetProducer] = useState<DatasetProducer | null>(null);
+  const [restorationContext, setRestorationContext] = useState<CollectionRestoration | null>(null);
   const [datasetVersion, setDatasetVersion] = useState(0);
   const datasetVersionRef = useRef(0);
   const sessionIdentity = useRef('anonymous:');
@@ -217,7 +219,7 @@ export default function App() {
     ? { ...report, ...importedLaboratoryMetadata, records: report.records }
     : report;
   const datasetProducer: DatasetProducer = {
-    application: 'Healthbank', version: session.version || 'unknown', connector_revision: 'nhi-spa.2026-10-28.2',
+    application: 'Healthbank', version: session.version || 'unknown', connector_revision: 'nhi-spa.2026-10-28.3',
     clinical_catalog_id: catalog.provenance?.catalog_id ?? 'unknown',
     clinical_catalog_revision: catalog.provenance?.catalog_revision ?? 'unknown',
     clinical_evidence_revision: catalog.provenance?.evidence_revision ?? 'unknown',
@@ -517,6 +519,7 @@ export default function App() {
     setImportedDataCatalog([]);
     setImportedLaboratoryMetadata(null);
     setImportedDatasetProducer(null);
+    setRestorationContext(null);
     setDataBusy(false);
   }
 
@@ -605,7 +608,7 @@ export default function App() {
     return result;
   }
 
-  async function restoreDataset(dataset: ImportedDataset) {
+  async function restoreDataset(dataset: ImportedDataset, collection?: CollectionRestoration) {
     if (datasetVersion !== datasetVersionRef.current || controlsBusy)
       throw new Error('使用階段已變更或仍在處理資料，請重新選取資料包。');
     const generation = ++sessionGeneration.current;
@@ -629,6 +632,7 @@ export default function App() {
       setImportedDataCatalog(dataset.catalog);
       setImportedLaboratoryMetadata(dataset.laboratoryMetadata);
       setImportedDatasetProducer(dataset.producer);
+      setRestorationContext(collection ?? null);
       setImportOpen(false); navigate('data');
       setMessage('完整資料包已還原至獨立匯入模式；檔案來源及完整性描述未經本次官方連線驗證。');
     } catch (failure) {
@@ -2083,7 +2087,8 @@ export default function App() {
                 onSessionExpired={() => { void expireOfficialSession(); }} />
               <NativePrintReport report={datasetExportReport} snapshot={dataSnapshot} categories={workspaceCatalog} mode={session.mode} version={session.version} reportOpen={printOpen} />
               <DatasetTools key={`dataset:${datasetVersion}`} report={datasetExportReport} snapshot={dataSnapshot} attachments={dataAttachments} catalog={workspaceCatalog}
-                producer={datasetProducer} importedFrom={importedDatasetProducer} disabled={controlsBusy} onImport={restoreDataset} />
+                producer={datasetProducer} importedFrom={importedDatasetProducer} disabled={controlsBusy} collection={restorationContext} onImport={restoreDataset}
+                onCollectionChange={next => { if (datasetVersion === datasetVersionRef.current) setRestorationContext(next); }} />
             </>}
           </div>
           <div hidden={view !== 'trends' && view !== 'settings'}><PersonalRecords key={`${session.mode}:${session.profile_key || report.fetched_at}`} profileKey={session.profile_key ?? ''} /></div>

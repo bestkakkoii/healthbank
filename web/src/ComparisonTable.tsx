@@ -89,6 +89,9 @@ function ComparisonScroller({ id, children }: { id: string; children: ReactNode 
     const element = scrollRef.current;
     if (!element) return;
     const update = () => {
+      const width = `${element.clientWidth}px`;
+      if (element.style.getPropertyValue('--comparison-visible-width') !== width)
+        element.style.setProperty('--comparison-visible-width', width);
       const maximum = Math.max(0, element.scrollWidth - element.clientWidth);
       // Safari's elastic overscroll can briefly report positions outside the range.
       const position = Math.min(maximum, Math.max(0, element.scrollLeft));
@@ -121,7 +124,7 @@ function ComparisonScroller({ id, children }: { id: string; children: ReactNode 
     const element = scrollRef.current;
     if (!element) return;
     const dateColumn = element.querySelector('.date-column');
-    // Compact layouts scroll every column; only reserve space for an actual frozen column.
+    // Reserve the actual sticky date width in desktop and compact layouts.
     const dateWidth = dateColumn && getComputedStyle(dateColumn).position === 'sticky'
       ? dateColumn.getBoundingClientRect().width
       : 0;

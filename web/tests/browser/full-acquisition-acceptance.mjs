@@ -206,7 +206,7 @@ export async function runFullAcquisitionAcceptance({ createContext, baseURL, evi
             return { archive_id: file.archive_id, state: 'completed', bytes: bytes.length, sha256: digest(bytes) };
           });
           const members = files.filter(file => file.state === 'completed').map(file => [`originals/${file.archive_id}/synthetic.txt`, `合成原始檔 ${file.archive_id}\n`]);
-          if (job.input.dataset) members.unshift(['dataset.v2.json', JSON.stringify(job.input.dataset) + '\n']);
+          if (job.input.dataset) members.unshift(['healthbank.dataset.v2.json', JSON.stringify(job.input.dataset) + '\n']);
           members.push(['manifest.json', JSON.stringify({ synthetic_only: true, plan: job.input.plan, files,
             ...(job.input.external_dataset ? { external_dataset: job.input.external_dataset } : {}) }) + '\n']);
           const bytes = storedZIP(members);
