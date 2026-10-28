@@ -192,6 +192,7 @@ export interface Source {
 export interface CatalogResponse {
   items: CatalogItem[];
   sources: Source[];
+  provenance?: { catalog_id: string; catalog_revision: string; evidence_revision: string };
 }
 
 export interface LoginInput {

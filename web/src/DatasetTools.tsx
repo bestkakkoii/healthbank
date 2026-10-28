@@ -3,14 +3,17 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReportResponse } from './api';
 import type { DataCategory, DownloadedAttachment, HealthDataSnapshot } from './health-data';
 import { categoryCoverage } from './health-data';
-import { exportDataset, importDataset, MAX_DATASET_BYTES, type ImportedDataset } from './health-dataset';
+import { exportDataset, importDataset, MAX_DATASET_BYTES, type ImportedDataset, type DatasetProducer } from './health-dataset';
+import { DatasetComparison } from './DatasetComparison';
 import { downloadText } from './model';
 
-export function DatasetTools({ report, snapshot, attachments, catalog, disabled, onImport }: {
+export function DatasetTools({ report, snapshot, attachments, catalog, producer, importedFrom, disabled, onImport }: {
   report: ReportResponse;
   snapshot: HealthDataSnapshot;
   attachments: DownloadedAttachment[];
   catalog: DataCategory[];
+  producer: DatasetProducer;
+  importedFrom: DatasetProducer | null;
   disabled: boolean;
   onImport: (dataset: ImportedDataset) => Promise<void>;
 }) {
@@ -31,7 +34,7 @@ export function DatasetTools({ report, snapshot, attachments, catalog, disabled,
     const generation = lifecycle.current;
     setBusy(true); setError(''); setMessage('');
     try {
-      const content = await exportDataset(report, snapshot, attachments, catalog, bom);
+      const content = await exportDataset(report, snapshot, attachments, catalog, bom, producer, importedFrom ?? undefined);
       if (generation !== lifecycle.current) return;
       downloadText(content, `healthbank-dataset-${new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' })}.json`, 'application/json;charset=utf-8');
       setMessage('已產生本次資料包；所有已取得來源與明細均已包含，未取得內容仍明確標示。');
@@ -69,8 +72,11 @@ export function DatasetTools({ report, snapshot, attachments, catalog, disabled,
     <details className="dataset-format-options"><summary>檔案格式與附件限制</summary>
       <label className="checkbox-label"><input type="checkbox" checked={bom} onChange={event => setBOM(event.target.checked)} disabled={busy} />文字編輯器需要時加 UTF-8 BOM</label>
       <p className="helper-text">資料包使用 UTF-8，總量上限 128 MiB；其中檢驗內容及已加入附件各上限 32 MiB，附件附 SHA-256。大型原始檔請另存，未加入的檔案只保留來源描述，沒有宣稱已備份。檔案由您保管；登入憑證與官方操作識別不會寫入資料包。</p>
+      <p className="helper-text">新版資料包 v2 記錄產生版本、連接器與判讀規則識別；仍可讀取 v1。版本資訊由檔案提供，不是身分或官方真實性的證明。檢驗重新匯入時依目前規則判讀，保留原始結果。</p>
+      <p className="helper-text">本次產生版本：{producer.version}；連接器：{producer.connector_revision}。{importedFrom ? `匯入來源版本：${importedFrom.version}。` : ''}</p>
     </details>
     {attachments.length > 0 && <details><summary>已加入的原始附件（{attachments.length}）</summary><ul>{attachments.map(file => <li key={`${file.category}:${file.id}`}><button className="text-button" type="button" onClick={() => downloadAttachment(file)}>{file.name}</button> · {Math.ceil(file.bytes.length / 1024)} KiB</li>)}</ul></details>}
+    <DatasetComparison disabled={disabled || busy} />
     {message && <p role="status">{message}</p>}
     {error && <p className="error-text" role="alert">{error}</p>}
   </details>;

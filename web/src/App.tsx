@@ -33,7 +33,7 @@ import { SupplementaryData, CoverageSummary } from './SupplementaryData';
 import { DatasetTools } from './DatasetTools';
 import { PrintReport } from './PrintReport';
 import { laboratoryCoverageStatus, laboratoryDateSummary } from './coverage-status';
-import type { ImportedDataset, LaboratoryMetadata } from './health-dataset';
+import type { ImportedDataset, LaboratoryMetadata, DatasetProducer } from './health-dataset';
 import { emptyHealthData, type HealthDataSnapshot, type DownloadedAttachment, type DataCategory } from './health-data';
 import { AnalysisProvider, AnalysisStamp } from './AnalysisContext';
 import { PrivacyNotice } from './PrivacyNotice';
@@ -165,6 +165,7 @@ export default function App() {
   const dataAttachmentsRef = useRef<DownloadedAttachment[]>([]);
   const [importedDataCatalog, setImportedDataCatalog] = useState<DataCategory[]>([]);
   const [importedLaboratoryMetadata, setImportedLaboratoryMetadata] = useState<LaboratoryMetadata | null>(null);
+  const [importedDatasetProducer, setImportedDatasetProducer] = useState<DatasetProducer | null>(null);
   const [datasetVersion, setDatasetVersion] = useState(0);
   const datasetVersionRef = useRef(0);
   const sessionIdentity = useRef('anonymous:');
@@ -213,6 +214,12 @@ export default function App() {
   const datasetExportReport = importedLaboratoryMetadata
     ? { ...report, ...importedLaboratoryMetadata, records: report.records }
     : report;
+  const datasetProducer: DatasetProducer = {
+    application: 'Healthbank', version: session.version || 'unknown', connector_revision: 'nhi-spa.2026-10-28.2',
+    clinical_catalog_id: catalog.provenance?.catalog_id ?? 'unknown',
+    clinical_catalog_revision: catalog.provenance?.catalog_revision ?? 'unknown',
+    clinical_evidence_revision: catalog.provenance?.evidence_revision ?? 'unknown',
+  };
 
   useEffect(() => {
     const restoreView = () => {
@@ -506,6 +513,7 @@ export default function App() {
     setDataAttachments([]);
     setImportedDataCatalog([]);
     setImportedLaboratoryMetadata(null);
+    setImportedDatasetProducer(null);
     setDataBusy(false);
   }
 
@@ -616,6 +624,7 @@ export default function App() {
       setDataAttachments(dataset.attachments);
       setImportedDataCatalog(dataset.catalog);
       setImportedLaboratoryMetadata(dataset.laboratoryMetadata);
+      setImportedDatasetProducer(dataset.producer);
       setImportOpen(false); navigate('data');
       setMessage('完整資料包已還原至獨立匯入模式；檔案來源及完整性描述未經本次官方連線驗證。');
     } catch (failure) {
@@ -2056,7 +2065,8 @@ export default function App() {
                   navigate('trends');
                 }}
                 onSessionExpired={() => { void expireOfficialSession(); }} />
-              <DatasetTools key={`dataset:${datasetVersion}`} report={datasetExportReport} snapshot={dataSnapshot} attachments={dataAttachments} catalog={workspaceCatalog} disabled={controlsBusy} onImport={restoreDataset} />
+              <DatasetTools key={`dataset:${datasetVersion}`} report={datasetExportReport} snapshot={dataSnapshot} attachments={dataAttachments} catalog={workspaceCatalog}
+                producer={datasetProducer} importedFrom={importedDatasetProducer} disabled={controlsBusy} onImport={restoreDataset} />
             </>}
           </div>
           <div hidden={view !== 'trends' && view !== 'settings'}><PersonalRecords key={`${session.mode}:${session.profile_key || report.fetched_at}`} profileKey={session.profile_key ?? ''} /></div>
