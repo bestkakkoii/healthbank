@@ -2,7 +2,7 @@
 
 Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
-Evidence checked: **2026-10-27**. This file distinguishes implemented rc.6 features, externally blocked live acceptance, and future source-dependent coverage. See [the real-environment acceptance checklist](acceptance.zh-TW.md).
+Evidence checked: **2026-10-27**. This file distinguishes implemented rc.7 features, externally blocked live acceptance, and future source-dependent coverage. See [the real-environment acceptance checklist](acceptance.zh-TW.md).
 The goal is to help people understand longitudinal observations and prepare useful
 questions for their clinicians. The application does not establish diagnoses or
 recommend unsupervised treatment experiments.
@@ -17,7 +17,7 @@ pseudonymous subject linkage, not medical observations. See the [README](../READ
 [connector verification boundary](nhi_protocol.md) for implemented behaviour.
 
 Additional category connectors and **Healthbank-format** JSON/XML imports are
-released in **v1.0.3-rc.6** from publicly observed SPA contracts
+available since **v1.0.3-rc.6** from publicly observed SPA contracts
 and synthetic fixtures. They are **not authenticated-live verified**; third-party
 NHI JSON/XML/PDF formats, official SDK integration and account completeness are
 not implemented. Public documentation alone is not authentication evidence.
@@ -32,10 +32,10 @@ portal, daily task system or automatic treatment recommender.
 | --- | --- | --- |
 | P0 | Actual historical coverage | Verify requested periods, default filters, source selectors, pagination and independent counts against authorized live records. Synthetic protocol fixtures are not live completeness evidence. |
 | P0 | Private-device login convenience | Multi-user opt-in remembered ID/card fields; password-manager-native form; manual CAPTCHA. Offline component/storage tests exist; real browser managers and devices still require verification. |
-| P0 | Practical age/sex comparison | Two immediate scenarios with sourced creatinine/ALP templates and guarded CKD-EPI; original values and flags immutable. Whole-table context bands and opt-in demographics setting sync are implemented in rc.6; source-bound interval coverage remains intentionally limited, not a universal age/sex catalogue. |
-| P1 | Same-period comparisons, coordinated charts and simple export | Exact differences plus measurement interval; preserve same-date duplicates, source methods and missing-data semantics. No arbitrary causal or danger score. |
+| P0 | Practical age/sex comparison | Two immediate scenarios with sourced intervals and guarded CKD-EPI; original values and flags immutable. Whole-table context bands and opt-in demographics setting sync are implemented in rc.6; source-bound interval coverage remains intentionally limited, not a universal age/sex catalogue. |
+| P1 | Time-series continuity and portable Unicode export | Corrected same-day duplicate breaking, time/date-index x-axis modes, display of multiple source values, UTF-8 JSON (optional BOM), original source preservation and regression cases. No unobserved measurement, interpolation, arbitrary causal or danger score. |
 | P1 | Additional official numeric results | First inspect preventive/self-paid examinations for actual extra results. Verify every authenticated contract and source overlap before integration. |
-| P2 | Optional prescribing/encounter/report context | Show source records alongside a selected date; no claim that prescriptions prove actual intake. Public-SPA based, whitelisted read-only category connectors are implemented with strict response handling and synthetic tests; real-account acceptance remains pending. |
+| P2 | Optional prescribing/encounter/report context | Listed medications, repeat prescriptions, Western/Chinese/dental encounters, surgeries and inpatient records have bounded source-bound read-only list/detail support, with synthetic contract tests. Per-drug prescription-days charts are present; neither records nor charts establish ingestion, dispensing, adherence, outcomes or live authenticated completeness. |
 | Optional | Personal products or medication notes | An optional device-local list with explicit save/export/import/delete and interval matching is implemented; no daily entry or medical notes in server settings. |
 
 Scientific research supplies internal constants, formula coefficients, eligibility

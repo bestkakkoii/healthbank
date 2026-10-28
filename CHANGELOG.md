@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.0.3-rc.7 — 2026-10-28 (Asia/Taipei)
+
+- Fixed trend discontinuities when the first examination date has multiple source results; keep exact raw points, draw same-day ranges where appropriate, and allow a clearly labelled evenly-spaced examination-date view without treating it as true elapsed time.
+- Improved JSON download interoperability using UTF-8 bytes/charset and optional UTF-8 BOM for editors; tested Chinese round-trip and versioned portable import.
+- Added strictly source-bound high-triglyceride handling: never apply Friedewald with TG ≥400 mg/dL, do not exceed the Sampson/NIH study range, keep the original laboratory LDL, and require explicit confirmation before eligible calculated values.
+- Added read-only, session-scoped medical-category lists/details for medicines, chronic prescriptions, Western/Chinese/dental encounters, surgeries, and hospitalization. Drug-code prescription-duration plots preserve raw dates/counts and do not infer actual intake, adherence, treatment efficacy, or pharmacokinetic levels.
+- Preserved original reports in transient memory and settings-only HMAC-linked SQL persistence. New data endpoints never store longitudinal medical records in SQL; no user-health fixtures enter releases.
+- All application changes were committed in independent batches; temporary research, export, and patch workflows are excluded from the main branch. Linux deployment tarballs retain the flat root layout.
+- Official-account compatibility/completeness, real iPhone/Safari, and actual operator CDN/OS retention remain external acceptance requirements, not claimed as synthetic test successes.
+
+
 ## v1.0.3-rc.6 — 2026-10-27 (Asia/Taipei)
 
 - Added verified-source age/sex scenario templates for nine analytes, instant table badges and trend-reference overlays; original institutional flags remain independent. Explicitly synchronize scenario settings after official authentication, never the optional birthday.
