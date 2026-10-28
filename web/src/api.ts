@@ -76,9 +76,20 @@ export interface LabRecord {
   official_flag?: string;
 }
 
+export interface MedicineOrder {
+  code: string;
+  name: string;
+  quantity: string;
+  days: string;
+}
 export interface SupplementEntry {
   date: string; institution: string; title: string; source: string;
-  fields: { name: string; value: string; unit?: string }[]; detail_id?: string;
+  fields: { name: string; value: string; unit?: string }[];
+  detail_id?: string;
+  key?: string;
+  kind?: string;
+  end_date?: string;
+  medicine?: MedicineOrder;
 }
 export interface SupplementReport {
   category: string; entries: SupplementEntry[]; coverage: string; fetched_at: string;
