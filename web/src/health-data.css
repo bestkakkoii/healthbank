@@ -1,0 +1,38 @@
+/* Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT */
+.health-data-workspace { min-inline-size: 0; }
+.health-data-workspace h2, .health-data-workspace h3, .health-data-workspace h4 { margin-block: .5rem; overflow-wrap: anywhere; }
+.health-data-workspace p { overflow-wrap: anywhere; }
+.health-data-workspace input, .health-data-workspace select { min-inline-size: 0; max-inline-size: 100%; }
+.health-data-actions { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin-block: .8rem; }
+.health-data-actions > * { min-inline-size: 0; max-inline-size: 100%; white-space: normal; overflow-wrap: anywhere; }
+.health-data-notice { padding: .8rem; border-inline-start: .25rem solid var(--accent); background: var(--surface-soft); }
+.health-data-options, .health-data-coverage, .health-data-medication { border-block-start: 1px solid var(--border); margin-block: 1rem; padding-block: .5rem; }
+.health-data-category-group { border: 1px solid var(--border); border-radius: .5rem; padding: .75rem; margin-block: .8rem; min-inline-size: 0; }
+.health-data-category-grid, .health-data-coverage-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: .8rem; }
+.health-data-category-grid label { align-items: start; padding: .3rem; }
+.health-data-category-grid small { display: block; color: var(--ink-muted); margin-block-start: .2rem; }
+.health-data-custom-range { border-block-start: 1px solid var(--border); margin-block-start: 1rem; padding-block: .6rem; }
+.health-data-progress { display: grid; gap: .5rem; margin-block: 1rem; }
+.health-data-progress progress { inline-size: 100%; accent-color: var(--accent); }
+.health-data-source { border: 1px solid var(--border); border-radius: .5rem; padding: .8rem; min-inline-size: 0; }
+.health-data-source h3 { font-size: 1em; }
+.health-data-source p { margin-block: .5rem; }
+.health-data-events { border-block-start: 1px solid var(--border); padding-block-start: 1rem; }
+.health-data-pagination { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-block: 1rem; }
+.health-data-event-list { display: grid; gap: .7rem; }
+.health-data-event { border: 1px solid var(--border); border-radius: .5rem; padding: .6rem; min-inline-size: 0; overflow-wrap: anywhere; }
+.health-data-event > summary { display: list-item; padding: .5rem; }
+.health-data-event > summary > * { display: block; margin-block: .25rem; }
+.health-data-event > summary > small { color: var(--ink-muted); font-weight: 400; }
+.health-data-event dd { max-block-size: 24rem; overflow: auto; }
+.health-data-attachments { padding: .7rem; border: 1px solid var(--border); background: var(--surface-soft); border-radius: .5rem; }
+.health-data-attachments > div { margin-block: .6rem; }
+@media (max-width: 480px) {
+  .health-data-actions > .button { flex: 1 1 100%; }
+  .health-data-pagination { align-items: stretch; }
+  .health-data-pagination > span { flex: 1 1 100%; order: -1; }
+}
+@media print {
+  .health-data-actions, .health-data-options, .health-data-pagination { display: none; }
+  .health-data-event dd { max-block-size: none; overflow: visible; }
+}

@@ -1,6 +1,10 @@
 // Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT
 import type { LabRecord } from './api';
 export const PORTABLE_REPORT_SCHEMA = 'healthbank.lab.v1';
+export const MAX_PORTABLE_REPORT_BYTES = 32 * 1024 * 1024;
+export function assertPortableReportSize(source: string): void {
+  if (new TextEncoder().encode(source).length > MAX_PORTABLE_REPORT_BYTES) throw new Error('檢驗內容超過可攜匯入上限 32 MiB；請分次整理檢驗資料。沒有輸出截斷的檔案，目前資料未變更。');
+}
 // Original source fields only: grades, calculated values and identity data are
 // deliberately excluded. Import recalculates interpretation under current rules.
 export function portableRows(records: LabRecord[]) {
@@ -11,7 +15,9 @@ export function portableRows(records: LabRecord[]) {
 }
 export function portableReportJSON(records: LabRecord[], textEditorMode = false): string {
   // BOM is opt-in for downloaded files only, never an API JSON response.
-  return (textEditorMode ? '\uFEFF' : '') + JSON.stringify({ schema: PORTABLE_REPORT_SCHEMA, records: portableRows(records) }, null, 2) + '\n';
+  const output = (textEditorMode ? '\uFEFF' : '') + JSON.stringify({ schema: PORTABLE_REPORT_SCHEMA, records: portableRows(records) }, null, 2) + '\n';
+  assertPortableReportSize(output);
+  return output;
 }
 function xmlEscape(value: string): string {
   for (const character of value) {
@@ -21,5 +27,7 @@ function xmlEscape(value: string): string {
   return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&apos;');
 }
 export function portableReportXML(records: LabRecord[]): string {
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<healthbank_report schema="${PORTABLE_REPORT_SCHEMA}">\n${portableRows(records).map(row => `  <record>${Object.entries(row).map(([key, value]) => `<${key}>${xmlEscape(value)}</${key}>`).join('')}</record>`).join('\n')}\n</healthbank_report>\n`;
+  const output = `<?xml version="1.0" encoding="UTF-8"?>\n<healthbank_report schema="${PORTABLE_REPORT_SCHEMA}">\n${portableRows(records).map(row => `  <record>${Object.entries(row).map(([key, value]) => `<${key}>${xmlEscape(value)}</${key}>`).join('')}</record>`).join('\n')}\n</healthbank_report>\n`;
+  assertPortableReportSize(output);
+  return output;
 }

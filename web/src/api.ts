@@ -82,6 +82,24 @@ export interface MedicineOrder {
   quantity: string;
   days: string;
 }
+export interface DocumentAttachment {
+  id: string;
+  name: string;
+  content_type: string;
+  size?: number;
+}
+export interface DocumentAction {
+  id: string;
+  name: string;
+  kind: 'prepare_jpeg' | 'prepare_dicom' | 'prepare_export';
+}
+export interface DataCategory {
+  id: string;
+  label: string;
+  group: string;
+  range_mode: 'date_search' | 'source';
+  has_details?: boolean;
+}
 export interface SupplementEntry {
   date: string; institution: string; title: string; source: string;
   fields: { name: string; value: string; unit?: string }[];
@@ -90,6 +108,8 @@ export interface SupplementEntry {
   kind?: string;
   end_date?: string;
   medicine?: MedicineOrder;
+  attachments?: DocumentAttachment[];
+  document_actions?: DocumentAction[];
 }
 export interface SupplementReport {
   category: string; entries: SupplementEntry[]; coverage: string; fetched_at: string;
@@ -282,7 +302,35 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return payload as T;
 }
 
+async function fetchDataCatalog(signal?: AbortSignal): Promise<{ categories: DataCategory[] }> {
+  const result = await request<{ categories: unknown }>('/api/data/catalog', { signal: signal ?? null });
+  if (!Array.isArray(result.categories) || result.categories.length === 0 || result.categories.length > 128)
+    throw new ApiError('資料來源目錄格式不正確，請重新取得。', 'invalid_catalog', 200);
+  const categories: DataCategory[] = [];
+  const seen = new Set<string>();
+  const values: unknown[] = result.categories;
+  for (const item of values) {
+    if (typeof item !== 'object' || item === null || !('id' in item) || !('label' in item) ||
+      !('group' in item) || !('range_mode' in item) || typeof item.id !== 'string' ||
+      !/^[a-z][a-z0-9_]{0,63}$/.test(item.id) || seen.has(item.id) || typeof item.label !== 'string' ||
+      !item.label.trim() || item.label.length > 240 || typeof item.group !== 'string' ||
+      !item.group.trim() || item.group.length > 240 ||
+      item.range_mode !== 'date_search' && item.range_mode !== 'source' ||
+      'has_details' in item && typeof item.has_details !== 'boolean')
+      throw new ApiError('資料來源目錄格式不正確，請重新取得。', 'invalid_catalog', 200);
+    seen.add(item.id);
+    categories.push({ id: item.id, label: item.label, group: item.group, range_mode: item.range_mode,
+      ...('has_details' in item && typeof item.has_details === 'boolean' ? { has_details: item.has_details } : {}) });
+  }
+  return { categories };
+}
+
 export const api = {
+  dataCatalog: fetchDataCatalog,
+  prepareDocument: (category: string, id: string, signal?: AbortSignal) =>
+    request<{ status: 'requested'; message: string }>('/api/documents/prepare', {
+      method: 'POST', body: JSON.stringify({ category, id }), signal: signal ?? null,
+    }),
   supplementary: (category: string, from: string, to: string, detail: string, signal: AbortSignal) =>
     request<SupplementReport>(`/api/supplementary?${new URLSearchParams({ category, from, to, detail })}`, { signal }),
   privacy: (signal?: AbortSignal) => request<PrivacyInfo>('/api/privacy', signal ? { signal } : {}),
@@ -292,8 +340,8 @@ export const api = {
   login: (body: LoginInput) =>
     request<Session>('/api/auth/login', { method: 'POST', body: JSON.stringify(body) }),
   logout: () => request<Session>('/api/auth/logout', { method: 'POST', body: '{}' }),
-  reports: (from: string, to: string) =>
-    request<ReportResponse>(`/api/reports?${new URLSearchParams({ from, to })}`),
+  reports: (from: string, to: string, signal?: AbortSignal) =>
+    request<ReportResponse>(`/api/reports?${new URLSearchParams({ from, to })}`, { signal: signal ?? null }),
   currentReports: (signal?: AbortSignal) =>
     request<ReportResponse>('/api/reports/current', { signal: signal ?? null }),
   importReports: (file: File) => {
