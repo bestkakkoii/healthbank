@@ -53,7 +53,7 @@
       "name": "Go net/html",
       "repository": "https://github.com/golang/net",
       "branch": "master",
-      "commit": "05c76ee9adc59087cf3ba77ee9c8fcfab61bf61c"
+      "commit": "3de643db506517b3e652a13cc0b56034cea6b8e6"
     },
     {
       "name": "React type declarations",
@@ -170,12 +170,12 @@
     },
     {
       "module": "golang.org/x/net",
-      "version": "v0.61.1-0.20261022225259-05c76ee9adc5",
-      "sum": "h1:hiB9drdBUxaK1tPuoZFMsl8PahKhCSAXmbM4XcF4HTU=",
+      "version": "v0.62.0",
+      "sum": "h1:18ELalfM5+XNRwzM2nYqXsZQ9ByS1uhj2O/U7+5jqRY=",
       "license_files": [
         "licenses/golang.org__x__net/LICENSE"
       ],
-      "upstream_commit": "05c76ee9adc59087cf3ba77ee9c8fcfab61bf61c"
+      "upstream_commit": "3de643db506517b3e652a13cc0b56034cea6b8e6"
     },
     {
       "module": "golang.org/x/sys",
@@ -456,13 +456,13 @@
     },
     {
       "module": "golang.org/x/net",
-      "version": "v0.61.1-0.20261022225259-05c76ee9adc5",
+      "version": "v0.62.0",
       "role": "linux-runtime",
       "repository": "https://github.com/golang/net",
-      "upstream_commit": "05c76ee9adc59087cf3ba77ee9c8fcfab61bf61c",
+      "upstream_commit": "3de643db506517b3e652a13cc0b56034cea6b8e6",
       "source_url": "https://api.github.com/repos/golang/net/commits/master",
-      "sum": "h1:hiB9drdBUxaK1tPuoZFMsl8PahKhCSAXmbM4XcF4HTU=",
-      "upstream_head_version": "v0.61.1-0.20261022225259-05c76ee9adc5",
+      "sum": "h1:18ELalfM5+XNRwzM2nYqXsZQ9ByS1uhj2O/U7+5jqRY=",
+      "upstream_head_version": "v0.62.0",
       "at_upstream_head": true
     },
     {
@@ -786,7 +786,7 @@
   ],
   "compiler_tool_dependencies": {
     "tsc": {
-      "compiler_commit": "6c49ac311e5642fa5399b46c736295a9dc4eeec9",
+      "compiler_commit": "41cb39b794bfe81144930746ccf72440a0382adb",
       "policy": "Unmodified official tool source with its own upstream module graph; these modules are not linked into Healthbank.",
       "modules": [
         {
@@ -831,7 +831,7 @@
       ]
     },
     "esbuild": {
-      "compiler_commit": "6c49ac311e5642fa5399b46c736295a9dc4eeec9",
+      "compiler_commit": "41cb39b794bfe81144930746ccf72440a0382adb",
       "policy": "Unmodified official tool source with its own upstream module graph; these modules are not linked into Healthbank.",
       "modules": [
         {
@@ -847,7 +847,7 @@
       ]
     },
     "govulncheck": {
-      "compiler_commit": "6c49ac311e5642fa5399b46c736295a9dc4eeec9",
+      "compiler_commit": "41cb39b794bfe81144930746ccf72440a0382adb",
       "policy": "Unmodified official tool source with its own upstream module graph; these modules are not linked into Healthbank.",
       "modules": [
         {
@@ -882,7 +882,7 @@
     "A latest source commit can report a package version below a published release tag; source identity is the immutable commit, not a version-number comparison.",
     "Native TypeScript 7 production compilation and the JavaScript TypeScript compiler API required by typescript-eslint are separate tools. The lint API must remain within the parser-supported range.",
     "Upstream build-tool graphs (including React Classic Yarn lockfile and the TypeScript/esbuild/govulncheck module graphs) are retained rather than patched with unsupported transitive major-version overrides.",
-    "govulncheck v1.9.0 source scan returned no findings against the database last modified 2026-10-21T00:27:29Z. Its semantic-version conversion cannot classify this development Go standard-library version; zero findings do not certify the development standard library."
+    "Historical 2026-10-27 audit: govulncheck v1.9.0 source scan returned no findings against the database last modified 2026-10-21T00:27:29Z. Its semantic-version conversion cannot classify this development Go standard-library version; zero findings do not certify the development standard library. The targeted 2026-10-28 result is recorded separately in security_refresh."
   ],
   "go_graph_audit_completed_at": "2026-10-27T09:26:44.884774+08:00",
   "sqlite_engine": {
@@ -1061,5 +1061,34 @@
     "scope": "Runtime-only refresh; earlier full-graph audit timestamps remain historical.",
     "react_build_java": "openjdk 21.0.12.1 2026-08-18 LTS\nOpenJDK Runtime Environment Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS)\nOpenJDK 64-Bit Server VM Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS, mixed mode, sharing)",
     "compatibility_exception": "React pinned Closure Compiler rejects stderr emitted by the runner default JDK. Isolate its source build to available Temurin 21; do not suppress stderr or alter application checks."
+  },
+  "security_refresh": {
+    "checked_at": "2026-10-28T09:14:52+08:00",
+    "module": "golang.org/x/net",
+    "previous_version": "v0.61.1-0.20261022225259-05c76ee9adc5",
+    "version": "v0.62.0",
+    "upstream_commit": "3de643db506517b3e652a13cc0b56034cea6b8e6",
+    "official_source": "https://github.com/golang/net/commit/3de643db506517b3e652a13cc0b56034cea6b8e6",
+    "advisories": [
+      "https://vuln.go.dev/ID/GO-2026-6866.json",
+      "https://vuln.go.dev/ID/GO-2026-6860.json"
+    ],
+    "scope": "Targeted x/net refresh to the verified official master HEAD, which is also the v0.62.0 release commit. Before/after selected Go module graphs differ only in x/net. Earlier full-graph and registry audit timestamps remain historical; no other runtime modules or build tools were upgraded.",
+    "license_verified_unchanged": true,
+    "compiler_provenance_correction": {
+      "compiler_commit": "41cb39b794bfe81144930746ccf72440a0382adb",
+      "tools": [
+        "tsc",
+        "esbuild",
+        "govulncheck"
+      ],
+      "verification": "Actual go version -m metadata matches the existing pinned Go source/bootstrap commit. Every recorded tool module/version/checksum remains identical; only stale compiler provenance was corrected."
+    },
+    "verification": {
+      "focused_go_tests": "go test ./internal/lab ./internal/nhi ./internal/server -count=1: passed",
+      "module_checksums": "go mod verify: all modules verified",
+      "advisory_scan": "govulncheck -show=verbose ./...: No vulnerabilities found; initial two imported-package findings are absent",
+      "standard_library_limit": "The real development Go version remains unmodified; govulncheck cannot fully classify a development standard library using release semantic versions."
+    }
   }
 }

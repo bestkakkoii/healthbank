@@ -2,6 +2,39 @@
 
 Copyright (c) 2026 bestkakkoii llc. SPDX-License-Identifier: MIT.
 
+## Targeted security refresh: 2026-10-28
+
+The final RC7 live advisory scan found **GO-2026-6866** and **GO-2026-6860** in
+the imported `golang.org/x/net/html` package. It reported **zero reachable affected
+symbols**: Healthbank uses the streaming tokenizer, while the published affected
+symbols belong to HTML rendering and tree parsing. The findings were still removed
+before release by updating only `golang.org/x/net` from
+`v0.61.1-0.20261022225259-05c76ee9adc5` to **v0.62.0**.
+
+The [official Go vulnerability records](https://vuln.go.dev/ID/GO-2026-6866.json)
+and [the tree-parser advisory](https://vuln.go.dev/ID/GO-2026-6860.json) both identify
+v0.62.0 as the fixed release. Official `golang/net` master resolved to
+[`3de643db506517b3e652a13cc0b56034cea6b8e6`](https://github.com/golang/net/commit/3de643db506517b3e652a13cc0b56034cea6b8e6),
+which is also that release's commit. This selection therefore retains the project's
+verified upstream-main policy. The module's requirements and bundled license text
+are unchanged; before/after selected module graphs differ only in `x/net`.
+
+With the pinned compiler, `go test ./internal/lab ./internal/nhi ./internal/server
+-count=1` and `go mod verify` passed. A new `govulncheck -show=verbose ./...` scan
+reported **No vulnerabilities found**, including no remaining imported-package
+findings. The real development Go version was retained; this result does not fully
+classify the development standard library or establish absence of unknown defects.
+Full final CI and release evidence is recorded in `docs/verification.zh-TW.md`.
+
+Actual `go version -m` metadata for TypeScript, esbuild and govulncheck also confirmed
+Go commit `41cb39b794bfe81144930746ccf72440a0382adb`. Stale compiler-provenance fields
+were corrected to that already-pinned revision; the tools' source revisions and
+embedded module/version/checksum graphs were not changed.
+
+This is a targeted security and provenance correction on **2026-10-28, Asia/Taipei**,
+not a new complete upstream-HEAD or registry audit. Earlier audit timestamps below
+remain historical. Exact checksums and scope are in the lock's `security_refresh`.
+
 ## Runtime refresh and current verification scope
 
 The runtime snapshot prepared on 2026-10-27T08:46:19Z updates React/DOM/Scheduler to
@@ -30,13 +63,13 @@ At the initial complete audit, every third-party Go module linked into the Linux
 
 | Component | Verified source/version | Result |
 | --- | --- | --- |
-| Go | golang/go master `6c49ac311e5642fa5399b46c736295a9dc4eeec9` | Source-built `devel go1.28`; used for application, native TypeScript, esbuild and govulncheck builds |
+| Go | golang/go master `41cb39b794bfe81144930746ccf72440a0382adb` | Source-built `devel go1.28`; actual application/tool compiler metadata rechecked 2026-10-28 |
 | React / React DOM / Scheduler | facebook/react main `e9df86ca6991b779ee50bc744ad8bbdeefa9bae6` | Source-built packages reporting 19.3.0 / 19.3.0 / 0.28.0 |
 | Production TypeScript | microsoft/TypeScript main `49e69830214c55a8cc361aa3c4e7412d0afd02fe` | Source-built native compiler reporting 7.1.0-dev |
 | esbuild | evanw/esbuild main `f6058f8364fe7ab91ca57a83e02577ed74c9cae4` | Source-built compiler reporting 0.28.2; source identity remains the recorded commit |
 | SQLite Go driver | cznic/sqlite master `e6990422658b8c9b79328fc5bbda69cc892d70ee` | Pure Go; actual `SELECT sqlite_version()` returned **3.54.1** |
 | MySQL Go driver | go-sql-driver/mysql master `c9e0863414a0e47bd708fcbc93d4adc611d15a5e` | Updated optional runtime adapter; latest local batch skips live MySQL (no DSN); earlier integration is historical |
-| HTML tokenizer | golang/net master `05c76ee9adc59087cf3ba77ee9c8fcfab61bf61c` | Streaming memory-only saved-report parser |
+| HTML tokenizer | golang/net master `3de643db506517b3e652a13cc0b56034cea6b8e6` / v0.62.0 | Streaming memory-only saved-report parser; targeted security refresh 2026-10-28 |
 | React declarations | DefinitelyTyped master `0d5b76188fd585fe187acb6cffbe08071f2bdd16` | Vendored declaration content unchanged from the verified upstream directories |
 | ESLint / @eslint/js | eslint/eslint main `161558ae1391a8649a8d69a8b2c2e555b40121b9` | Unmodified source packages reporting 10.13.0 / 10.0.1 |
 | govulncheck | golang/vuln master `e672cbe8fbc8c76e28fcb6db0efd9ce354e0dac5` | Official v1.9.0 source, compiled with the pinned development Go |
@@ -91,9 +124,9 @@ Compiler binary paths include both the source revision and Go revision. The boot
 
 The Go bootstrap compiler 1.27.3 is verified against its official go.dev archive hash. It only builds the pinned development compiler; it does not compile the application release. After bootstrap, commands must put `.tools/bin` and `.tools/go/bin` first in PATH. End users need none of these tools on the BaoTa host.
 
-## Verification boundaries
+## Historical verification boundaries
 
-The updated application passed its full Go suite and race-enabled suite with the disposable MySQL integration enabled: **261 passing test/subtest events per run, zero failed and zero skipped events**. Go vet and module checksum verification also passed. These are application checks, not upstream certification of all development snapshots.
+At the original 2026-10-27 audit, the application passed its full Go suite and race-enabled suite with the disposable MySQL integration enabled: **261 passing test/subtest events per run, zero failed and zero skipped events**. Go vet and module checksum verification also passed. These are historical application checks, not the RC7 final integration run or upstream certification of all development snapshots.
 
 The official govulncheck source scan returned zero findings using a vulnerability database last modified **2026-10-21T00:27:29Z**. It recorded the real development Go compiler version. However, govulncheck's semantic-version conversion cannot classify that development standard-library version, so **this result does not certify the development Go standard library**. No fake GOVERSION was substituted to make the scan appear complete. A clean scan also does not establish that no undisclosed vulnerability exists.
 
